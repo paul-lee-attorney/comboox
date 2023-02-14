@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -55,14 +55,14 @@ library SigsRepo {
     //####################
 
     function setSigDeadline(Page storage p, uint48 deadline)
-        internal
+        public
         onlyFutureTime(deadline)
     {
         p.signatures[0][0].blocknumber = deadline;
     }
 
     function setClosingDeadline(Page storage p, uint48 deadline)
-        internal
+        public
         onlyFutureTime(deadline)
     {
         p.signatures[0][0].sigDate = deadline;
@@ -71,13 +71,13 @@ library SigsRepo {
     function addBlank(
         Page storage p,
         uint40 acct,
-        uint16 ssn
-    ) internal returns (bool flag) {
+        uint16 seq
+    ) public returns (bool flag) {
         if (p.signatures[0][0].sigHash != bytes32(0))
             p.signatures[0][0].sigHash = bytes32(0);
 
-        if (!blankExist(p, acct, ssn)) {
-            p.signatures[acct][ssn].signer = acct;
+        if (!blankExist(p, acct, seq)) {
+            p.signatures[acct][seq].signer = acct;
 
             p.parties.add(acct);
 
@@ -91,7 +91,7 @@ library SigsRepo {
         Page storage p,
         uint40 acct,
         uint16 ssn
-    ) internal returns (bool flag) {
+    ) public returns (bool flag) {
         if (blankExist(p, acct, ssn) && !dealIsSigned(p, acct, ssn)) {
             delete p.signatures[acct][ssn];
             p.parties.remove(acct);
@@ -107,12 +107,12 @@ library SigsRepo {
         uint40 caller,
         uint16 ssn,
         bytes32 sigHash
-    ) internal {
+    ) public {
         if (blankExist(p, caller, ssn) && !dealIsSigned(p, caller, ssn)) {
             p.signatures[caller][ssn] = Signature({
                 signer: caller,
                 blocknumber: uint64(block.number),
-                sigDate: uint32(block.timestamp),
+                sigDate: uint48(block.timestamp),
                 sigHash: sigHash
             });
 
@@ -132,7 +132,7 @@ library SigsRepo {
         Page storage p,
         uint40 acct,
         uint16 ssn
-    ) internal view returns (bool) {
+    ) public view returns (bool) {
         return p.signatures[acct][ssn].signer == acct;
     }
 
@@ -140,28 +140,28 @@ library SigsRepo {
         Page storage p,
         uint40 acct,
         uint16 ssn
-    ) internal view returns (bool) {
+    ) public view returns (bool) {
         return p.signatures[acct][ssn].sigDate != 0;
     }
 
-    function established(Page storage p) internal view returns (bool) {
+    function established(Page storage p) public view returns (bool) {
         return p.signatures[0][0].sigHash == bytes32("true");
     }
 
-    function sigDeadline(Page storage p) internal view returns (uint48) {
+    function sigDeadline(Page storage p) public view returns (uint48) {
         return uint48(p.signatures[0][0].blocknumber);
     }
 
-    function closingDeadline(Page storage p) internal view returns (uint48) {
+    function closingDeadline(Page storage p) public view returns (uint48) {
         return p.signatures[0][0].sigDate;
     }
 
-    function isParty(Page storage p, uint40 acct) internal view returns (bool) {
+    function isParty(Page storage p, uint40 acct) public view returns (bool) {
         return p.parties.contains(acct);
     }
 
     function isInitSigner(Page storage p, uint40 acct)
-        internal
+        public
         view
         returns (bool)
     {
@@ -169,22 +169,22 @@ library SigsRepo {
     }
 
     function partiesOfDoc(Page storage p)
-        internal
+        public
         view
         returns (uint40[] memory)
     {
         return p.parties.valuesToUint40();
     }
 
-    function qtyOfParties(Page storage p) internal view returns (uint256) {
+    function qtyOfParties(Page storage p) public view returns (uint256) {
         return p.parties.length();
     }
 
-    function blankCounterOfDoc(Page storage p) internal view returns (uint16) {
+    function blankCounterOfDoc(Page storage p) public view returns (uint16) {
         return p.blankCounter;
     }
 
-    function sigCounter(Page storage p) internal view returns (uint16) {
+    function sigCounter(Page storage p) public view returns (uint16) {
         return uint16(p.signatures[0][0].signer);
     }
 
@@ -193,7 +193,7 @@ library SigsRepo {
         uint40 acct,
         uint16 ssn
     )
-        internal
+        public
         view
         returns (
             uint64 blocknumber,
@@ -210,13 +210,13 @@ library SigsRepo {
         sigHash = sig.sigHash;
     }
 
-    function dealSigVerify(
-        Page storage p,
-        uint40 acct,
-        uint16 ssn,
-        string memory src
-    ) internal view returns (bool) {
-        // require(dealIsSigned(p, acct, ssn), "SP.sigDateOfDeal: deal not signed");
-        return p.signatures[acct][ssn].sigHash == keccak256(bytes(src));
-    }
+    // function dealSigVerify(
+    //     Page storage p,
+    //     uint40 acct,
+    //     uint16 ssn,
+    //     string memory src
+    // ) public view returns (bool) {
+    //     // require(dealIsSigned(p, acct, ssn), "SP.sigDateOfDeal: deal not signed");
+    //     return p.signatures[acct][ssn].sigHash == keccak256(bytes(src));
+    // }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -21,7 +21,9 @@ interface IAccessControl {
 
     event SetDirectKeeper(address keeper);
 
-    event SetManager(uint8 title, uint40 acct);
+    event SetOwner(uint256 acct);
+
+    event SetGeneralCounsel(uint256 acct);
 
     // event SetRoleAdmin(bytes32 role, uint40 acct);
 
@@ -48,7 +50,9 @@ interface IAccessControl {
 
     function setDirectKeeper(address keeper) external;
 
-    function setManager(uint8 title, uint40 acct) external;
+    function setOwner(uint40 acct) external;
+
+    function setGeneralCounsel(uint40 acct) external;
 
     function grantRole(bytes32 role, uint40 acct) external;
 
@@ -63,14 +67,14 @@ interface IAccessControl {
     function lockContents() external;
 
     // ##################
-    // ##   查询端口   ##
+    // ##   查询端口    ##
     // ##################
 
-    function getManager(uint8 title) external view returns (uint40);
+    function getOwner() external view returns (uint40);
+
+    function getGeneralCounsel() external view returns (uint40);
 
     function getBookeeper() external view returns (address);
-
-    function getManagerKey(uint8 title) external view returns (address);
 
     function finalized() external view returns (bool);
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -19,7 +19,7 @@ contract BODSetting is AccessControl {
         _;
     }
 
-    function setBOD(address bod) external onlyDK {
+    function setBOD(address bod) external onlyDirectKeeper {
         _bod = IBookOfDirectors(bod);
     }
 

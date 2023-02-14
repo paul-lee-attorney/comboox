@@ -108,7 +108,7 @@ interface IBookOfOptions {
         view
         returns (
             uint40 rightholder,
-            uint64 closingBN,
+            uint48 closingDate,
             uint64 paid,
             uint64 par,
             bytes32 hashLock
@@ -127,7 +127,7 @@ interface IBookOfOptions {
 
     function pledges(bytes32 sn) external view returns (bytes32[] memory);
 
-    function oracle(bytes32 sn, uint64 blocknumber)
+    function oracle(bytes32 sn, uint48 timestamp)
         external
         view
         returns (uint32 d1, uint32 d2);

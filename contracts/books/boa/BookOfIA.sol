@@ -11,14 +11,14 @@ import "./InvestmentAgreement.sol";
 import "./IInvestmentAgreement.sol";
 import "./IBookOfIA.sol";
 
-import "../../common/components/DocumentsRepo.sol";
+import "../../common/components/RepoOfDocs.sol";
 
 import "../../common/lib/SNParser.sol";
 
 import "../../common/ruting/BOHSetting.sol";
 import "../../common/ruting/IBookSetting.sol";
 
-contract BookOfIA is IBookOfIA, BOHSetting, DocumentsRepo {
+contract BookOfIA is IBookOfIA, BOHSetting, RepoOfDocs {
     using SNParser for bytes32;
 
     // ia => frd
@@ -31,16 +31,17 @@ contract BookOfIA is IBookOfIA, BOHSetting, DocumentsRepo {
     //##  Write I/O  ##
     //#################
 
-    function circulateIA(address ia, bytes32 docHash) external onlyDK {
-        bytes32 rule = _getSHA().votingRules(
-            IInvestmentAgreement(ia).typeOfIA()
-        );
-        circulateDoc(ia, rule, docHash);
+    function circulateIA(address ia, bytes32 docUrl, bytes32 docHash) external onlyDirectKeeper {
+        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
+
+        bytes32 votingRule = _getSHA().getRule(typeOfIA);
+
+        circulateDoc(ia, votingRule, docUrl, docHash);
     }
 
     function createFRDeals(address ia, uint40 creator)
         external
-        onlyKeeper(uint8(TitleOfKeepers.SHAKeeper))
+        onlyKeeper
         returns (address frd)
     {
         if (_frDeals[ia] == address(0)) {
@@ -50,7 +51,7 @@ contract BookOfIA is IBookOfIA, BOHSetting, DocumentsRepo {
 
     function createMockResults(address ia, uint40 creator)
         external
-        onlyKeeper(uint8(TitleOfKeepers.SHAKeeper))
+        onlyKeeper
         returns (address mock)
     {
         if (_mockResults[ia] == address(0)) {

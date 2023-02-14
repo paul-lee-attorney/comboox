@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -48,9 +48,8 @@ contract RegCenter is IRegCenter {
 
     OptionsSetting private _opts;
 
-    constructor(address keeper) {
+    constructor() {
         _users[0].primeKey = msg.sender;
-        _users[0].backupKey = keeper;
     }
 
     // #################

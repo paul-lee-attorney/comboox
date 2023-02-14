@@ -10,6 +10,7 @@ pragma solidity ^0.8.8;
 import "../../boa//IInvestmentAgreement.sol";
 
 import "../../../common/ruting/BOMSetting.sol";
+import "../../../common/ruting/RODSetting.sol";
 
 import "../../../common/lib/ArrayUtils.sol";
 import "../../../common/lib/SNParser.sol";
@@ -20,7 +21,7 @@ import "../../../common/components/ISigPage.sol";
 import "./ILockUp.sol";
 import "./ITerm.sol";
 
-contract LockUp is ILockUp, BOMSetting {
+contract LockUp is ILockUp, BOMSetting, RODSetting {
     using ArrayUtils for uint40[];
     using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -134,7 +135,7 @@ contract LockUp is ILockUp, BOMSetting {
             1
         );
 
-        uint40[] memory signers = ISigPage(ia).partiesOfDoc();
+        uint40[] memory signers = _rod.partiesOfDoc(ia);
 
         uint40[] memory agreedParties = consentParties.combine(signers);
 

@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 pragma solidity ^0.8.8;
 
-import "../../common/ruting/BOSSetting.sol";
-import "../../common/ruting/ROMSetting.sol";
-
-import "../../common/lib/SNParser.sol";
 import "../../common/lib/EnumerableSet.sol";
+import "../../common/lib/SNParser.sol";
 
 import "../../common/components/SigPage.sol";
 
@@ -19,12 +16,10 @@ import "./IInvestmentAgreement.sol";
 
 contract InvestmentAgreement is
     IInvestmentAgreement,
-    BOSSetting,
-    ROMSetting,
     SigPage
 {
-    using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using SNParser for bytes32;
 
     enum TypeOfDeal {
         ZeroPoint,
@@ -60,9 +55,10 @@ contract InvestmentAgreement is
     }
 
     // _deals[0] {
-    //     paid: counterOfDeal;
+    //     paid: counterOfClosedDeal;
+    //     par: counterOfDeal;
     //     state: typeOfIA;
-    // }
+    // }    
 
     // seq => Deal
     mapping(uint256 => Deal) private _deals;
@@ -90,13 +86,13 @@ contract InvestmentAgreement is
         uint64 paid,
         uint64 par,
         uint48 closingDate
-    ) external attorneyOrKeeper(uint8(TitleOfKeepers.SHAKeeper)) {
+    ) external attorneyOrKeeper() {
         require(par != 0, "IA.createDeal: par is ZERO");
         require(par >= paid, "IA.createDeal: paid overflow");
 
-        _deals[0].paid++;
+        _deals[0].par++;
 
-        uint16 seq = uint16(_deals[0].paid);
+        uint16 seq = uint16(_deals[0].par);
 
         Deal storage deal = _deals[seq];
 
@@ -117,12 +113,14 @@ contract InvestmentAgreement is
                 sn.typeOfDeal() != uint8(TypeOfDeal.FreeGift)
             ) addBlank(seller, seq);
             addBlank(buyer, seq);
+
+            emit CreateDeal(sn, paid, par, closingDate);
         } else {
             if (seller != 0) addBlank(seller, 0);
             addBlank(buyer, 0);
         }
 
-        emit CreateDeal(sn, paid, par, closingDate);
+        
     }
 
     function updateDeal(
@@ -130,22 +128,23 @@ contract InvestmentAgreement is
         uint64 paid,
         uint64 par,
         uint48 closingDate
-    ) external attorneyOrKeeper(uint8(TitleOfKeepers.SHAKeeper)) {
+    ) external attorneyOrKeeper() {
         require(isDeal(seq), "IA.updateDeal: deal not exist");
 
         Deal storage deal = _deals[seq];
+
+        if (finalized()) emit UpdateDeal(deal.sn, paid, par, closingDate);
+
         deal.paid = paid;
         deal.par = par;
         deal.closingDate = closingDate;
-
-        emit UpdateDeal(deal.sn, paid, par, closingDate);
     }
 
-    function setTypeOfIA(uint8 t) external onlyPending onlyAttorney {
+    function setTypeOfIA(uint8 t) external onlyAttorney {
         _deals[0].state = t;
     }
 
-    function delDeal(uint16 seq) external onlyPending onlyAttorney {
+    function delDeal(uint16 seq) external onlyAttorney {
         bytes32 sn = _deals[seq].sn;
         uint40 seller = sn.sellerOfDeal();
 
@@ -155,35 +154,31 @@ contract InvestmentAgreement is
 
         removeBlank(sn.buyerOfDeal(), seq);
 
-        delete _deals[seq];
-        _dealsList.remove(sn);
+        if (_dealsList.remove(sn)) {
+            delete _deals[seq];
+            _deals[0].par--;
+        }
+
     }
 
-    function lockDealSubject(uint16 seq) external returns (bool flag) {
-        require(
-            _gk.isKeeper(uint8(TitleOfKeepers.BOAKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.SHAKeeper), msg.sender),
-            "IA.lockDealSubject: caller has no access right"
-        );
-
+    function lockDealSubject(uint16 seq) external onlyKeeper returns (bool flag) {
         Deal storage deal = _deals[seq];
         if (deal.state == uint8(StateOfDeal.Drafting)) {
             deal.state = uint8(StateOfDeal.Locked);
             flag = true;
-            emit LockDealSubject(deal.sn);
         }
     }
 
     function releaseDealSubject(uint16 seq)
         external
-        onlyDK
+        onlyDirectKeeper
         returns (bool flag)
     {
         Deal storage deal = _deals[seq];
         if (deal.state >= uint8(StateOfDeal.Locked)) {
             deal.state = uint8(StateOfDeal.Drafting);
             flag = true;
-            emit ReleaseDealSubject(deal.sn);
+            // emit ReleaseDealSubject(deal.sn);
         }
     }
 
@@ -191,17 +186,12 @@ contract InvestmentAgreement is
         uint16 seq,
         bytes32 hashLock,
         uint48 closingDate
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         Deal storage deal = _deals[seq];
 
         require(
-            block.timestamp + 15 minutes < closingDate,
+            block.timestamp < closingDate,
             "closingDate shall be FUTURE time"
-        );
-
-        require(
-            closingDate <= closingDeadline(),
-            "closingDate LATER than deadline"
         );
 
         require(deal.state == uint8(StateOfDeal.Locked), "Deal state wrong");
@@ -218,7 +208,7 @@ contract InvestmentAgreement is
     function closeDeal(uint16 seq, string memory hashKey)
         external
         onlyCleared(seq)
-        onlyDK
+        onlyDirectKeeper
         returns (bool)
     {
         Deal storage deal = _deals[seq];
@@ -229,7 +219,7 @@ contract InvestmentAgreement is
         );
 
         require(
-            block.timestamp + 900 <= deal.closingDate,
+            block.timestamp <= deal.closingDate,
             "IA.closeDeal: MISSED closing date"
         );
 
@@ -237,37 +227,21 @@ contract InvestmentAgreement is
 
         emit CloseDeal(deal.sn, hashKey);
 
-        return _checkCompletionOfIA();
-    }
+        _deals[0].paid++;
 
-    function _checkCompletionOfIA() private view returns (bool) {
-        bytes32[] memory list = _dealsList.values();
-
-        uint256 len = list.length;
-
-        while (len > 0) {
-            bytes32 sn = list[len - 1];
-
-            uint16 seq = sn.seqOfDeal();
-
-            if (_deals[seq].state < uint8(StateOfDeal.Closed)) return false;
-
-            len--;
-        }
-
-        return true;
+        return (_deals[0].paid == _deals[0].par);
     }
 
     function revokeDeal(uint16 seq, string memory hashKey)
         external
         onlyCleared(seq)
-        onlyDK
+        onlyDirectKeeper
         returns (bool)
     {
         Deal storage deal = _deals[seq];
 
         require(
-            deal.closingDate < block.timestamp - 15 minutes,
+            deal.closingDate < block.timestamp,
             "NOT reached closing date"
         );
 
@@ -290,12 +264,15 @@ contract InvestmentAgreement is
 
         emit RevokeDeal(deal.sn, hashKey);
 
-        return _checkCompletionOfIA();
+        _deals[0].paid ++;
+
+        return (_deals[0].paid == _deals[0].par);
     }
 
     function takeGift(uint16 seq)
         external
-        onlyKeeper(uint8(TitleOfKeepers.SHAKeeper))
+        onlyKeeper
+        returns (bool)
     {
         Deal storage deal = _deals[seq];
 
@@ -311,16 +288,19 @@ contract InvestmentAgreement is
 
         require(deal.state == uint8(StateOfDeal.Locked), "wrong state");
 
+        emit CloseDeal(deal.sn, "0");
         deal.state = uint8(StateOfDeal.Closed);
 
-        emit CloseDeal(deal.sn, "0");
+        _deals[0].paid++;
+
+        return (_deals[0].paid == _deals[0].par);
     }
 
     //  #################################
     //  ##       查询接口               ##
     //  ################################
 
-    function typeOfIA() external view returns (uint8) {
+    function typeOfIA() external view returns (uint256) {
         return _deals[0].state;
     }
 
@@ -329,7 +309,7 @@ contract InvestmentAgreement is
     }
 
     function counterOfDeals() external view returns (uint16) {
-        return uint16(_deals[0].paid);
+        return uint16(_deals[0].par);
     }
 
     function getDeal(uint16 seq)

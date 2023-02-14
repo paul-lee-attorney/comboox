@@ -75,33 +75,33 @@ library EnumerableSet {
     }
 
     function add(Bytes32Set storage set, bytes32 value)
-        internal
+        public
         returns (bool)
     {
         return _add(set._inner, value);
     }
 
     function remove(Bytes32Set storage set, bytes32 value)
-        internal
+        public
         returns (bool)
     {
         return _remove(set._inner, value);
     }
 
     function contains(Bytes32Set storage set, bytes32 value)
-        internal
+        public
         view
         returns (bool)
     {
         return _contains(set._inner, value);
     }
 
-    function length(Bytes32Set storage set) internal view returns (uint256) {
+    function length(Bytes32Set storage set) public view returns (uint256) {
         return _length(set._inner);
     }
 
     function at(Bytes32Set storage set, uint256 index)
-        internal
+        public
         view
         returns (bytes32)
     {
@@ -109,7 +109,7 @@ library EnumerableSet {
     }
 
     function values(Bytes32Set storage set)
-        internal
+        public
         view
         returns (bytes32[] memory)
     {
@@ -123,33 +123,33 @@ library EnumerableSet {
     }
 
     function add(AddressSet storage set, address value)
-        internal
+        public
         returns (bool)
     {
         return _add(set._inner, bytes32(uint256(uint160(value))));
     }
 
     function remove(AddressSet storage set, address value)
-        internal
+        public
         returns (bool)
     {
         return _remove(set._inner, bytes32(uint256(uint160(value))));
     }
 
     function contains(AddressSet storage set, address value)
-        internal
+        public
         view
         returns (bool)
     {
         return _contains(set._inner, bytes32(uint256(uint160(value))));
     }
 
-    function length(AddressSet storage set) internal view returns (uint256) {
+    function length(AddressSet storage set) public view returns (uint256) {
         return _length(set._inner);
     }
 
     function at(AddressSet storage set, uint256 index)
-        internal
+        public
         view
         returns (address)
     {
@@ -157,7 +157,7 @@ library EnumerableSet {
     }
 
     function values(AddressSet storage set)
-        internal
+        public
         view
         returns (address[] memory)
     {
@@ -177,12 +177,12 @@ library EnumerableSet {
         Set _inner;
     }
 
-    function add(UintSet storage set, uint256 value) internal returns (bool) {
+    function add(UintSet storage set, uint256 value) public returns (bool) {
         return _add(set._inner, bytes32(value));
     }
 
     function remove(UintSet storage set, uint256 value)
-        internal
+        public
         returns (bool)
     {
         return _remove(set._inner, bytes32(value));
@@ -192,7 +192,7 @@ library EnumerableSet {
      * @dev Returns true if the value is in the set. O(1).
      */
     function contains(UintSet storage set, uint256 value)
-        internal
+        public
         view
         returns (bool)
     {
@@ -202,12 +202,12 @@ library EnumerableSet {
     /**
      * @dev Returns the number of values on the set. O(1).
      */
-    function length(UintSet storage set) internal view returns (uint256) {
+    function length(UintSet storage set) public view returns (uint256) {
         return _length(set._inner);
     }
 
     function at(UintSet storage set, uint256 index)
-        internal
+        public
         view
         returns (uint256)
     {
@@ -215,7 +215,7 @@ library EnumerableSet {
     }
 
     function values(UintSet storage set)
-        internal
+        public
         view
         returns (uint256[] memory)
     {
@@ -232,13 +232,13 @@ library EnumerableSet {
     // =========================================================================
 
     /**
-     * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+     * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
      * All Rights Reserved.
      ***/
 
     // shall be checked at front-end so as to avoid overflow
     function valuesToUint8(UintSet storage set)
-        internal
+        public
         view
         returns (uint8[] memory)
     {
@@ -252,9 +252,24 @@ library EnumerableSet {
         return result;
     }
 
+    // function valuesToUint16(UintSet storage set)
+    //     public
+    //     view
+    //     returns (uint16[] memory)
+    // {
+    //     bytes32[] memory store = _values(set._inner);
+    //     uint16[] memory result;
+
+    //     assembly {
+    //         result := store
+    //     }
+
+    //     return result;
+    // }
+    
     // shall be checked at front-end so as to avoid overflow
     function valuesToUint32(UintSet storage set)
-        internal
+        public
         view
         returns (uint32[] memory)
     {
@@ -270,7 +285,7 @@ library EnumerableSet {
 
     // shall be checked at front-end so as to avoid overflow
     function valuesToUint40(UintSet storage set)
-        internal
+        public
         view
         returns (uint40[] memory)
     {
@@ -286,7 +301,7 @@ library EnumerableSet {
 
     // // shall be checked at front-end so as to avoid overflow
     // function valuesToUint88(UintSet storage set)
-    //     internal
+    //     public
     //     view
     //     returns (uint88[] memory)
     // {
@@ -300,7 +315,7 @@ library EnumerableSet {
     //     return result;
     // }
 
-    function emptyItems(UintSet storage set) internal {
+    function emptyItems(UintSet storage set) public {
         uint256 len = set._inner._values.length;
 
         while (len != 0) {

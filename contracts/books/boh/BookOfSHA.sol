@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -9,9 +9,9 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfSHA.sol";
 
-import "../../common/components/DocumentsRepo.sol";
+import "../../common/components/RepoOfDocs.sol";
 
-contract BookOfSHA is IBookOfSHA, DocumentsRepo {
+contract BookOfSHA is IBookOfSHA, RepoOfDocs {
     mapping(uint256 => address) private _termTemplates;
 
     address private _pointer;
@@ -20,12 +20,11 @@ contract BookOfSHA is IBookOfSHA, DocumentsRepo {
     //##    写接口    ##
     //##################
 
-    function setTermTemplate(uint8 title, address body) external onlyDK {
+    function setTermTemplate(uint8 title, address body) external onlyDirectKeeper {
         _termTemplates[title] = body;
-        emit SetTermTemplate(title, body);
     }
 
-    function changePointer(address body) external onlyDK onlyRegistered(body) {
+    function changePointer(address body) external onlyDirectKeeper onlyRegistered(body) {
         if (_pointer != address(0)) pushToNextState(_pointer);
 
         pushToNextState(body);

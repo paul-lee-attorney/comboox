@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -45,28 +45,16 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
     //##    写接口    ##
     //##################
 
-    function setMaxQtyOfMembers(uint8 max) external onlyDK {
+    function setMaxQtyOfMembers(uint8 max) external onlyDirectKeeper {
         _gm.setMaxQtyOfMembers(max);
         emit SetMaxQtyOfMembers(max);
     }
 
-    function setVoteBase(bool onPar) external {
-        require(
-            _gk.isKeeper(uint8(TitleOfKeepers.BOHKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.ROMKeeper), msg.sender),
-            "ROM.SetVoteBase: have no access right"
-        );
-
+    function setVoteBase(bool onPar) external onlyKeeper {
         if (_gm.setVoteBase(onPar)) emit SetVoteBase(onPar);
     }
 
-    function setAmtBase(bool onPar) external {
-        require(
-            _gk.isKeeper(uint8(TitleOfKeepers.BOHKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.ROMKeeper), msg.sender),
-            "ROM.SetAmtBase: have no access right"
-        );
-
+    function setAmtBase(bool onPar) external onlyKeeper {
         if (_gm.setAmtBase(onPar)) emit SetAmtBase(onPar);
     }
 
@@ -146,14 +134,14 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
 
     function addMemberToGroup(uint40 acct, uint40 root)
         external
-        onlyKeeper(uint8(TitleOfKeepers.BOHKeeper))
+        onlyKeeper
     {
         if (_gm.addMemberToGroup(acct, root)) emit AddMemberToGroup(acct, root);
     }
 
     function removeMemberFromGroup(uint40 acct, uint40 root)
         external
-        onlyKeeper(uint8(TitleOfKeepers.BOHKeeper))
+        onlyKeeper
     {
         require(
             root == _gm.groupRep(acct),
@@ -188,12 +176,12 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
         return _gm.parCap();
     }
 
-    function capAtBlock(uint64 blocknumber)
+    function capAtDate(uint48 date)
         external
         view
         returns (uint64 paid, uint64 par)
     {
-        return _gm.capAtBlock(blocknumber);
+        return _gm.capAtDate(date);
     }
 
     function totalVotes() external view returns (uint64) {
@@ -239,12 +227,12 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
         return _gm.votesInHand(acct);
     }
 
-    function votesAtBlock(uint40 acct, uint64 blocknumber)
+    function votesAtDate(uint40 acct, uint48 date)
         external
         view
         returns (uint64)
     {
-        return _gm.votesAtBlock(acct, blocknumber);
+        return _gm.votesAtDate(acct, date);
     }
 
     function sharesInHand(uint40 acct)

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -25,7 +25,7 @@ library OptionsRepo {
         // bytes32 sn;
         bytes32 hashLock;
         uint40 rightholder;
-        uint64 closingBN;
+        uint48 closingDate;
         uint8 state; // 0-pending; 1-issued; 2-executed; 3-futureReady; 4-pledgeReady; 5-closed; 6-revoked; 7-expired;
         uint64[2] par;
         uint64[3] paid; // 0-optValue; 1-futureValue;
@@ -38,20 +38,20 @@ library OptionsRepo {
     // bytes32 snInfo{
     //      uint8 typeOfOpt; 0, 1  //0-call(price); 1-put(price); 2-call(roe); 3-put(roe); 4-call(price) & cnds; 5-put(price) & cnds; 6-call(roe) & cnds; 7-put(roe) & cnds;
     //      uint32 seqOfOpt; 1, 4
-    //      uint64 triggerBN; 5, 8
-    //      uint8 exerciseDays; 13, 1
-    //      uint8 closingDays; 14, 1
-    //      uint16 class; 15, 2
-    //      uint32 rate; 17, 4 // Price, ROE, IRR or other key rate to deduce price.
-    //      uint8 logicOperator; 21, 1 // 0-not applicable; 1-and; 2-or; ...
-    //      uint8 compareOperator_1; 22, 1 // 0-not applicable; 1-bigger; 2-smaller; 3-bigger or equal; 4-smaller or equal; ...
-    //      uint32 para_1; 23, 4
-    //      uint8 compareOperator_2; 27, 1 // 0-not applicable; 1-bigger; 2-smaller; 3-bigger or equal; 4-smaller or equal; ...
-    //      uint32 para_2; 28, 4
+    //      uint48 triggerDate; 5, 6
+    //      uint8 exerciseDays; 11, 1
+    //      uint8 closingDays; 12, 1
+    //      uint16 class; 13, 2
+    //      uint32 rate; 15, 4 // Price, ROE, IRR or other key rate to deduce price.
+    //      uint8 logicOperator; 19, 1 // 0-not applicable; 1-and; 2-or; ...
+    //      uint8 compareOperator_1; 20, 1 // 0-not applicable; 1-bigger; 2-smaller; 3-bigger or equal; 4-smaller or equal; ...
+    //      uint32 para_1; 21, 4
+    //      uint8 compareOperator_2; 25, 1 // 0-not applicable; 1-bigger; 2-smaller; 3-bigger or equal; 4-smaller or equal; ...
+    //      uint32 para_2; 26, 4
     // }
 
     // struct Oracle {
-    //     uint64 blocknumber;
+    //     uint48 timestamp;
     //     uint32 data_1;
     //     uint32 data_2;
     // }
@@ -89,10 +89,10 @@ library OptionsRepo {
         uint40[] memory obligors,
         uint64 paid,
         uint64 par
-    ) internal returns (bytes32 _sn) {
+    ) public returns (bytes32 _sn) {
         require(
-            sn.triggerBNOfOpt() > block.number,
-            "OR.createOption: trigger block number has passed"
+            sn.triggerDateOfOpt() > block.timestamp,
+            "OR.createOption: trigger date has passed"
         );
         require(
             sn.exerciseDaysOfOpt() > 0,
@@ -149,7 +149,7 @@ library OptionsRepo {
         Repo storage repo,
         bytes32 sn,
         uint40 obligor
-    ) internal optionExist(repo, sn) returns (bool flag) {
+    ) public optionExist(repo, sn) returns (bool flag) {
         if (repo.options[sn].obligors.add(obligor)) {
             flag = true;
         }
@@ -159,14 +159,14 @@ library OptionsRepo {
         Repo storage repo,
         bytes32 sn,
         uint40 obligor
-    ) internal optionExist(repo, sn) returns (bool flag) {
+    ) public optionExist(repo, sn) returns (bool flag) {
         if (repo.options[sn].obligors.remove(obligor)) {
             flag = true;
         }
     }
 
     function removeOption(Repo storage repo, bytes32 sn)
-        internal
+        public
         returns (bool flag)
     {
         if (repo.snList.remove(sn)) {
@@ -180,45 +180,44 @@ library OptionsRepo {
         bytes32 sn,
         uint32 d1,
         uint32 d2
-    ) internal optionExist(repo, sn) {
-        repo.options[sn].oracles.push(d1, d2);
+    ) public optionExist(repo, sn) {
+        repo.options[sn].oracles.push(d1, d2, 0);
     }
 
     function execOption(
         Repo storage repo,
-        bytes32 sn,
-        uint64 blocksPerHour
-    ) internal optionExist(repo, sn) {
+        bytes32 sn
+    ) public optionExist(repo, sn) {
         Option storage opt = repo.options[sn];
 
-        uint64 triggerBN = sn.triggerBNOfOpt();
-        uint64 exerciseDays = sn.exerciseDaysOfOpt();
-        uint64 closingDays = sn.closingDaysOfOpt();
+        uint48 triggerDate = sn.triggerDateOfOpt();
+        uint48 exerciseDays = sn.exerciseDaysOfOpt();
+        uint48 closingDays = sn.closingDaysOfOpt();
 
         require(
             opt.state == 1,
             "OR.createOption: option's state is NOT correct"
         );
         require(
-            block.number >= triggerBN,
+            block.timestamp >= triggerDate,
             "OR.createOption: NOT reached TriggerDate"
         );
 
         if (exerciseDays != 0)
             require(
-                block.number <= triggerBN + exerciseDays * 24 * blocksPerHour,
+                block.timestamp <= triggerDate + exerciseDays * 86400,
                 "OR.createOption: NOT in exercise period"
             );
 
-        (uint64 d1, uint64 d2) = opt.oracles.latest();
+        Checkpoints.Checkpoint memory cp = opt.oracles.latest();
 
         if (sn.typeOfOpt() > 3)
             require(
-                sn.checkConditions(uint32(d1), uint32(d2)),
+                sn.checkConditions(uint32(cp.paid), uint32(cp.par)),
                 "OR.createOption: conditions NOT satisfied"
             );
 
-        opt.closingBN = uint64(block.number) + closingDays * 24 * blocksPerHour;
+        opt.closingDate = uint48(block.timestamp) + closingDays * 86400;
         opt.state = 2;
     }
 
@@ -229,11 +228,11 @@ library OptionsRepo {
         uint64 paid,
         uint64 par,
         IBookOfShares _bos
-    ) internal optionExist(repo, sn) returns (bool flag) {
+    ) public optionExist(repo, sn) returns (bool flag) {
         Option storage opt = repo.options[sn];
 
         require(
-            block.number <= opt.closingBN,
+            block.timestamp <= opt.closingDate,
             "OR.addFuture: MISSED closingDate"
         );
         require(opt.state == 2, "OR.addFuture: option NOT executed");
@@ -288,7 +287,7 @@ library OptionsRepo {
         Repo storage repo,
         bytes32 sn,
         bytes32 ft
-    ) internal optionExist(repo, sn) returns (bool flag) {
+    ) public optionExist(repo, sn) returns (bool flag) {
         if (repo.options[sn].futures.remove(ft)) flag = true;
     }
 
@@ -297,7 +296,7 @@ library OptionsRepo {
         bytes32 sn,
         bytes32 shareNumber,
         uint64 paid
-    ) internal optionExist(repo, sn) returns (bool flag) {
+    ) public optionExist(repo, sn) returns (bool flag) {
         Option storage opt = repo.options[sn];
 
         require(opt.state < 5, "OR.requestPledge: WRONG state");
@@ -334,7 +333,7 @@ library OptionsRepo {
         Repo storage repo,
         bytes32 sn,
         bytes32 hashLock
-    ) internal optionExist(repo, sn) {
+    ) public optionExist(repo, sn) {
         Option storage opt = repo.options[sn];
         require(opt.state > 1, "OR.lockOption: WRONG state");
         opt.hashLock = hashLock;
@@ -344,13 +343,13 @@ library OptionsRepo {
         Repo storage repo,
         bytes32 sn,
         string memory hashKey
-    ) internal optionExist(repo, sn) {
+    ) public optionExist(repo, sn) {
         Option storage opt = repo.options[sn];
 
         require(opt.state > 1, "OR.closeOption: WRONG state");
         require(opt.state < 5, "OR.closeOption: WRONG state");
         require(
-            block.number <= opt.closingBN,
+            block.timestamp <= opt.closingDate,
             "OR.closeOption: MISSED closingDate"
         );
         require(
@@ -362,13 +361,13 @@ library OptionsRepo {
     }
 
     function revokeOption(Repo storage repo, bytes32 sn)
-        internal
+        public
         optionExist(repo, sn)
     {
         Option storage opt = repo.options[sn];
 
         require(opt.state < 5, "WRONG state");
-        require(block.number > opt.closingBN, "closing period NOT expired");
+        require(block.timestamp > opt.closingDate, "closing period NOT expired");
 
         opt.state = 6;
     }
@@ -378,19 +377,19 @@ library OptionsRepo {
     // ################
 
     function counterOfOptions(Repo storage repo)
-        internal
+        public
         view
         returns (uint32)
     {
         return uint32(repo.options[0].rightholder);
     }
 
-    // function qtyOfOptions(Repo storage repo) internal view returns (uint256) {
+    // function qtyOfOptions(Repo storage repo) public view returns (uint256) {
     //     return repo.snList.length();
     // }
 
     // function isOption(Repo storage repo, bytes32 sn)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
@@ -398,7 +397,7 @@ library OptionsRepo {
     // }
 
     // function getOption(Repo storage repo, bytes32 sn)
-    //     internal
+    //     public
     //     view
     //     returns (
     //         uint40 rightholder,
@@ -420,12 +419,12 @@ library OptionsRepo {
     //     Repo storage repo,
     //     bytes32 sn,
     //     uint40 acct
-    // ) internal view returns (bool) {
+    // ) public view returns (bool) {
     //     return repo.options[sn].obligors.contains(acct);
     // }
 
     // function obligorsOfOption(Repo storage repo, bytes32 sn)
-    //     internal
+    //     public
     //     view
     //     returns (uint40[] memory)
     // {
@@ -433,7 +432,7 @@ library OptionsRepo {
     // }
 
     // function stateOfOption(Repo storage repo, bytes32 sn)
-    //     internal
+    //     public
     //     view
     //     returns (uint8)
     // {
@@ -441,7 +440,7 @@ library OptionsRepo {
     // }
 
     // function futures(Repo storage repo, bytes32 sn)
-    //     internal
+    //     public
     //     view
     //     returns (bytes32[] memory)
     // {
@@ -449,7 +448,7 @@ library OptionsRepo {
     // }
 
     // function pledges(Repo storage repo, bytes32 sn)
-    //     internal
+    //     public
     //     view
     //     returns (bytes32[] memory)
     // {
@@ -460,7 +459,7 @@ library OptionsRepo {
     //     Repo storage repo,
     //     bytes32 sn,
     //     uint64 blocknumber
-    // ) internal view returns (uint32, uint32) {
+    // ) public view returns (uint32, uint32) {
     //     (uint64 d1, uint64 d2) = repo.options[sn].oracles.getAtBlock(
     //         blocknumber
     //     );
@@ -468,7 +467,7 @@ library OptionsRepo {
     // }
 
     // function optsList(Repo storage repo)
-    //     internal
+    //     public
     //     view
     //     returns (bytes32[] memory)
     // {

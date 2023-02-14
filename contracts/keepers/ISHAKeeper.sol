@@ -59,6 +59,8 @@ interface ISHAKeeper {
     // ======== FirstRefusal ========
 
     function execFirstRefusal(
+        bytes32 rule,
+        uint256 seqOfRightholder,
         address ia,
         bytes32 sn,
         uint40 caller,

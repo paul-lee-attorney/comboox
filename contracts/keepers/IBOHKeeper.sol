@@ -23,6 +23,8 @@ interface IBOHKeeper {
     function circulateSHA(
         address sha,
         uint40 caller,
+        bytes32 rule,
+        bytes32 docUrl,
         bytes32 docHash
     ) external;
 

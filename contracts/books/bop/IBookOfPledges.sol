@@ -8,6 +8,16 @@
 pragma solidity ^0.8.8;
 
 interface IBookOfPledges {
+
+    //Pledge 质权
+    struct Pledge {
+        bytes32 sn; //质押编号
+        uint40 creditor; //质权人、债权人
+        uint48 expireDate;
+        uint64 pledgedPar; // 出质票面额（数量）
+        uint64 guaranteedAmt; //担保金额
+    }
+
     //##################
     //##    Event     ##
     //##################
@@ -23,7 +33,7 @@ interface IBookOfPledges {
     event UpdatePledge(
         bytes32 indexed sn,
         uint40 creditor,
-        uint64 expireBN,
+        uint48 expireDate,
         uint64 pledgedPar,
         uint64 guaranteedAmt
     );
@@ -43,7 +53,7 @@ interface IBookOfPledges {
     function updatePledge(
         bytes32 sn,
         uint40 creditor,
-        uint64 expireBN,
+        uint48 expireDate,
         uint64 pledgedPar,
         uint64 guaranteedAmt
     ) external;
@@ -62,9 +72,6 @@ interface IBookOfPledges {
         external
         view
         returns (
-            uint40 creditor,
-            uint64 expireBN,
-            uint64 pledgedPar,
-            uint64 guaranteedAmt
+            Pledge memory pld
         );
 }

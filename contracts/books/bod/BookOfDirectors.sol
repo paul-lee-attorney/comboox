@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -12,9 +12,11 @@ import "./IBookOfDirectors.sol";
 import "../../common/components/MeetingMinutes.sol";
 
 import "../../common/lib/EnumerableSet.sol";
+import "../../common/lib/SNParser.sol";
 
 contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     using EnumerableSet for EnumerableSet.UintSet;
+    using SNParser for bytes32;
 
     enum TitleOfDirectors {
         ZeroPoint,
@@ -27,8 +29,8 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         uint8 title; // 1-Chairman; 2-ViceChairman; 3-Director;
         uint40 acct;
         uint40 appointer;
-        uint64 startBN;
-        uint64 endBN;
+        uint48 startDate;
+        uint48 endDate;
     }
 
     /*
@@ -36,8 +38,8 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         title: maxQtyOfDirectors;
         acct: ViceChair;
         appointer: Chairman;
-        startBN: (pending);
-        endBN: (pending);
+        startDate: (pending);
+        endDate: (pending);
     }
 */
 
@@ -45,6 +47,9 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     mapping(uint256 => Director) private _directors;
 
     EnumerableSet.UintSet private _board;
+
+    // userNo => numOfDirectors
+    mapping(uint256 => uint256) private _appointmentCounter;
 
     //####################
     //##    modifier    ##
@@ -63,21 +68,23 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
 
     function setMaxQtyOfDirectors(uint8 max)
         external
-        onlyKeeper(uint8(TitleOfKeepers.BOHKeeper))
+        onlyKeeper
     {
         _directors[0].title = max;
         emit SetMaxQtyOfDirectors(max);
     }
 
     function appointDirector(
+        bytes32 rule,
         uint40 candidate,
         uint8 title,
         uint40 appointer
-    ) external onlyDK {
-        _addDirector(candidate, title, appointer);
+    ) external onlyDirectKeeper {
+        _addDirector(rule, candidate, title, appointer);
     }
 
     function _addDirector(
+        bytes32 rule,
         uint40 candidate,
         uint8 title,
         uint40 appointer
@@ -88,19 +95,19 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
                 "BOD.addDirector: number of directors overflow"
             );
 
-        uint64 startBN = uint64(block.number);
+        uint48 startDate = uint48(block.timestamp);
 
-        uint64 endBN = startBN +
-            _getSHA().tenureOfBoard() *
-            8760 *
-            _rc.blocksPerHour();
+        bytes32 governingRule = _getSHA().getRule(0);
+
+        uint48 endDate = startDate +
+            governingRule.tenureOfBoard() * 31536000;
 
         _directors[candidate] = Director({
             title: title,
             acct: candidate,
             appointer: appointer,
-            startBN: startBN,
-            endBN: endBN
+            startDate: startDate,
+            endDate: endDate
         });
 
         if (title == uint8(TitleOfDirectors.Chairman)) {
@@ -112,15 +119,19 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
             else revert("BOD.addDirector: ViceChairman's position is occupied");
         }
 
-        if (_board.add(candidate))
-            emit AddDirector(title, candidate, appointer, startBN, endBN);
+        if (_board.add(candidate)) {
+            require(rule.qtyOfBoardSeats() < _appointmentCounter[appointer], "BOD.addDirector: Board seets used up");
+
+            emit AddDirector(title, candidate, appointer, startDate, endDate);
+            _appointmentCounter[appointer]++;
+        }
     }
 
-    function takePosition(uint40 candidate, uint40 nominator) external onlyDK {
-        _addDirector(candidate, uint8(TitleOfDirectors.Director), nominator);
+    function takePosition(bytes32 rule, uint40 candidate, uint40 nominator) external onlyDirectKeeper {
+        _addDirector(rule, candidate, uint8(TitleOfDirectors.Director), nominator);
     }
 
-    function removeDirector(uint40 acct) external onlyDK {
+    function removeDirector(uint40 acct) external onlyDirectKeeper {
         if (isDirector(acct)) {
             if (_directors[acct].title == uint8(TitleOfDirectors.Chairman)) {
                 _directors[0].appointer = 0;
@@ -174,8 +185,8 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         directorExist(acct)
         returns (bool)
     {
-        return (_directors[acct].endBN >= block.number &&
-            _directors[acct].startBN <= block.number);
+        return (_directors[acct].endDate >= block.timestamp &&
+            _directors[acct].startDate <= block.timestamp);
     }
 
     function whoIs(uint8 title) external view returns (uint40) {
@@ -204,22 +215,22 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         return _directors[acct].appointer;
     }
 
-    function startBNOfDirector(uint40 acct)
+    function startDateOfDirector(uint40 acct)
         external
         view
         directorExist(acct)
-        returns (uint64)
+        returns (uint48)
     {
-        return _directors[acct].startBN;
+        return _directors[acct].startDate;
     }
 
-    function endBNOfDirector(uint40 acct)
+    function endDateOfDirector(uint40 acct)
         external
         view
         directorExist(acct)
-        returns (uint64)
+        returns (uint48)
     {
-        return _directors[acct].endBN;
+        return _directors[acct].endDate;
     }
 
     function directors() external view returns (uint40[] memory) {

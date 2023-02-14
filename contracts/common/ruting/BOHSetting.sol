@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -15,7 +15,7 @@ import "../access/AccessControl.sol";
 contract BOHSetting is AccessControl {
     IBookOfSHA internal _boh;
 
-    function setBOH(address boh) external onlyDK {
+    function setBOH(address boh) external onlyDirectKeeper {
         _boh = IBookOfSHA(boh);
     }
 

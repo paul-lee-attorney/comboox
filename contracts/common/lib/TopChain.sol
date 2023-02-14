@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -41,12 +41,12 @@ library TopChain {
 
     // ==== Setting ====
 
-    function setMaxQtyOfMembers(Chain storage chain, uint32 max) internal {
+    function setMaxQtyOfMembers(Chain storage chain, uint32 max) public {
         chain.nodes[0].amt = max;
     }
 
     function setVoteBase(Chain storage chain, bool onPar)
-        internal
+        public
         returns (bool flag)
     {
         if (onPar != basedOnPar(chain)) {
@@ -58,7 +58,7 @@ library TopChain {
     // ==== Node ====
 
     function addNode(Chain storage chain, uint40 acct)
-        internal
+        public
         returns (bool flag)
     {
         Node storage n = chain.nodes[acct];
@@ -83,7 +83,7 @@ library TopChain {
     }
 
     function delNode(Chain storage chain, uint40 acct)
-        internal
+        public
         returns (bool flag)
     {
         if (_carveOut(chain, acct)) {
@@ -100,7 +100,7 @@ library TopChain {
         uint40 acct,
         uint64 deltaAmt,
         bool increase
-    ) internal memberExist(chain, acct) returns (bool flag) {
+    ) public memberExist(chain, acct) returns (bool flag) {
         Node storage n = chain.nodes[acct];
 
         if (increase) {
@@ -132,7 +132,7 @@ library TopChain {
         uint40 acct,
         uint40 root
     )
-        internal
+        public
         memberExist(chain, acct)
         memberExist(chain, root)
         returns (bool flag)
@@ -147,7 +147,7 @@ library TopChain {
     }
 
     function sub2Top(Chain storage chain, uint40 acct)
-        internal
+        public
         memberExist(chain, acct)
         returns (bool flag)
     {
@@ -174,7 +174,7 @@ library TopChain {
     // ==== restoreChain ====
 
     function restoreChain(Chain storage chain, Node[] memory snapshot)
-        internal
+        public
     {
         chain.nodes[0] = snapshot[0];
 
@@ -347,7 +347,7 @@ library TopChain {
     //##################
 
     function isMember(Chain storage chain, uint40 acct)
-        internal
+        public
         view
         returns (bool)
     {
@@ -356,31 +356,31 @@ library TopChain {
 
     // ==== Zero Node ====
 
-    function tail(Chain storage chain) internal view returns (uint40) {
+    function tail(Chain storage chain) public view returns (uint40) {
         return chain.nodes[0].prev;
     }
 
-    function head(Chain storage chain) internal view returns (uint40) {
+    function head(Chain storage chain) public view returns (uint40) {
         return chain.nodes[0].next;
     }
 
-    function qtyOfMembers(Chain storage chain) internal view returns (uint32) {
+    function qtyOfMembers(Chain storage chain) public view returns (uint32) {
         return uint32(chain.nodes[0].ptr);
     }
 
     function maxQtyOfMembers(Chain storage chain)
-        internal
+        public
         view
         returns (uint32)
     {
         return uint32(chain.nodes[0].amt);
     }
 
-    function totalVotes(Chain storage chain) internal view returns (uint64) {
+    function totalVotes(Chain storage chain) public view returns (uint64) {
         return chain.nodes[0].sum;
     }
 
-    function basedOnPar(Chain storage chain) internal view returns (bool) {
+    function basedOnPar(Chain storage chain) public view returns (bool) {
         return chain.nodes[0].cat == 1;
     }
 
@@ -392,7 +392,7 @@ library TopChain {
         uint40 prev,
         uint40 next,
         bool increase
-    ) internal view returns (uint40, uint40) {
+    ) public view returns (uint40, uint40) {
         if (increase)
             while (prev > 0 && chain.nodes[prev].sum < amount) {
                 next = prev;
@@ -408,7 +408,7 @@ library TopChain {
     }
 
     function nextNode(Chain storage chain, uint40 acct)
-        internal
+        public
         view
         returns (uint40 next)
     {
@@ -424,7 +424,7 @@ library TopChain {
     }
 
     function getNode(Chain storage chain, uint40 acct)
-        internal
+        public
         view
         returns (
             uint40 prev,
@@ -448,7 +448,7 @@ library TopChain {
     // ==== group ====
 
     function rootOf(Chain storage chain, uint40 acct)
-        internal
+        public
         view
         memberExist(chain, acct)
         returns (uint40 group)
@@ -458,7 +458,7 @@ library TopChain {
     }
 
     function qtyOfBranches(Chain storage chain)
-        internal
+        public
         view
         returns (uint32 len)
     {
@@ -471,7 +471,7 @@ library TopChain {
     }
 
     function deepOfBranch(Chain storage chain, uint40 acct)
-        internal
+        public
         view
         memberExist(chain, acct)
         returns (uint32 deep)
@@ -499,7 +499,7 @@ library TopChain {
     }
 
     function votesOfGroup(Chain storage chain, uint40 acct)
-        internal
+        public
         view
         returns (uint64 votes)
     {
@@ -508,7 +508,7 @@ library TopChain {
     }
 
     function membersOfGroup(Chain storage chain, uint40 acct)
-        internal
+        public
         view
         returns (uint40[] memory)
     {
@@ -523,7 +523,7 @@ library TopChain {
         uint40 acct1,
         uint40 acct2
     )
-        internal
+        public
         view
         memberExist(chain, acct1)
         memberExist(chain, acct2)
@@ -538,7 +538,7 @@ library TopChain {
     // ==== members ====
 
     function membersList(Chain storage chain)
-        internal
+        public
         view
         returns (uint40[] memory)
     {
@@ -570,7 +570,7 @@ library TopChain {
     // ==== backup ====
 
     function getSnapshot(Chain storage chain)
-        internal
+        public
         view
         returns (Node[] memory)
     {

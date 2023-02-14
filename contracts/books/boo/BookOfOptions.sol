@@ -49,15 +49,6 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
 
     OptionsRepo.Repo private _options;
 
-    modifier BOM_Or_BOO_Keeper() {
-        require(
-            _gk.isKeeper(uint8(TitleOfKeepers.BOMKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.BOOKeeper), msg.sender),
-            "BOO.createOption: caller not have access right"
-        );
-        _;
-    }
-
     modifier optionExist(bytes32 sn) {
         require(_options.snList.contains(sn), "BOO.optionExist: opt not exist");
         _;
@@ -73,14 +64,14 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         uint40[] memory obligors,
         uint64 paid,
         uint64 par
-    ) external BOM_Or_BOO_Keeper returns (bytes32 _sn) {
+    ) external onlyKeeper returns (bytes32 _sn) {
         _sn = _options.createOption(sn, rightholder, obligors, paid, par);
         emit CreateOpt(_sn, rightholder, paid, par);
     }
 
     function registerOption(address opts)
         external
-        onlyKeeper(uint8(TitleOfKeepers.BOHKeeper))
+        onlyKeeper
     {
         bytes32[] memory list = IOptions(opts).optsList();
         uint256 len = list.length;
@@ -107,14 +98,14 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         }
     }
 
-    function addObligorIntoOption(bytes32 sn, uint40 obligor) external onlyDK {
+    function addObligorIntoOption(bytes32 sn, uint40 obligor) external onlyDirectKeeper {
         if (_options.addObligorIntoOption(sn, obligor))
             emit AddObligorIntoOpt(sn, obligor);
     }
 
     function removeObligorFromOption(bytes32 sn, uint40 obligor)
         external
-        onlyDK
+        onlyDirectKeeper
     {
         if (_options.removeObligorFromOption(sn, obligor))
             emit RemoveObligorFromOpt(sn, obligor);
@@ -124,13 +115,13 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         bytes32 sn,
         uint32 d1,
         uint32 d2
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         _options.updateOracle(sn, d1, d2);
         emit UpdateOracle(sn, d1, d2);
     }
 
-    function execOption(bytes32 sn) external BOM_Or_BOO_Keeper {
-        _options.execOption(sn, _rc.blocksPerHour());
+    function execOption(bytes32 sn) external onlyKeeper {
+        _options.execOption(sn);
         emit ExecOpt(sn);
     }
 
@@ -139,13 +130,13 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         bytes32 shareNumber,
         uint64 paid,
         uint64 par
-    ) external BOM_Or_BOO_Keeper {
+    ) external onlyKeeper {
         if (_options.addFuture(sn, shareNumber, paid, par, _bos)) {
             emit AddFuture(sn, shareNumber, paid, par);
         }
     }
 
-    function removeFuture(bytes32 sn, bytes32 ft) external onlyDK {
+    function removeFuture(bytes32 sn, bytes32 ft) external onlyDirectKeeper {
         if (_options.removeFuture(sn, ft)) {
             emit RemoveFuture(sn, ft);
         }
@@ -155,22 +146,22 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         bytes32 sn,
         bytes32 shareNumber,
         uint64 paid
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         if (_options.requestPledge(sn, shareNumber, paid))
             emit AddPledge(sn, shareNumber, paid);
     }
 
-    function lockOption(bytes32 sn, bytes32 hashLock) external onlyDK {
+    function lockOption(bytes32 sn, bytes32 hashLock) external onlyDirectKeeper {
         _options.lockOption(sn, hashLock);
         emit LockOpt(sn, hashLock);
     }
 
-    function closeOption(bytes32 sn, string memory hashKey) external onlyDK {
+    function closeOption(bytes32 sn, string memory hashKey) external onlyDirectKeeper {
         _options.closeOption(sn, hashKey);
         emit CloseOpt(sn, hashKey);
     }
 
-    function revokeOption(bytes32 sn) external onlyDK {
+    function revokeOption(bytes32 sn) external onlyDirectKeeper {
         _options.revokeOption(sn);
         emit RevokeOpt(sn);
     }
@@ -193,7 +184,7 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         optionExist(sn)
         returns (
             uint40 rightholder,
-            uint64 closingBN,
+            uint48 closingDate,
             uint64 paid,
             uint64 par,
             bytes32 hashLock
@@ -202,7 +193,7 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         OptionsRepo.Option storage opt = _options.options[sn];
 
         rightholder = opt.rightholder;
-        closingBN = opt.closingBN;
+        closingDate = opt.closingDate;
         paid = opt.paid[0];
         par = opt.par[0];
         hashLock = opt.hashLock;
@@ -253,16 +244,16 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         return _options.options[sn].pledges.values();
     }
 
-    function oracle(bytes32 sn, uint64 blocknumber)
+    function oracle(bytes32 sn, uint48 date)
         external
         view
         optionExist(sn)
         returns (uint32, uint32)
     {
-        (uint64 d1, uint64 d2) = _options.options[sn].oracles.getAtBlock(
-            blocknumber
+        Checkpoints.Checkpoint memory cp = _options.options[sn].oracles.getAtDate(
+            date
         );
-        return (uint32(d1), uint32(d2));
+        return (uint32(cp.paid), uint32(cp.par));
     }
 
     function optsList() external view returns (bytes32[] memory) {

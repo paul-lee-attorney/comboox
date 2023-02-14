@@ -46,15 +46,15 @@ contract BOMKeeper is
     // ##   Corp Setting   ##
     // ######################
 
-    function createCorpSeal() external onlyDK {
+    function createCorpSeal() external onlyDirectKeeper {
         _bom.createCorpSeal();
     }
 
-    function createBoardSeal() external onlyDK {
+    function createBoardSeal() external onlyDirectKeeper {
         _bom.createBoardSeal(address(_bod));
     }
 
-    function setRegNumberHash(bytes32 numHash) external onlyDK {
+    function setRegNumberHash(bytes32 numHash) external onlyDirectKeeper {
         _bom.setRegNumberHash(numHash);
     }
 
@@ -66,7 +66,7 @@ contract BOMKeeper is
         uint40 caller,
         uint40 delegate,
         uint256 actionId
-    ) external onlyDK memberExist(caller) memberExist(delegate) {
+    ) external onlyDirectKeeper memberExist(caller) memberExist(delegate) {
         _bom.entrustDelegate(caller, delegate, actionId);
     }
 
@@ -74,38 +74,43 @@ contract BOMKeeper is
 
     function nominateDirector(uint40 candidate, uint40 nominator)
         external
-        onlyDK
+        onlyDirectKeeper
         memberExist(nominator)
     {
         _bom.nominateDirector(candidate, nominator);
     }
 
-    function proposeIA(address ia, uint40 caller)
+    function proposeDoc(address doc, uint8 typeOfDoc, uint40 caller)
         external
-        onlyDK
+        onlyDirectKeeper
         memberExist(caller)
     {
+        IRepoOfDocs rod;
+        if (typeOfDoc > 0 && typeOfDoc < 8) rod = IRepoOfDocs(_boa);
+        else if (typeOfDoc == 8) rod = IRepoOfDocs(_boh);
+        else revert("BOMKeeper.pd: wrong doc type");
+
         require(
-            ISigPage(ia).isParty(caller),
+            rod.isParty(doc, caller),
             "BOMKeeper.proposeIA: NOT Party of Doc"
         );
 
         require(
-            _boa.currentState(ia) == uint8(DocumentsRepo.BODStates.Established),
+            rod.currentState(doc) == uint8(RepoOfDocs.RODStates.Established),
             "InvestmentAgreement not on Established"
         );
 
-        uint64 execDeadline = _boa.shaExecDeadlineBNOf(ia);
-        uint64 proposeDeadline = _boa.proposeDeadlineBNOf(ia);
+        uint48 execDeadline = rod.shaExecDeadlineOf(doc);
+        uint48 proposeDeadline = rod.proposeDeadlineOf(doc);
 
         require(
-            execDeadline < block.number,
+            execDeadline < block.timestamp,
             "BOMKeeper.proposeMotion: IA not passed review procedure"
         );
 
         require(
-            proposeDeadline == execDeadline || proposeDeadline >= block.number,
-            "missed votingDeadlineBN"
+            proposeDeadline == execDeadline || proposeDeadline >= block.timestamp,
+            "missed votingDeadline"
         );
 
         // bytes32 vr = _getSHA().votingRules(IInvestmentAgreement(ia).typeOfIA());
@@ -113,46 +118,46 @@ contract BOMKeeper is
         // if (vr.ratioHeadOfVR() != 0 || vr.ratioAmountOfVR() != 0)
         //     _bom.proposeIA(ia, caller);
 
-        _boa.pushToNextState(ia);
+        rod.pushToNextState(doc);
 
-        _bom.proposeIA(ia, caller);
+        _bom.proposeDoc(doc, typeOfDoc, caller);
     }
 
-    function _subjectToReview(address ia) private view returns (bool) {
-        bytes32[] memory dealsList = IInvestmentAgreement(ia).dealsList();
-        uint256 len = dealsList.length;
+    // function _subjectToReview(address ia) private view returns (bool) {
+    //     bytes32[] memory dealsList = IInvestmentAgreement(ia).dealsList();
+    //     uint256 len = dealsList.length;
 
-        while (len > 0) {
-            bytes32 sn = dealsList[len - 1];
-            len--;
+    //     while (len > 0) {
+    //         bytes32 sn = dealsList[len - 1];
+    //         len--;
 
-            if (_getSHA().isSubjectToFR(sn.typeOfDeal())) return true;
+    //         if (_getSHA().isSubjectToFR(sn.typeOfDeal())) return true;
 
-            if (
-                _getSHA().hasTitle(
-                    uint8(ShareholdersAgreement.TermTitle.TAG_ALONG)
-                ) &&
-                _getSHA().termIsTriggered(
-                    uint8(ShareholdersAgreement.TermTitle.TAG_ALONG),
-                    ia,
-                    sn
-                )
-            ) return true;
+    //         if (
+    //             _getSHA().hasTitle(
+    //                 uint8(ShareholdersAgreement.TermTitle.TAG_ALONG)
+    //             ) &&
+    //             _getSHA().termIsTriggered(
+    //                 uint8(ShareholdersAgreement.TermTitle.TAG_ALONG),
+    //                 ia,
+    //                 sn
+    //             )
+    //         ) return true;
 
-            if (
-                _getSHA().hasTitle(
-                    uint8(ShareholdersAgreement.TermTitle.DRAG_ALONG)
-                ) &&
-                _getSHA().termIsTriggered(
-                    uint8(ShareholdersAgreement.TermTitle.DRAG_ALONG),
-                    ia,
-                    sn
-                )
-            ) return true;
-        }
+    //         if (
+    //             _getSHA().hasTitle(
+    //                 uint8(ShareholdersAgreement.TermTitle.DRAG_ALONG)
+    //             ) &&
+    //             _getSHA().termIsTriggered(
+    //                 uint8(ShareholdersAgreement.TermTitle.DRAG_ALONG),
+    //                 ia,
+    //                 sn
+    //             )
+    //         ) return true;
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
     function proposeAction(
         uint8 actionType,
@@ -162,7 +167,7 @@ contract BOMKeeper is
         bytes32 desHash,
         uint40 submitter,
         uint40 executor
-    ) external onlyDK memberExist(submitter) {
+    ) external onlyDirectKeeper memberExist(submitter) {
         _bom.proposeAction(
             actionType,
             targets,
@@ -181,10 +186,10 @@ contract BOMKeeper is
         uint8 attitude,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK memberExist(caller) {
+    ) external onlyDirectKeeper memberExist(caller) {
         if (_isIA(motionId))
             require(
-                !ISigPage(address(uint160(motionId))).isParty(caller),
+                !_boa.isParty(address(uint160(motionId)), caller),
                 "BOMKeeper.castVote: Party has no voting right"
             );
 
@@ -197,7 +202,7 @@ contract BOMKeeper is
 
     function voteCounting(uint256 motionId, uint40 caller)
         external
-        onlyDK
+        onlyDirectKeeper
         memberExist(caller)
     {
         _bom.voteCounting(motionId);
@@ -233,7 +238,7 @@ contract BOMKeeper is
         bytes32 sn,
         uint40 againstVoter,
         uint40 caller
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         require(
             _bom.state(uint256(uint160(ia))) ==
                 uint8(MotionsRepo.StateOfMotion.Rejected_ToBuy),
@@ -276,7 +281,7 @@ contract BOMKeeper is
 
     function _createOptSN(
         uint8 typeOfOpt,
-        uint64 triggerBN,
+        uint48 triggerDate,
         uint8 execDays,
         uint8 closingDays,
         uint16 classOfOpt,
@@ -285,11 +290,11 @@ contract BOMKeeper is
         bytes memory _sn = new bytes(32);
 
         _sn[0] = bytes1(typeOfOpt);
-        _sn = _sn.amtToSN(5, triggerBN);
-        _sn[13] = bytes1(execDays);
-        _sn[14] = bytes1(closingDays);
-        _sn = _sn.seqToSN(15, classOfOpt);
-        _sn = _sn.ssnToSN(17, rateOfOpt);
+        _sn = _sn.dateToSN(5, triggerDate);
+        _sn[11] = bytes1(execDays);
+        _sn[12] = bytes1(closingDays);
+        _sn = _sn.seqToSN(13, classOfOpt);
+        _sn = _sn.ssnToSN(15, rateOfOpt);
 
         sn = _sn.bytesToBytes32();
     }

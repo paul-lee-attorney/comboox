@@ -9,12 +9,13 @@ pragma solidity ^0.8.8;
 
 interface IBODKeeper {
     function appointDirector(
+        uint16 seqOfRule,
+        uint8 seqOfTitle,
         uint40 acct,
-        uint8 title,
         uint40 appointer
     ) external;
 
-    function takePosition(uint40 candidate, uint256 motionId) external;
+    function takePosition(bytes32 rule, uint40 candidate, uint256 motionId) external;
 
     function removeDirector(uint40 director, uint40 appointer) external;
 

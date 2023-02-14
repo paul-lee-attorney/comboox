@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 pragma solidity ^0.8.8;
 
+import "../../common/ruting/BOASetting.sol";
 import "../../common/ruting/BOHSetting.sol";
 import "../../common/ruting/ROMSetting.sol";
 
@@ -18,7 +19,7 @@ import "../../common/lib/BallotsBox.sol";
 
 import "./IMeetingMinutes.sol";
 
-contract MeetingMinutes is IMeetingMinutes, BOHSetting, ROMSetting {
+contract MeetingMinutes is IMeetingMinutes, BOHSetting, ROMSetting, BOASetting {
     using SNParser for bytes32;
     using MotionsRepo for MotionsRepo.Repo;
     using DelegateMap for DelegateMap.Map;
@@ -52,7 +53,7 @@ contract MeetingMinutes is IMeetingMinutes, BOHSetting, ROMSetting {
         uint40 authorizer,
         uint40 delegate,
         uint256 motionId
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         if (_mm.entrustDelegate(authorizer, delegate, motionId))
             emit EntrustDelegate(motionId, authorizer, delegate);
     }
@@ -82,7 +83,7 @@ contract MeetingMinutes is IMeetingMinutes, BOHSetting, ROMSetting {
         bytes32 desHash,
         uint40 submitter,
         uint40 executor
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         uint256 actionId = _hashAction(
             actionType,
             targets,
@@ -91,15 +92,17 @@ contract MeetingMinutes is IMeetingMinutes, BOHSetting, ROMSetting {
             desHash
         );
 
+        bytes32 governingRule = _getSHA().getRule(0);
+
         require(
             _proposalWeight(actionId, submitter) >=
-                _getSHA().proposalThreshold(),
+                governingRule.proposalThreshold(),
             "insufficient voting weight"
         );
 
-        bytes32 rule = _getSHA().votingRules(actionType);
+        bytes32 rule = _getSHA().getRule(actionType);
 
-        if (_mm.proposeMotion(actionId, rule, executor, _rc.blocksPerHour()))
+        if (_mm.proposeMotion(actionId, rule, executor))
             emit ProposeAction(actionId, actionType, submitter);
     }
 
@@ -129,18 +132,18 @@ contract MeetingMinutes is IMeetingMinutes, BOHSetting, ROMSetting {
         uint8 attitude,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         if (_mm.castVote(motionId, attitude, caller, sigHash, _rom))
             emit CastVote(motionId, attitude, caller, sigHash);
     }
 
     // ==== counting ====
 
-    function voteCounting(uint256 motionId) external onlyDK {
+    function voteCounting(uint256 motionId) external onlyDirectKeeper {
         if (
             _mm.motions[motionId].head.state ==
             uint8(MotionsRepo.StateOfMotion.Proposed) &&
-            _mm.voteCounting(motionId, _rom)
+            _mm.voteCounting(motionId, _boa, _rom)
         ) emit VoteCounting(motionId, _mm.motions[motionId].head.state);
     }
 
@@ -153,7 +156,7 @@ contract MeetingMinutes is IMeetingMinutes, BOHSetting, ROMSetting {
         bytes[] memory params,
         uint40 caller,
         bytes32 desHash
-    ) external onlyDK returns (uint256) {
+    ) external onlyDirectKeeper returns (uint256) {
         uint256 motionId = _hashAction(
             actionType,
             targets,

@@ -30,14 +30,6 @@ interface IInvestmentAgreement is ISigPage {
         uint48 closingDate
     );
 
-    event SetTypeOfIA(uint8 t);
-
-    event DelDeal(bytes32 indexed sn);
-
-    event LockDealSubject(bytes32 indexed sn);
-
-    event ReleaseDealSubject(bytes32 indexed sn);
-
     event ClearDealCP(
         bytes32 indexed sn,
         uint8 state,
@@ -91,14 +83,14 @@ interface IInvestmentAgreement is ISigPage {
         external
         returns (bool);
 
-    function takeGift(uint16 seq) external;
+    function takeGift(uint16 seq) external returns(bool);
 
     //  ######################
     //  ##     查询接口     ##
     //  ######################
 
     // ======== InvestmentAgreement ========
-    function typeOfIA() external view returns (uint8);
+    function typeOfIA() external view returns (uint256);
 
     function isDeal(uint16 seq) external view returns (bool);
 

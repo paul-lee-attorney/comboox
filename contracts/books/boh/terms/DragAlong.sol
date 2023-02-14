@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -17,7 +17,7 @@ import "../../../common/ruting/BOASetting.sol";
 
 import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
-import "../../../common/components/DocumentsRepo.sol";
+import "../../../common/components/RepoOfDocs.sol";
 
 import "./IAlongs.sol";
 
@@ -181,7 +181,7 @@ contract DragAlong is IAlongs, ROMSetting, BOSSetting, BOASetting {
     // ################
 
     function isTriggered(address ia, bytes32 sn) public view returns (bool) {
-        if (_boa.currentState(ia) != uint8(DocumentsRepo.BODStates.Circulated))
+        if (_boa.currentState(ia) != uint8(RepoOfDocs.RODStates.Circulated))
             return false;
 
         if (

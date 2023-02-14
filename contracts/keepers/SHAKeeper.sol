@@ -18,7 +18,7 @@ import "../books/boa/IInvestmentAgreement.sol";
 import "../books/boa/IFirstRefusalDeals.sol";
 import "../books/boa/IMockResults.sol";
 
-import "../common/components/DocumentsRepo.sol";
+import "../common/components/RepoOfDocs.sol";
 import "../common/components/ISigPage.sol";
 
 import "../common/ruting/IBookSetting.sol";
@@ -48,7 +48,7 @@ contract SHAKeeper is
 
     modifier withinExecPeriod(address ia) {
         require(
-            _boa.shaExecDeadlineBNOf(ia) >= block.number,
+            _boa.shaExecDeadlineOf(ia) >= block.timestamp,
             "missed review period"
         );
         _;
@@ -56,7 +56,7 @@ contract SHAKeeper is
 
     modifier afterExecPeriod(address ia) {
         require(
-            _boa.shaExecDeadlineBNOf(ia) < block.number,
+            _boa.shaExecDeadlineOf(ia) < block.timestamp,
             "still within review period"
         );
         _;
@@ -64,8 +64,8 @@ contract SHAKeeper is
 
     modifier onlyEstablished(address ia) {
         require(
-            IDocumentsRepo(address(_boa)).currentState(ia) ==
-                uint8(DocumentsRepo.BODStates.Established),
+            _boa.currentState(ia) ==
+                uint8(RepoOfDocs.RODStates.Established),
             "IA not established"
         );
         _;
@@ -86,7 +86,7 @@ contract SHAKeeper is
         uint64 par,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK onlyEstablished(ia) withinExecPeriod(ia) {
+    ) external onlyDirectKeeper onlyEstablished(ia) withinExecPeriod(ia) {
         address mock = _boa.mockResultsOfIA(ia);
         if (mock == address(0)) {
             mock = _boa.createMockResults(ia, caller);
@@ -115,7 +115,7 @@ contract SHAKeeper is
         _lockDealSubject(ia, alongSN, par);
 
         if (!dragAlong)
-            ISigPage(ia).signDeal(alongSN.seqOfDeal(), caller, sigHash);
+            _boa.signDeal(ia, caller, alongSN.seqOfDeal(), sigHash);
     }
 
     function _addAlongDeal(
@@ -146,7 +146,7 @@ contract SHAKeeper is
         );
 
         require(
-            !ISigPage(ia).isInitSigner(shareNumber.shareholder()),
+            !_boa.isInitSigner(ia, shareNumber.shareholder()),
             "follower is an InitSigner of IA"
         );
 
@@ -226,7 +226,7 @@ contract SHAKeeper is
         bytes32 sn,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK onlyEstablished(ia) withinExecPeriod(ia) {
+    ) external onlyDirectKeeper onlyEstablished(ia) withinExecPeriod(ia) {
         require(caller == sn.buyerOfDeal(), "caller NOT buyer");
 
         address mock = _boa.mockResultsOfIA(ia);
@@ -243,7 +243,7 @@ contract SHAKeeper is
 
         IMockResults(mock).mockDealOfBuy(sn, amount);
 
-        ISigPage(ia).signDeal(sn.seqOfDeal(), caller, sigHash);
+        _boa.signDeal(ia, caller, sn.seqOfDeal(), sigHash);
     }
 
     // ======== AntiDilution ========
@@ -254,14 +254,14 @@ contract SHAKeeper is
         bytes32 shareNumber,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK onlyEstablished(ia) withinExecPeriod(ia) {
+    ) external onlyDirectKeeper onlyEstablished(ia) withinExecPeriod(ia) {
         require(
             caller == shareNumber.shareholder(),
             "caller is not shareholder"
         );
 
         require(
-            !ISigPage(ia).isInitSigner(caller),
+            !_boa.isInitSigner(ia, caller),
             "caller is an InitSigner of IA"
         );
 
@@ -297,9 +297,10 @@ contract SHAKeeper is
                     caller
                 );
 
-                ISigPage(ia).signDeal(
-                    snOfGiftDeal.seqOfDeal(),
+                _boa.signDeal(
+                    ia,
                     caller,
+                    snOfGiftDeal.seqOfDeal(),
                     sigHash
                 );
 
@@ -373,7 +374,7 @@ contract SHAKeeper is
         address ia,
         bytes32 sn,
         uint40 caller
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         require(caller == sn.buyerOfDeal(), "caller is not buyer");
 
         uint16 seq = sn.seqOfDeal();
@@ -392,22 +393,25 @@ contract SHAKeeper is
     // ======== FirstRefusal ========
 
     function execFirstRefusal(
+        bytes32 rule,
+        uint256 seqOfRightholder,
         address ia,
         bytes32 snOfOD,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK onlyEstablished(ia) withinExecPeriod(ia) {
-        require(!ISigPage(ia).isInitSigner(caller), "caller is an init signer");
+    ) external onlyDirectKeeper onlyEstablished(ia) withinExecPeriod(ia) {
+        require(!_boa.isInitSigner(ia, caller), "caller is an init signer");
 
         require(
-            _getSHA().isRightholderOfFR(snOfOD.typeOfDeal(), caller),
-            "NOT first refusal rightholder"
+            (rule.membersEqualOfFR() && _rom.isMember(caller)) || 
+            rule.rightholdersOfFR(seqOfRightholder) == caller,
+            "SHAKeeper.efr: caller NOT rightholder"
         );
 
         // ==== create FR deal in IA ====
         bytes32 snOfFR = _createFRDeal(ia, snOfOD, caller);
 
-        ISigPage(ia).signDeal(snOfFR.seqOfDeal(), caller, sigHash);
+        _boa.signDeal(ia, caller, snOfFR.seqOfDeal(), sigHash);
 
         // ==== record FR deal in frDeals ====
         address frd = _boa.frDealsOfIA(ia);
@@ -500,7 +504,7 @@ contract SHAKeeper is
         uint16 ssnOfFR,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK onlyEstablished(ia) afterExecPeriod(ia) {
+    ) external onlyDirectKeeper onlyEstablished(ia) afterExecPeriod(ia) {
         uint16 ssnOfOD = snOfOD.seqOfDeal();
 
         if (
@@ -519,7 +523,7 @@ contract SHAKeeper is
 
         IInvestmentAgreement(ia).lockDealSubject(ssnOfFR);
 
-        ISigPage(ia).signDeal(ssnOfFR, caller, sigHash);
+        _boa.signDeal(ia, caller, ssnOfFR, sigHash);
     }
 
     function _acceptFR(

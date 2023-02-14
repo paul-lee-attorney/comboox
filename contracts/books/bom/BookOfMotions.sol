@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -15,12 +15,10 @@ import "../boa/IInvestmentAgreement.sol";
 import "../../common/components/ISigPage.sol";
 import "../../common/components/MeetingMinutes.sol";
 
-import "../../common/ruting/BOASetting.sol";
-
 import "../../common/lib/SNParser.sol";
 import "../../common/lib/MotionsRepo.sol";
 
-contract BookOfMotions is IBookOfMotions, MeetingMinutes, BOASetting {
+contract BookOfMotions is IBookOfMotions, MeetingMinutes {
     using SNParser for bytes32;
     using MotionsRepo for MotionsRepo.Repo;
 
@@ -47,15 +45,15 @@ contract BookOfMotions is IBookOfMotions, MeetingMinutes, BOASetting {
 
     // ==== Corp Register ====
 
-    function createCorpSeal() external onlyDK {
+    function createCorpSeal() external onlyDirectKeeper {
         _rc.regUser();
     }
 
-    function createBoardSeal(address bod) external onlyDK {
+    function createBoardSeal(address bod) external onlyDirectKeeper {
         _rc.setBackupKey(bod);
     }
 
-    function setRegNumberHash(bytes32 numHash) external onlyDK {
+    function setRegNumberHash(bytes32 numHash) external onlyDirectKeeper {
         _regNumHash = numHash;
         emit SetRegNumberHash(numHash);
     }
@@ -64,9 +62,9 @@ contract BookOfMotions is IBookOfMotions, MeetingMinutes, BOASetting {
 
     function nominateDirector(uint40 candidate, uint40 nominator)
         external
-        onlyDK
+        onlyDirectKeeper
     {
-        bytes32 rule = _getSHA().votingRules(
+        bytes32 rule = _getSHA().getRule(
             uint8(TypeOfVoting.OrdinaryIssuesOfGM)
         );
 
@@ -76,21 +74,23 @@ contract BookOfMotions is IBookOfMotions, MeetingMinutes, BOASetting {
             )
         );
 
-        if (_mm.proposeMotion(motionId, rule, candidate, _rc.blocksPerHour()))
+        if (_mm.proposeMotion(motionId, rule, candidate))
             emit NominateDirector(motionId, candidate, nominator);
     }
 
-    function proposeIA(address ia, uint40 submitter) external onlyDK {
-        require(ISigPage(ia).established(), "doc is not established");
+    function proposeDoc(address doc, uint8 typeOfDoc, uint40 submitter) external onlyDirectKeeper {
 
-        uint256 motionId = uint256(uint160(ia));
+        IRepoOfDocs rod;
+        if (typeOfDoc < 8 && typeOfDoc > 0) rod = IRepoOfDocs(_boa);
+        else if (typeOfDoc == 8) rod = IRepoOfDocs(_boh);
+        else revert("BOMKeeper.pd: wrong doc type");
 
-        uint8 motionType = IInvestmentAgreement(ia).typeOfIA();
+        uint256 motionId = (uint256(typeOfDoc) << 160) + uint256(uint160(doc));
 
-        bytes32 rule = _getSHA().votingRules(motionType);
+        bytes32 rule = _getSHA().getRule(typeOfDoc);
 
-        if (_mm.proposeMotion(motionId, rule, submitter, _rc.blocksPerHour()))
-            emit ProposeIA(motionId, ia, submitter);
+        if (_mm.proposeMotion(motionId, rule, submitter))
+            emit ProposeDoc(motionId, doc, submitter);
     }
 
     // ==== requestToBuy ====
@@ -98,24 +98,22 @@ contract BookOfMotions is IBookOfMotions, MeetingMinutes, BOASetting {
     function requestToBuy(address ia, bytes32 sn)
         external
         view
-        onlyDK
+        onlyDirectKeeper
         returns (uint64 paid, uint64 par)
     {
         require(
-            block.timestamp + 15 minutes <
+            block.timestamp <
                 IInvestmentAgreement(ia).closingDateOfDeal(sn.seqOfDeal()),
             "MISSED closing date"
         );
 
         require(
-            block.number <
-                _mm.motions[uint256(uint160(ia))].head.voteEndBN +
+            block.timestamp <
+                _mm.motions[uint256(uint160(ia))].head.voteEndDate +
                     _mm
                         .motions[uint256(uint160(ia))]
                         .votingRule
-                        .execDaysForPutOptOfVR() *
-                    24 *
-                    _rc.blocksPerHour(),
+                        .execDaysForPutOptOfVR() * 86400,
             "MISSED execute deadline"
         );
 

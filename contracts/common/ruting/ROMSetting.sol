@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -24,7 +24,7 @@ contract ROMSetting is AccessControl {
         _;
     }
 
-    function setROM(address rom) external onlyDK {
+    function setROM(address rom) external onlyDirectKeeper {
         _rom = IRegisterOfMembers(rom);
     }
 

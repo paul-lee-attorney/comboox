@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -63,17 +63,6 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         _;
     }
 
-    modifier keepersAllowed() {
-        require(
-            _gk.isKeeper(uint8(TitleOfKeepers.BOAKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.BOOKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.BOPKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.SHAKeeper), msg.sender),
-            "BOS.keepersAllowed: not have access right"
-        );
-        _;
-    }
-
     //##################
     //##    写接口    ##
     //##################
@@ -85,13 +74,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         uint64 paid,
         uint64 par,
         uint48 paidInDeadline
-    ) external {
-        require(
-            _gk.isKeeper(uint8(TitleOfKeepers.BOAKeeper), msg.sender) ||
-                msg.sender == getBookeeper(),
-            "BOS.issueShare: caller not right keeper"
-        );
-
+    ) external onlyKeeper {
         require(
             shareNumber.shareholder() != 0,
             "BOS.issueShare: zero shareholder"
@@ -101,7 +84,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         if (issueDate == 0) issueDate = uint48(block.timestamp);
         else
             require(
-                issueDate <= block.timestamp + 15 minutes,
+                issueDate <= block.timestamp,
                 "BOS.issueShare: future issueDate"
             );
 
@@ -129,7 +112,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
 
     // ==== PayInCapital ====
 
-    function setPayInAmount(bytes32 sn, uint64 amount) external onlyDK {
+    function setPayInAmount(bytes32 sn, uint64 amount) external onlyDirectKeeper {
         require(_lockers[sn] == 0, "BOS.setPayInAmount: locker occupied");
 
         _lockers[sn] = amount;
@@ -139,7 +122,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
 
     function requestPaidInCapital(bytes32 sn, string memory hashKey)
         external
-        onlyDK
+        onlyDirectKeeper
     {
         require(
             _shares[sn.ssn()].paidInDeadline >= block.timestamp + 15 minutes,
@@ -165,7 +148,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         delete _lockers[sn];
     }
 
-    function withdrawPayInAmount(bytes32 sn) external onlyDK {
+    function withdrawPayInAmount(bytes32 sn) external onlyDirectKeeper {
         require(
             _shares[sn.ssn()].paidInDeadline < block.timestamp - 15 minutes,
             "BOS.withdrawPayInAmount: still within effective period"
@@ -184,15 +167,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         uint64 par,
         uint40 to,
         uint32 unitPrice
-    ) external shareExist(ssn) notFreezed(ssn) {
-        require(
-            _gk.isKeeper(uint8(TitleOfKeepers.BOAKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.BOOKeeper), msg.sender) ||
-                _gk.isKeeper(uint8(TitleOfKeepers.SHAKeeper), msg.sender) ||
-                msg.sender == getBookeeper(),
-            "BOS.transferShare: caller not right keeper"
-        );
-
+    ) external onlyKeeper shareExist(ssn) notFreezed(ssn) {
         uint16 class = _shares[ssn].shareNumber.class();
 
         require(to != 0, "BOS.transferShare: shareholder userNo is ZERO");
@@ -248,7 +223,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         uint32 ssn,
         uint64 paid,
         uint64 par
-    ) external onlyDK shareExist(ssn) notFreezed(ssn) {
+    ) external onlyDirectKeeper shareExist(ssn) notFreezed(ssn) {
         // 减少特定“股票”项下的认缴和实缴金额
         _decreaseShareAmount(ssn, paid, par);
 
@@ -260,7 +235,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
 
     function decreaseCleanPar(uint32 ssn, uint64 paid)
         external
-        keepersAllowed
+        onlyKeeper
         shareExist(ssn)
         notFreezed(ssn)
     {
@@ -280,7 +255,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
 
     function increaseCleanPar(uint32 ssn, uint64 paid)
         external
-        keepersAllowed
+        onlyKeeper
         shareExist(ssn)
         notFreezed(ssn)
     {
@@ -303,7 +278,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
     /// @param state - 股票状态 （0:正常，1:查封 ）
     function updateStateOfShare(uint32 ssn, uint8 state)
         external
-        onlyDK
+        onlyDirectKeeper
         shareExist(ssn)
     {
         _shares[ssn].state = state;
@@ -315,7 +290,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
     /// @param paidInDeadline - 实缴出资期限
     function updatePaidInDeadline(uint32 ssn, uint48 paidInDeadline)
         external
-        onlyDK
+        onlyDirectKeeper
         shareExist(ssn)
     {
         _shares[ssn].paidInDeadline = paidInDeadline;

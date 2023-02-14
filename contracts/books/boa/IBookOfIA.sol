@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 pragma solidity ^0.8.8;
 
-import "../../common/components/IDocumentsRepo.sol";
+import "../../common/components/IRepoOfDocs.sol";
 
-interface IBookOfIA is IDocumentsRepo {
+interface IBookOfIA is IRepoOfDocs {
     //##################
     //##    写接口    ##
     //##################
 
     // ======== BookOfIA ========
 
-    function circulateIA(address ia, bytes32 docHash) external;
+    function circulateIA(address ia, bytes32 docUrl, bytes32 docHash) external;
 
     function createFRDeals(address ia, uint40 creator)
         external

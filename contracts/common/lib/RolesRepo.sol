@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -11,14 +11,15 @@ library RolesRepo {
     bytes32 constant ATTORNEYS = bytes32("Attorneys");
 
     struct GroupOfRole {
-        mapping(uint40 => bool) isMember;
+        mapping(uint256 => bool) isMember;
         uint40 admin;
     }
 
     struct Roles {
-        uint8 state; // 0-pending; 1-initiated; 2-finalized
+        uint40 owner;
         address bookeeper;
-        uint40[2] managers; // 0-owner; 1-generalCounsel; ...
+        uint40 generalCounsel;
+        uint8 state; // 0-pending; 1-initiated; 2-finalized
         mapping(bytes32 => GroupOfRole) roles;
     }
 
@@ -28,15 +29,15 @@ library RolesRepo {
 
     function initDoc(
         Roles storage self,
-        uint40 owner,
+        uint256 owner,
         address keeper
-    ) internal {
+    ) public {
 
         require(self.state == 0, 
             "RR.initiate: already initiated");
 
         self.state = 1;
-        self.managers[0] = owner;
+        self.owner = uint40(owner);
         self.bookeeper = keeper;
     }
 
@@ -44,24 +45,30 @@ library RolesRepo {
         Roles storage self,
         address caller,
         address acct
-    ) internal {
+    ) public {
         require(caller == self.bookeeper, 
             "RR.setBookeeper: caller not bookeeper");
         self.bookeeper = acct;
     }
 
-    function setManager(
+    function setOwner(
         Roles storage self,
-        uint8 title,
-        uint40 acct
-    ) internal {
+        uint256 acct
+    ) public {
+        self.owner = uint40(acct);
+    }
 
-        self.managers[title] = acct;
+    function setGeneralCounsel(
+        Roles storage self,
+        uint256 acct
+    ) public {
+        uint40 gc = uint40(acct);
+        
+        self.generalCounsel = gc;
 
-        // ==== GeneralCounsel ====
-        if (title == 1 && acct != 0) {
-            self.roles[ATTORNEYS].admin = acct;
-            self.roles[ATTORNEYS].isMember[acct] = true;
+        if (acct != 0) {
+            self.roles[ATTORNEYS].admin = gc;
+            self.roles[ATTORNEYS].isMember[gc] = true;
         }
     }
 
@@ -72,10 +79,10 @@ library RolesRepo {
         bytes32 role,
         uint40 caller,
         uint40 acct
-    ) internal {
+    ) public {
 
         require(
-            caller == self.managers[0],
+            caller == self.owner,
             "RR.setRoleAdmin: caller not owner"
         );
 
@@ -87,7 +94,7 @@ library RolesRepo {
         bytes32 role,
         uint40 caller,
         uint40 acct
-    ) internal {
+    ) public {
         require(
             caller == roleAdmin(self, role),
             "RR.grantRole: caller not admin of role"
@@ -100,7 +107,7 @@ library RolesRepo {
         bytes32 role,
         uint40 originator,
         uint40 acct
-    ) internal {
+    ) public {
         require(originator == roleAdmin(self, role), "RR.revokeRole: originator not admin");
 
         delete self.roles[role].isMember[acct];
@@ -110,14 +117,14 @@ library RolesRepo {
         Roles storage self,
         bytes32 role,
         uint40 originator
-    ) internal {
+    ) public {
         delete self.roles[role].isMember[originator];
     }
 
     function abandonRole(
         Roles storage self,
         bytes32 role
-    ) internal {
+    ) public {
         self.roles[role].admin = 0;
         delete self.roles[role];
     }
@@ -126,32 +133,43 @@ library RolesRepo {
     // ##   查询端口   ##
     // ##################
 
-    function isManager(
+    function isOwner(
         Roles storage self,
-        uint8 title,
-        uint40 acct
-    ) internal view returns (bool) {
-        return self.managers[title] == acct;
+        uint256 acct
+    ) public view returns (bool) {
+        return self.owner == acct;
+    }
+
+    function isGeneralCounsel(
+        Roles storage self,
+        uint256 acct
+    ) public view returns (bool) {
+        return self.generalCounsel == acct;
     }
 
     function isDirectKeeper(
         Roles storage self,
         address keeper
-    ) internal view returns (bool) {
+    ) public view returns (bool) {
         return self.bookeeper == keeper;
     }
 
     function getKeeper(
         Roles storage self
-    ) internal view returns (address) {
+    ) public view returns (address) {
         return self.bookeeper;
     }
 
-    function getManager(
-        Roles storage self,
-        uint8 title
-    ) internal view returns (uint40) {
-        return self.managers[title];
+    function getOwner(
+        Roles storage self
+    ) public view returns (uint40) {
+        return self.owner;
+    }
+
+    function getGeneralCounsel(
+        Roles storage self
+    ) public view returns (uint40) {
+        return self.generalCounsel;
     }
 
     // ==== role ====
@@ -159,15 +177,15 @@ library RolesRepo {
     function hasRole(
         Roles storage self,
         bytes32 role,
-        uint40 acct
-    ) internal view returns (bool) {
+        uint256 acct
+    ) public view returns (bool) {
         return self.roles[role].isMember[acct];
     }
 
     function roleAdmin(Roles storage self, bytes32 role)
-        internal
+        public
         view
-        returns (uint40)
+        returns (uint256)
     {
         return self.roles[role].admin;
     }

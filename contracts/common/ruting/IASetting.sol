@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -27,7 +27,7 @@ contract IASetting is AccessControl {
     //##    写接口    ##
     //##################
 
-    function setIA(address ia) external onlyDK {
+    function setIA(address ia) external onlyDirectKeeper {
         _ia = IInvestmentAgreement(ia);
     }
 

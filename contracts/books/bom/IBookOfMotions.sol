@@ -22,7 +22,7 @@ interface IBookOfMotions is IMeetingMinutes {
         uint40 nominator
     );
 
-    event ProposeIA(uint256 indexed motionId, address ia, uint40 submitter);
+    event ProposeDoc(uint256 indexed motionId, address doc, uint40 submitter);
 
     event SetRegNumberHash(bytes32 numHash);
 
@@ -38,7 +38,7 @@ interface IBookOfMotions is IMeetingMinutes {
 
     function nominateDirector(uint40 candidate, uint40 nominator) external;
 
-    function proposeIA(address ia, uint40 submitter) external;
+    function proposeDoc(address doc, uint8 typeOfDoc, uint40 submitter) external;
 
     function requestToBuy(address ia, bytes32 sn)
         external

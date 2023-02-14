@@ -8,9 +8,9 @@
 pragma solidity ^0.8.8;
 
 import "./IMockResults.sol";
-import "../../common/lib/TopChain.sol";
-
 import "./IInvestmentAgreement.sol";
+
+import "../../common/lib/TopChain.sol";
 import "../../common/lib/MembersRepo.sol";
 import "../../common/lib/SNParser.sol";
 
@@ -29,7 +29,7 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
     //##  Write I/O  ##
     //#################
 
-    function createMockGM() external onlyManager(0) {
+    function createMockGM() external onlyOwner {
         TopChain.Node[] memory snapshot = _rom.getSnapshot();
 
         _mgm.setMaxQtyOfMembers(0);
@@ -94,7 +94,7 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
         bytes32 rule,
         bytes32 shareNumber,
         uint64 amount
-    ) external onlyManager(0) {
+    ) external onlyOwner {
         uint40 dGroup = _mgm.groupRep(rule.dragerOfLink());
 
         uint40 follower = shareNumber.shareholder();

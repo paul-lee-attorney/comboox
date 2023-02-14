@@ -18,15 +18,6 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     using SNFactory for bytes;
     using SNParser for bytes32;
 
-    //Pledge 质权
-    struct Pledge {
-        bytes32 sn; //质押编号
-        uint40 creditor; //质权人、债权人
-        uint64 expireBN;
-        uint64 pledgedPar; // 出质票面额（数量）
-        uint64 guaranteedAmt; //担保金额
-    }
-
     // struct snInfo {
     //     uint32 ssnOfShare; 4
     //     uint16 sequence; 2
@@ -59,21 +50,19 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         uint16 monOfGuarantee,
         uint64 pledgedPar,
         uint64 guaranteedAmt
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         uint32 ssn = sn.ssnOfPld();
         uint16 seq = _increaseCounterOfPledges(ssn);
 
         sn = _updateSN(sn, seq);
 
-        uint64 expireBN = uint64(block.number) +
-            monOfGuarantee *
-            720 *
-            _rc.blocksPerHour();
+        uint48 expireDate = uint48(block.timestamp) +
+            monOfGuarantee * 2592000;
 
         _pledges[ssn][seq] = Pledge({
             sn: sn,
             creditor: creditor,
-            expireBN: expireBN,
+            expireDate: expireDate,
             pledgedPar: pledgedPar,
             guaranteedAmt: guaranteedAmt
         });
@@ -104,23 +93,23 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function updatePledge(
         bytes32 sn,
         uint40 creditor,
-        uint64 expireBN,
+        uint48 expireDate,
         uint64 pledgedPar,
         uint64 guaranteedAmt
-    ) external onlyDK pledgeExist(sn) {
+    ) external onlyDirectKeeper pledgeExist(sn) {
         require(
-            expireBN > block.number || expireBN == 0,
-            "BOP.updatePledge: expireBN is passed"
+            expireDate > block.timestamp || expireDate == 0,
+            "BOP.updatePledge: expireDate is passed"
         );
 
         Pledge storage pld = _pledges[sn.ssnOfPld()][sn.seqOfPld()];
 
         pld.creditor = creditor;
-        pld.expireBN = expireBN;
+        pld.expireDate = expireDate;
         pld.pledgedPar = pledgedPar;
         pld.guaranteedAmt = guaranteedAmt;
 
-        emit UpdatePledge(sn, creditor, expireBN, pledgedPar, guaranteedAmt);
+        emit UpdatePledge(sn, creditor, expireDate, pledgedPar, guaranteedAmt);
     }
 
     //##################
@@ -158,17 +147,9 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         view
         pledgeExist(sn)
         returns (
-            uint40 creditor,
-            uint64 expireBN,
-            uint64 pledgedPar,
-            uint64 guaranteedAmt
+            Pledge memory pld
         )
     {
-        Pledge storage pld = _pledges[sn.ssnOfPld()][sn.seqOfPld()];
-
-        creditor = pld.creditor;
-        expireBN = pld.expireBN;
-        pledgedPar = pld.pledgedPar;
-        guaranteedAmt = pld.guaranteedAmt;
+        pld = _pledges[sn.ssnOfPld()][sn.seqOfPld()];
     }
 }

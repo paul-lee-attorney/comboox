@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -14,23 +14,6 @@ import "../lib/RolesRepo.sol";
 contract AccessControl is IAccessControl, RegCenterSetting {
     using RolesRepo for RolesRepo.Roles;
 
-    enum TitleOfKeepers {
-        BOAKeeper, // 0
-        BODKeeper, // 1
-        BOHKeeper, // 2
-        BOMKeeper, // 3
-        BOOKeeper, // 4
-        BOPKeeper, // 5
-        BOSKeeper, // 6
-        ROMKeeper, // 7
-        SHAKeeper // 8
-    }
-
-    enum TitleOfManagers {
-        Owner,
-        GeneralCounsel
-    }
-
     bytes32 constant ATTORNEYS = bytes32("Attorneys");
 
     RolesRepo.Roles internal _roles;
@@ -39,57 +22,61 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     // ##   修饰器      ##
     // ##################
 
-    modifier onlyDK() {
+    modifier onlyDirectKeeper() {
         require(
             _roles.isDirectKeeper(msg.sender),
-            "AC.onlyDK: not direct keeper"
+            "AC.onlyDirectKeeper: not direct keeper"
         );
         _;
     }
 
-    modifier ownerOrBookeeper() {
+    modifier onlyOwner {
+        require(
+            _roles.isOwner(_msgSender()),
+            "AC.ow: not owner"
+        );
+        _;
+    }
+
+    modifier onlyGeneralCounsel {
+        require(
+            _roles.isGeneralCounsel(_msgSender()),
+            "AC.ogc: not general counsel"
+        );
+        _;
+    }
+
+    modifier ownerOrDirectBookeeper() {
         require(
             _roles.isDirectKeeper(msg.sender) ||
-                _roles.isManager(0, _msgSender()),
-            "AC.ownerOrBookeeper: neither owner nor bookeeper"
+                _roles.isOwner(_msgSender()),
+            "AC.ownerOrDirectBookeeper: neither owner nor bookeeper"
         );
         _;
     }
 
-    modifier onlyManager(uint8 title) {
-        require(
-            _roles.isManager(title, _msgSender()),
-            "AC.onlyManager: not the specific manager"
-        );
-        _;
-    }
-
-    modifier onlyKeeper(uint8 title) {
-        require(_gk.isKeeper(title, msg.sender), "AC.onlyKeeper: not Keeper");
+    modifier onlyKeeper {
+        require(_gk.isKeeper(msg.sender), "AC.ok: not Keeper");
         _;
     }
 
     modifier onlyAttorney() {
         require(
             _roles.hasRole(ATTORNEYS, _msgSender()),
-            "AC.onlyAttorney: not Attorney"
+            "AC.ot: not Attorney"
         );
         _;
     }
 
-    modifier attorneyOrKeeper(uint8 title) {
+    modifier attorneyOrKeeper() {
         require(
             _roles.hasRole(ATTORNEYS, _msgSender()) ||
-                _gk.isKeeper(title, msg.sender),
-            "not Attorney or Bookeeper"
+                _gk.isKeeper(msg.sender),
+            "neither Attorney nor Bookeeper"
         );
         _;
     }
 
-    modifier onlyPending() {
-        require(_roles.state == 1, "AC.onlyPending: Doc is finalized");
-        _;
-    }
 
     modifier onlyFinalized() {
         require(_roles.state == 2, "AC.onlyFinalized: Doc is still pending");
@@ -120,13 +107,22 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         emit SetDirectKeeper(keeper);
     }
 
-    function setManager(uint8 title, uint40 acct)
+    function setOwner(uint40 acct)
         external
         virtual
-        ownerOrBookeeper
+        ownerOrDirectBookeeper
     {
-        _roles.setManager(title, acct);
-        emit SetManager(title, acct);
+        _roles.setOwner(acct);
+        emit SetOwner(acct);
+    }
+
+    function setGeneralCounsel(uint40 acct)
+        external
+        virtual
+        ownerOrDirectBookeeper
+    {
+        _roles.setGeneralCounsel(acct);
+        emit SetGeneralCounsel(acct);
     }
 
     function setRoleAdmin(bytes32 role, uint40 acct) external {
@@ -150,14 +146,16 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         // emit RenounceRole(role, msgSender);
     }
 
-    function abandonRole(bytes32 role) external onlyDK {
+    function abandonRole(bytes32 role) external onlyDirectKeeper {
         _roles.abandonRole(role);
         // emit AbandonRole(role);
     }
 
-    function lockContents() public onlyPending onlyDK {
+    function lockContents() public onlyDirectKeeper {
+        require(_roles.state == 1, "AC.onlyPending: Doc is finalized");
+
         _roles.abandonRole(ATTORNEYS);
-        _roles.setManager(1, 0);
+        _roles.setGeneralCounsel(0);
         _roles.state = 2;
 
         emit LockContents();
@@ -167,16 +165,16 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     // ##   查询端口   ##
     // ##################
 
-    function getManager(uint8 title) public view returns (uint40) {
-        return _roles.getManager(title);
+    function getOwner() public view returns (uint40) {
+        return _roles.getOwner();
+    }
+
+    function getGeneralCounsel() public view returns (uint40) {
+        return _roles.getGeneralCounsel();
     }
 
     function getBookeeper() public view returns (address) {
         return _roles.getKeeper();
-    }
-
-    function getManagerKey(uint8 title) public view returns (address) {
-        return _rc.primeKey(getManager(title));
     }
 
     function finalized() public view returns (bool) {

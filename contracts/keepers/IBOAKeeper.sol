@@ -21,6 +21,7 @@ interface IBOAKeeper {
     function circulateIA(
         address ia,
         uint40 caller,
+        bytes32 docUrl,
         bytes32 docHash
     ) external;
 

@@ -30,7 +30,7 @@ interface IBOMKeeper {
 
     function nominateDirector(uint40 candidate, uint40 nominator) external;
 
-    function proposeIA(address ia, uint40 caller) external;
+    function proposeDoc(address doc, uint8 typeOfDoc, uint40 caller) external;
 
     function proposeAction(
         uint8 actionType,

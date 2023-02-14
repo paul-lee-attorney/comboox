@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -23,7 +23,7 @@ contract BOSSetting is AccessControl {
     // ##    写端口    ##
     // ##################
 
-    function setBOS(address bos) external onlyDK {
+    function setBOS(address bos) external onlyDirectKeeper {
         _bos = IBookOfShares(bos);
     }
 

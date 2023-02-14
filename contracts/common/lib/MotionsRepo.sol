@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -14,15 +14,16 @@ import "./DelegateMap.sol";
 
 // import "../access/IRegCenter.sol";
 import "../components/ISigPage.sol";
+import "../components/IRepoOfDocs.sol";
 
 import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/boh/IShareholdersAgreement.sol";
 
 library MotionsRepo {
-    using SNParser for bytes32;
-    using EnumerableSet for EnumerableSet.UintSet;
     using BallotsBox for BallotsBox.Box;
     using DelegateMap for DelegateMap.Map;
+    using EnumerableSet for EnumerableSet.UintSet;
+    using SNParser for bytes32;
 
     enum StateOfMotion {
         Pending,
@@ -44,12 +45,10 @@ library MotionsRepo {
     struct Head {
         uint16 typeOfVote;
         uint8 state; // 0-pending 1-proposed  2-passed 3-rejected(not to buy) 4-rejected (to buy)
-        // uint40 submitter;
         uint40 executor;
-        uint64 proposeBN;
-        // uint64 voteStartBN;
-        uint64 voteStartBN;
-        uint64 voteEndBN;
+        uint48 proposeDate;
+        uint48 voteStartDate;
+        uint48 voteEndDate;
     }
 
     struct Motion {
@@ -75,12 +74,12 @@ library MotionsRepo {
         uint40 acct,
         uint40 delegate,
         uint256 motionId
-    ) internal returns (bool flag) {
+    ) public returns (bool flag) {
         Motion storage m = repo.motions[motionId];
 
         if (
             m.box.ballots[acct].sigDate == 0 &&
-            block.number < m.head.voteStartBN
+            block.timestamp < m.head.voteStartDate
         ) {
             flag = repo.motions[motionId].map.entrustDelegate(acct, delegate);
         }
@@ -92,34 +91,27 @@ library MotionsRepo {
         Repo storage repo,
         uint256 motionId,
         bytes32 rule,
-        uint40 executor,
-        uint64 blocksPerHour
-    ) internal returns (bool flag) {
+        uint40 executor
+    ) public returns (bool flag) {
         if (repo.motionIds.add(motionId)) {
-            Motion storage m = repo.motions[motionId];
 
-            uint64 reviewDays = rule.reviewDaysOfVR();
-            uint64 votingDays = rule.votingDaysOfVR();
+            uint48 reviewDays = rule.reviewDaysOfVR();
+            uint48 votingDays = rule.votingDaysOfVR();
+            uint48 timestamp = uint48(block.timestamp);
+
+            Motion storage m = repo.motions[motionId];
 
             m.votingRule = rule;
 
-            m.head.typeOfVote = rule.seqOfRule();
-            m.head.executor = executor;
-
-            m.head.proposeBN = uint64(block.number);
-            m.head.voteStartBN =
-                m.head.proposeBN +
-                reviewDays *
-                24 *
-                blocksPerHour;
-            m.head.voteEndBN =
-                m.head.voteStartBN +
-                votingDays *
-                24 *
-                blocksPerHour;
-
-            m.head.state = uint8(StateOfMotion.Proposed);
-
+            m.head = Head({
+                typeOfVote: rule.seqOfRule(),
+                state: uint8(StateOfMotion.Proposed),
+                executor: executor,
+                proposeDate: timestamp,
+                voteStartDate: timestamp + reviewDays * 86400,
+                voteEndDate: timestamp + (reviewDays + votingDays) * 86400
+            });
+            
             flag = true;
         }
     }
@@ -133,16 +125,16 @@ library MotionsRepo {
         uint40 caller,
         bytes32 sigHash,
         IRegisterOfMembers _rom
-    ) internal returns (bool flag) {
+    ) public returns (bool flag) {
         Motion storage m = repo.motions[motionId];
 
         require(
-            block.number >= m.head.voteStartBN,
+            block.timestamp >= m.head.voteStartDate,
             "MR. castVote: vote not start"
         );
         require(
-            block.number <= m.head.voteEndBN ||
-                m.head.voteEndBN == m.head.voteStartBN,
+            block.timestamp <= m.head.voteEndDate ||
+                m.head.voteEndDate == m.head.voteStartDate,
             "MR.castVote: vote closed"
         );
         require(
@@ -153,8 +145,8 @@ library MotionsRepo {
         uint64 voteWeight;
 
         if (m.map.principalsOf[caller].length > 0)
-            voteWeight = _voteWeight(m.map, caller, m.head.voteStartBN, _rom);
-        else voteWeight = _rom.votesAtBlock(caller, m.head.voteStartBN);
+            voteWeight = _voteWeight(m.map, caller, m.head.voteStartDate, _rom);
+        else voteWeight = _rom.votesAtDate(caller, m.head.voteStartDate);
 
         flag = m.box.castVote(caller, attitude, voteWeight, sigHash);
     }
@@ -162,15 +154,15 @@ library MotionsRepo {
     function _voteWeight(
         DelegateMap.Map storage map,
         uint40 acct,
-        uint64 blocknumber,
+        uint48 blockdate,
         IRegisterOfMembers _rom
     ) private view returns (uint64) {
         uint40[] memory principals = map.principalsOf[acct];
         uint256 len = principals.length;
-        uint64 weight = _rom.votesAtBlock(acct, blocknumber);
+        uint64 weight = _rom.votesAtDate(acct, blockdate);
 
         while (len > 0) {
-            weight += _rom.votesAtBlock(principals[len - 1], blocknumber);
+            weight += _rom.votesAtDate(principals[len - 1], blockdate);
             len--;
         }
 
@@ -182,15 +174,16 @@ library MotionsRepo {
     function voteCounting(
         Repo storage repo,
         uint256 motionId,
+        IRepoOfDocs _rod,
         IRegisterOfMembers _rom
-    ) internal returns (bool flag) {
-        if (repo.motions[motionId].head.voteEndBN < block.number) {
+    ) public returns (bool flag) {
+        if (repo.motions[motionId].head.voteEndDate < block.number) {
             (
                 uint64 totalHead,
                 uint64 totalAmt,
                 uint64 consentHead,
                 uint64 consentAmt
-            ) = _getParas(repo, motionId, _rom);
+            ) = _getParas(repo, motionId, _rod, _rom);
 
             bool flag1;
             bool flag2;
@@ -237,7 +230,7 @@ library MotionsRepo {
     }
 
     function _isVetoed(Motion storage m, uint40 vetoer)
-        internal
+        public
         view
         returns (bool)
     {
@@ -249,6 +242,7 @@ library MotionsRepo {
     function _getParas(
         Repo storage repo,
         uint256 motionId,
+        IRepoOfDocs _rod,
         IRegisterOfMembers _rom
     )
         private
@@ -270,20 +264,19 @@ library MotionsRepo {
         } else {
             // members hold voting rights at block
             totalHead = _rom.qtyOfMembers();
-            totalAmt = _rom.votesAtBlock(0, m.head.voteStartBN);
+            totalAmt = _rom.votesAtDate(0, m.head.voteStartDate);
 
             if (m.head.typeOfVote < 8) {
                 // 1-7 typeOfIA; 8-external deal
 
-                // minus parties of IA;
-                uint40[] memory parties = ISigPage(address(uint160(motionId)))
-                    .partiesOfDoc();
+                // minus parties of doc;
+                uint40[] memory parties = _rod.partiesOfDoc((address(uint160(motionId))));
                 uint256 len = parties.length;
 
-                while (len != 0) {
-                    uint64 voteAmt = _rom.votesAtBlock(
+                while (len > 0) {
+                    uint64 voteAmt = _rom.votesAtDate(
                         parties[len - 1],
-                        m.head.voteStartBN
+                        m.head.voteStartDate
                     );
 
                     // party has voting right at block
@@ -318,33 +311,33 @@ library MotionsRepo {
     //################
 
     // function beforeVoteStart(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
-    //     return repo.motions[motionId].head.voteStartBN > block.number;
+    //     return repo.motions[motionId].head.voteStartDate > block.number;
     // }
 
     // function afterVoteEnd(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
-    //     return repo.motions[motionId].head.voteEndBN < block.number;
+    //     return repo.motions[motionId].head.voteEndDate < block.number;
     // }
 
     // function onVoting(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
     //     return
-    //         repo.motions[motionId].head.voteStartBN <= block.number &&
-    //         block.number <= repo.motions[motionId].head.voteEndBN;
+    //         repo.motions[motionId].head.voteStartDate <= block.number &&
+    //         block.number <= repo.motions[motionId].head.voteEndDate;
     // }
 
     // function isProposed(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
@@ -352,7 +345,7 @@ library MotionsRepo {
     // }
 
     // function headOf(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (Head memory)
     // {
@@ -360,7 +353,7 @@ library MotionsRepo {
     // }
 
     // function votingRule(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bytes32)
     // {
@@ -368,7 +361,7 @@ library MotionsRepo {
     // }
 
     // function state(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (uint8)
     // {
@@ -376,7 +369,7 @@ library MotionsRepo {
     // }
 
     // function isPassed(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
@@ -384,7 +377,7 @@ library MotionsRepo {
     // }
 
     // function isExecuted(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
@@ -393,7 +386,7 @@ library MotionsRepo {
     // }
 
     // function isRejected(Repo storage repo, uint256 motionId)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {

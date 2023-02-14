@@ -22,10 +22,10 @@ import "../../../common/lib/TopChain.sol";
 import "./IAntiDilution.sol";
 
 contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
-    using SNParser for bytes32;
-    using EnumerableSet for EnumerableSet.UintSet;
-    using TopChain for TopChain.Chain;
     using ArrayUtils for uint40[];
+    using EnumerableSet for EnumerableSet.UintSet;
+    using SNParser for bytes32;
+    using TopChain for TopChain.Chain;
 
     mapping(uint256 => EnumerableSet.UintSet) private _obligors;
 

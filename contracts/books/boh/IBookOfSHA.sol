@@ -7,16 +7,14 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/components/IDocumentsRepo.sol";
+import "../../common/components/IRepoOfDocs.sol";
 
-interface IBookOfSHA is IDocumentsRepo {
+interface IBookOfSHA is IRepoOfDocs {
     //##############
     //##  Event   ##
     //##############
 
-    event SetTermTemplate(uint8 indexed title, address add);
-
-    event ChangePointer(address indexed pointer);
+    event ChangePointer(address pointer);
 
     //##################
     //##    写接口    ##
@@ -35,7 +33,7 @@ interface IBookOfSHA is IDocumentsRepo {
 
     function pointer() external view returns (address);
 
-    function hasTemplate(uint8 title) external view returns (bool flag);
+    function hasTemplate(uint8 title) external view returns (bool);
 
-    function getTermTemplate(uint8 title) external view returns (address temp);
+    function getTermTemplate(uint8 title) external view returns (address);
 }

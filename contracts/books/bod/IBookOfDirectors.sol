@@ -18,13 +18,13 @@ interface IBookOfDirectors is IMeetingMinutes {
 
     event AddDirector(
         uint8 title,
-        uint40 acct,
+        uint40 indexed acct,
         uint40 appointer,
-        uint64 startBN,
-        uint64 endBN
+        uint48 startDate,
+        uint48 endDate
     );
 
-    event RemoveDirector(uint40 user);
+    event RemoveDirector(uint40 indexed user);
 
     //##################
     //##    写接口    ##
@@ -35,6 +35,7 @@ interface IBookOfDirectors is IMeetingMinutes {
     function setMaxQtyOfDirectors(uint8 max) external;
 
     function appointDirector(
+        bytes32 rule,
         uint40 candidate,
         uint8 title,
         uint40 appointer
@@ -42,7 +43,7 @@ interface IBookOfDirectors is IMeetingMinutes {
 
     function removeDirector(uint40 acct) external;
 
-    function takePosition(uint40 candidate, uint40 nominator) external;
+    function takePosition(bytes32 rule, uint40 candidate, uint40 nominator) external;
 
     //##################
     //##    读接口    ##
@@ -67,9 +68,9 @@ interface IBookOfDirectors is IMeetingMinutes {
 
     function appointerOfDirector(uint40 acct) external view returns (uint40);
 
-    function startBNOfDirector(uint40 acct) external view returns (uint64);
+    function startDateOfDirector(uint40 acct) external view returns (uint48);
 
-    function endBNOfDirector(uint40 acct) external view returns (uint64);
+    function endDateOfDirector(uint40 acct) external view returns (uint48);
 
     function directors() external view returns (uint40[] memory);
 }

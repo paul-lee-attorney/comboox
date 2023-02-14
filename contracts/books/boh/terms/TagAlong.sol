@@ -10,6 +10,7 @@ pragma solidity ^0.8.8;
 import "../../boa/IInvestmentAgreement.sol";
 
 import "../../../common/ruting/BOMSetting.sol";
+import "../../../common/ruting/BOASetting.sol";
 
 import "../../../common/components/ISigPage.sol";
 
@@ -61,7 +62,7 @@ contract TagAlong is DragAlong, BOMSetting {
             1
         );
 
-        uint40[] memory signers = ISigPage(ia).partiesOfDoc();
+        uint40[] memory signers = _boa.partiesOfDoc(ia);
 
         _supporters.emptyItems();
 

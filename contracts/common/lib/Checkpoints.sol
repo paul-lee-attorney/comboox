@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -13,13 +13,15 @@ library Checkpoints {
     using EnumerableSet for EnumerableSet.UintSet;
 
     struct Checkpoint {
-        uint64 blocknumber;
+        uint48 timestamp;
         uint64 paid;
         uint64 par;
+        uint64 amount; 
     }
 
     struct History {
-        Checkpoint[] checkpoints;
+        // checkpoints[0].blocknumber : counter
+        mapping (uint256 => Checkpoint) checkpoints;
     }
 
     //##################
@@ -29,25 +31,28 @@ library Checkpoints {
     function push(
         History storage self,
         uint64 paid,
-        uint64 par
-    ) internal returns (uint64) {
-        uint256 pos = self.checkpoints.length;
-        if (
-            pos != 0 &&
-            self.checkpoints[pos - 1].blocknumber == uint64(block.number)
-        ) {
+        uint64 par,
+        uint64 amount
+    ) internal returns (uint48) {
+        uint256 pos = self.checkpoints[0].timestamp;
+        pos++;
+
+        uint48 timestamp= uint48 (block.timestamp);
+
+        if (pos > 1 && self.checkpoints[pos - 1].timestamp == timestamp) {
             self.checkpoints[pos - 1].paid = paid;
             self.checkpoints[pos - 1].par = par;
+            self.checkpoints[pos - 1].amount = amount;
         } else {
-            self.checkpoints.push(
+            self.checkpoints[pos] =
                 Checkpoint({
-                    blocknumber: uint64(block.number),
+                    timestamp: timestamp,
                     paid: paid,
-                    par: par
-                })
-            );
+                    par: par,
+                    amount: amount
+                });
         }
-        return (uint64(block.number));
+        return timestamp;
     }
 
     //##################
@@ -57,38 +62,37 @@ library Checkpoints {
     function latest(History storage self)
         internal
         view
-        returns (uint64 paid, uint64 par)
+        returns (Checkpoint memory point)
     {
-        uint256 pos = self.checkpoints.length;
-        paid = pos == 0 ? 0 : self.checkpoints[pos - 1].paid;
-        par = pos == 0 ? 0 : self.checkpoints[pos - 1].par;
+        uint256 pos = self.checkpoints[0].timestamp;
+        point = self.checkpoints[pos];
     }
 
     function _average(uint256 a, uint256 b) private pure returns (uint256) {
         return (a & b) + ((a ^ b) >> 1);
     }
 
-    function getAtBlock(History storage self, uint64 blocknumber)
+    function getAtDate(History storage self, uint48 timestamp)
         internal
         view
-        returns (uint64 paid, uint64 par)
+        returns (Checkpoint memory point)
     {
         require(
-            blocknumber <= block.number,
+            timestamp <= block.timestamp,
             "Checkpoints: block not yet mined"
         );
 
-        uint256 high = self.checkpoints.length;
-        uint256 low = 0;
+        uint256 high = self.checkpoints[0].timestamp + 1;
+        uint256 low = 1;
         while (low < high) {
             uint256 mid = _average(low, high);
-            if (self.checkpoints[mid].blocknumber > blocknumber) {
+            if (self.checkpoints[mid].timestamp > timestamp) {
                 high = mid;
             } else {
                 low = mid + 1;
             }
         }
-        paid = high == 0 ? 0 : self.checkpoints[high - 1].paid;
-        par = high == 0 ? 0 : self.checkpoints[high - 1].par;
+        if (high > 1) point = self.checkpoints[high - 1];
+
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -15,6 +15,7 @@ import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/BOHSetting.sol";
 
 import "../common/lib/MotionsRepo.sol";
+import "../common/lib/SNParser.sol";
 
 import "./IBODKeeper.sol";
 
@@ -25,48 +26,24 @@ contract BODKeeper is
     BOMSetting,
     BOSSetting
 {
+    using SNParser for bytes32;
+
     function appointDirector(
+        uint16 seqOfRule,
+        uint8 seqOfTitle,
         uint40 candidate,
-        uint8 title,
         uint40 appointer
-    ) external onlyDK {
-        require(
-            _getSHA().boardSeatsOf(appointer) >
-                _bod.appointmentCounter(appointer),
-            "BODKeeper.appointDirector: board seats quota used out"
-        );
+    ) external onlyDirectKeeper {
+        bytes32 rule = _getSHA().getRule(seqOfRule);
+        require(rule.rightholderOfBSR() == appointer, "BODKeeper.ad: caller not rightholder");
 
-        if (title == uint8(BookOfDirectors.TitleOfDirectors.Chairman)) {
-            require(
-                _getSHA().appointerOfOfficer(0) == appointer,
-                "BODKeeper.appointDirector: has no appointment right"
-            );
+        uint8 title = rule.appointTitle(seqOfTitle);
+        require(title > 0 && title < 4, "BODKeeper.ad: title overflow");
 
-            require(
-                _bod.whoIs(title) == 0 || _bod.whoIs(title) == candidate,
-                "BODKeeper.appointDirector: current Chairman shall quit first"
-            );
-        } else if (
-            title == uint8(BookOfDirectors.TitleOfDirectors.ViceChairman)
-        ) {
-            require(
-                _getSHA().appointerOfOfficer(1) == appointer,
-                "BODKeeper.appointDirector: has no appointment right"
-            );
-            require(
-                _bod.whoIs(title) == 0 || _bod.whoIs(title) == candidate,
-                "BODKeeper.appointDirector: current ViceChairman shall quit first"
-            );
-        } else if (title != uint8(BookOfDirectors.TitleOfDirectors.Director)) {
-            revert(
-                "BODKeeper.appointDirector: there is not such title for candidate"
-            );
-        }
-
-        _bod.appointDirector(candidate, title, appointer);
+        _bod.appointDirector(rule, candidate, title, appointer);
     }
 
-    function takePosition(uint40 candidate, uint256 motionId) external onlyDK {
+    function takePosition(bytes32 rule, uint40 candidate, uint256 motionId) external onlyDirectKeeper {
         require(
             _bom.isPassed(motionId),
             "BODKeeper.takePosition: candidate not be approved"
@@ -79,10 +56,10 @@ contract BODKeeper is
             "BODKeeper.takePosition: caller is not the candidate"
         );
 
-        _bod.takePosition(candidate, head.executor);
+        _bod.takePosition(rule, candidate, head.executor);
     }
 
-    function removeDirector(uint40 director, uint40 appointer) external onlyDK {
+    function removeDirector(uint40 director, uint40 appointer) external onlyDirectKeeper {
         require(
             _bod.isDirector(director),
             "BODKeeper.removeDirector: appointer is not a member"
@@ -95,7 +72,7 @@ contract BODKeeper is
         _bod.removeDirector(director);
     }
 
-    function quitPosition(uint40 director) external onlyDK {
+    function quitPosition(uint40 director) external onlyDirectKeeper {
         require(
             _bod.isDirector(director),
             "BODKeeper.quitPosition: appointer is not a member"
@@ -110,7 +87,7 @@ contract BODKeeper is
         uint40 caller,
         uint40 delegate,
         uint256 actionId
-    ) external onlyDK directorExist(caller) directorExist(delegate) {
+    ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
         _bod.entrustDelegate(caller, delegate, actionId);
     }
 
@@ -122,7 +99,7 @@ contract BODKeeper is
         bytes32 desHash,
         uint40 submitter,
         uint40 executor
-    ) external onlyDK directorExist(submitter) {
+    ) external onlyDirectKeeper directorExist(submitter) {
         _bod.proposeAction(
             actionType,
             targets,
@@ -139,13 +116,13 @@ contract BODKeeper is
         uint8 attitude,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDK directorExist(caller) {
+    ) external onlyDirectKeeper directorExist(caller) {
         _bod.castVote(actionId, attitude, caller, sigHash);
     }
 
     function voteCounting(uint256 motionId, uint40 caller)
         external
-        onlyDK
+        onlyDirectKeeper
         directorExist(caller)
     {
         _bod.voteCounting(motionId);

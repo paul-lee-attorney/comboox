@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -25,7 +25,7 @@ library DelegateMap {
         Map storage map,
         uint40 acct,
         uint40 delegate
-    ) internal returns (bool flag) {
+    ) public returns (bool flag) {
         require(
             acct != delegate,
             "DM.entrustDelegate: self delegate not allowed"
@@ -44,7 +44,7 @@ library DelegateMap {
     // #################
 
     // function isPrincipal(Map storage map, uint40 acct)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
@@ -52,7 +52,7 @@ library DelegateMap {
     // }
 
     // function isDelegate(Map storage map, uint40 acct)
-    //     internal
+    //     public
     //     view
     //     returns (bool)
     // {
@@ -60,7 +60,7 @@ library DelegateMap {
     // }
 
     // function getDelegate(Map storage map, uint40 acct)
-    //     internal
+    //     public
     //     view
     //     returns (uint40)
     // {
@@ -68,7 +68,7 @@ library DelegateMap {
     // }
 
     // function getPrincipals(Map storage map, uint40 acct)
-    //     internal
+    //     public
     //     view
     //     returns (uint40[] memory)
     // {

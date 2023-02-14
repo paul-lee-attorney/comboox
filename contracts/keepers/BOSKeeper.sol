@@ -18,18 +18,18 @@ contract BOSKeeper is IBOSKeeper, BOSSetting {
     // ##   BOS   ##
     // #############
 
-    function setPayInAmount(bytes32 sn, uint64 amount) external onlyDK {
+    function setPayInAmount(bytes32 sn, uint64 amount) external onlyDirectKeeper {
         _bos.setPayInAmount(sn, amount);
     }
 
     function requestPaidInCapital(bytes32 sn, string memory hashKey)
         external
-        onlyDK
+        onlyDirectKeeper
     {
         _bos.requestPaidInCapital(sn, hashKey);
     }
 
-    function withdrawPayInAmount(bytes32 sn) external onlyDK {
+    function withdrawPayInAmount(bytes32 sn) external onlyDirectKeeper {
         _bos.withdrawPayInAmount(sn);
     }
 
@@ -37,11 +37,11 @@ contract BOSKeeper is IBOSKeeper, BOSSetting {
         uint32 ssn,
         uint64 paid,
         uint64 par
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         _bos.decreaseCapital(ssn, paid, par);
     }
 
-    function updatePaidInDeadline(uint32 ssn, uint32 line) external onlyDK {
+    function updatePaidInDeadline(uint32 ssn, uint32 line) external onlyDirectKeeper {
         _bos.updatePaidInDeadline(ssn, line);
     }
 }

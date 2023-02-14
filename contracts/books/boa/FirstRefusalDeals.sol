@@ -34,7 +34,7 @@ contract FirstRefusalDeals is IFirstRefusalDeals, ROMSetting {
         uint16 seqOfOD,
         uint16 seqOfFR,
         uint40 acct
-    ) external onlyDK {
+    ) external onlyDirectKeeper {
         uint64 weight = _rom.votesInHand(acct);
         require(weight != 0, "first refusal request has ZERO weight");
 
@@ -48,7 +48,7 @@ contract FirstRefusalDeals is IFirstRefusalDeals, ROMSetting {
 
     function acceptFirstRefusal(uint16 seqOfOD, uint16 seqOfFR)
         external
-        onlyDK
+        onlyDirectKeeper
         returns (uint64 ratio)
     {
         uint64 _sumOfWeight = _frDeals[seqOfOD].sumOfWeight;

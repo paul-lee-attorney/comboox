@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -14,7 +14,7 @@ import "../access/AccessControl.sol";
 contract BOPSetting is AccessControl {
     IBookOfPledges internal _bop;
 
-    function setBOP(address bop) external onlyDK {
+    function setBOP(address bop) external onlyDirectKeeper {
         _bop = IBookOfPledges(bop);
     }
 

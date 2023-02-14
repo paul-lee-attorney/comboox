@@ -16,15 +16,15 @@ contract ROMKeeper is IROMKeeper, ROMSetting {
     // ##   ROM   ##
     // #############
 
-    function setMaxQtyOfMembers(uint8 max) external onlyDK {
+    function setMaxQtyOfMembers(uint8 max) external onlyDirectKeeper {
         _rom.setMaxQtyOfMembers(max);
     }
 
-    function setVoteBase(bool onPar) external onlyDK {
+    function setVoteBase(bool onPar) external onlyDirectKeeper {
         _rom.setVoteBase(onPar);
     }
 
-    function setAmtBase(bool onPar) external onlyDK {
+    function setAmtBase(bool onPar) external onlyDirectKeeper {
         _rom.setAmtBase(onPar);
     }
 }

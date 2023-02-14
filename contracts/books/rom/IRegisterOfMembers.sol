@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -96,7 +96,7 @@ interface IRegisterOfMembers {
 
     function parCap() external view returns (uint64);
 
-    function capAtBlock(uint64 blocknumber)
+    function capAtDate(uint48 date)
         external
         view
         returns (uint64, uint64);
@@ -115,7 +115,7 @@ interface IRegisterOfMembers {
 
     function votesInHand(uint40 acct) external view returns (uint64);
 
-    function votesAtBlock(uint40 acct, uint64 blocknumber)
+    function votesAtDate(uint40 acct, uint48 date)
         external
         view
         returns (uint64);

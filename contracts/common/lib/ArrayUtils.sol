@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -9,7 +9,7 @@ pragma solidity ^0.8.8;
 
 library ArrayUtils {
     function combine(uint40[] memory arrA, uint40[] memory arrB)
-        internal
+        public
         pure
         returns (uint40[] memory)
     {
@@ -26,7 +26,7 @@ library ArrayUtils {
     }
 
     function minus(uint40[] memory arrA, uint40[] memory arrB)
-        internal
+        public
         pure
         returns (uint40[] memory)
     {
@@ -68,7 +68,7 @@ library ArrayUtils {
     }
 
     function fullyCoveredBy(uint40[] memory arrA, uint40[] memory arrB)
-        internal
+        public
         pure
         returns (bool)
     {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -14,7 +14,7 @@ import "../access/AccessControl.sol";
 contract BOMSetting is AccessControl {
     IBookOfMotions internal _bom;
 
-    function setBOM(address bom) external onlyDK {
+    function setBOM(address bom) external onlyDirectKeeper {
         _bom = IBookOfMotions(bom);
     }
 

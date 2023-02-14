@@ -25,7 +25,7 @@ interface IBOPKeeper {
     function updatePledge(
         bytes32 sn,
         uint40 creditor,
-        uint64 expireBN,
+        uint48 expireDate,
         uint64 pledgedPar,
         uint64 guaranteedAmt,
         uint40 caller
