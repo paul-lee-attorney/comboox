@@ -79,23 +79,23 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
     }
 
     function addShareToMember(uint32 ssn, uint40 acct) external onlyBOS {
-        (bytes32 shareNumber, uint64 paid, uint64 par, , ) = _bos.getShare(ssn);
+        IBookOfShares.Share memory share = _bos.getShare(ssn);
 
-        if (_gm.addShareToMember(shareNumber, acct)) {
-            _gm.changeAmtOfMember(acct, paid, par, true);
-            emit AddShareToMember(shareNumber, acct);
+        if (_gm.addShareToMember(share.shareNumber, acct)) {
+            _gm.changeAmtOfMember(acct, share.paid, share.par, true);
+            emit AddShareToMember(share.shareNumber, acct);
         }
     }
 
     function removeShareFromMember(uint32 ssn, uint40 acct) external onlyBOS {
-        (bytes32 shareNumber, uint64 paid, uint64 par, , ) = _bos.getShare(ssn);
+        IBookOfShares.Share memory share = _bos.getShare(ssn);
 
-        changeAmtOfMember(acct, paid, par, false);
+        changeAmtOfMember(acct, share.paid, share.par, false);
 
-        if (_gm.removeShareFromMember(shareNumber, acct)) {
+        if (_gm.removeShareFromMember(share.shareNumber, acct)) {
             if (_gm.qtyOfSharesInHand(acct) == 0) _gm.delMember(acct);
 
-            emit RemoveShareFromMember(shareNumber, acct);
+            emit RemoveShareFromMember(share.shareNumber, acct);
         }
     }
 

@@ -177,7 +177,7 @@ library MembersRepo {
             cp.par -= deltaPar;
         }
 
-        timestamp = gm.members[acct].votesInHand.push(cp.paid, cp.par, cp.amount);
+        timestamp = gm.members[acct].votesInHand.push(cp.paid, cp.par, cp.cleanPar);
     }
 
     function changeAmtOfCap(

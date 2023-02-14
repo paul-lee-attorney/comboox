@@ -16,7 +16,7 @@ library Checkpoints {
         uint48 timestamp;
         uint64 paid;
         uint64 par;
-        uint64 amount; 
+        uint64 cleanPar;
     }
 
     struct History {
@@ -32,7 +32,7 @@ library Checkpoints {
         History storage self,
         uint64 paid,
         uint64 par,
-        uint64 amount
+        uint64 cleanPar
     ) internal returns (uint48) {
         uint256 pos = self.checkpoints[0].timestamp;
         pos++;
@@ -42,14 +42,14 @@ library Checkpoints {
         if (pos > 1 && self.checkpoints[pos - 1].timestamp == timestamp) {
             self.checkpoints[pos - 1].paid = paid;
             self.checkpoints[pos - 1].par = par;
-            self.checkpoints[pos - 1].amount = amount;
+            self.checkpoints[pos - 1].cleanPar = cleanPar;
         } else {
             self.checkpoints[pos] =
                 Checkpoint({
                     timestamp: timestamp,
                     paid: paid,
                     par: par,
-                    amount: amount
+                    cleanPar: cleanPar
                 });
         }
         return timestamp;

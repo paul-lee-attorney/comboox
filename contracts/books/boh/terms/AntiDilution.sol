@@ -124,9 +124,9 @@ contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
             "AD.giftPar: AntiDilution not triggered"
         );
 
-        (, uint64 paid, , , ) = _bos.getShare(shareNumber.ssn());
+        IBookOfShares.Share memory share = _bos.getShare(shareNumber.ssn());
 
-        gift = (paid * markPrice) / dealPrice - paid;
+        gift = (share.paid * markPrice) / dealPrice - share.paid;
     }
 
     // ################

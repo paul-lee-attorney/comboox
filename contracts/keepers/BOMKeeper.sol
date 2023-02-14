@@ -273,10 +273,10 @@ contract BOMKeeper is
 
         snOfOpt = _boo.createOption(snOfOpt, caller, obligors, paid, par);
 
-        (bytes32 shareNumber, , , , ) = _bos.getShare(sn.ssnOfDeal());
+        IBookOfShares.Share memory share  = _bos.getShare(sn.ssnOfDeal());
 
         _boo.execOption(snOfOpt);
-        _boo.addFuture(snOfOpt, shareNumber, paid, par);
+        _boo.addFuture(snOfOpt, share.shareNumber, paid, par);
     }
 
     function _createOptSN(

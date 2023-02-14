@@ -8,6 +8,16 @@
 pragma solidity ^0.8.8;
 
 interface IBookOfShares {
+    //Share 股票
+    struct Share {
+        bytes32 shareNumber; //出资证明书编号（股票编号）
+        uint64 paid; //实缴出资
+        uint64 par; //票面金额（注册资本面值）
+        uint64 cleanPar; //清洁金额（扣除出质、远期票面金额）
+        uint48 paidInDeadline; //出资期限（时间戳）
+        uint8 state; //股票状态 （0:正常，1:查封）
+    }
+
     //##################
     //##    Event     ##
     //##################
@@ -117,13 +127,7 @@ interface IBookOfShares {
     function getShare(uint32 ssn)
         external
         view
-        returns (
-            bytes32 shareNumber,
-            uint64 paid,
-            uint64 par,
-            uint48 paidInDeadline,
-            uint8 state
-        );
+        returns (Share memory share);
 
     function getLocker(bytes32 sn) external view returns (uint64 amount);
 }

@@ -440,9 +440,9 @@ contract SHAKeeper is
     ) private returns (bytes32 snOfFR) {
         uint32 ssnOfOD = snOfOD.ssnOfDeal();
 
-        bytes32 shareNumber;
+        IBookOfShares.Share memory share;
 
-        if (ssnOfOD != 0) (shareNumber, , , , ) = _bos.getShare(ssnOfOD);
+        if (ssnOfOD != 0) share = _bos.getShare(ssnOfOD);
 
         uint16 seq = IInvestmentAgreement(ia).counterOfDeals() + 1;
         uint16 seqOfOD = snOfOD.seqOfDeal();
@@ -453,10 +453,10 @@ contract SHAKeeper is
             ssnOfOD == 0
                 ? uint8(InvestmentAgreement.TypeOfDeal.PreEmptive)
                 : uint8(InvestmentAgreement.TypeOfDeal.FirstRefusal),
-            shareNumber.shareholder(),
+            share.shareNumber.shareholder(),
             caller,
             _rom.groupRep(caller),
-            shareNumber.ssn(),
+            share.shareNumber.ssn(),
             snOfOD.priceOfDeal(),
             seqOfOD
         );

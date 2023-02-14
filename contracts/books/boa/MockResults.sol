@@ -62,9 +62,9 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
     }
 
     function mockDealOfSell(uint32 ssn, uint64 amount) public {
-        (bytes32 shareNumber, , , , ) = _bos.getShare(ssn);
+        IBookOfShares.Share memory share = _bos.getShare(ssn);
 
-        uint40 seller = shareNumber.shareholder();
+        uint40 seller = share.shareNumber.shareholder();
 
         _mgm.chain.changeAmt(seller, amount, true);
 

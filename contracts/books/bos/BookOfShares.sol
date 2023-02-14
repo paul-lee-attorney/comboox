@@ -18,16 +18,6 @@ contract BookOfShares is IBookOfShares, ROMSetting {
     using SNFactory for bytes;
     using SNParser for bytes32;
 
-    //Share 股票
-    struct Share {
-        bytes32 shareNumber; //出资证明书编号（股票编号）
-        uint64 paid; //实缴出资
-        uint64 par; //票面金额（注册资本面值）
-        uint64 cleanPar; //清洁金额（扣除出质、远期票面金额）
-        uint48 paidInDeadline; //出资期限（时间戳）
-        uint8 state; //股票状态 （0:正常，1:查封）
-    }
-
     // SNInfo: 股票编号编码规则
     // struct SNInfo {
     //     uint16 class; //股份类别（投资轮次）
@@ -451,21 +441,9 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         external
         view
         shareExist(ssn)
-        returns (
-            bytes32 shareNumber,
-            uint64 paid,
-            uint64 par,
-            uint48 paidInDeadline,
-            uint8 state
-        )
+        returns (Share memory share)
     {
-        Share storage share = _shares[ssn];
-
-        shareNumber = share.shareNumber;
-        paid = share.paid;
-        par = share.par;
-        paidInDeadline = share.paidInDeadline;
-        state = share.state;
+        share = _shares[ssn];
     }
 
     // ==== PayInCapital ====
