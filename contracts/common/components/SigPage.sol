@@ -7,18 +7,11 @@
 
 pragma solidity ^0.8.8;
 
-// import "../lib/SigsRepo.sol";
-
-// import "../access/AccessControl.sol";
-
 import "../ruting/RODSetting.sol";
 
 import "./ISigPage.sol";
 
 contract SigPage is ISigPage, RODSetting {
-    // using SigsRepo for SigsRepo.Page;
-
-    // SigsRepo.Page private _sigPage;
 
     //####################
     //##    设置接口     ##
@@ -47,9 +40,5 @@ contract SigPage is ISigPage, RODSetting {
     //####################
     //##    查询接口     ##
     //####################
-
-    // funtion blankCounterOfDoc() public {
-    //     _rod.blankCounterOfDoc();
-    // }
 
 }

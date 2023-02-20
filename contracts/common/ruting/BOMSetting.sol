@@ -7,18 +7,18 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/bom/IBookOfMotions.sol";
+import "../../books/bog/IBookOfGM.sol";
 
 import "../access/AccessControl.sol";
 
 contract BOMSetting is AccessControl {
-    IBookOfMotions internal _bom;
+    IBookOfGM internal _bog;
 
     function setBOM(address bom) external onlyDirectKeeper {
-        _bom = IBookOfMotions(bom);
+        _bog = IBookOfGM(bom);
     }
 
     function bomAddr() external view returns (address) {
-        return address(_bom);
+        return address(_bog);
     }
 }

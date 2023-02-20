@@ -7,15 +7,23 @@
 
 pragma solidity ^0.8.8;
 
+import "../../books/rom/IRegisterOfMembers.sol";
+import "./ArrayUtils.sol";
+
 library DelegateMap {
-    struct Map {
-        mapping(uint256 => uint40) delegateOf;
-        mapping(uint256 => uint40[]) principalsOf;
+    using ArrayUtils for uint40[];
+
+    struct Voter {
+        uint40 delegate;
+        uint64 weight;
+        uint64 repWeight;
+        uint32 repHead;
+        uint40[] principals;
     }
 
-    /*
-    principalsOf[0] : all principals;
-*/
+    struct Map {
+        mapping(uint256 => Voter) voters;
+    }
 
     // #################
     // ##    Write    ##
@@ -23,17 +31,29 @@ library DelegateMap {
 
     function entrustDelegate(
         Map storage map,
-        uint40 acct,
-        uint40 delegate
+        uint40 principal,
+        uint40 delegate,
+        uint64 weight
     ) public returns (bool flag) {
-        require(
-            acct != delegate,
-            "DM.entrustDelegate: self delegate not allowed"
-        );
+        require(principal != 0, "DM.ED: zero principal");
+        require(delegate != 0, "DM.ED: zero delegate");
+        require(principal != delegate,"DM.ED: self delegate");
 
-        if (map.delegateOf[acct] == 0 && map.delegateOf[delegate] == 0) {
-            map.delegateOf[acct] = delegate;
-            map.principalsOf[delegate].push(acct);
+        if (map.voters[principal].delegate == 0 && 
+            map.voters[delegate].delegate == 0) 
+        {
+            Voter storage p = map.voters[principal];
+            Voter storage d = map.voters[delegate];
+
+            p.delegate = delegate;
+            p.weight = weight;
+            p.repWeight += weight;
+            p.repHead ++;
+
+            d.repHead += p.repHead;
+            d.repWeight += p.repWeight;
+           
+            d.principals.push(principal);
 
             flag = true;
         }
@@ -43,35 +63,14 @@ library DelegateMap {
     // ##    Read     ##
     // #################
 
-    // function isPrincipal(Map storage map, uint40 acct)
-    //     public
-    //     view
-    //     returns (bool)
-    // {
-    //     return map.delegateOf[acct] != 0;
-    // }
-
-    // function isDelegate(Map storage map, uint40 acct)
-    //     public
-    //     view
-    //     returns (bool)
-    // {
-    //     return map.principalsOf[acct].length != 0;
-    // }
-
-    // function getDelegate(Map storage map, uint40 acct)
-    //     public
-    //     view
-    //     returns (uint40)
-    // {
-    //     return map.delegateOf[acct];
-    // }
-
-    // function getPrincipals(Map storage map, uint40 acct)
-    //     public
-    //     view
-    //     returns (uint40[] memory)
-    // {
-    //     return map.principalsOf[acct];
-    // }
+    function getDelegateOf(Map storage map, uint40 acct)
+        public
+        view
+        returns (uint40 d)
+    {
+        while (acct > 0) {
+            d = acct;
+            acct = map.voters[d].delegate;
+        }
+    }
 }

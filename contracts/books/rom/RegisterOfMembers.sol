@@ -227,7 +227,7 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
         return _gm.votesInHand(acct);
     }
 
-    function votesAtDate(uint40 acct, uint48 date)
+    function votesAtDate(uint256 acct, uint48 date)
         external
         view
         returns (uint64)

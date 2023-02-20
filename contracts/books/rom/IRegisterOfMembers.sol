@@ -115,7 +115,7 @@ interface IRegisterOfMembers {
 
     function votesInHand(uint40 acct) external view returns (uint64);
 
-    function votesAtDate(uint40 acct, uint48 date)
+    function votesAtDate(uint256 acct, uint48 date)
         external
         view
         returns (uint64);

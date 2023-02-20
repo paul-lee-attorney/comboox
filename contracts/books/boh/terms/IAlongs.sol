@@ -8,6 +8,27 @@
 pragma solidity ^0.8.8;
 
 interface IAlongs {
+
+    enum TriggerTypeOfAlongs {
+        NoConditions,
+        ControlChanged,
+        ControlChangedWithHigherPrice,
+        ControlChangedWithHigherROE
+    }
+
+    // struct linkRule {
+    //     uint40 drager;
+    //     uint40 group;
+    //     // 0-no condition; 1- not biggest || biggest but shareRatio < threshold; 2- 1 && price >= uintPrice; 3- 1 && roe >= ROE
+    //     uint8 triggerType;
+    //     // threshold to define material control party
+    //     uint32 threshold;
+    //     // false - free amount; true - pro rata (transfered parValue : original parValue)
+    //     bool proRata;
+    //     uint32 unitPrice;
+    //     uint32 ROE;
+    // }
+
     // ################
     // ##   Write    ##
     // ################

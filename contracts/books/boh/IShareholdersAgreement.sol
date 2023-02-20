@@ -10,8 +10,56 @@ pragma solidity ^0.8.8;
 import "../../common/components/ISigPage.sol";
 
 interface IShareholdersAgreement is ISigPage {
+
+    enum TermTitle {
+        ZeroPoint, //            0
+        LOCK_UP, //              1
+        ANTI_DILUTION, //        2
+        DRAG_ALONG, //           3
+        TAG_ALONG, //            4
+        OPTIONS //               5
+    }
+
+    // ==== Rules ========
+
+/*
+    |  Seq  |        Type       |    Abb       |            Description                     |       
+    |    0  |  GovernanceRule   |     GR       | Board Constitution and General Rules of GM | 
+    |    1  |  VotingRuleOfGM   |     CI       | VR for Capital Increase                    |
+    |    2  |                   |   SText      | VR for External Share Transfer             |
+    |    3  |                   |   STint      | VR for Internal Share Transfer             |
+    |    4  |                   |    1+3       | VR for CI & STint                          |
+    |    5  |                   |    2+3       | VR for SText & STint                       |
+    |    6  |                   |   1+2+3      | VR for CI & SText & STint                  |
+    |    7  |                   |    1+2       | VR for CI & SText                          |
+    |    8  |                   |   SHA        | VR for Update SHA                          |
+    |    9  |                   |  O-Issue-GM  | VR for Ordinary Issues of GeneralMeeting   |
+    |   10  |                   |  S-Issue-GM  | VR for Special Issues Of GeneralMeeting    |
+    |   11  | VotingRuleOfBoard |     CI       | VR for Capital Increase                    |
+    |   12  |                   |   SText      | VR for External Share Transfer             |
+    |   13  |                   |   STint      | VR for Internal Share Transfer             |
+    |   14  |                   |    1+3       | VR for CI & STint                          |
+    |   15  |                   |    2+3       | VR for SText & STint                       |
+    |   16  |                   |   1+2+3      | VR for CI & SText & STint                  |
+    |   17  |                   |    1+2       | VR for CI & SText                          |
+    |   18  |                   |   SHA        | VR for Update SHA                          |
+    |   19  |                   |  O-Issue-B   | VR for Ordinary Issues Of Board            |
+    |   20  |                   |  S-Issue-B   | VR for Special Issues Of Board             |
+    ...
+
+    |  256  |  BoardSeatsRule   |      BSR     | Board Seats Allocation Rights to Members   |
+    ...
+
+    |  512  | FirstRefusalRule  |  FR for CI...| FR rule for Investment Deal                |
+    ...
+
+    |  768  | GroupUpdateOrder  |  GroupUpdate | Grouping Members as per their relationship |
+    ...
+
+*/
+
     //##################
-    //##    写接口    ##
+    //##    写接口     ##
     //##################
 
     function createTerm(uint8 title) external returns (address body);

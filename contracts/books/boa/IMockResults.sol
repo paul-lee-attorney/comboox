@@ -12,7 +12,7 @@ interface IMockResults {
     //##  Events  ##
     //##############
 
-    event CreateMockGM(uint64 blocknumber);
+    event CreateMockGM();
 
     event MockDealOfSell(uint40 indexed seller, uint64 amount);
 

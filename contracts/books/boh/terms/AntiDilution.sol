@@ -138,8 +138,8 @@ contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
 
         if (
             sn.typeOfDeal() !=
-            uint8(InvestmentAgreement.TypeOfDeal.CapitalIncrease) &&
-            sn.typeOfDeal() != uint8(InvestmentAgreement.TypeOfDeal.PreEmptive)
+            uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease) &&
+            sn.typeOfDeal() != uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
         ) return false;
 
         uint40 mark = _marks.nodes[0].next;
@@ -216,10 +216,13 @@ contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
     function isExempted(address ia, bytes32 sn) external view returns (bool) {
         if (!isTriggered(ia, sn)) return true;
 
-        (uint40[] memory consentParties, ) = _bom.getCaseOf(
-            uint256(uint160(ia)),
+        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
+        uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
+
+        uint40[] memory consentParties = _bog.getCaseOfAttitude(
+            motionId,
             1
-        );
+        ).voters;
 
         uint32 unitPrice = sn.priceOfDeal();
 

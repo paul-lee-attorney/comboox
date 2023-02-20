@@ -36,7 +36,7 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
         _mgm.restoreChain(snapshot);
         _mockDealsOfIA();
 
-        emit CreateMockGM(uint64(block.number));
+        emit CreateMockGM();
     }
 
     function _mockDealsOfIA() private {
@@ -48,9 +48,10 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
             bytes32 sn = dealsList[len - 1];
             uint64 amount;
 
-            if (_rom.basedOnPar())
-                (, , amount, , ) = _ia.getDeal(sn.seqOfDeal());
-            else (, amount, , , ) = _ia.getDeal(sn.seqOfDeal());
+            IInvestmentAgreement.Deal memory deal = _ia.getDeal(sn.seqOfDeal());
+
+            if (_rom.basedOnPar()) amount = deal.par;
+            else amount = deal.paid;
 
             uint32 short = sn.ssnOfDeal();
             if (short != 0) mockDealOfSell(short, amount);

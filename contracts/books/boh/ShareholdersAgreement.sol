@@ -40,48 +40,9 @@ contract ShareholdersAgreement is
     using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    enum TermTitle {
-        ZeroPoint, //            0
-        LOCK_UP, //              1
-        ANTI_DILUTION, //        2
-        DRAG_ALONG, //           3
-        TAG_ALONG, //            4
-        OPTIONS //               5
-    }
-
     // title => body
     mapping(uint256 => address) private _terms;
     EnumerableSet.UintSet private _titles;
-
-    // ==== Rules ========
-
-/*
-    |  Seq  |        Type       |    Abb       |            Description                     |       
-    |    0  |  GovernanceRule   |     GR       | Board Constitution and General Rules of GM | 
-    |    1  |  VotingRule       |     CI       | VR for Capital Increase                    |
-    |    2  |                   |   SText      | VR for External Share Transfer             |
-    |    3  |                   |   STint      | VR for Internal Share Transfer             |
-    |    4  |                   |    1+3       | VR for CI & STint                          |
-    |    5  |                   |    2+3       | VR for SText & STint                       |
-    |    6  |                   |   1+2+3      | VR for CI & SText & STint                  |
-    |    7  |                   |    1+2       | VR for CI & SText                          |
-    |    8  |                   |   SHA        | VR for Update SHA                          |
-    |    9  |                   |  O-Issue-GM  | VR for Ordinary Issues of GeneralMeeting   |
-    |   10  |                   |  S-Issue-GM  | VR for Special Issues Of GeneralMeeting    |
-    |   11  |                   |  O-Issue-B   | VR for Ordinary Issues Of Board            |
-    |   12  |                   |  S-Issue-B   | VR for Special Issues Of Board             |
-    ...
-
-    |  256  |  BoardSeatsRule   |      BSR     | Board Seats Allocation Rights to Members   |
-    ...
-
-    |  512  | FirstRefusalRule  |  FR for CI...| FR rule for Investment Deal                |
-    ...
-
-    |  768  | GroupUpdateOrder  |  GroupUpdate | Grouping Members as per their relationship |
-    ...
-
-*/
 
     // seq => rule
     mapping(uint256 => bytes32) private _rules;
@@ -136,7 +97,7 @@ contract ShareholdersAgreement is
             title == uint8(TermTitle.ANTI_DILUTION) ||
             title == uint8(TermTitle.LOCK_UP) ||
             title == uint8(TermTitle.TAG_ALONG)
-        ) IBookSetting(body).setBOM(address(_bom));
+        ) IBookSetting(body).setBOM(address(_bog));
 
         if (
             title == uint8(TermTitle.ANTI_DILUTION) ||

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -10,6 +10,41 @@ pragma solidity ^0.8.8;
 import "../../common/components/ISigPage.sol";
 
 interface IInvestmentAgreement is ISigPage {
+
+    struct Deal {
+        bytes32 sn;
+        uint64 paid;
+        uint64 par;
+        uint48 closingDate;
+        uint8 state;
+        bytes32 hashLock;
+    }
+
+    enum TypeOfDeal {
+        ZeroPoint,
+        CapitalIncrease,
+        ShareTransferExt,
+        ShareTransferInt,
+        CI_STint,
+        SText_STint,
+        CI_SText_STint,
+        CI_SText,
+        PreEmptive,
+        TagAlong,
+        DragAlong,
+        FirstRefusal,
+        FreeGift
+    }
+
+    enum StateOfDeal {
+        Drafting,
+        Locked,
+        Cleared,
+        Closed,
+        Terminated
+    }
+
+
     //##################
     //##    Event     ##
     //##################
@@ -90,7 +125,7 @@ interface IInvestmentAgreement is ISigPage {
     //  ######################
 
     // ======== InvestmentAgreement ========
-    function typeOfIA() external view returns (uint256);
+    function typeOfIA() external view returns (uint8);
 
     function isDeal(uint16 seq) external view returns (bool);
 
@@ -99,15 +134,9 @@ interface IInvestmentAgreement is ISigPage {
     function getDeal(uint16 seq)
         external
         view
-        returns (
-            bytes32 sn,
-            uint64 paid,
-            uint64 par,
-            uint8 state, // 0-pending 1-cleared 2-closed 3-terminated
-            bytes32 hashLock
-        );
+        returns (Deal memory deal);
 
-    function closingDateOfDeal(uint16 seq) external view returns (uint48);
+    // function closingDateOfDeal(uint16 seq) external view returns (uint48);
 
     function dealsList() external view returns (bytes32[] memory);
 }

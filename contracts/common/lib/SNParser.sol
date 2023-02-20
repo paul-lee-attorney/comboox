@@ -255,7 +255,7 @@ library SNParser {
 
     // ---- VotingRule ----
 
-    function decisionPowerOfVR(bytes32 sn) public pure returns (uint8) {
+    function authorityOfVR(bytes32 sn) public pure returns (uint8) {
         return uint8(sn[4]);
     }
 
@@ -328,14 +328,14 @@ library SNParser {
         return uint8(sn[9]);
     }
 
-    function appointTitle(bytes32 sn, uint256 seqOfTitle) public pure returns(uint8) {
-        require(seqOfTitle > 0 && seqOfTitle < 11, "SNParser.appointTitle: seqOfTitle over flow");
+    function nominateTitle(bytes32 sn, uint8 seqOfTitle) public pure returns(uint8) {
+        require(seqOfTitle > 0 && seqOfTitle < 8, "SNP.NT: seqOfTitle over flow");
         return uint8(sn[9+seqOfTitle]);
     }
 
-    function nominateTitle(bytes32 sn, uint256 seqOfTitle) public pure returns(uint8) {
-        require(seqOfTitle > 0 && seqOfTitle < 11, "SNParser.nominateTitle: seqOfTitle over flow");
-        return uint8(sn[19+seqOfTitle]);
+    function vrSeqOfNomination(bytes32 sn, uint8 seqOfTitle) public pure returns(uint16) {
+        require(seqOfTitle > 0 && seqOfTitle < 8, "SNP.VRSON: seqOfTitle over flow");
+        return uint16(bytes2(sn << (120 + 16 * seqOfTitle)));
     }
 
     // ---- FirstRefusal Rule ----

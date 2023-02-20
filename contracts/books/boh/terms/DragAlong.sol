@@ -26,26 +26,6 @@ contract DragAlong is IAlongs, ROMSetting, BOSSetting, BOASetting {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    enum TriggerTypeOfAlongs {
-        NoConditions,
-        ControlChanged,
-        ControlChangedWithHigherPrice,
-        ControlChangedWithHigherROE
-    }
-
-    // struct linkRule {
-    //     uint40 drager;
-    //     uint40 group;
-    //     // 0-no condition; 1- not biggest || biggest but shareRatio < threshold; 2- 1 && price >= uintPrice; 3- 1 && roe >= ROE
-    //     uint8 triggerType;
-    //     // threshold to define material control party
-    //     uint32 threshold;
-    //     // false - free amount; true - pro rata (transfered parValue : original parValue)
-    //     bool proRata;
-    //     uint32 unitPrice;
-    //     uint32 ROE;
-    // }
-
     EnumerableSet.UintSet private _dragers;
     EnumerableSet.Bytes32Set private _rules;
 
@@ -146,9 +126,9 @@ contract DragAlong is IAlongs, ROMSetting, BOSSetting, BOASetting {
         );
 
         uint32 dealPrice = sn.priceOfDeal();
-        uint48 closingDate = IInvestmentAgreement(ia).closingDateOfDeal(
+        uint48 closingDate = IInvestmentAgreement(ia).getDeal(
             sn.seqOfDeal()
-        );
+        ).closingDate;
 
         bytes32 rule = _links[caller];
 
@@ -181,13 +161,13 @@ contract DragAlong is IAlongs, ROMSetting, BOSSetting, BOASetting {
     // ################
 
     function isTriggered(address ia, bytes32 sn) public view returns (bool) {
-        if (_boa.currentState(ia) != uint8(RepoOfDocs.RODStates.Circulated))
+        if (_boa.getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
             return false;
 
         if (
             sn.typeOfDeal() ==
-            uint8(InvestmentAgreement.TypeOfDeal.CapitalIncrease) ||
-            sn.typeOfDeal() == uint8(InvestmentAgreement.TypeOfDeal.PreEmptive)
+            uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease) ||
+            sn.typeOfDeal() == uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
         ) return false;
 
         uint40 seller = sn.sellerOfDeal();

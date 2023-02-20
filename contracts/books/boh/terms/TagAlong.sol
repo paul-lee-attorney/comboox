@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -53,14 +53,17 @@ contract TagAlong is DragAlong, BOMSetting {
     }
 
     function isExempted(address ia, bytes32 sn) external returns (bool) {
-        require(_bom.isPassed(uint256(uint160(ia))), "motion NOT passed");
+        require(_bog.isPassed(uint256(uint160(ia))), "motion NOT passed");
 
         if (!isTriggered(ia, sn)) return true;
 
-        (uint40[] memory consentParties, ) = _bom.getCaseOf(
-            uint256(uint160(ia)),
+        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
+        uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
+
+        uint40[] memory consentParties = _bog.getCaseOfAttitude(
+            motionId,
             1
-        );
+        ).voters;
 
         uint40[] memory signers = _boa.partiesOfDoc(ia);
 

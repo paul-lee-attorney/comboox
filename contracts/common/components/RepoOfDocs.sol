@@ -18,36 +18,10 @@ import "../access/AccessControl.sol";
 import "../utils/CloneFactory.sol";
 
 contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
+    using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using SigsRepo for SigsRepo.Page;
     using SNParser for bytes32;
-
-    enum RODStates {
-        ZeroPoint,
-        Created,
-        Circulated,
-        Established,
-        Proposed,
-        Voted,
-        Executed,
-        Revoked
-    }
-
-    struct Head {
-        uint8 docType;
-        uint40 creator;
-        uint48 createDate;
-        uint48 shaExecDeadline;
-        uint48 proposeDeadline;
-        uint8 state;
-    }
-
-    struct Doc {
-        Head head;
-        bytes32 docUrl;
-        bytes32 docHash;
-        SigsRepo.Page sigPage;
-    }
 
     // docType => address
     mapping(uint256 => address) private _templates;
@@ -61,7 +35,7 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     //##    modifier    ##
     //####################
 
-    modifier tempReady(uint256 typeOfDoc) {
+    modifier tempReady(uint8 typeOfDoc) {
         require(_templates[typeOfDoc] != address(0), "ROD.md.tr: template NOT set");
         _;
     }
@@ -94,12 +68,12 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     //##    写接口     ##
     //##################
 
-    function setTemplate(address body, uint256 typeOfDoc) external onlyDirectKeeper {
+    function setTemplate(address body, uint8 typeOfDoc) external onlyDirectKeeper {
         _templates[typeOfDoc] = body;
         emit SetTemplate(body, typeOfDoc);
     }
 
-    function createDoc(uint256 docType, uint256 creator)
+    function createDoc(uint8 docType, uint40 creator)
         public
         onlyDirectKeeper
         tempReady(docType)
@@ -112,21 +86,14 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
 
             emit UpdateStateOfDoc(body, uint8(RODStates.Created));
 
-            // Head storage head = _docs[body].docHead;
-
             _docs[body].head = Head({
-                docType: uint8(docType),
-                creator: uint40(creator),
+                docType: docType,
+                creator: creator,
                 createDate: uint48(block.timestamp),
                 shaExecDeadline: 0,
                 proposeDeadline: 0,
                 state: uint8(RODStates.Created)
             });
-
-            // doc.docType = docType;
-            // doc.creator = creator;
-            // doc.createDate = uint48(block.timestamp);
-            // doc.state = uint8(RODStates.Created);
         }
     }
 
@@ -187,21 +154,21 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     function addBlank(uint40 acct, uint16 seq)
         external onlyRegistered(msg.sender) 
     {
-        _docs[msg.sender].sigPage.addBlank(acct, seq);
+        _docs[msg.sender].sigPage.addBlank(seq, acct);
     }
 
     function removeBlank(uint40 acct, uint16 seq)
         external onlyRegistered(msg.sender)
     {
-        _docs[msg.sender].sigPage.removeBlank(acct, seq);
+        _docs[msg.sender].sigPage.removeBlank(seq, acct);
     }
 
     // ==== Execution ====
 
-    function signDeal(address body, uint40 caller, uint16 seq, bytes32 sigHash)
+    function signDeal(address body, uint16 seq, uint40 caller, bytes32 sigHash)
         public onlyForCirculated(body) onlyDirectKeeper
     {
-        _docs[msg.sender].sigPage.signDeal(caller, seq, sigHash);
+        _docs[msg.sender].sigPage.signDeal(seq, caller, sigHash);
     }
 
     function signDoc(address body, uint40 caller, bytes32 sigHash)
@@ -209,16 +176,17 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         onlyDirectKeeper
         onlyForCirculated(body)
     {
-        signDeal(body, caller, 0, sigHash);
+        signDeal(body, 0, caller, sigHash);
     }
 
-    function acceptDoc(address body, bytes32 sigHash, uint40 caller) 
+    function acceptDoc(address body, uint40 caller, bytes32 sigHash) 
         external 
         onlyDirectKeeper
-        onlyForCirculated(body)
     {
-        require(_docs[body].sigPage.established(), "SP.acceptDoc: Doc not established");
-        signDeal(body, caller, 0, sigHash);
+        require(_docs[body].sigPage.established(),
+            "SP.AD: Doc not established");
+        
+        signDeal(body, 0, caller, sigHash);
     }
 
     //##################
@@ -233,29 +201,6 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         return _docsList.contains(body);
     }
 
-    function passedExecPeriod(address body)
-        external
-        view
-        onlyRegistered(body)
-        returns (bool)
-    {
-        Doc storage doc = _docs[body];
-
-        if (doc.head.state < uint8(RODStates.Established)) return false;
-        else if (doc.head.state > uint8(RODStates.Established)) return true;
-        else if (doc.head.shaExecDeadline > block.timestamp) return false;
-        else return true;
-    }
-
-    function isCirculated(address body)
-        external
-        view
-        onlyRegistered(body)
-        returns (bool)
-    {
-        return _docs[body].head.state >= uint8(RODStates.Circulated);
-    }
-
     function qtyOfDocs() external view returns (uint256) {
         return _docsList.length();
     }
@@ -264,81 +209,58 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         return _docsList.values();
     }
 
-    function getDoc(address body)
+    function getHeadOfDoc(address body)
         external
         view
         onlyRegistered(body)
-        returns (
-            uint8 docType,
-            uint40 creator,
-            uint48 createDate,
-            bytes32 docUrl,
-            bytes32 docHash
-        )
+        returns (Head memory head)
     {
-        Doc storage doc = _docs[body];
-
-        docType = doc.head.docType;
-        creator = doc.head.creator;
-        createDate = doc.head.createDate;
-        docUrl = doc.docUrl;
-        docHash = doc.docHash;
+        head = _docs[body].head;
     }
 
-    function currentState(address body)
+    function getRefOfDoc(address body)
         external
         view
         onlyRegistered(body)
-        returns (uint8)
+        returns (bytes32 docUrl, bytes32 docHash) 
     {
-        return _docs[body].head.state;
-    }
-
-    function shaExecDeadlineOf(address body)
-        external
-        view
-        onlyRegistered(body)
-        returns (uint48)
-    {
-        return _docs[body].head.shaExecDeadline;
-    }
-
-    function proposeDeadlineOf(address body)
-        external
-        view
-        onlyRegistered(body)
-        returns (uint48)
-    {
-        return _docs[body].head.proposeDeadline;
+        docUrl = _docs[body].docUrl;
+        docHash = _docs[body].docHash;
     }
 
     // ==== SigPage ====
 
-    function established(address body) 
-        external 
-        view 
-        onlyRegistered(body)
+    function established(address body) external view onlyRegistered(body)
         returns (bool) 
     {
         return _docs[body].sigPage.established();
     }
 
-    function sigDeadline(address body) 
+    function parasOfPage(address body) 
         external 
         view 
         onlyRegistered(body) 
-        returns (uint48) 
+        returns (SigsRepo.Signature memory) 
     {
-        return _docs[body].sigPage.sigDeadline();
+        return _docs[body].sigPage.parasOfPage();
     }
 
-    function closingDeadline(address body) 
-        external 
-        view 
+    function sigDeadline(address body)
+        external
+        view
         onlyRegistered(body)
-        returns(uint48) 
+        returns (uint48)
     {
-        return _docs[body].sigPage.closingDeadline();
+        return _docs[body].sigPage.signatures[0].sigDate;
+    }
+
+    function closingDeadline(address body)
+        external
+        view
+        onlyRegistered(body)
+        returns (uint48)
+    {
+        return uint48(_docs[body].sigPage.signatures[0].blocknumber);
     }
 
     function isParty(address body, uint40 acct)
@@ -347,7 +269,7 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         onlyRegistered(body)
         returns(bool)
     {
-        return _docs[body].sigPage.isParty(acct);
+        return _docs[body].sigPage.parties.contains(acct);
     }
 
     function isInitSigner(address body, uint40 acct) 
@@ -356,68 +278,42 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         onlyRegistered(body)
         returns (bool) 
     {
-        return _docs[body].sigPage.isInitSigner(acct);
+        return _docs[body].sigPage.signatures[acct].signer == acct;
     }
 
-    function partiesOfDoc(address body) 
-        external 
-        view 
-        onlyRegistered(body)
-        returns (uint40[] memory) 
-    {
-        return _docs[body].sigPage.partiesOfDoc();
-    }
-
-    function qtyOfParties(address body) 
-        external 
-        view 
-        onlyRegistered(body)
-        returns (uint256) 
-    {
-        return _docs[body].sigPage.qtyOfParties();
-    }
-
-    function blankCounter(address body) 
-        external 
-        view 
-        onlyRegistered(body)
-        returns (uint16) 
-    {
-        return _docs[body].sigPage.blankCounterOfDoc();
-    }
-
-    function sigCounter(address body) 
-        external 
-        view 
-        onlyRegistered(body)
-        returns (uint16) 
-    {
-        return _docs[body].sigPage.sigCounter();
-    }
-
-    function sigOfDeal(address body, uint40 acct, uint16 ssn) 
+    function qtyOfParties(address body)
         external
         view
         onlyRegistered(body)
-        returns (
-            uint64 blocknumber,
-            uint48 sigDate,
-            bytes32 sigHash
-        )
+        returns (uint256)
     {
-        return _docs[body].sigPage.sigOfDeal(acct, ssn);
+        return _docs[body].sigPage.parties.length();
+    }
+
+    function partiesOfDoc(address body)
+        external
+        view
+        onlyRegistered(body)
+        returns (uint40[] memory)
+    {
+        return _docs[body].sigPage.parties.valuesToUint40();
+    }
+
+    function sigOfDeal(address body, uint16 seq, uint40 acct) 
+        external
+        view
+        onlyRegistered(body)
+        returns (SigsRepo.Signature memory)
+    {
+        return _docs[body].sigPage.sigOfDeal(seq, acct);
     }
 
     function sigOfDoc(address body, uint40 acct) 
         external
         view
         onlyRegistered(body)
-        returns (
-            uint64 blocknumber,
-            uint48 sigDate,
-            bytes32 sigHash
-        )
+        returns (SigsRepo.Signature memory)
     {
-        return _docs[body].sigPage.sigOfDeal(acct, 0);
+        return _docs[body].sigPage.sigOfDeal(0, acct);
     }
 }

@@ -86,7 +86,7 @@ contract BOHKeeper is
 
         IBookSetting(sha).setBOA(address(_boa));
         IBookSetting(sha).setBOH(address(_boh));
-        IBookSetting(sha).setBOM(address(_bom));
+        IBookSetting(sha).setBOM(address(_bog));
         IBookSetting(sha).setBOS(address(_bos));
         IBookSetting(sha).setROM(address(_rom));
     }
@@ -122,7 +122,7 @@ contract BOHKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper onlyPartyOf(sha, caller) {
         require(
-            _boh.currentState(sha) == uint8(RepoOfDocs.RODStates.Circulated),
+            _boh.getHeadOfDoc(sha).state == uint8(IRepoOfDocs.RODStates.Circulated),
             "SHA not in Circulated State"
         );
 
@@ -137,8 +137,8 @@ contract BOHKeeper is
         onlyPartyOf(sha, caller)
     {
         require(
-            _boh.currentState(sha) ==
-                uint8(RepoOfDocs.RODStates.Established),
+            _boh.getHeadOfDoc(sha).state ==
+                uint8(IRepoOfDocs.RODStates.Established),
             "BOHKeeper.es: SHA not executed yet"
         );
 
@@ -159,12 +159,12 @@ contract BOHKeeper is
 
         if (
             IShareholdersAgreement(sha).hasTitle(
-                uint8(ShareholdersAgreement.TermTitle.OPTIONS)
+                uint8(IShareholdersAgreement.TermTitle.OPTIONS)
             )
         ) {
             _boo.registerOption(
                 IShareholdersAgreement(sha).getTerm(
-                    uint8(ShareholdersAgreement.TermTitle.OPTIONS)
+                    uint8(IShareholdersAgreement.TermTitle.OPTIONS)
                 )
             );
         }
@@ -216,6 +216,6 @@ contract BOHKeeper is
     }
 
     function acceptSHA(bytes32 sigHash, uint40 caller) external onlyDirectKeeper {
-        _boh.acceptDoc(_boh.pointer(), sigHash, caller);
+        _boh.acceptDoc(_boh.pointer(), caller, sigHash);
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -94,9 +94,9 @@ contract LockUp is ILockUp, BOMSetting, RODSetting {
     // ################
 
     function isTriggered(address ia, bytes32 sn) external view returns (bool) {
-        uint48 closingDate = IInvestmentAgreement(ia).closingDateOfDeal(
+        uint48 closingDate = IInvestmentAgreement(ia).getDeal(
             sn.seqOfDeal()
-        );
+        ).closingDate;
 
         uint8 typeOfDeal = sn.typeOfDeal();
         uint32 ssn = sn.ssnOfDeal();
@@ -130,10 +130,14 @@ contract LockUp is ILockUp, BOMSetting, RODSetting {
     }
 
     function isExempted(address ia, bytes32 sn) external view returns (bool) {
-        (uint40[] memory consentParties, ) = _bom.getCaseOf(
-            uint256(uint160(ia)),
+        
+        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
+        uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
+               
+        uint40[] memory consentParties = _bog.getCaseOfAttitude(
+            motionId,
             1
-        );
+        ).voters;
 
         uint40[] memory signers = _rod.partiesOfDoc(ia);
 

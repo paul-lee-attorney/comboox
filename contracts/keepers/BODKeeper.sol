@@ -28,35 +28,55 @@ contract BODKeeper is
 {
     using SNParser for bytes32;
 
-    function appointDirector(
-        uint16 seqOfRule,
+    function appointOfficer(
+        bytes32 bsRule,
         uint8 seqOfTitle,
-        uint40 candidate,
-        uint40 appointer
+        uint40 nominator,
+        uint40 candidate
     ) external onlyDirectKeeper {
-        bytes32 rule = _getSHA().getRule(seqOfRule);
-        require(rule.rightholderOfBSR() == appointer, "BODKeeper.ad: caller not rightholder");
+        require(bsRule.rightholderOfBSR() == nominator, 
+            "BOGK.AO: nominator not rightholder");
 
-        uint8 title = rule.appointTitle(seqOfTitle);
-        require(title > 0 && title < 4, "BODKeeper.ad: title overflow");
+        uint16 seqOfVR = bsRule.vrSeqOfNomination(seqOfTitle);
+        require(seqOfVR > 10 && seqOfVR < 21, "BOGK.AO: not Board voting issue");
 
-        _bod.appointDirector(rule, candidate, title, appointer);
+        uint8 title = bsRule.nominateTitle(seqOfTitle);
+
+        _bod.appointOfficer(seqOfVR, title, nominator, candidate);
     }
 
-    function takePosition(bytes32 rule, uint40 candidate, uint256 motionId) external onlyDirectKeeper {
-        require(
-            _bom.isPassed(motionId),
-            "BODKeeper.takePosition: candidate not be approved"
-        );
+    function takePosition(
+        bytes32 bsRule, 
+        uint8 seqOfTitle,
+        uint256 motionId, 
+        uint40 candidate 
+    ) external onlyDirectKeeper {
 
-        MotionsRepo.Head memory head = _bom.headOf(motionId);
+        uint16 seqOfVR = bsRule.vrSeqOfNomination(seqOfTitle);
+        bytes32 vrRule = _getSHA().getRule(seqOfVR);
+        uint8 title = bsRule.nominateTitle(seqOfTitle);
+
+        MotionsRepo.Head memory head = (vrRule.authorityOfVR() == 1) ? 
+            _bog.getHeadOfMotion(motionId) : _bod.getHeadOfMotion(motionId);
+
+        require(motionId == uint256(
+            keccak256(
+                abi.encode(seqOfVR, title, head.proposer, candidate, head.proposeDate)
+            )
+        ), "BODK.TP: incorrect motionId");
+
+        require(head.state == uint8(MotionsRepo.StateOfMotion.Passed), 
+            "BODK.TP: candidate not be approved or already in position");
 
         require(
             head.executor == candidate,
-            "BODKeeper.takePosition: caller is not the candidate"
+            "BODK.TP: caller is not the candidate"
         );
 
-        _bod.takePosition(rule, candidate, head.executor);
+        if (vrRule.authorityOfVR() == 1) _bog.motionExecuted(motionId);
+        else _bod.motionExecuted(motionId);
+        
+        _bod.takePosition(bsRule, title, candidate, head.proposer);
     }
 
     function removeDirector(uint40 director, uint40 appointer) external onlyDirectKeeper {
@@ -65,7 +85,7 @@ contract BODKeeper is
             "BODKeeper.removeDirector: appointer is not a member"
         );
         require(
-            _bod.appointerOfDirector(director) == appointer,
+            _bod.getDirector(director).appointer == appointer,
             "BODKeeper.reoveDirector: caller is not appointer"
         );
 
@@ -86,9 +106,9 @@ contract BODKeeper is
     function entrustDelegate(
         uint40 caller,
         uint40 delegate,
-        uint256 actionId
+        uint256 motionId
     ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
-        _bod.entrustDelegate(caller, delegate, actionId);
+        _bod.entrustDelegate(motionId, caller, delegate);
     }
 
     function proposeAction(
@@ -117,7 +137,7 @@ contract BODKeeper is
         uint40 caller,
         bytes32 sigHash
     ) external onlyDirectKeeper directorExist(caller) {
-        _bod.castVote(actionId, attitude, caller, sigHash);
+        _bod.castVote(actionId, caller, attitude, sigHash);
     }
 
     function voteCounting(uint256 motionId, uint40 caller)

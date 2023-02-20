@@ -40,14 +40,14 @@ contract BOAKeeper is
     using SNFactory for bytes;
     using SNParser for bytes32;
 
-    ShareholdersAgreement.TermTitle[] private _termsForCapitalIncrease = [
-        ShareholdersAgreement.TermTitle.ANTI_DILUTION
+    IShareholdersAgreement.TermTitle[] private _termsForCapitalIncrease = [
+        IShareholdersAgreement.TermTitle.ANTI_DILUTION
     ];
 
-    ShareholdersAgreement.TermTitle[] private _termsForShareTransfer = [
-        ShareholdersAgreement.TermTitle.LOCK_UP,
-        ShareholdersAgreement.TermTitle.TAG_ALONG,
-        ShareholdersAgreement.TermTitle.DRAG_ALONG
+    IShareholdersAgreement.TermTitle[] private _termsForShareTransfer = [
+        IShareholdersAgreement.TermTitle.LOCK_UP,
+        IShareholdersAgreement.TermTitle.TAG_ALONG,
+        IShareholdersAgreement.TermTitle.DRAG_ALONG
     ];
 
     // ##################
@@ -128,7 +128,7 @@ contract BOAKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper onlyPartyOf(ia, caller) {
         require(
-            _boa.currentState(ia) == uint8(RepoOfDocs.RODStates.Circulated),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Circulated),
             "IA not in Circulated State"
         );
 
@@ -150,16 +150,14 @@ contract BOAKeeper is
 
             uint16 seq = sn.seqOfDeal();
 
-            (, , uint64 par, , ) = IInvestmentAgreement(ia).getDeal(seq);
-
             if (sn.sellerOfDeal() == caller) {
                 if (IInvestmentAgreement(ia).lockDealSubject(seq)) {
-                    _bos.decreaseCleanPar(sn.ssnOfDeal(), par);
+                    _bos.decreaseCleanPar(sn.ssnOfDeal(), IInvestmentAgreement(ia).getDeal(seq).par);
                 }
             } else if (
                 sn.buyerOfDeal() == caller &&
                 sn.typeOfDeal() ==
-                uint8(InvestmentAgreement.TypeOfDeal.CapitalIncrease)
+                uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
             ) IInvestmentAgreement(ia).lockDealSubject(seq);
         }
     }
@@ -174,7 +172,7 @@ contract BOAKeeper is
         uint40 caller
     ) external onlyDirectKeeper {
         require(
-            _boa.currentState(ia) == uint8(RepoOfDocs.RODStates.Voted),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
             "wrong state of BOD"
         );
 
@@ -202,12 +200,12 @@ contract BOAKeeper is
 
         if (vr.ratioAmountOfVR() != 0 || vr.ratioHeadOfVR() != 0) {
 
-            if (vr.decisionPowerOfVR() == 1)
-                require(_bom.isPassed(uint256(uint160(ia))), "BOAKeeper.ptc:  GM Motion NOT passed");
-            else if (vr.decisionPowerOfVR() == 2)
+            if (vr.authorityOfVR() == 1)
+                require(_bog.isPassed(uint256(uint160(ia))), "BOAKeeper.ptc:  GM Motion NOT passed");
+            else if (vr.authorityOfVR() == 2)
                 require(_bod.isPassed(uint256(uint160(ia))), "BOAKeeper.ptc:  Board Motion NOT passed");
-            else if (vr.decisionPowerOfVR() == 3)
-                require(_bod.isPassed(uint256(uint160(ia))) && _bom.isPassed(uint256(uint160(ia))), "BOAKeeper.ptc: Board and GM not BOTH passed");
+            else if (vr.authorityOfVR() == 3)
+                require(_bod.isPassed(uint256(uint160(ia))) && _bog.isPassed(uint256(uint160(ia))), "BOAKeeper.ptc: Board and GM not BOTH passed");
             else revert("BOAKeeper.ptc: wrong decision power setting");
         }
 
@@ -216,7 +214,7 @@ contract BOAKeeper is
     }
 
     function _checkSHA(
-        ShareholdersAgreement.TermTitle[] memory terms,
+        IShareholdersAgreement.TermTitle[] memory terms,
         address ia,
         bytes32 sn
     ) private view {
@@ -239,7 +237,7 @@ contract BOAKeeper is
         uint40 caller
     ) external onlyDirectKeeper {
         require(
-            _boa.currentState(ia) == uint8(RepoOfDocs.RODStates.Voted),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
             "BOAKeeper.closeDeal: InvestmentAgreement NOT in voted state"
         );
 
@@ -266,19 +264,19 @@ contract BOAKeeper is
         uint16 seq = sn.seqOfDeal();
         uint32 ssn = sn.ssnOfDeal();
 
-        (, uint64 paid, uint64 par, , ) = IInvestmentAgreement(ia).getDeal(seq);
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seq);
 
         uint32 unitPrice = sn.priceOfDeal();
         uint40 buyer = sn.buyerOfDeal();
 
-        _bos.increaseCleanPar(ssn, paid);
-        _bos.transferShare(ssn, paid, par, buyer, unitPrice);
+        _bos.increaseCleanPar(ssn, deal.paid);
+        _bos.transferShare(ssn, deal.paid, deal.par, buyer, unitPrice);
     }
 
     function issueNewShare(address ia, bytes32 sn) public onlyDirectKeeper {
         uint16 seq = sn.seqOfDeal();
 
-        (, uint64 paid, uint64 par, , ) = IInvestmentAgreement(ia).getDeal(seq);
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seq);
 
         bytes32 shareNumber = _createShareNumber(
             sn.classOfDeal(),
@@ -291,7 +289,7 @@ contract BOAKeeper is
 
         paidInDeadline = uint48(block.timestamp) + 43200;
 
-        _bos.issueShare(shareNumber, paid, par, paidInDeadline);
+        _bos.issueShare(shareNumber, deal.paid, deal.par, paidInDeadline);
     }
 
     function _createShareNumber(
@@ -330,7 +328,7 @@ contract BOAKeeper is
         string memory hashKey
     ) external onlyDirectKeeper {
         require(
-            _boa.currentState(ia) == uint8(RepoOfDocs.RODStates.Voted),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
             "BOAKeeper.revokeDeal: wrong State"
         );
 
@@ -344,9 +342,7 @@ contract BOAKeeper is
         if (IInvestmentAgreement(ia).revokeDeal(seq, hashKey))
             _boa.pushToNextState(ia);
 
-        (, , uint64 par, , ) = IInvestmentAgreement(ia).getDeal(seq);
-
         if (IInvestmentAgreement(ia).releaseDealSubject(seq))
-            _bos.increaseCleanPar(sn.ssnOfDeal(), par);
+            _bos.increaseCleanPar(sn.ssnOfDeal(), IInvestmentAgreement(ia).getDeal(seq).par);
     }
 }

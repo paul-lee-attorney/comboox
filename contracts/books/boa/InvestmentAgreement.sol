@@ -21,39 +21,6 @@ contract InvestmentAgreement is
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using SNParser for bytes32;
 
-    enum TypeOfDeal {
-        ZeroPoint,
-        CapitalIncrease,
-        ShareTransferExt,
-        ShareTransferInt,
-        CI_STint,
-        SText_STint,
-        CI_SText_STint,
-        CI_SText,
-        PreEmptive,
-        TagAlong,
-        DragAlong,
-        FirstRefusal,
-        FreeGift
-    }
-
-    enum StateOfDeal {
-        Drafting,
-        Locked,
-        Cleared,
-        Closed,
-        Terminated
-    }
-
-    struct Deal {
-        bytes32 sn;
-        uint64 paid;
-        uint64 par;
-        uint48 closingDate;
-        uint8 state;
-        bytes32 hashLock;
-    }
-
     // _deals[0] {
     //     paid: counterOfClosedDeal;
     //     par: counterOfDeal;
@@ -300,7 +267,7 @@ contract InvestmentAgreement is
     //  ##       查询接口               ##
     //  ################################
 
-    function typeOfIA() external view returns (uint256) {
+    function typeOfIA() external view returns (uint8) {
         return _deals[0].state;
     }
 
@@ -315,26 +282,14 @@ contract InvestmentAgreement is
     function getDeal(uint16 seq)
         external
         view
-        returns (
-            bytes32 sn,
-            uint64 paid,
-            uint64 par,
-            uint8 state, // 0-pending 1-locked 2-cleared 3-closed 4-terminated
-            bytes32 hashLock
-        )
+        returns (Deal memory deal)
     {
-        Deal storage deal = _deals[seq];
-
-        sn = deal.sn;
-        paid = deal.paid;
-        par = deal.par;
-        state = deal.state;
-        hashLock = deal.hashLock;
+        deal = _deals[seq];
     }
 
-    function closingDateOfDeal(uint16 seq) external view returns (uint48) {
-        return _deals[seq].closingDate;
-    }
+    // function closingDateOfDeal(uint16 seq) external view returns (uint48) {
+    //     return _deals[seq].closingDate;
+    // }
 
     function dealsList() external view returns (bytes32[] memory) {
         return _dealsList.values();

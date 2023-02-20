@@ -7,7 +7,36 @@
 
 pragma solidity ^0.8.8;
 
+import "../lib/SigsRepo.sol";
+
 interface IRepoOfDocs {
+    enum RODStates {
+        ZeroPoint,
+        Created,
+        Circulated,
+        Established,
+        Proposed,
+        Voted,
+        Executed,
+        Revoked
+    }
+
+    struct Head {
+        uint8 docType;
+        uint40 creator;
+        uint48 createDate;
+        uint48 shaExecDeadline;
+        uint48 proposeDeadline;
+        uint8 state;
+    }
+
+    struct Doc {
+        Head head;
+        bytes32 docUrl;
+        bytes32 docHash;
+        SigsRepo.Page sigPage;
+    }
+
     //##############
     //##  Event   ##
     //##############
@@ -22,11 +51,9 @@ interface IRepoOfDocs {
     //##    写接口    ##
     //##################
 
-    function setTemplate(address body, uint256 typeOfDoc) external;
+    function setTemplate(address body, uint8 typeOfDoc) external;
 
-    function createDoc(uint256 docType, uint256 creator)
-        external
-        returns (address body);
+    function createDoc(uint8 docType, uint40 creator) external returns (address body);
 
     function removeDoc(address body) external;
 
@@ -40,8 +67,8 @@ interface IRepoOfDocs {
     function pushToNextState(address body) external;
 
     // ==== Drafting ====
-
-    function setSigDeadline(uint48 deadline) external;
+    
+    function setSigDeadline(uint48 deadline) external; 
 
     function setClosingDeadline(uint48 deadline) external;
 
@@ -51,82 +78,85 @@ interface IRepoOfDocs {
 
     // ==== Execution ====
 
-    function signDeal(address body, uint40 caller, uint16 seq, bytes32 sigHash)
-        external;
+    function signDeal(
+        address body, 
+        uint16 seq, 
+        uint40 caller, 
+        bytes32 sigHash
+    ) external;
 
     function signDoc(address body, uint40 caller, bytes32 sigHash) external;
 
-    function acceptDoc(address body, bytes32 sigHash, uint40 caller) external; 
+    function acceptDoc(address body, uint40 caller, bytes32 sigHash) external;
 
     //##################
-    //##    读接口    ##
+    //##   read I/O   ##
     //##################
 
     function template(uint8 typeOfDoc) external view returns (address);
 
     function isRegistered(address body) external view returns (bool);
 
-    function passedExecPeriod(address body) external view returns (bool);
-
-    function isCirculated(address body) external view returns (bool);
-
     function qtyOfDocs() external view returns (uint256);
 
     function docsList() external view returns (address[] memory);
 
-    function getDoc(address body)
+    function getHeadOfDoc(address body) external view
+        returns (Head memory head);
+
+    function getRefOfDoc(address body)
         external
         view
-        returns (
-            uint8 docType,
-            uint40 creator,
-            uint48 createDate,
-            bytes32 docUrl,
-            bytes32 docHash
-        );
+        returns (bytes32 docUrl, bytes32 docHash); 
 
-    function currentState(address body) external view returns (uint8);
+    // ==== SigPage ====
 
-    function shaExecDeadlineOf(address body) external view returns (uint48);
+    function established(address body) external view
+        returns (bool);
 
-    function proposeDeadlineOf(address body) external view returns (uint48);
-
-    //####################
-    //##    查询接口    ##
-    //####################
-
-    function established(address body) external view returns (bool);
-
-    function sigDeadline(address body) external view returns (uint48);
-
-    function closingDeadline(address body) external view returns (uint48);
-
-    function isParty(address body, uint40 acct) external view returns (bool);
-
-    function isInitSigner(address body, uint40 acct) external view returns (bool);
-
-    function partiesOfDoc(address body) external view returns (uint40[] memory);
-
-    function qtyOfParties(address body) external view returns (uint256);
-
-    function sigCounter(address body) external view returns (uint16);
-
-    function sigOfDeal(address body, uint40 acct, uint16 ssn)
-        external
-        view
-        returns (
-            uint64 blocknumber,
-            uint48 sigDate,
-            bytes32 sigHash
-        );
-
-    function sigOfDoc(address body, uint40 acct) 
+    function parasOfPage(address body) 
         external 
         view 
-        returns (
-            uint64 blocknumber,
-            uint48 sigDate,
-            bytes32 sigHash
-        );
+        returns (SigsRepo.Signature memory); 
+
+    function sigDeadline(address body)
+        external
+        view
+        returns (uint48);
+
+    function closingDeadline(address body)
+        external
+        view
+        returns (uint48);
+
+    function isParty(address body, uint40 acct)
+        external
+        view
+        returns(bool);
+
+    function isInitSigner(address body, uint40 acct) 
+        external 
+        view 
+        returns (bool);
+
+    function qtyOfParties(address body)
+        external
+        view
+        returns (uint256);
+
+    function partiesOfDoc(address body)
+        external
+        view
+        returns (uint40[] memory);
+
+    function sigOfDeal(address body, uint16 seq, uint40 acct) 
+        external
+        view
+        returns (SigsRepo.Signature memory);
+
+    function sigOfDoc(address body, uint40 acct) 
+        external
+        view
+        returns (SigsRepo.Signature memory);
 
 }

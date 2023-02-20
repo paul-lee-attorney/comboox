@@ -48,7 +48,7 @@ contract SHAKeeper is
 
     modifier withinExecPeriod(address ia) {
         require(
-            _boa.shaExecDeadlineOf(ia) >= block.timestamp,
+            _boa.getHeadOfDoc(ia).shaExecDeadline >= block.timestamp,
             "missed review period"
         );
         _;
@@ -56,7 +56,7 @@ contract SHAKeeper is
 
     modifier afterExecPeriod(address ia) {
         require(
-            _boa.shaExecDeadlineOf(ia) < block.timestamp,
+            _boa.getHeadOfDoc(ia).shaExecDeadline < block.timestamp,
             "still within review period"
         );
         _;
@@ -64,8 +64,8 @@ contract SHAKeeper is
 
     modifier onlyEstablished(address ia) {
         require(
-            _boa.currentState(ia) ==
-                uint8(RepoOfDocs.RODStates.Established),
+            _boa.getHeadOfDoc(ia).state ==
+                uint8(IRepoOfDocs.RODStates.Established),
             "IA not established"
         );
         _;
@@ -115,7 +115,7 @@ contract SHAKeeper is
         _lockDealSubject(ia, alongSN, par);
 
         if (!dragAlong)
-            _boa.signDeal(ia, caller, alongSN.seqOfDeal(), sigHash);
+            _boa.signDeal(ia, alongSN.seqOfDeal(), caller, sigHash);
     }
 
     function _addAlongDeal(
@@ -132,10 +132,10 @@ contract SHAKeeper is
 
         address term = dragAlong
             ? _getSHA().getTerm(
-                uint8(ShareholdersAgreement.TermTitle.DRAG_ALONG)
+                uint8(IShareholdersAgreement.TermTitle.DRAG_ALONG)
             )
             : _getSHA().getTerm(
-                uint8(ShareholdersAgreement.TermTitle.TAG_ALONG)
+                uint8(IShareholdersAgreement.TermTitle.TAG_ALONG)
             );
 
         require(ITerm(term).isTriggered(ia, sn), "not triggered");
@@ -177,8 +177,8 @@ contract SHAKeeper is
         bytes32 shareNumber
     ) private view returns (bytes32) {
         uint8 typeOfDeal = (dragAlong)
-            ? uint8(InvestmentAgreement.TypeOfDeal.DragAlong)
-            : uint8(InvestmentAgreement.TypeOfDeal.TagAlong);
+            ? uint8(IInvestmentAgreement.TypeOfDeal.DragAlong)
+            : uint8(IInvestmentAgreement.TypeOfDeal.TagAlong);
 
         uint40 buyer = sn.buyerOfDeal();
 
@@ -203,9 +203,9 @@ contract SHAKeeper is
         uint64 paid,
         uint64 par
     ) private {
-        uint48 closingDate = IInvestmentAgreement(ia).closingDateOfDeal(
+        uint48 closingDate = IInvestmentAgreement(ia).getDeal(
             sn.seqOfDeal()
-        );
+        ).closingDate;
 
         IInvestmentAgreement(ia).createDeal(snOfAlong, paid, par, closingDate);
     }
@@ -235,15 +235,14 @@ contract SHAKeeper is
         uint16 seq = sn.seqOfDeal();
         uint64 amount;
 
-        if (_rom.basedOnPar()) {
-            (, , amount, , ) = IInvestmentAgreement(ia).getDeal(seq);
-        } else {
-            (, amount, , , ) = IInvestmentAgreement(ia).getDeal(seq);
-        }
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seq);
+
+        if (_rom.basedOnPar()) amount = deal.par;
+        else amount = deal.paid;
 
         IMockResults(mock).mockDealOfBuy(sn, amount);
 
-        _boa.signDeal(ia, caller, sn.seqOfDeal(), sigHash);
+        _boa.signDeal(ia, seq, caller, sigHash);
     }
 
     // ======== AntiDilution ========
@@ -266,7 +265,7 @@ contract SHAKeeper is
         );
 
         address ad = _getSHA().getTerm(
-            uint8(ShareholdersAgreement.TermTitle.ANTI_DILUTION)
+            uint8(IShareholdersAgreement.TermTitle.ANTI_DILUTION)
         );
 
         uint64 giftPar = IAntiDilution(ad).giftPar(sn, shareNumber);
@@ -299,8 +298,8 @@ contract SHAKeeper is
 
                 _boa.signDeal(
                     ia,
-                    caller,
                     snOfGiftDeal.seqOfDeal(),
+                    caller,
                     sigHash
                 );
 
@@ -326,9 +325,9 @@ contract SHAKeeper is
         if (targetCleanPar != 0) {
             snOfGiftDeal = _createGiftDealSN(ia, sn, shareNumber, caller);
 
-            uint48 closingDate = IInvestmentAgreement(ia).closingDateOfDeal(
+            uint48 closingDate = IInvestmentAgreement(ia).getDeal(
                 sn.seqOfDeal()
-            );
+            ).closingDate;
 
             lockAmount = (targetCleanPar < giftPar) ? targetCleanPar : giftPar;
 
@@ -360,7 +359,7 @@ contract SHAKeeper is
             createDealSN(
                 shareNumber.class(),
                 IInvestmentAgreement(ia).counterOfDeals() + 1,
-                uint8(InvestmentAgreement.TypeOfDeal.FreeGift),
+                uint8(IInvestmentAgreement.TypeOfDeal.FreeGift),
                 shareNumber.shareholder(),
                 caller,
                 _rom.groupRep(caller),
@@ -381,13 +380,13 @@ contract SHAKeeper is
 
         IInvestmentAgreement(ia).takeGift(seq);
 
-        (, uint64 paid, uint64 par, , ) = IInvestmentAgreement(ia).getDeal(seq);
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seq);
 
         uint32 ssn = sn.ssnOfDeal();
 
-        _bos.increaseCleanPar(ssn, paid);
+        _bos.increaseCleanPar(ssn, deal.paid);
 
-        _bos.transferShare(ssn, paid, par, sn.buyerOfDeal(), 0);
+        _bos.transferShare(ssn, deal.paid, deal.par, sn.buyerOfDeal(), 0);
     }
 
     // ======== FirstRefusal ========
@@ -411,7 +410,7 @@ contract SHAKeeper is
         // ==== create FR deal in IA ====
         bytes32 snOfFR = _createFRDeal(ia, snOfOD, caller);
 
-        _boa.signDeal(ia, caller, snOfFR.seqOfDeal(), sigHash);
+        _boa.signDeal(ia, snOfFR.seqOfDeal(), caller, sigHash);
 
         // ==== record FR deal in frDeals ====
         address frd = _boa.frDealsOfIA(ia);
@@ -451,8 +450,8 @@ contract SHAKeeper is
             snOfOD.class(),
             seq,
             ssnOfOD == 0
-                ? uint8(InvestmentAgreement.TypeOfDeal.PreEmptive)
-                : uint8(InvestmentAgreement.TypeOfDeal.FirstRefusal),
+                ? uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
+                : uint8(IInvestmentAgreement.TypeOfDeal.FirstRefusal),
             share.shareNumber.shareholder(),
             caller,
             _rom.groupRep(caller),
@@ -461,15 +460,11 @@ contract SHAKeeper is
             seqOfOD
         );
 
-        (, uint64 paid, uint64 par, , ) = IInvestmentAgreement(ia).getDeal(
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(
             seqOfOD
         );
 
-        uint48 closingDate = IInvestmentAgreement(ia).closingDateOfDeal(
-            seqOfOD
-        );
-
-        IInvestmentAgreement(ia).createDeal(snOfFR, paid, par, closingDate);
+        IInvestmentAgreement(ia).createDeal(snOfFR, deal.paid, deal.par, deal.closingDate);
     }
 
     function createDealSN(
@@ -509,7 +504,7 @@ contract SHAKeeper is
 
         if (
             snOfOD.typeOfDeal() ==
-            uint8(InvestmentAgreement.TypeOfDeal.CapitalIncrease)
+            uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
         )
             require(
                 _rom.groupRep(caller) == _rom.controllor(),
@@ -523,7 +518,7 @@ contract SHAKeeper is
 
         IInvestmentAgreement(ia).lockDealSubject(ssnOfFR);
 
-        _boa.signDeal(ia, caller, ssnOfFR, sigHash);
+        _boa.signDeal(ia, ssnOfFR, caller,  sigHash);
     }
 
     function _acceptFR(
@@ -545,16 +540,11 @@ contract SHAKeeper is
         uint16 ssnOfFR,
         uint64 ratio
     ) private {
-        (, uint64 paid, uint64 par, , ) = IInvestmentAgreement(ia).getDeal(
-            ssnOfOD
-        );
-        uint48 closingDate = IInvestmentAgreement(ia).closingDateOfDeal(
+
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(
             ssnOfOD
         );
 
-        par = (par * ratio) / 10000;
-        paid = (paid * ratio) / 10000;
-
-        IInvestmentAgreement(ia).updateDeal(ssnOfFR, paid, par, closingDate);
+        IInvestmentAgreement(ia).updateDeal(ssnOfFR, (deal.paid * ratio) / 10000, (deal.par * ratio) / 10000, deal.closingDate);
     }
 }

@@ -351,7 +351,7 @@ library MembersRepo {
 
     function votesAtDate(
         GeneralMeeting storage gm,
-        uint40 acct,
+        uint256 acct,
         uint48 date
     ) public view returns (uint64 vote) {
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.getAtDate(date);

@@ -33,7 +33,7 @@ library Checkpoints {
         uint64 paid,
         uint64 par,
         uint64 cleanPar
-    ) internal returns (uint48) {
+    ) public returns (uint48) {
         uint256 pos = self.checkpoints[0].timestamp;
         pos++;
 
@@ -60,7 +60,7 @@ library Checkpoints {
     //##################
 
     function latest(History storage self)
-        internal
+        public
         view
         returns (Checkpoint memory point)
     {
@@ -72,8 +72,8 @@ library Checkpoints {
         return (a & b) + ((a ^ b) >> 1);
     }
 
-    function getAtDate(History storage self, uint48 timestamp)
-        internal
+    function getAtDate(History storage self, uint256 timestamp)
+        public
         view
         returns (Checkpoint memory point)
     {

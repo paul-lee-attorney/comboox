@@ -12,8 +12,8 @@ interface IGeneralKeeper {
     enum TitleOfKeepers {
         BOAKeeper, // 0
         BODKeeper, // 1
-        BOHKeeper, // 2
-        BOMKeeper, // 3
+        BOGKeeper, // 2
+        BOHKeeper, // 3
         BOOKeeper, // 4
         BOPKeeper, // 5
         BOSKeeper, // 6
@@ -25,7 +25,11 @@ interface IGeneralKeeper {
     // ##   Event   ##
     // ###############
 
+    event SetBook(uint16 title, address book);
+
     event SetBookeeper(uint16 title, address keeper);
+
+    event SetRegNumberHash(bytes32 numHash);
 
     // ######################
     // ##   AccessControl  ##
