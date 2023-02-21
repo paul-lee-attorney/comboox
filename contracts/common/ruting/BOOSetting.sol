@@ -8,17 +8,10 @@
 pragma solidity ^0.8.8;
 
 import "../../books/boo/IBookOfOptions.sol";
+import "../access/RegCenterSetting.sol";
 
-import "../access/AccessControl.sol";
-
-contract BOOSetting is AccessControl {
-    IBookOfOptions internal _boo;
-
-    function setBOO(address boo) external onlyDirectKeeper {
-        _boo = IBookOfOptions(boo);
-    }
-
-    function booAddr() external view returns (address) {
-        return address(_boo);
+contract BOOSetting is RegCenterSetting {
+    function _getBOO() internal view returns(IBookOfOptions _boo) {
+        _boo = IBookOfOptions(_gk.getBook(uint8(TitleOfBooks.BookOfOptions)));
     }
 }

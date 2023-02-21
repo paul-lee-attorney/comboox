@@ -11,6 +11,18 @@ import "./IRegCenter.sol";
 import "../../keepers/IGeneralKeeper.sol";
 
 contract RegCenterSetting {
+
+    enum TitleOfBooks {
+        BookOfIA, // 0
+        BookOfDirectors, // 1
+        BookOfGM, // 2
+        BookOfSHA, // 3
+        BookOfOptions, // 4
+        BookOfPledges, // 5
+        BookOfShares, // 6
+        RegisterOfMembers // 7
+    }
+
     IRegCenter internal _rc;
     IGeneralKeeper internal _gk;
 
@@ -19,7 +31,6 @@ contract RegCenterSetting {
     // ##################
 
     event SetRegCenter(address rc);
-
     event SetGeneralKeeper(address gk);
 
     // ##################
@@ -30,13 +41,15 @@ contract RegCenterSetting {
     function _setRegCenter(address rc) internal {
         require(address(_rc) == address(0), "already set regCenter");
 
-        _rc = IRegCenter(rc);
         emit SetRegCenter(rc);
+        _rc = IRegCenter(rc);
     }
 
     function _setGeneralKeeper(address gk) internal {
-        _gk = IGeneralKeeper(gk);
+        require(address(_gk) == address(0), "already set generalKeeper");
+
         emit SetGeneralKeeper(gk);
+        _gk = IGeneralKeeper(gk);
     }
 
     function _msgSender() internal returns (uint40) {

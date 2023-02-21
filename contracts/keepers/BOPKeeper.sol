@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 pragma solidity ^0.8.8;
 
-import "../common/ruting/IBookSetting.sol";
+import "../common/access/AccessControl.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/BOPSetting.sol";
 
@@ -15,7 +15,7 @@ import "../common/lib/SNParser.sol";
 
 import "./IBOPKeeper.sol";
 
-contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting {
+contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
     using SNParser for bytes32;
 
     // ################
@@ -37,9 +37,9 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting {
         );
         require(shareNumber.shareholder() == caller, "NOT shareholder");
 
-        _bos.decreaseCleanPar(shareNumber.ssn(), pledgedPar);
+        _getBOS().decreaseCleanPar(shareNumber.ssn(), pledgedPar);
 
-        _bop.createPledge(
+        _getBOP().createPledge(
             sn,
             creditor,
             monOfGuarantee,
@@ -60,20 +60,20 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting {
 
         uint32 shortShareNumber = sn.ssnOfPld();
 
-        IBookOfPledges.Pledge memory pld = _bop.getPledge(sn);
+        IBookOfPledges.Pledge memory pld = _getBOP().getPledge(sn);
 
         if (pledgedPar < pld.pledgedPar || expireDate < pld.expireDate) {
             require(
                 caller == pld.creditor,
                 "BOPKeeper.updatePledge: NOT creditor"
             );
-            _bos.increaseCleanPar(shortShareNumber, pld.pledgedPar - pledgedPar);
+            _getBOS().increaseCleanPar(shortShareNumber, pld.pledgedPar - pledgedPar);
         } else if (pledgedPar > pld.pledgedPar || expireDate > pld.expireDate) {
             require(
                 caller == sn.pledgorOfPld(),
                 "BOPKeeper.updatePledge: NOT pledgor"
             );
-            _bos.decreaseCleanPar(shortShareNumber, pledgedPar - pld.pledgedPar);
+            _getBOS().decreaseCleanPar(shortShareNumber, pledgedPar - pld.pledgedPar);
         }
 
         if (creditor != pld.creditor) {
@@ -83,18 +83,18 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting {
             );
         }
 
-        _bop.updatePledge(sn, creditor, expireDate, pledgedPar, guaranteedAmt);
+        _getBOP().updatePledge(sn, creditor, expireDate, pledgedPar, guaranteedAmt);
     }
 
     function delPledge(bytes32 sn, uint40 caller) external onlyDirectKeeper {
         
-        IBookOfPledges.Pledge memory pld = _bop.getPledge(sn);
+        IBookOfPledges.Pledge memory pld = _getBOP().getPledge(sn);
 
         if (block.timestamp < pld.expireDate)
             require(caller == pld.creditor, "NOT creditor");
 
-        _bos.increaseCleanPar(sn.ssnOfPld(), pld.pledgedPar);
+        _getBOS().increaseCleanPar(sn.ssnOfPld(), pld.pledgedPar);
 
-        _bop.updatePledge(sn, pld.creditor, 0, 0, 0);
+        _getBOP().updatePledge(sn, pld.creditor, 0, 0, 0);
     }
 }

@@ -12,9 +12,11 @@ import "./IBookOfShares.sol";
 import "../../common/lib/SNFactory.sol";
 import "../../common/lib/SNParser.sol";
 
+import "../../common/access/AccessControl.sol";
+
 import "../../common/ruting/ROMSetting.sol";
 
-contract BookOfShares is IBookOfShares, ROMSetting {
+contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     using SNFactory for bytes;
     using SNParser for bytes32;
 
@@ -86,7 +88,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         require(paid <= par, "BOS.issueShare: paid BIGGER than par");
 
         // 判断是否需要添加新股东，若添加是否会超过法定人数上限
-        _rom.addMember(shareNumber.shareholder());
+        _getROM().addMember(shareNumber.shareholder());
 
         shareNumber = _assignSSN(shareNumber, issueDate);
 
@@ -94,10 +96,10 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         _issueShare(shareNumber, paid, par, paidInDeadline);
 
         // 将股票编号加入《股东名册》记载的股东名下
-        _rom.addShareToMember(counterOfShares(), shareNumber.shareholder());
+        _getROM().addShareToMember(counterOfShares(), shareNumber.shareholder());
 
         // 增加“认缴出资”和“实缴出资”金额
-        _rom.capIncrease(paid, par);
+        _getROM().capIncrease(paid, par);
     }
 
     // ==== PayInCapital ====
@@ -129,10 +131,10 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         // 增加“股票”项下实缴出资金额
         _payInCapital(sn.ssn(), amount);
 
-        _rom.changeAmtOfMember(sn.shareholder(), amount, 0, true);
+        _getROM().changeAmtOfMember(sn.shareholder(), amount, 0, true);
 
         // 增加公司的“实缴出资”总额
-        _rom.capIncrease(amount, 0);
+        _getROM().capIncrease(amount, 0);
 
         // remove payInAmount;
         delete _lockers[sn];
@@ -166,7 +168,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         _decreaseShareAmount(ssn, paid, par);
 
         // 判断是否需要新增股东，若需要判断是否超过法定人数上限
-        _rom.addMember(to);
+        _getROM().addMember(to);
 
         _increaseCounterOfShares();
 
@@ -184,7 +186,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
 
         _issueShare(shareNumber_1, paid, par, _shares[ssn].paidInDeadline);
 
-        _rom.addShareToMember(counterOfShares(), to);
+        _getROM().addShareToMember(counterOfShares(), to);
     }
 
     function createShareNumber(
@@ -218,7 +220,7 @@ contract BookOfShares is IBookOfShares, ROMSetting {
         _decreaseShareAmount(ssn, paid, par);
 
         // 减少公司“注册资本”和“实缴出资”总额
-        _rom.capDecrease(paid, par);
+        _getROM().capDecrease(paid, par);
     }
 
     // ==== CleanPar ====
@@ -381,12 +383,12 @@ contract BookOfShares is IBookOfShares, ROMSetting {
 
         // 若拟降低的面值金额等于股票面值，则删除相关股票
         if (par == share.par) {
-            _rom.removeShareFromMember(ssn, share.shareNumber.shareholder());
+            _getROM().removeShareFromMember(ssn, share.shareNumber.shareholder());
             _deregisterShare(ssn);
         } else {
             // 仅调低认缴和实缴金额，保留原股票
             _subAmountFromShare(ssn, paid, par);
-            _rom.changeAmtOfMember(
+            _getROM().changeAmtOfMember(
                 share.shareNumber.shareholder(),
                 paid,
                 par,

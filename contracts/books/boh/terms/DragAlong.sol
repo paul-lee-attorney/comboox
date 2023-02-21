@@ -8,20 +8,22 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
-import "../../boa/InvestmentAgreement.sol";
 import "../../boa/IMockResults.sol";
+import "../../boa/IBookOfIA.sol";
 
-import "../../../common/ruting/ROMSetting.sol";
-import "../../../common/ruting/BOSSetting.sol";
+import "../../rom/IRegisterOfMembers.sol";
+
 import "../../../common/ruting/BOASetting.sol";
+import "../../../common/ruting/ROMSetting.sol";
 
 import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
-import "../../../common/components/RepoOfDocs.sol";
+import "../../../common/components/IRepoOfDocs.sol";
+import "../../../common/access/AccessControl.sol";
 
 import "./IAlongs.sol";
 
-contract DragAlong is IAlongs, ROMSetting, BOSSetting, BOASetting {
+contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -161,7 +163,7 @@ contract DragAlong is IAlongs, ROMSetting, BOSSetting, BOASetting {
     // ################
 
     function isTriggered(address ia, bytes32 sn) public view returns (bool) {
-        if (_boa.getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
+        if (_getBOA().getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
             return false;
 
         if (
@@ -179,12 +181,12 @@ contract DragAlong is IAlongs, ROMSetting, BOSSetting, BOASetting {
         if (rule.triggerTypeOfLink() == uint8(TriggerTypeOfAlongs.NoConditions))
             return true;
 
-        uint40 controllor = _rom.controllor();
+        uint40 controllor = _getROM().controllor();
 
-        if (controllor != _rom.groupRep(seller)) return false;
+        if (controllor != _getROM().groupRep(seller)) return false;
 
         (uint40 newControllor, uint64 ratio) = IMockResults(
-            _boa.mockResultsOfIA(ia)
+            _getBOA().mockResultsOfIA(ia)
         ).topGroup();
 
         if (controllor != newControllor) return true;

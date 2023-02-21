@@ -7,14 +7,16 @@
 
 pragma solidity ^0.8.8;
 
+import "./IBOGKeeper.sol";
+
 import "../books/boa/IInvestmentAgreement.sol";
-// import "../books/boh/ShareholdersAgreement.sol";
 import "../books/boo/BookOfOptions.sol";
 
-import "../common/ruting/IBookSetting.sol";
+import "../common/access/AccessControl.sol";
+
 import "../common/ruting/BOASetting.sol";
 import "../common/ruting/BODSetting.sol";
-import "../common/ruting/BOMSetting.sol";
+import "../common/ruting/BOGSetting.sol";
 import "../common/ruting/BOHSetting.sol";
 import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/BOSSetting.sol";
@@ -26,17 +28,16 @@ import "../common/lib/MotionsRepo.sol";
 
 import "../common/components/IRepoOfDocs.sol";
 
-import "./IBOGKeeper.sol";
-
 contract BOGKeeper is
     IBOGKeeper,
     BOASetting,
     BODSetting,
+    BOGSetting,
     BOHSetting,
-    BOMSetting,
     BOOSetting,
     BOSSetting,
-    ROMSetting
+    ROMSetting,
+    AccessControl
 {
     using SNFactory for bytes;
     using SNParser for bytes32;
@@ -46,11 +47,11 @@ contract BOGKeeper is
     // ######################
 
     function createCorpSeal() external onlyDirectKeeper {
-        _bog.createCorpSeal();
+        _getBOG().createCorpSeal();
     }
 
     function createBoardSeal() external onlyDirectKeeper {
-        _bog.createBoardSeal(address(_bod));
+        _getBOG().createBoardSeal(address(_getBOD()));
     }
 
     // ################
@@ -66,13 +67,13 @@ contract BOGKeeper is
         uint40 candidate
     ) external onlyDirectKeeper memberExist(nominator){
         require(bsRule.rightholderOfBSR() == nominator, "BOGK.NO: caller not rightholder");
-        require(_bod.boardSeatsOf(nominator) > bsRule.qtyOfBoardSeats(), "BOGK.NO: board has no seats");
+        require(_getBOD().boardSeatsOf(nominator) > bsRule.qtyOfBoardSeats(), "BOGK.NO: board has no seats");
 
         uint16 seqOfVR = bsRule.vrSeqOfNomination(seqOfTitle);
         uint8 title = bsRule.nominateTitle(seqOfTitle);
 
-        if (seqOfVR <= 10) _bog.nominateOfficer(seqOfVR, title, nominator, candidate);
-        else _bod.nominateOfficer(seqOfVR, title, nominator, candidate);
+        if (seqOfVR <= 10) _getBOG().nominateOfficer(seqOfVR, title, nominator, candidate);
+        else _getBOD().nominateOfficer(seqOfVR, title, nominator, candidate);
     }
 
     function proposeDoc(address doc, uint8 seqOfVR, uint40 caller)
@@ -81,8 +82,8 @@ contract BOGKeeper is
         memberExist(caller)
     {
         IRepoOfDocs rod;
-        if (seqOfVR > 0 && seqOfVR < 8) rod = IRepoOfDocs(_boa);
-        else if (seqOfVR == 8) rod = IRepoOfDocs(_boh);
+        if (seqOfVR != 8 && seqOfVR != 18) rod = _getBOA();
+        else if (seqOfVR == 8 || seqOfVR == 18) rod = _getBOH();
         else revert("BOGK.PD: wrong seqOfVR");
 
         require(
@@ -106,13 +107,14 @@ contract BOGKeeper is
         );
 
         require(
-            headOfDoc.proposeDeadline == headOfDoc.shaExecDeadline || headOfDoc.proposeDeadline >= block.timestamp,
+            headOfDoc.proposeDeadline == headOfDoc.shaExecDeadline || 
+            headOfDoc.proposeDeadline >= block.timestamp,
             "missed votingDeadline"
         );
 
         rod.pushToNextState(doc);
 
-        _bog.proposeDoc(doc, seqOfVR, caller, 0);
+        _getBOG().proposeDoc(doc, seqOfVR, caller, 0);
     }
 
 
@@ -125,7 +127,7 @@ contract BOGKeeper is
         uint40 submitter,
         uint40 executor
     ) external onlyDirectKeeper memberExist(submitter) {
-        _bog.proposeAction(
+        _getBOG().proposeAction(
             actionType,
             targets,
             values,
@@ -143,7 +145,7 @@ contract BOGKeeper is
         uint40 caller,
         uint40 delegate
     ) external onlyDirectKeeper memberExist(caller) memberExist(delegate) {
-        _bog.entrustDelegate(actionId, caller, delegate);
+        _getBOG().entrustDelegate(actionId, caller, delegate);
     }
 
 
@@ -155,7 +157,7 @@ contract BOGKeeper is
         uint8 attitude,
         bytes32 sigHash
     ) external onlyDirectKeeper memberExist(caller) {
-        _bog.castVote(motionId, caller, attitude, sigHash);
+        _getBOG().castVote(motionId, caller, attitude, sigHash);
     }
 
     function voteCounting(uint256 motionId, uint40 caller)
@@ -163,7 +165,7 @@ contract BOGKeeper is
         onlyDirectKeeper
         memberExist(caller)
     {
-        _bog.voteCounting(motionId);
+        _getBOG().voteCounting(motionId);
         // if (address(_rod) > address(0)) _rod.pushToNextState(address(uint160(motionId)));
     }
 
@@ -177,10 +179,10 @@ contract BOGKeeper is
         bytes32 desHash,
         uint40 caller
     ) external returns (uint256) {
-        require(_bod.isDirector(caller), "caller is not a Director");
+        require(_getBOD().isDirector(caller), "caller is not a Director");
         require(!_rc.isCOA(caller), "caller is not an EOA");
         return
-            _bog.execAction(
+            _getBOG().execAction(
                 actionType,
                 targets,
                 values,
@@ -199,14 +201,14 @@ contract BOGKeeper is
 
         require(caller == snOfDeal.sellerOfDeal(), "BOGKeeper.RTB: caller NOT Seller");
 
-        MotionsRepo.Head memory m = _bog.getHeadOfMotion(motionId);
+        MotionsRepo.Head memory m = _getBOG().getHeadOfMotion(motionId);
 
         require(
             m.state == uint8(MotionsRepo.StateOfMotion.Rejected_ToBuy),
             "BOGKeeper.RTB: NO need to buy"
         );
 
-        bytes32 vr = _bog.getVotingRuleOfMotion(motionId);
+        bytes32 vr = _getBOG().getVotingRuleOfMotion(motionId);
 
         require(block.timestamp < m.voteStartDate + (vr.votingDaysOfVR() + vr.execDaysForPutOptOfVR()) * 86400, 
             "BOGKeeper.RTB: missed EXEC date");
@@ -216,7 +218,7 @@ contract BOGKeeper is
         uint8 closingDays = uint8((deal.closingDate - uint48(block.timestamp) + 12 hours) / (24 hours));
 
         bytes32 snOfOpt = _createOptSN(
-            uint8(BookOfOptions.TypeOfOption.Put_Price),
+            uint8(IBookOfOptions.TypeOfOption.Put_Price),
             uint48(block.number),
             1,
             closingDays,
@@ -227,9 +229,11 @@ contract BOGKeeper is
         uint40[] memory obligors = new uint40[](1);
         obligors[0] = againstVoter;
 
+        IBookOfOptions _boo = _getBOO();
+
         snOfOpt = _boo.createOption(snOfOpt, caller, obligors, deal.paid, deal.par);
 
-        IBookOfShares.Share memory share  = _bos.getShare(snOfDeal.ssnOfDeal());
+        IBookOfShares.Share memory share  = _getBOS().getShare(snOfDeal.ssnOfDeal());
 
         _boo.execOption(snOfOpt);
         _boo.addFuture(snOfOpt, share.shareNumber, deal.paid, deal.par);

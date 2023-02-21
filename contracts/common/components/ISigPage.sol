@@ -7,6 +7,8 @@
 
 pragma solidity ^0.8.8;
 
+// import "../ruting/IRODSetting.sol";
+
 interface ISigPage {
 
     //####################
@@ -16,8 +18,6 @@ interface ISigPage {
     function setSigDeadline(uint48 deadline) external;
 
     function setClosingDeadline(uint48 deadline) external;
-
-    function addBlank(uint40 acct, uint16 ssn) external;
 
     function removeBlank(uint40 acct, uint16 ssn) external;
 

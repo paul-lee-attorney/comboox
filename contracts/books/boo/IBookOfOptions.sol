@@ -8,6 +8,29 @@
 pragma solidity ^0.8.8;
 
 interface IBookOfOptions {
+
+    enum TypeOfOption {
+        Call_Price,
+        Put_Price,
+        Call_ROE,
+        Put_ROE,
+        Call_PriceAndConditions,
+        Put_PriceAndConditions,
+        Call_ROEAndConditions,
+        Put_ROEAndConditions
+    }
+
+    enum StateOfOption {
+        Pending,
+        Issued,
+        Executed,
+        Futured,
+        Pledged,
+        Closed,
+        Revoked,
+        Expired
+    }
+
     // ################
     // ##   Event    ##
     // ################

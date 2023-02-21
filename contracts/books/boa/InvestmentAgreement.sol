@@ -78,13 +78,13 @@ contract InvestmentAgreement is
                 seller != 0 &&
                 sn.typeOfDeal() != uint8(TypeOfDeal.DragAlong) &&
                 sn.typeOfDeal() != uint8(TypeOfDeal.FreeGift)
-            ) addBlank(seller, seq);
-            addBlank(buyer, seq);
+            ) _addBlank(seller, seq);
+            _addBlank(buyer, seq);
 
             emit CreateDeal(sn, paid, par, closingDate);
         } else {
-            if (seller != 0) addBlank(seller, 0);
-            addBlank(buyer, 0);
+            if (seller != 0) _addBlank(seller, 0);
+            _addBlank(buyer, 0);
         }
 
         

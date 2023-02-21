@@ -7,12 +7,12 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/lib/SNFactory.sol";
-import "../../common/lib/SNParser.sol";
+import "./IBookOfPledges.sol";
 
 import "../../common/access/AccessControl.sol";
 
-import "./IBookOfPledges.sol";
+import "../../common/lib/SNFactory.sol";
+import "../../common/lib/SNParser.sol";
 
 contract BookOfPledges is IBookOfPledges, AccessControl {
     using SNFactory for bytes;

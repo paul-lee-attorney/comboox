@@ -9,25 +9,27 @@ pragma solidity ^0.8.8;
 
 import "../../books/bos/IBookOfShares.sol";
 
-import "../access/AccessControl.sol";
+import "../access/RegCenterSetting.sol";
 
-contract BOSSetting is AccessControl {
-    IBookOfShares internal _bos;
-
+contract BOSSetting is RegCenterSetting {
     modifier shareExist(uint32 ssn) {
-        require(_bos.isShare(ssn), "shareNumber NOT exist");
+        require(_getBOS().isShare(ssn), "shareNumber NOT exist");
         _;
     }
 
-    // ##################
-    // ##    写端口    ##
-    // ##################
-
-    function setBOS(address bos) external onlyDirectKeeper {
-        _bos = IBookOfShares(bos);
+    modifier onlyBOS() {
+        require(
+            msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfShares)),
+            "ROM.onlyBOS: msgSender is not bos"
+        );
+        _;
     }
 
-    function bosAddr() external view returns (address) {
-        return address(_bos);
+    // ################
+    // ##    Read    ##
+    // ################
+
+    function _getBOS() internal view returns (IBookOfShares _bos)  {
+        _bos = IBookOfShares(_gk.getBook(uint8(TitleOfBooks.BookOfShares)));
     }
 }

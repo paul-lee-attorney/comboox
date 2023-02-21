@@ -16,7 +16,6 @@ import "../../common/components/RepoOfDocs.sol";
 import "../../common/lib/SNParser.sol";
 
 import "../../common/ruting/BOHSetting.sol";
-import "../../common/ruting/IBookSetting.sol";
 
 contract BookOfIA is IBookOfIA, BOHSetting, RepoOfDocs {
     using SNParser for bytes32;

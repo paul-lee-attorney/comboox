@@ -11,13 +11,15 @@ import "./IAccessControl.sol";
 import "./RegCenterSetting.sol";
 import "../lib/RolesRepo.sol";
 
+import "../../books/boh/IShareholdersAgreement.sol";
+import "../../books/boh/IBookOfSHA.sol";
+
 contract AccessControl is IAccessControl, RegCenterSetting {
     using RolesRepo for RolesRepo.Roles;
 
     bytes32 constant ATTORNEYS = bytes32("Attorneys");
 
     RolesRepo.Roles internal _roles;
-
     // ##################
     // ##   修饰器      ##
     // ##################
@@ -127,28 +129,23 @@ contract AccessControl is IAccessControl, RegCenterSetting {
 
     function setRoleAdmin(bytes32 role, uint40 acct) external {
         _roles.setRoleAdmin(role, _msgSender(), acct);
-        // emit SetRoleAdmin(role, acct);
     }
 
     function grantRole(bytes32 role, uint40 acct) external {
         _roles.grantRole(role, _msgSender(), acct);
-        // emit GrantRole(role, acct);
     }
 
     function revokeRole(bytes32 role, uint40 acct) external {
         _roles.revokeRole(role, _msgSender(), acct);
-        // emit RevokeRole(role, acct);
     }
 
     function renounceRole(bytes32 role) external {
         uint40 msgSender = _msgSender();
         _roles.renounceRole(role, msgSender);
-        // emit RenounceRole(role, msgSender);
     }
 
     function abandonRole(bytes32 role) external onlyDirectKeeper {
         _roles.abandonRole(role);
-        // emit AbandonRole(role);
     }
 
     function lockContents() public onlyDirectKeeper {
@@ -176,6 +173,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     function getBookeeper() public view returns (address) {
         return _roles.getKeeper();
     }
+
 
     function finalized() public view returns (bool) {
         return _roles.state == 2;

@@ -9,21 +9,16 @@ pragma solidity ^0.8.8;
 
 import "../../books/bod/IBookOfDirectors.sol";
 
-import "../access/AccessControl.sol";
+import "../access/RegCenterSetting.sol";
 
-contract BODSetting is AccessControl {
-    IBookOfDirectors internal _bod;
+contract BODSetting is RegCenterSetting {
 
     modifier directorExist(uint40 acct) {
-        require(_bod.isDirector(acct), "director NOT exist");
+        require(_getBOD().isDirector(acct), "director NOT exist");
         _;
     }
 
-    function setBOD(address bod) external onlyDirectKeeper {
-        _bod = IBookOfDirectors(bod);
-    }
-
-    function bodAddr() external view returns (address) {
-        return address(_bod);
+    function _getBOD() internal view returns (IBookOfDirectors _bod) {
+        _bod = IBookOfDirectors(_gk.getBook(uint8(TitleOfBooks.BookOfDirectors)));
     }
 }

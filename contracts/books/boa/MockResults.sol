@@ -30,7 +30,7 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
     //#################
 
     function createMockGM() external onlyOwner {
-        TopChain.Node[] memory snapshot = _rom.getSnapshot();
+        TopChain.Node[] memory snapshot = _getROM().getSnapshot();
 
         _mgm.setMaxQtyOfMembers(0);
         _mgm.restoreChain(snapshot);
@@ -50,7 +50,7 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
 
             IInvestmentAgreement.Deal memory deal = _ia.getDeal(sn.seqOfDeal());
 
-            if (_rom.basedOnPar()) amount = deal.par;
+            if (_getROM().basedOnPar()) amount = deal.par;
             else amount = deal.paid;
 
             uint32 short = sn.ssnOfDeal();
@@ -63,7 +63,7 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
     }
 
     function mockDealOfSell(uint32 ssn, uint64 amount) public {
-        IBookOfShares.Share memory share = _bos.getShare(ssn);
+        IBookOfShares.Share memory share = _getBOS().getShare(ssn);
 
         uint40 seller = share.shareNumber.shareholder();
 
@@ -113,10 +113,10 @@ contract MockResults is IMockResults, IASetting, BOSSetting, ROMSetting {
         uint40 fGroup,
         uint64 amount
     ) private view {
-        uint64 orgDGVotes = _rom.votesOfGroup(dGroup);
+        uint64 orgDGVotes = _getROM().votesOfGroup(dGroup);
         uint64 curDGVotes = _mgm.votesOfGroup(dGroup);
 
-        uint64 orgFGVotes = _rom.votesOfGroup(fGroup);
+        uint64 orgFGVotes = _getROM().votesOfGroup(fGroup);
         uint64 curFGVotes = _mgm.votesOfGroup(fGroup);
 
         require(

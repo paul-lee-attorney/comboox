@@ -8,10 +8,12 @@
 pragma solidity ^0.8.8;
 
 import "../books/bod/BookOfDirectors.sol";
+import "../books/bog/IBookOfGM.sol";
+
+import "../common/access/AccessControl.sol";
 
 import "../common/ruting/BODSetting.sol";
-import "../common/ruting/BOMSetting.sol";
-import "../common/ruting/BOSSetting.sol";
+import "../common/ruting/BOGSetting.sol";
 import "../common/ruting/BOHSetting.sol";
 
 import "../common/lib/MotionsRepo.sol";
@@ -22,9 +24,9 @@ import "./IBODKeeper.sol";
 contract BODKeeper is
     IBODKeeper,
     BODSetting,
+    BOGSetting,
     BOHSetting,
-    BOMSetting,
-    BOSSetting
+    AccessControl
 {
     using SNParser for bytes32;
 
@@ -42,7 +44,7 @@ contract BODKeeper is
 
         uint8 title = bsRule.nominateTitle(seqOfTitle);
 
-        _bod.appointOfficer(seqOfVR, title, nominator, candidate);
+        _getBOD().appointOfficer(seqOfVR, title, nominator, candidate);
     }
 
     function takePosition(
@@ -56,8 +58,10 @@ contract BODKeeper is
         bytes32 vrRule = _getSHA().getRule(seqOfVR);
         uint8 title = bsRule.nominateTitle(seqOfTitle);
 
-        MotionsRepo.Head memory head = (vrRule.authorityOfVR() == 1) ? 
-            _bog.getHeadOfMotion(motionId) : _bod.getHeadOfMotion(motionId);
+        IBookOfGM _bog = _getBOG();
+
+        MotionsRepo.Head memory head = (vrRule.authorityOfVR() % 2 == 1) ? 
+            _bog.getHeadOfMotion(motionId) : _getBOD().getHeadOfMotion(motionId);
 
         require(motionId == uint256(
             keccak256(
@@ -73,32 +77,32 @@ contract BODKeeper is
             "BODK.TP: caller is not the candidate"
         );
 
-        if (vrRule.authorityOfVR() == 1) _bog.motionExecuted(motionId);
-        else _bod.motionExecuted(motionId);
+        if (vrRule.authorityOfVR() % 2 == 1) _bog.motionExecuted(motionId);
+        else _getBOD().motionExecuted(motionId);
         
-        _bod.takePosition(bsRule, title, candidate, head.proposer);
+        _getBOD().takePosition(bsRule, title, candidate, head.proposer);
     }
 
     function removeDirector(uint40 director, uint40 appointer) external onlyDirectKeeper {
         require(
-            _bod.isDirector(director),
+            _getBOD().isDirector(director),
             "BODKeeper.removeDirector: appointer is not a member"
         );
         require(
-            _bod.getDirector(director).appointer == appointer,
+            _getBOD().getDirector(director).appointer == appointer,
             "BODKeeper.reoveDirector: caller is not appointer"
         );
 
-        _bod.removeDirector(director);
+        _getBOD().removeDirector(director);
     }
 
     function quitPosition(uint40 director) external onlyDirectKeeper {
         require(
-            _bod.isDirector(director),
+            _getBOD().isDirector(director),
             "BODKeeper.quitPosition: appointer is not a member"
         );
 
-        _bod.removeDirector(director);
+        _getBOD().removeDirector(director);
     }
 
     // ==== resolution ====
@@ -108,7 +112,7 @@ contract BODKeeper is
         uint40 delegate,
         uint256 motionId
     ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
-        _bod.entrustDelegate(motionId, caller, delegate);
+        _getBOD().entrustDelegate(motionId, caller, delegate);
     }
 
     function proposeAction(
@@ -120,7 +124,7 @@ contract BODKeeper is
         uint40 submitter,
         uint40 executor
     ) external onlyDirectKeeper directorExist(submitter) {
-        _bod.proposeAction(
+        _getBOD().proposeAction(
             actionType,
             targets,
             values,
@@ -137,7 +141,7 @@ contract BODKeeper is
         uint40 caller,
         bytes32 sigHash
     ) external onlyDirectKeeper directorExist(caller) {
-        _bod.castVote(actionId, caller, attitude, sigHash);
+        _getBOD().castVote(actionId, caller, attitude, sigHash);
     }
 
     function voteCounting(uint256 motionId, uint40 caller)
@@ -145,7 +149,7 @@ contract BODKeeper is
         onlyDirectKeeper
         directorExist(caller)
     {
-        _bod.voteCounting(motionId);
+        _getBOD().voteCounting(motionId);
     }
 
     function execAction(
@@ -158,7 +162,7 @@ contract BODKeeper is
     ) external directorExist(caller) returns (uint256) {
         require(!_rc.isCOA(caller), "caller is not an EOA");
         return
-            _bod.execAction(
+            _getBOD().execAction(
                 actionType,
                 targets,
                 values,

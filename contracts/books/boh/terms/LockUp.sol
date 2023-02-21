@@ -7,21 +7,21 @@
 
 pragma solidity ^0.8.8;
 
-import "../../boa//IInvestmentAgreement.sol";
+import "../../boa/IInvestmentAgreement.sol";
+import "../../boa/IBookOfIA.sol";
+import "../../bog/IBookOfGM.sol";
 
-import "../../../common/ruting/BOMSetting.sol";
-import "../../../common/ruting/RODSetting.sol";
-
+import "../../../common/access/AccessControl.sol";
 import "../../../common/lib/ArrayUtils.sol";
 import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
 
-import "../../../common/components/ISigPage.sol";
+import "../../../common/ruting/BOASetting.sol";
+import "../../../common/ruting/BODSetting.sol";
 
 import "./ILockUp.sol";
-import "./ITerm.sol";
 
-contract LockUp is ILockUp, BOMSetting, RODSetting {
+contract LockUp is ILockUp, BOASetting, BODSetting, AccessControl {
     using ArrayUtils for uint40[];
     using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -134,12 +134,11 @@ contract LockUp is ILockUp, BOMSetting, RODSetting {
         uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
         uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
                
-        uint40[] memory consentParties = _bog.getCaseOfAttitude(
-            motionId,
-            1
-        ).voters;
+        uint40[] memory consentParties = _getBOD().
+            getCaseOfAttitude(motionId,1).voters;
 
-        uint40[] memory signers = _rod.partiesOfDoc(ia);
+        uint40[] memory signers = _getBOA().
+            partiesOfDoc(ia);
 
         uint40[] memory agreedParties = consentParties.combine(signers);
 

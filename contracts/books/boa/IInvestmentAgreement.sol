@@ -7,9 +7,9 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/components/ISigPage.sol";
+// import "../../common/components/ISigPage.sol";
 
-interface IInvestmentAgreement is ISigPage {
+interface IInvestmentAgreement {
 
     struct Deal {
         bytes32 sn;

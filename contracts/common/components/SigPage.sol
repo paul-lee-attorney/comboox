@@ -7,10 +7,9 @@
 
 pragma solidity ^0.8.8;
 
-import "../ruting/RODSetting.sol";
-
 import "./ISigPage.sol";
 
+import "../ruting/RODSetting.sol";
 contract SigPage is ISigPage, RODSetting {
 
     //####################
@@ -25,20 +24,15 @@ contract SigPage is ISigPage, RODSetting {
         _rod.setClosingDeadline(deadline);
     }
 
-    function addBlank(uint40 acct, uint16 ssn) public {
-        _rod.addBlank(acct, ssn);
+    function _addBlank(uint40 acct, uint16 seq) internal {
+        _rod.addBlank(acct, seq);
     }
 
-    function removeBlank(uint40 acct, uint16 ssn) public onlyAttorney {
-        _rod.removeBlank(acct, ssn);
+    function removeBlank(uint40 acct, uint16 seq) public onlyAttorney {
+        _rod.removeBlank(acct, seq);
     }
 
     function addParty(uint40 acct) external onlyAttorney {
-        addBlank(acct, 0);
+        _addBlank(acct, 0);
     }
-
-    //####################
-    //##    查询接口     ##
-    //####################
-
 }

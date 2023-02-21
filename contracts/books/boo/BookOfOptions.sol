@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -10,6 +10,9 @@ pragma solidity ^0.8.8;
 import "./IBookOfOptions.sol";
 
 import "../boh/terms/IOptions.sol";
+import "../bos/IBookOfShares.sol";
+
+import "../../common/access/AccessControl.sol";
 
 import "../../common/lib/Checkpoints.sol";
 import "../../common/lib/EnumerableSet.sol";
@@ -18,34 +21,12 @@ import "../../common/lib/OptionsRepo.sol";
 
 import "../../common/ruting/BOSSetting.sol";
 
-contract BookOfOptions is IBookOfOptions, BOSSetting {
+contract BookOfOptions is IBookOfOptions, BOSSetting, AccessControl {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
     using OptionsRepo for OptionsRepo.Repo;
     using SNParser for bytes32;
-
-    enum TypeOfOption {
-        Call_Price,
-        Put_Price,
-        Call_ROE,
-        Put_ROE,
-        Call_PriceAndConditions,
-        Put_PriceAndConditions,
-        Call_ROEAndConditions,
-        Put_ROEAndConditions
-    }
-
-    enum StateOfOption {
-        Pending,
-        Issued,
-        Executed,
-        Futured,
-        Pledged,
-        Closed,
-        Revoked,
-        Expired
-    }
 
     OptionsRepo.Repo private _options;
 
@@ -131,7 +112,7 @@ contract BookOfOptions is IBookOfOptions, BOSSetting {
         uint64 paid,
         uint64 par
     ) external onlyKeeper {
-        if (_options.addFuture(sn, shareNumber, paid, par, _bos)) {
+        if (_options.addFuture(sn, shareNumber, paid, par, _getBOS())) {
             emit AddFuture(sn, shareNumber, paid, par);
         }
     }

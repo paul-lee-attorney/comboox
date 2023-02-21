@@ -1,0 +1,876 @@
+{
+    "contractName": "BOSSetting",
+    "abi": [
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "address",
+                    "name": "gk",
+                    "type": "address"
+                }
+            ],
+            "name": "SetGeneralKeeper",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "address",
+                    "name": "rc",
+                    "type": "address"
+                }
+            ],
+            "name": "SetRegCenter",
+            "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "getBOS",
+            "outputs": [
+                {
+                    "internalType": "contract IBookOfShares",
+                    "name": "_bos",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ],
+    "metadata": "{\"compiler\":{\"version\":\"0.8.8+commit.dddeac2f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gk\",\"type\":\"address\"}],\"name\":\"SetGeneralKeeper\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"rc\",\"type\":\"address\"}],\"name\":\"SetRegCenter\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getBOS\",\"outputs\":[{\"internalType\":\"contract IBookOfShares\",\"name\":\"_bos\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOSSetting.sol\":\"BOSSetting\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/bos/IBookOfShares.sol\":{\"keccak256\":\"0x27b8ebd297fd9be57198ca0175bc3d6e1fad4f2ce0340f333905c375f3694b47\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://cf3d4d993d3eed85627affc20e94fad2eac4aff85ccfc1609aca5bb78884cba0\",\"dweb:/ipfs/QmWsHJ9wKmFD68AAXqQzqjX4jSM771TYawTmvaiW6Mc5bo\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/IRegCenter.sol\":{\"keccak256\":\"0x7887f4a79405cc7ef5bbedb3b4f45e01a7c55f0eb4d104837dd3332c9c281fc8\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://56efdca09c3620ad89060fd06682724be19acb8b0a3d5f703569809315a6f05a\",\"dweb:/ipfs/QmWtfVn7VGXuZDAcSbZhQbmkRudAXS6QXwkptf8y7zfWUV\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol\":{\"keccak256\":\"0xae85a3596053fc4bed9d01d6c49ff6efca8149b71e058b67293124a06ae341ff\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://6bed9cec944419ad07dd171b497cb9508ddf7f22a4281b34e54d7ed9f33b9e1e\",\"dweb:/ipfs/QmWFnVfjU8txerbDXtZyefKfNm9YLJxcogQgztH43KaF1k\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOSSetting.sol\":{\"keccak256\":\"0x85b0a5b7c7ba34f57ddece413e0fa95d87f93c27505f1d3887347e1e6d8da8c8\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://0e7973ebf29695720bf5cb84efc529915df9bb062f38f4305b869f8a2cde97b4\",\"dweb:/ipfs/QmZhf2eyXzSHegcAjE6DHUzvgNKRrftFosEkzYkJvVotKt\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/keepers/IGeneralKeeper.sol\":{\"keccak256\":\"0x11fe5eba17f5500b953f9daeaab05768c223c6106ccaa05b81534d5514f5500c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://14e4c691f4c4e7f76b6775208d7a3f724c4e21aaa7dbfd035a71a0112096f77e\",\"dweb:/ipfs/QmNctvLmm4ZUDa5UuLDnyCCPK4uwzmcJiJitegKAGgT7RE\"]}},\"version\":1}",
+    "bytecode": "608060405234801561001057600080fd5b50610131806100206000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063f01e100f14602d575b600080fd5b6033604f565b6040516001600160a01b03909116815260200160405180910390f35b60015460405163381baea360e21b8152600660048201526000916001600160a01b03169063e06eba8c9060240160206040518083038186803b158015609357600080fd5b505afa15801560a6573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019060c8919060cd565b905090565b60006020828403121560de57600080fd5b81516001600160a01b038116811460f457600080fd5b939250505056fea2646970667358221220efadfe6304dea242c5552620059a827a7ee5e498fb488bd83fb71f63f56f22a064736f6c63430008080033",
+    "deployedBytecode": "6080604052348015600f57600080fd5b506004361060285760003560e01c8063f01e100f14602d575b600080fd5b6033604f565b6040516001600160a01b03909116815260200160405180910390f35b60015460405163381baea360e21b8152600660048201526000916001600160a01b03169063e06eba8c9060240160206040518083038186803b158015609357600080fd5b505afa15801560a6573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019060c8919060cd565b905090565b60006020828403121560de57600080fd5b81516001600160a01b038116811460f457600080fd5b939250505056fea2646970667358221220efadfe6304dea242c5552620059a827a7ee5e498fb488bd83fb71f63f56f22a064736f6c63430008080033",
+    "sourceMap": "242:578:3:-:0;;;;;;;;;;;;;;;;;;;",
+    "deployedSourceMap": "242:578:3:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;674:144;;;:::i;:::-;;;-1:-1:-1;;;;;199:32:5;;;181:51;;169:2;154:18;674:144:3;;;;;;;;765:3;;:45;;-1:-1:-1;;;765:45:3;;783:25;765:45;;;518:36:5;713:18:3;;-1:-1:-1;;;;;765:3:3;;:11;;491:18:5;;765:45:3;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;744:67;;674:144;:::o;565:290:5:-;635:6;688:2;676:9;667:7;663:23;659:32;656:52;;;704:1;701;694:12;656:52;730:16;;-1:-1:-1;;;;;775:31:5;;765:42;;755:70;;821:1;818;811:12;755:70;844:5;565:290;-1:-1:-1;;;565:290:5:o",
+    "sourcePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOSSetting.sol",
+    "compiler": {
+        "name": "solc",
+        "version": "0.8.8+commit.dddeac2f"
+    },
+    "ast": {
+        "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOSSetting.sol",
+        "exportedSymbols": {
+            "BOSSetting": [
+                601
+            ],
+            "IBookOfShares": [
+                215
+            ],
+            "IGeneralKeeper": [
+                634
+            ],
+            "IRegCenter": [
+                442
+            ],
+            "RegCenterSetting": [
+                540
+            ]
+        },
+        "id": 602,
+        "license": "UNLICENSED",
+        "nodeType": "SourceUnit",
+        "nodes": [
+            {
+                "id": 542,
+                "literals": [
+                    "solidity",
+                    "^",
+                    "0.8",
+                    ".8"
+                ],
+                "nodeType": "PragmaDirective",
+                "src": "130:23:3"
+            },
+            {
+                "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/books/bos/IBookOfShares.sol",
+                "file": "../../books/bos/IBookOfShares.sol",
+                "id": 543,
+                "nameLocation": "-1:-1:-1",
+                "nodeType": "ImportDirective",
+                "scope": 602,
+                "sourceUnit": 216,
+                "src": "155:43:3",
+                "symbolAliases": [],
+                "unitAlias": ""
+            },
+            {
+                "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol",
+                "file": "../access/RegCenterSetting.sol",
+                "id": 544,
+                "nameLocation": "-1:-1:-1",
+                "nodeType": "ImportDirective",
+                "scope": 602,
+                "sourceUnit": 541,
+                "src": "200:40:3",
+                "symbolAliases": [],
+                "unitAlias": ""
+            },
+            {
+                "abstract": false,
+                "baseContracts": [
+                    {
+                        "baseName": {
+                            "id": 545,
+                            "name": "RegCenterSetting",
+                            "nodeType": "IdentifierPath",
+                            "referencedDeclaration": 540,
+                            "src": "265:16:3"
+                        },
+                        "id": 546,
+                        "nodeType": "InheritanceSpecifier",
+                        "src": "265:16:3"
+                    }
+                ],
+                "contractDependencies": [],
+                "contractKind": "contract",
+                "fullyImplemented": true,
+                "id": 601,
+                "linearizedBaseContracts": [
+                    601,
+                    540
+                ],
+                "name": "BOSSetting",
+                "nameLocation": "251:10:3",
+                "nodeType": "ContractDefinition",
+                "nodes": [
+                    {
+                        "body": {
+                            "id": 560,
+                            "nodeType": "Block",
+                            "src": "320:83:3",
+                            "statements": [
+                                {
+                                    "expression": {
+                                        "arguments": [
+                                            {
+                                                "arguments": [
+                                                    {
+                                                        "id": 554,
+                                                        "name": "ssn",
+                                                        "nodeType": "Identifier",
+                                                        "overloadedDeclarations": [],
+                                                        "referencedDeclaration": 548,
+                                                        "src": "355:3:3",
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_uint32",
+                                                            "typeString": "uint32"
+                                                        }
+                                                    }
+                                                ],
+                                                "expression": {
+                                                    "argumentTypes": [
+                                                        {
+                                                            "typeIdentifier": "t_uint32",
+                                                            "typeString": "uint32"
+                                                        }
+                                                    ],
+                                                    "expression": {
+                                                        "arguments": [],
+                                                        "expression": {
+                                                            "argumentTypes": [],
+                                                            "id": 551,
+                                                            "name": "getBOS",
+                                                            "nodeType": "Identifier",
+                                                            "overloadedDeclarations": [],
+                                                            "referencedDeclaration": 600,
+                                                            "src": "338:6:3",
+                                                            "typeDescriptions": {
+                                                                "typeIdentifier": "t_function_internal_view$__$returns$_t_contract$_IBookOfShares_$215_$",
+                                                                "typeString": "function () view returns (contract IBookOfShares)"
+                                                            }
+                                                        },
+                                                        "id": 552,
+                                                        "isConstant": false,
+                                                        "isLValue": false,
+                                                        "isPure": false,
+                                                        "kind": "functionCall",
+                                                        "lValueRequested": false,
+                                                        "names": [],
+                                                        "nodeType": "FunctionCall",
+                                                        "src": "338:8:3",
+                                                        "tryCall": false,
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_contract$_IBookOfShares_$215",
+                                                            "typeString": "contract IBookOfShares"
+                                                        }
+                                                    },
+                                                    "id": 553,
+                                                    "isConstant": false,
+                                                    "isLValue": false,
+                                                    "isPure": false,
+                                                    "lValueRequested": false,
+                                                    "memberName": "isShare",
+                                                    "nodeType": "MemberAccess",
+                                                    "referencedDeclaration": 192,
+                                                    "src": "338:16:3",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_function_external_view$_t_uint32_$returns$_t_bool_$",
+                                                        "typeString": "function (uint32) view external returns (bool)"
+                                                    }
+                                                },
+                                                "id": 555,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": false,
+                                                "kind": "functionCall",
+                                                "lValueRequested": false,
+                                                "names": [],
+                                                "nodeType": "FunctionCall",
+                                                "src": "338:21:3",
+                                                "tryCall": false,
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_bool",
+                                                    "typeString": "bool"
+                                                }
+                                            },
+                                            {
+                                                "hexValue": "73686172654e756d626572204e4f54206578697374",
+                                                "id": 556,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": true,
+                                                "kind": "string",
+                                                "lValueRequested": false,
+                                                "nodeType": "Literal",
+                                                "src": "361:23:3",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_stringliteral_cfca874adf61898755c846b82dc905a7209a8d5bdf917e5a07889c8d9a31b374",
+                                                    "typeString": "literal_string \"shareNumber NOT exist\""
+                                                },
+                                                "value": "shareNumber NOT exist"
+                                            }
+                                        ],
+                                        "expression": {
+                                            "argumentTypes": [
+                                                {
+                                                    "typeIdentifier": "t_bool",
+                                                    "typeString": "bool"
+                                                },
+                                                {
+                                                    "typeIdentifier": "t_stringliteral_cfca874adf61898755c846b82dc905a7209a8d5bdf917e5a07889c8d9a31b374",
+                                                    "typeString": "literal_string \"shareNumber NOT exist\""
+                                                }
+                                            ],
+                                            "id": 550,
+                                            "name": "require",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [
+                                                4294967278,
+                                                4294967278
+                                            ],
+                                            "referencedDeclaration": 4294967278,
+                                            "src": "330:7:3",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                                                "typeString": "function (bool,string memory) pure"
+                                            }
+                                        },
+                                        "id": 557,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "kind": "functionCall",
+                                        "lValueRequested": false,
+                                        "names": [],
+                                        "nodeType": "FunctionCall",
+                                        "src": "330:55:3",
+                                        "tryCall": false,
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_tuple$__$",
+                                            "typeString": "tuple()"
+                                        }
+                                    },
+                                    "id": 558,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "330:55:3"
+                                },
+                                {
+                                    "id": 559,
+                                    "nodeType": "PlaceholderStatement",
+                                    "src": "395:1:3"
+                                }
+                            ]
+                        },
+                        "id": 561,
+                        "name": "shareExist",
+                        "nameLocation": "297:10:3",
+                        "nodeType": "ModifierDefinition",
+                        "parameters": {
+                            "id": 549,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 548,
+                                    "mutability": "mutable",
+                                    "name": "ssn",
+                                    "nameLocation": "315:3:3",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 561,
+                                    "src": "308:10:3",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint32",
+                                        "typeString": "uint32"
+                                    },
+                                    "typeName": {
+                                        "id": 547,
+                                        "name": "uint32",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "308:6:3",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint32",
+                                            "typeString": "uint32"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "307:12:3"
+                        },
+                        "src": "288:115:3",
+                        "virtual": false,
+                        "visibility": "internal"
+                    },
+                    {
+                        "body": {
+                            "id": 579,
+                            "nodeType": "Block",
+                            "src": "428:167:3",
+                            "statements": [
+                                {
+                                    "expression": {
+                                        "arguments": [
+                                            {
+                                                "commonType": {
+                                                    "typeIdentifier": "t_address",
+                                                    "typeString": "address"
+                                                },
+                                                "id": 574,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": false,
+                                                "lValueRequested": false,
+                                                "leftExpression": {
+                                                    "expression": {
+                                                        "id": 564,
+                                                        "name": "msg",
+                                                        "nodeType": "Identifier",
+                                                        "overloadedDeclarations": [],
+                                                        "referencedDeclaration": 4294967281,
+                                                        "src": "459:3:3",
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_magic_message",
+                                                            "typeString": "msg"
+                                                        }
+                                                    },
+                                                    "id": 565,
+                                                    "isConstant": false,
+                                                    "isLValue": false,
+                                                    "isPure": false,
+                                                    "lValueRequested": false,
+                                                    "memberName": "sender",
+                                                    "nodeType": "MemberAccess",
+                                                    "src": "459:10:3",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_address",
+                                                        "typeString": "address"
+                                                    }
+                                                },
+                                                "nodeType": "BinaryOperation",
+                                                "operator": "==",
+                                                "rightExpression": {
+                                                    "arguments": [
+                                                        {
+                                                            "arguments": [
+                                                                {
+                                                                    "expression": {
+                                                                        "id": 570,
+                                                                        "name": "TitleOfBooks",
+                                                                        "nodeType": "Identifier",
+                                                                        "overloadedDeclarations": [],
+                                                                        "referencedDeclaration": 455,
+                                                                        "src": "491:12:3",
+                                                                        "typeDescriptions": {
+                                                                            "typeIdentifier": "t_type$_t_enum$_TitleOfBooks_$455_$",
+                                                                            "typeString": "type(enum RegCenterSetting.TitleOfBooks)"
+                                                                        }
+                                                                    },
+                                                                    "id": 571,
+                                                                    "isConstant": false,
+                                                                    "isLValue": false,
+                                                                    "isPure": true,
+                                                                    "lValueRequested": false,
+                                                                    "memberName": "BookOfShares",
+                                                                    "nodeType": "MemberAccess",
+                                                                    "referencedDeclaration": 453,
+                                                                    "src": "491:25:3",
+                                                                    "typeDescriptions": {
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$455",
+                                                                        "typeString": "enum RegCenterSetting.TitleOfBooks"
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "expression": {
+                                                                "argumentTypes": [
+                                                                    {
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$455",
+                                                                        "typeString": "enum RegCenterSetting.TitleOfBooks"
+                                                                    }
+                                                                ],
+                                                                "id": 569,
+                                                                "isConstant": false,
+                                                                "isLValue": false,
+                                                                "isPure": true,
+                                                                "lValueRequested": false,
+                                                                "nodeType": "ElementaryTypeNameExpression",
+                                                                "src": "485:5:3",
+                                                                "typeDescriptions": {
+                                                                    "typeIdentifier": "t_type$_t_uint8_$",
+                                                                    "typeString": "type(uint8)"
+                                                                },
+                                                                "typeName": {
+                                                                    "id": 568,
+                                                                    "name": "uint8",
+                                                                    "nodeType": "ElementaryTypeName",
+                                                                    "src": "485:5:3",
+                                                                    "typeDescriptions": {}
+                                                                }
+                                                            },
+                                                            "id": 572,
+                                                            "isConstant": false,
+                                                            "isLValue": false,
+                                                            "isPure": true,
+                                                            "kind": "typeConversion",
+                                                            "lValueRequested": false,
+                                                            "names": [],
+                                                            "nodeType": "FunctionCall",
+                                                            "src": "485:32:3",
+                                                            "tryCall": false,
+                                                            "typeDescriptions": {
+                                                                "typeIdentifier": "t_uint8",
+                                                                "typeString": "uint8"
+                                                            }
+                                                        }
+                                                    ],
+                                                    "expression": {
+                                                        "argumentTypes": [
+                                                            {
+                                                                "typeIdentifier": "t_uint8",
+                                                                "typeString": "uint8"
+                                                            }
+                                                        ],
+                                                        "expression": {
+                                                            "id": 566,
+                                                            "name": "_gk",
+                                                            "nodeType": "Identifier",
+                                                            "overloadedDeclarations": [],
+                                                            "referencedDeclaration": 461,
+                                                            "src": "473:3:3",
+                                                            "typeDescriptions": {
+                                                                "typeIdentifier": "t_contract$_IGeneralKeeper_$634",
+                                                                "typeString": "contract IGeneralKeeper"
+                                                            }
+                                                        },
+                                                        "id": 567,
+                                                        "isConstant": false,
+                                                        "isLValue": false,
+                                                        "isPure": false,
+                                                        "lValueRequested": false,
+                                                        "memberName": "getBook",
+                                                        "nodeType": "MemberAccess",
+                                                        "referencedDeclaration": 633,
+                                                        "src": "473:11:3",
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_function_external_view$_t_uint16_$returns$_t_address_$",
+                                                            "typeString": "function (uint16) view external returns (address)"
+                                                        }
+                                                    },
+                                                    "id": 573,
+                                                    "isConstant": false,
+                                                    "isLValue": false,
+                                                    "isPure": false,
+                                                    "kind": "functionCall",
+                                                    "lValueRequested": false,
+                                                    "names": [],
+                                                    "nodeType": "FunctionCall",
+                                                    "src": "473:45:3",
+                                                    "tryCall": false,
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_address",
+                                                        "typeString": "address"
+                                                    }
+                                                },
+                                                "src": "459:59:3",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_bool",
+                                                    "typeString": "bool"
+                                                }
+                                            },
+                                            {
+                                                "hexValue": "524f4d2e6f6e6c79424f533a206d736753656e646572206973206e6f7420626f73",
+                                                "id": 575,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": true,
+                                                "kind": "string",
+                                                "lValueRequested": false,
+                                                "nodeType": "Literal",
+                                                "src": "532:35:3",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_stringliteral_0481f66585e41c9006e287c98d0494e5a918d6c32b35dda093781479975e2317",
+                                                    "typeString": "literal_string \"ROM.onlyBOS: msgSender is not bos\""
+                                                },
+                                                "value": "ROM.onlyBOS: msgSender is not bos"
+                                            }
+                                        ],
+                                        "expression": {
+                                            "argumentTypes": [
+                                                {
+                                                    "typeIdentifier": "t_bool",
+                                                    "typeString": "bool"
+                                                },
+                                                {
+                                                    "typeIdentifier": "t_stringliteral_0481f66585e41c9006e287c98d0494e5a918d6c32b35dda093781479975e2317",
+                                                    "typeString": "literal_string \"ROM.onlyBOS: msgSender is not bos\""
+                                                }
+                                            ],
+                                            "id": 563,
+                                            "name": "require",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [
+                                                4294967278,
+                                                4294967278
+                                            ],
+                                            "referencedDeclaration": 4294967278,
+                                            "src": "438:7:3",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                                                "typeString": "function (bool,string memory) pure"
+                                            }
+                                        },
+                                        "id": 576,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "kind": "functionCall",
+                                        "lValueRequested": false,
+                                        "names": [],
+                                        "nodeType": "FunctionCall",
+                                        "src": "438:139:3",
+                                        "tryCall": false,
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_tuple$__$",
+                                            "typeString": "tuple()"
+                                        }
+                                    },
+                                    "id": 577,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "438:139:3"
+                                },
+                                {
+                                    "id": 578,
+                                    "nodeType": "PlaceholderStatement",
+                                    "src": "587:1:3"
+                                }
+                            ]
+                        },
+                        "id": 580,
+                        "name": "onlyBOS",
+                        "nameLocation": "418:7:3",
+                        "nodeType": "ModifierDefinition",
+                        "parameters": {
+                            "id": 562,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "425:2:3"
+                        },
+                        "src": "409:186:3",
+                        "virtual": false,
+                        "visibility": "internal"
+                    },
+                    {
+                        "body": {
+                            "id": 599,
+                            "nodeType": "Block",
+                            "src": "734:84:3",
+                            "statements": [
+                                {
+                                    "expression": {
+                                        "id": 597,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "lValueRequested": false,
+                                        "leftHandSide": {
+                                            "id": 586,
+                                            "name": "_bos",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 584,
+                                            "src": "744:4:3",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_contract$_IBookOfShares_$215",
+                                                "typeString": "contract IBookOfShares"
+                                            }
+                                        },
+                                        "nodeType": "Assignment",
+                                        "operator": "=",
+                                        "rightHandSide": {
+                                            "arguments": [
+                                                {
+                                                    "arguments": [
+                                                        {
+                                                            "arguments": [
+                                                                {
+                                                                    "expression": {
+                                                                        "id": 592,
+                                                                        "name": "TitleOfBooks",
+                                                                        "nodeType": "Identifier",
+                                                                        "overloadedDeclarations": [],
+                                                                        "referencedDeclaration": 455,
+                                                                        "src": "783:12:3",
+                                                                        "typeDescriptions": {
+                                                                            "typeIdentifier": "t_type$_t_enum$_TitleOfBooks_$455_$",
+                                                                            "typeString": "type(enum RegCenterSetting.TitleOfBooks)"
+                                                                        }
+                                                                    },
+                                                                    "id": 593,
+                                                                    "isConstant": false,
+                                                                    "isLValue": false,
+                                                                    "isPure": true,
+                                                                    "lValueRequested": false,
+                                                                    "memberName": "BookOfShares",
+                                                                    "nodeType": "MemberAccess",
+                                                                    "referencedDeclaration": 453,
+                                                                    "src": "783:25:3",
+                                                                    "typeDescriptions": {
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$455",
+                                                                        "typeString": "enum RegCenterSetting.TitleOfBooks"
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "expression": {
+                                                                "argumentTypes": [
+                                                                    {
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$455",
+                                                                        "typeString": "enum RegCenterSetting.TitleOfBooks"
+                                                                    }
+                                                                ],
+                                                                "id": 591,
+                                                                "isConstant": false,
+                                                                "isLValue": false,
+                                                                "isPure": true,
+                                                                "lValueRequested": false,
+                                                                "nodeType": "ElementaryTypeNameExpression",
+                                                                "src": "777:5:3",
+                                                                "typeDescriptions": {
+                                                                    "typeIdentifier": "t_type$_t_uint8_$",
+                                                                    "typeString": "type(uint8)"
+                                                                },
+                                                                "typeName": {
+                                                                    "id": 590,
+                                                                    "name": "uint8",
+                                                                    "nodeType": "ElementaryTypeName",
+                                                                    "src": "777:5:3",
+                                                                    "typeDescriptions": {}
+                                                                }
+                                                            },
+                                                            "id": 594,
+                                                            "isConstant": false,
+                                                            "isLValue": false,
+                                                            "isPure": true,
+                                                            "kind": "typeConversion",
+                                                            "lValueRequested": false,
+                                                            "names": [],
+                                                            "nodeType": "FunctionCall",
+                                                            "src": "777:32:3",
+                                                            "tryCall": false,
+                                                            "typeDescriptions": {
+                                                                "typeIdentifier": "t_uint8",
+                                                                "typeString": "uint8"
+                                                            }
+                                                        }
+                                                    ],
+                                                    "expression": {
+                                                        "argumentTypes": [
+                                                            {
+                                                                "typeIdentifier": "t_uint8",
+                                                                "typeString": "uint8"
+                                                            }
+                                                        ],
+                                                        "expression": {
+                                                            "id": 588,
+                                                            "name": "_gk",
+                                                            "nodeType": "Identifier",
+                                                            "overloadedDeclarations": [],
+                                                            "referencedDeclaration": 461,
+                                                            "src": "765:3:3",
+                                                            "typeDescriptions": {
+                                                                "typeIdentifier": "t_contract$_IGeneralKeeper_$634",
+                                                                "typeString": "contract IGeneralKeeper"
+                                                            }
+                                                        },
+                                                        "id": 589,
+                                                        "isConstant": false,
+                                                        "isLValue": false,
+                                                        "isPure": false,
+                                                        "lValueRequested": false,
+                                                        "memberName": "getBook",
+                                                        "nodeType": "MemberAccess",
+                                                        "referencedDeclaration": 633,
+                                                        "src": "765:11:3",
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_function_external_view$_t_uint16_$returns$_t_address_$",
+                                                            "typeString": "function (uint16) view external returns (address)"
+                                                        }
+                                                    },
+                                                    "id": 595,
+                                                    "isConstant": false,
+                                                    "isLValue": false,
+                                                    "isPure": false,
+                                                    "kind": "functionCall",
+                                                    "lValueRequested": false,
+                                                    "names": [],
+                                                    "nodeType": "FunctionCall",
+                                                    "src": "765:45:3",
+                                                    "tryCall": false,
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_address",
+                                                        "typeString": "address"
+                                                    }
+                                                }
+                                            ],
+                                            "expression": {
+                                                "argumentTypes": [
+                                                    {
+                                                        "typeIdentifier": "t_address",
+                                                        "typeString": "address"
+                                                    }
+                                                ],
+                                                "id": 587,
+                                                "name": "IBookOfShares",
+                                                "nodeType": "Identifier",
+                                                "overloadedDeclarations": [],
+                                                "referencedDeclaration": 215,
+                                                "src": "751:13:3",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_type$_t_contract$_IBookOfShares_$215_$",
+                                                    "typeString": "type(contract IBookOfShares)"
+                                                }
+                                            },
+                                            "id": 596,
+                                            "isConstant": false,
+                                            "isLValue": false,
+                                            "isPure": false,
+                                            "kind": "typeConversion",
+                                            "lValueRequested": false,
+                                            "names": [],
+                                            "nodeType": "FunctionCall",
+                                            "src": "751:60:3",
+                                            "tryCall": false,
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_contract$_IBookOfShares_$215",
+                                                "typeString": "contract IBookOfShares"
+                                            }
+                                        },
+                                        "src": "744:67:3",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_contract$_IBookOfShares_$215",
+                                            "typeString": "contract IBookOfShares"
+                                        }
+                                    },
+                                    "id": 598,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "744:67:3"
+                                }
+                            ]
+                        },
+                        "functionSelector": "f01e100f",
+                        "id": 600,
+                        "implemented": true,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "getBOS",
+                        "nameLocation": "683:6:3",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 581,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "689:2:3"
+                        },
+                        "returnParameters": {
+                            "id": 585,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 584,
+                                    "mutability": "mutable",
+                                    "name": "_bos",
+                                    "nameLocation": "727:4:3",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 600,
+                                    "src": "713:18:3",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_contract$_IBookOfShares_$215",
+                                        "typeString": "contract IBookOfShares"
+                                    },
+                                    "typeName": {
+                                        "id": 583,
+                                        "nodeType": "UserDefinedTypeName",
+                                        "pathNode": {
+                                            "id": 582,
+                                            "name": "IBookOfShares",
+                                            "nodeType": "IdentifierPath",
+                                            "referencedDeclaration": 215,
+                                            "src": "713:13:3"
+                                        },
+                                        "referencedDeclaration": 215,
+                                        "src": "713:13:3",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_contract$_IBookOfShares_$215",
+                                            "typeString": "contract IBookOfShares"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "712:20:3"
+                        },
+                        "scope": 601,
+                        "src": "674:144:3",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "public"
+                    }
+                ],
+                "scope": 602,
+                "src": "242:578:3",
+                "usedErrors": []
+            }
+        ],
+        "src": "130:691:3"
+    },
+    "functionHashes": {
+        "getBOS()": "f01e100f"
+    },
+    "gasEstimates": {
+        "creation": {
+            "codeDepositCost": "61000",
+            "executionCost": "111",
+            "totalCost": "61111"
+        },
+        "external": {
+            "getBOS()": "infinite"
+        }
+    }
+}

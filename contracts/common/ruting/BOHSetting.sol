@@ -10,20 +10,15 @@ pragma solidity ^0.8.8;
 import "../../books/boh/IShareholdersAgreement.sol";
 import "../../books/boh/IBookOfSHA.sol";
 
-import "../access/AccessControl.sol";
+import "../access/RegCenterSetting.sol";
 
-contract BOHSetting is AccessControl {
-    IBookOfSHA internal _boh;
+contract BOHSetting is RegCenterSetting {
 
-    function setBOH(address boh) external onlyDirectKeeper {
-        _boh = IBookOfSHA(boh);
+    function _getBOH() internal view returns(IBookOfSHA _boh) {
+        _boh = IBookOfSHA(_gk.getBook(uint8(TitleOfBooks.BookOfSHA)));
     }
 
-    function _getSHA() internal view returns (IShareholdersAgreement) {
-        return IShareholdersAgreement(_boh.pointer());
-    }
-
-    function bohAddr() external view returns (address) {
-        return address(_boh);
+    function _getSHA() internal view returns(IShareholdersAgreement _sha) {
+        _sha = IShareholdersAgreement(IBookOfSHA(_gk.getBook(uint8(TitleOfBooks.BookOfSHA))).pointer());
     }
 }

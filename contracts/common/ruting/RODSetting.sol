@@ -11,14 +11,17 @@ import "../components/IRepoOfDocs.sol";
 
 import "../access/AccessControl.sol";
 
-contract RODSetting is AccessControl {
+import "./IRODSetting.sol";
+
+contract RODSetting is IRODSetting, AccessControl {
     IRepoOfDocs internal _rod;
 
-    function setROD(address rod) external onlyDirectKeeper {
-        _rod = IRepoOfDocs(rod);
+    modifier tempReady(uint8 typeOfDoc) {
+        require(_rod.template(typeOfDoc) != address(0), "ROD.md.tr: template NOT set");
+        _;
     }
 
-    function rodAddr() external view returns (address) {
-        return address(_rod);
+    function setROD(IRepoOfDocs rod) external onlyDirectKeeper {
+        _rod = rod;
     }
 }

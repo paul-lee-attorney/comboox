@@ -179,10 +179,11 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     function getDirector(uint40 acct)
         external
         view
-        directorExist(acct)
-        returns(Officer memory director)
+        returns(Officer memory)
     {
-        director = _officers[acct];
+        require(_board.contains(acct), "BOD.GD: acct is not Director");
+        
+        return _officers[acct];
     }
 
     function directors() external view returns (uint40[] memory) {

@@ -7,19 +7,21 @@
 
 pragma solidity ^0.8.8;
 
+import "./IIASetting.sol";
+
 import "../access/AccessControl.sol";
 
 import "../../books/boa/IInvestmentAgreement.sol";
 
-contract IASetting is AccessControl {
+contract IASetting is IIASetting, AccessControl {
     IInvestmentAgreement internal _ia;
 
     //##################
     //##   Modifier   ##
     //##################
 
-    modifier dealExist(uint16 ssn) {
-        _ia.isDeal(ssn);
+    modifier dealExist(uint16 seq) {
+        _ia.isDeal(seq);
         _;
     }
 
@@ -29,9 +31,5 @@ contract IASetting is AccessControl {
 
     function setIA(address ia) external onlyDirectKeeper {
         _ia = IInvestmentAgreement(ia);
-    }
-
-    function iaAddr() external view returns (address) {
-        return address(_ia);
     }
 }

@@ -8,18 +8,17 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
+import "../../boa/IBookOfIA.sol";
+import "../../bog/IBookOfGM.sol";
 
-import "../../../common/ruting/BOMSetting.sol";
 import "../../../common/ruting/BOASetting.sol";
-
-import "../../../common/components/ISigPage.sol";
-
+import "../../../common/ruting/BOGSetting.sol";
 import "../../../common/lib/EnumerableSet.sol";
 import "../../../common/lib/SNParser.sol";
 
 import "./DragAlong.sol";
 
-contract TagAlong is DragAlong, BOMSetting {
+contract TagAlong is BOASetting, BOGSetting, DragAlong {
     using EnumerableSet for EnumerableSet.UintSet;
     using SNParser for bytes32;
 
@@ -53,6 +52,8 @@ contract TagAlong is DragAlong, BOMSetting {
     }
 
     function isExempted(address ia, bytes32 sn) external returns (bool) {
+        IBookOfGM _bog = _getBOG();
+        
         require(_bog.isPassed(uint256(uint160(ia))), "motion NOT passed");
 
         if (!isTriggered(ia, sn)) return true;
@@ -65,7 +66,7 @@ contract TagAlong is DragAlong, BOMSetting {
             1
         ).voters;
 
-        uint40[] memory signers = _boa.partiesOfDoc(ia);
+        uint40[] memory signers = _getBOA().partiesOfDoc(ia);
 
         _supporters.emptyItems();
 

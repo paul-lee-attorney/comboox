@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./IShareholdersAgreement.sol";
 import "./terms/ITerm.sol";
 
-import "../../books/boh/BookOfSHA.sol";
+import "../../books/boh/IBookOfSHA.sol";
 
 import "../../common/access/IAccessControl.sol";
 import "../../common/components/SigPage.sol";
@@ -18,23 +18,11 @@ import "../../common/components/SigPage.sol";
 import "../../common/lib/SNParser.sol";
 import "../../common/lib/EnumerableSet.sol";
 
-import "../../common/ruting/IBookSetting.sol";
-import "../../common/ruting/BOASetting.sol";
-import "../../common/ruting/BOHSetting.sol";
-import "../../common/ruting/BOMSetting.sol";
-import "../../common/ruting/BOSSetting.sol";
-import "../../common/ruting/ROMSetting.sol";
-
 import "../../common/utils/CloneFactory.sol";
 
 contract ShareholdersAgreement is
     IShareholdersAgreement,
     CloneFactory,
-    BOASetting,
-    BOHSetting,
-    BOMSetting,
-    BOSSetting,
-    ROMSetting,
     SigPage
 {
     using SNParser for bytes32;
@@ -60,13 +48,13 @@ contract ShareholdersAgreement is
         _;
     }
 
-    modifier tempReadyFor(uint8 title) {
-        require(
-            _boh.hasTemplate(title),
-            "SHA.tempReadyFor: Template NOT ready"
-        );
-        _;
-    }
+    // modifier tempReadyFor(uint8 title) {
+    //     require(
+    //         _rod.tempReady(title),
+    //         "SHA.tempReadyFor: Template NOT ready"
+    //     );
+    //     _;
+    // }
 
     //##################
     //##  Write I/O   ##
@@ -75,13 +63,12 @@ contract ShareholdersAgreement is
     function createTerm(uint8 title)
         external
         onlyGeneralCounsel
-        tempReadyFor(title)
+        tempReady(title)
         returns (address body)
     {
-        body = createClone(_boh.getTermTemplate(title));
+        body = createClone(_rod.template(title));
 
         uint40 owner = getOwner();
-
         uint40 gc = getGeneralCounsel();
 
         IAccessControl(body).init(
@@ -92,29 +79,6 @@ contract ShareholdersAgreement is
         );
 
         IAccessControl(body).setGeneralCounsel(gc);
-
-        if (
-            title == uint8(TermTitle.ANTI_DILUTION) ||
-            title == uint8(TermTitle.LOCK_UP) ||
-            title == uint8(TermTitle.TAG_ALONG)
-        ) IBookSetting(body).setBOM(address(_bog));
-
-        if (
-            title == uint8(TermTitle.ANTI_DILUTION) ||
-            title == uint8(TermTitle.DRAG_ALONG) ||
-            title == uint8(TermTitle.TAG_ALONG)
-        ) IBookSetting(body).setBOS(address(_bos));
-
-        if (
-            title == uint8(TermTitle.ANTI_DILUTION) ||
-            title == uint8(TermTitle.DRAG_ALONG) ||
-            title == uint8(TermTitle.TAG_ALONG)
-        ) IBookSetting(body).setROM(address(_rom));
-
-        if (
-            title == uint8(TermTitle.DRAG_ALONG) ||
-            title == uint8(TermTitle.TAG_ALONG)
-        ) IBookSetting(body).setBOA(address(_boa));
 
         _terms[title] = body;
         _titles.add(title);

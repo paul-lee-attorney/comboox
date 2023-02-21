@@ -12,9 +12,11 @@ import "./IRegisterOfMembers.sol";
 import "../../common/lib/MembersRepo.sol";
 import "../../common/lib/TopChain.sol";
 
+import "../../common/access/AccessControl.sol";
+
 import "../../common/ruting/BOSSetting.sol";
 
-contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
+contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
     using MembersRepo for MembersRepo.GeneralMeeting;
 
     MembersRepo.GeneralMeeting private _gm;
@@ -22,14 +24,6 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
     //##################
     //##   Modifier   ##
     //##################
-
-    modifier onlyBOS() {
-        require(
-            msg.sender == address(_bos),
-            "ROM.onlyBOS: msgSender is not bos"
-        );
-        _;
-    }
 
     modifier memberExist(uint40 acct) {
         require(isMember(acct), "ROM.memberExist: NOT Member");
@@ -79,7 +73,7 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
     }
 
     function addShareToMember(uint32 ssn, uint40 acct) external onlyBOS {
-        IBookOfShares.Share memory share = _bos.getShare(ssn);
+        IBookOfShares.Share memory share = _getBOS().getShare(ssn);
 
         if (_gm.addShareToMember(share.shareNumber, acct)) {
             _gm.changeAmtOfMember(acct, share.paid, share.par, true);
@@ -88,7 +82,7 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting {
     }
 
     function removeShareFromMember(uint32 ssn, uint40 acct) external onlyBOS {
-        IBookOfShares.Share memory share = _bos.getShare(ssn);
+        IBookOfShares.Share memory share = _getBOS().getShare(ssn);
 
         changeAmtOfMember(acct, share.paid, share.par, false);
 

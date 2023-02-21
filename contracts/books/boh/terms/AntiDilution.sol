@@ -8,20 +8,24 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
-import "../../boa/InvestmentAgreement.sol";
+import "../../bos/IBookOfShares.sol";
+import "../../bog/IBookOfGM.sol";
+import "../../rom/IRegisterOfMembers.sol";
 
-import "../../../common/ruting/BOSSetting.sol";
-import "../../../common/ruting/ROMSetting.sol";
-import "../../../common/ruting/BOMSetting.sol";
+import "../../../common/access/AccessControl.sol";
 
 import "../../../common/lib/ArrayUtils.sol";
 import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
 import "../../../common/lib/TopChain.sol";
 
+import "../../../common/ruting/BODSetting.sol";
+import "../../../common/ruting/BOSSetting.sol";
+import "../../../common/ruting/ROMSetting.sol";
+
 import "./IAntiDilution.sol";
 
-contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
+contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, AccessControl {
     using ArrayUtils for uint40[];
     using EnumerableSet for EnumerableSet.UintSet;
     using SNParser for bytes32;
@@ -124,7 +128,8 @@ contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
             "AD.giftPar: AntiDilution not triggered"
         );
 
-        IBookOfShares.Share memory share = _bos.getShare(shareNumber.ssn());
+        IBookOfShares.Share memory share = _getBOS().
+            getShare(shareNumber.ssn());
 
         gift = (share.paid * markPrice) / dealPrice - share.paid;
     }
@@ -183,7 +188,10 @@ contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
         view
         returns (uint40[] memory)
     {
+        IRegisterOfMembers _rom = _getROM();
+
         uint40[] memory members = _rom.membersList();
+
         uint256 len = members.length;
 
         uint40[] memory list = new uint40[](len);
@@ -219,10 +227,8 @@ contract AntiDilution is IAntiDilution, BOSSetting, ROMSetting, BOMSetting {
         uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
         uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
 
-        uint40[] memory consentParties = _bog.getCaseOfAttitude(
-            motionId,
-            1
-        ).voters;
+        uint40[] memory consentParties = _getBOD().
+            getCaseOfAttitude(motionId,1).voters;
 
         uint32 unitPrice = sn.priceOfDeal();
 

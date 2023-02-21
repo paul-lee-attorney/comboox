@@ -7,7 +7,10 @@
 
 pragma solidity ^0.8.8;
 
+import "../../books/boh/IShareholdersAgreement.sol";
+
 interface IAccessControl {
+
     // ##################
     // ##   Event      ##
     // ##################
@@ -24,16 +27,6 @@ interface IAccessControl {
     event SetOwner(uint256 acct);
 
     event SetGeneralCounsel(uint256 acct);
-
-    // event SetRoleAdmin(bytes32 role, uint40 acct);
-
-    // event GrantRole(bytes32 role, uint40 acct);
-
-    // event RevokeRole(bytes32 role, uint40 acct);
-
-    // event RenounceRole(bytes32 role, uint40 acct);
-
-    // event AbandonRole(bytes32 role);
 
     event LockContents();
 
@@ -75,6 +68,7 @@ interface IAccessControl {
     function getGeneralCounsel() external view returns (uint40);
 
     function getBookeeper() external view returns (address);
+
 
     function finalized() external view returns (bool);
 

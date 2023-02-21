@@ -9,16 +9,10 @@ pragma solidity ^0.8.8;
 
 import "../../books/boa/IBookOfIA.sol";
 
-import "../access/AccessControl.sol";
+import "../access/RegCenterSetting.sol";
 
-contract BOASetting is AccessControl {
-    IBookOfIA internal _boa;
-
-    function setBOA(address boa) external onlyDirectKeeper {
-        _boa = IBookOfIA(boa);
-    }
-
-    function boaAddr() external view returns (address) {
-        return address(_boa);
+contract BOASetting is RegCenterSetting {
+    function _getBOA() internal view returns (IBookOfIA _boa) {
+        _boa = IBookOfIA(_gk.getBook(uint8(TitleOfBooks.BookOfIA)));
     }
 }

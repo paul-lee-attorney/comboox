@@ -7,35 +7,36 @@
 
 pragma solidity ^0.8.8;
 
+import "../books/bod/IBookOfDirectors.sol";
 import "../books/boh/ShareholdersAgreement.sol";
 import "../books/boh/IShareholdersAgreement.sol";
+import "../books/boo/IBookOfOptions.sol";
+import "../books/rom/IRegisterOfMembers.sol";
 
 import "../common/components/ISigPage.sol";
 
-import "../common/ruting/BOASetting.sol";
+// import "../common/ruting/BOASetting.sol";
 import "../common/ruting/BODSetting.sol";
-import "../common/ruting/BOMSetting.sol";
+// import "../common/ruting/BOMSetting.sol";
 import "../common/ruting/BOOSetting.sol";
-import "../common/ruting/BOSSetting.sol";
+// import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
 import "../common/ruting/BOHSetting.sol";
-import "../common/ruting/IBookSetting.sol";
+import "../common/ruting/IRODSetting.sol";
 
-import "../common/access/IAccessControl.sol";
-
+import "../common/access/AccessControl.sol";
+// import "../common/access/IAccessControl.sol";
 import "../common/lib/SNParser.sol";
 
 import "./IBOHKeeper.sol";
 
 contract BOHKeeper is
     IBOHKeeper,
-    BOASetting,
     BODSetting,
-    BOMSetting,
+    BOHSetting,
     BOOSetting,
-    BOSSetting,
     ROMSetting,
-    BOHSetting
+    AccessControl
 {
     using SNParser for bytes32;
 
@@ -44,7 +45,7 @@ contract BOHKeeper is
     // ##################
 
     modifier notEstablished(address body) {
-        require(!_boh.established(body), "Doc ALREADY Established");
+        require(!_getBOH().established(body), "Doc ALREADY Established");
         _;
     }
 
@@ -57,7 +58,7 @@ contract BOHKeeper is
     }
 
     modifier onlyPartyOf(address body, uint40 caller) {
-        require(_boh.isParty(body, caller), "NOT Party of Doc");
+        require(_getBOH().isParty(body, caller), "NOT Party of Doc");
         _;
     }
 
@@ -66,16 +67,16 @@ contract BOHKeeper is
     // #############
 
     function setTempOfSHA(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
-        _boh.setTemplate(temp, typeOfDoc);
+        _getBOH().setTemplate(temp, typeOfDoc);
     }
 
     function setTermTemplate(uint8 title, address body) external onlyDirectKeeper {
-        _boh.setTermTemplate(title, body);
+        _getBOH().setTermTemplate(title, body);
     }
 
     function createSHA(uint8 docType, uint40 caller) external onlyDirectKeeper {
-        require(_rom.isMember(caller), "not MEMBER");
-        address sha = _boh.createDoc(docType, caller);
+        require(_getROM().isMember(caller), "not MEMBER");
+        address sha = _getBOH().createDoc(docType, caller);
 
         IAccessControl(sha).init(
             caller,
@@ -83,12 +84,8 @@ contract BOHKeeper is
             address(_rc),
             address(_gk)
         );
-
-        IBookSetting(sha).setBOA(address(_boa));
-        IBookSetting(sha).setBOH(address(_boh));
-        IBookSetting(sha).setBOM(address(_bog));
-        IBookSetting(sha).setBOS(address(_bos));
-        IBookSetting(sha).setROM(address(_rom));
+        
+        IRODSetting(sha).setROD(_getBOH());
     }
 
     function removeSHA(address sha, uint40 caller)
@@ -97,7 +94,7 @@ contract BOHKeeper is
         onlyOwnerOf(sha, caller)
         notEstablished(sha)
     {
-        _boh.removeDoc(sha);
+        _getBOH().removeDoc(sha);
     }
 
     function circulateSHA(
@@ -111,7 +108,7 @@ contract BOHKeeper is
 
         IAccessControl(sha).setOwner(0);
 
-        _boh.circulateDoc(sha, rule, docUrl, docHash);
+        _getBOH().circulateDoc(sha, rule, docUrl, docHash);
     }
 
     // ======== Sign SHA ========
@@ -122,13 +119,13 @@ contract BOHKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper onlyPartyOf(sha, caller) {
         require(
-            _boh.getHeadOfDoc(sha).state == uint8(IRepoOfDocs.RODStates.Circulated),
+            _getBOH().getHeadOfDoc(sha).state == uint8(IRepoOfDocs.RODStates.Circulated),
             "SHA not in Circulated State"
         );
 
-        _boh.signDoc(sha, caller, sigHash);
+        _getBOH().signDoc(sha, caller, sigHash);
 
-        if (_boh.established(sha)) _boh.pushToNextState(sha);
+        if (_getBOH().established(sha)) _getBOH().pushToNextState(sha);
     }
 
     function effectiveSHA(address sha, uint40 caller)
@@ -137,7 +134,7 @@ contract BOHKeeper is
         onlyPartyOf(sha, caller)
     {
         require(
-            _boh.getHeadOfDoc(sha).state ==
+            _getBOH().getHeadOfDoc(sha).state ==
                 uint8(IRepoOfDocs.RODStates.Established),
             "BOHKeeper.es: SHA not executed yet"
         );
@@ -145,15 +142,15 @@ contract BOHKeeper is
         require(_allMembersSigned(sha) || _reachedEffectiveThreshold(sha), 
             "BOHKeeper.es: SHA effective conditions not reached");
 
-        _boh.changePointer(sha);
+        _getBOH().changePointer(sha);
 
         bytes32 governingRule = IShareholdersAgreement(sha).getRule(0);
 
-        _rom.setAmtBase(governingRule.basedOnPar());
+        _getROM().setAmtBase(governingRule.basedOnPar());
 
-        _rom.setVoteBase(governingRule.basedOnPar());
+        _getROM().setVoteBase(governingRule.basedOnPar());
 
-        _bod.setMaxQtyOfDirectors(
+        _getBOD().setMaxQtyOfDirectors(
             governingRule.maxNumOfDirectors()
         );
 
@@ -162,7 +159,7 @@ contract BOHKeeper is
                 uint8(IShareholdersAgreement.TermTitle.OPTIONS)
             )
         ) {
-            _boo.registerOption(
+            _getBOO().registerOption(
                 IShareholdersAgreement(sha).getTerm(
                     uint8(IShareholdersAgreement.TermTitle.OPTIONS)
                 )
@@ -175,12 +172,12 @@ contract BOHKeeper is
         while (i < len) {
             bytes32 order = IShareholdersAgreement(sha).getRule(768+i);
             if (order.addMemberOfGUO())
-                _rom.addMemberToGroup(
+                _getROM().addMemberToGroup(
                     order.memberOfGUO(),
                     order.groupNoOfGUO()
                 );
             else
-                _rom.removeMemberFromGroup(
+                _getROM().removeMemberFromGroup(
                     order.memberOfGUO(),
                     order.groupNoOfGUO()
                 );
@@ -189,10 +186,10 @@ contract BOHKeeper is
     }
 
     function _allMembersSigned(address sha) private view returns (bool) {
-        uint40[] memory members = _rom.membersList();
+        uint40[] memory members = _getROM().membersList();
         uint256 len = members.length;
         while (len > 0) {            
-            if (!_boh.isParty(sha, members[len - 1]))
+            if (!_getBOH().isParty(sha, members[len - 1]))
                 return false;
             len--;
         }
@@ -200,15 +197,15 @@ contract BOHKeeper is
     }
 
     function _reachedEffectiveThreshold(address sha) private view returns (bool) {
-        uint40[] memory parties = _boh.partiesOfDoc(sha);
+        uint40[] memory parties = _getBOH().partiesOfDoc(sha);
         uint256 len = parties.length;
         
         bytes32 rule = _getSHA().getRule(0);
-        uint64 threashold = uint64(rule.shaEffectiveRatio()) * _rom.totalVotes() / 10000;
+        uint64 threashold = uint64(rule.shaEffectiveRatio()) * _getROM().totalVotes() / 10000;
         
         uint64 supportWeight;        
         while (len > 0) {
-            supportWeight += _rom.votesInHand(parties[len-1]);
+            supportWeight += _getROM().votesInHand(parties[len-1]);
             if (supportWeight > threashold) return true;
             len --;
         }
@@ -216,6 +213,6 @@ contract BOHKeeper is
     }
 
     function acceptSHA(bytes32 sigHash, uint40 caller) external onlyDirectKeeper {
-        _boh.acceptDoc(_boh.pointer(), caller, sigHash);
+        _getBOH().acceptDoc(_getBOH().pointer(), caller, sigHash);
     }
 }

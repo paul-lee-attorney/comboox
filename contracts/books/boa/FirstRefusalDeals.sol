@@ -7,11 +7,14 @@
 
 pragma solidity ^0.8.8;
 
+import "../../common/access/AccessControl.sol";
 import "../../common/ruting/ROMSetting.sol";
+
+import "../../books/rom/IRegisterOfMembers.sol";
 
 import "./IFirstRefusalDeals.sol";
 
-contract FirstRefusalDeals is IFirstRefusalDeals, ROMSetting {
+contract FirstRefusalDeals is IFirstRefusalDeals, ROMSetting, AccessControl {
     struct Claim {
         uint64 weight; // FR rightholder's voting weight
         uint64 ratio;
@@ -35,7 +38,7 @@ contract FirstRefusalDeals is IFirstRefusalDeals, ROMSetting {
         uint16 seqOfFR,
         uint40 acct
     ) external onlyDirectKeeper {
-        uint64 weight = _rom.votesInHand(acct);
+        uint64 weight = _getROM().votesInHand(acct);
         require(weight != 0, "first refusal request has ZERO weight");
 
         if (_frDeals[seqOfOD].claims[seqOfFR].weight == 0) {

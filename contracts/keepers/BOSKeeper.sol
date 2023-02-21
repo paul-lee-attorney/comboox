@@ -7,11 +7,14 @@
 
 pragma solidity ^0.8.8;
 
+import "../common/access/AccessControl.sol";
+
 import "../common/ruting/BOSSetting.sol";
+
 import "../common/lib/SNParser.sol";
 import "./IBOSKeeper.sol";
 
-contract BOSKeeper is IBOSKeeper, BOSSetting {
+contract BOSKeeper is IBOSKeeper, BOSSetting, AccessControl {
     using SNParser for bytes32;
 
     // #############
@@ -19,18 +22,18 @@ contract BOSKeeper is IBOSKeeper, BOSSetting {
     // #############
 
     function setPayInAmount(bytes32 sn, uint64 amount) external onlyDirectKeeper {
-        _bos.setPayInAmount(sn, amount);
+        _getBOS().setPayInAmount(sn, amount);
     }
 
     function requestPaidInCapital(bytes32 sn, string memory hashKey)
         external
         onlyDirectKeeper
     {
-        _bos.requestPaidInCapital(sn, hashKey);
+        _getBOS().requestPaidInCapital(sn, hashKey);
     }
 
     function withdrawPayInAmount(bytes32 sn) external onlyDirectKeeper {
-        _bos.withdrawPayInAmount(sn);
+        _getBOS().withdrawPayInAmount(sn);
     }
 
     function decreaseCapital(
@@ -38,10 +41,10 @@ contract BOSKeeper is IBOSKeeper, BOSSetting {
         uint64 paid,
         uint64 par
     ) external onlyDirectKeeper {
-        _bos.decreaseCapital(ssn, paid, par);
+        _getBOS().decreaseCapital(ssn, paid, par);
     }
 
     function updatePaidInDeadline(uint32 ssn, uint32 line) external onlyDirectKeeper {
-        _bos.updatePaidInDeadline(ssn, line);
+        _getBOS().updatePaidInDeadline(ssn, line);
     }
 }

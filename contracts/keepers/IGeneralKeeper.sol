@@ -9,17 +9,17 @@ pragma solidity ^0.8.8;
 
 interface IGeneralKeeper {
 
-    enum TitleOfKeepers {
-        BOAKeeper, // 0
-        BODKeeper, // 1
-        BOGKeeper, // 2
-        BOHKeeper, // 3
-        BOOKeeper, // 4
-        BOPKeeper, // 5
-        BOSKeeper, // 6
-        ROMKeeper, // 7
-        SHAKeeper // 8
-    }
+    // enum TitleOfKeepers {
+    //     BOAKeeper, // 0
+    //     BODKeeper, // 1
+    //     BOGKeeper, // 2
+    //     BOHKeeper, // 3
+    //     BOOKeeper, // 4
+    //     BOPKeeper, // 5
+    //     BOSKeeper, // 6
+    //     ROMKeeper, // 7
+    //     SHAKeeper // 8
+    // }
 
     // ###############
     // ##   Event   ##
@@ -35,5 +35,7 @@ interface IGeneralKeeper {
     // ##   AccessControl  ##
     // ######################
 
-    function isKeeper(address caller) external returns (bool flag);
+    function isKeeper(address caller) external view returns (bool flag);
+
+    function getBook(uint16) external view returns(address book);
 }

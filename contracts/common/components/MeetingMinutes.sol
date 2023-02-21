@@ -7,10 +7,14 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/ruting/BOASetting.sol";
+import "../../common/access/AccessControl.sol";
+
 import "../../common/ruting/BODSetting.sol";
 import "../../common/ruting/BOHSetting.sol";
 import "../../common/ruting/ROMSetting.sol";
+
+import "../../books/rom/IRegisterOfMembers.sol";
+import "../../books/bod/IBookOfDirectors.sol";
 
 import "../../common/lib/EnumerableSet.sol";
 import "../../common/lib/SNParser.sol";
@@ -22,7 +26,7 @@ import "../../common/components/IRepoOfDocs.sol";
 
 import "./IMeetingMinutes.sol";
 
-contract MeetingMinutes is IMeetingMinutes, BOASetting, BODSetting, BOHSetting, ROMSetting {
+contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, AccessControl {
     using SNParser for bytes32;
     using MotionsRepo for MotionsRepo.Motion;
     using DelegateMap for DelegateMap.Map;
@@ -133,8 +137,8 @@ contract MeetingMinutes is IMeetingMinutes, BOASetting, BODSetting, BOHSetting, 
     }
 
     function _getWeight(MotionsRepo.Motion storage m, uint40 acct) private view returns(uint64 weight) {
-        if (m.votingRule.authorityOfVR() == 1)
-            weight = _rom.votesAtDate(acct, m.head.shareRegDate);
+        if (m.votingRule.authorityOfVR() % 2 == 1)
+            weight = _getROM().votesAtDate(acct, m.head.shareRegDate);
     }
 
     // ==== cast vote ====
@@ -157,7 +161,10 @@ contract MeetingMinutes is IMeetingMinutes, BOASetting, BODSetting, BOHSetting, 
 
     function voteCounting(uint256 motionId) external onlyDirectKeeper returns(bool flag) {
 
-        MotionsRepo.Motion storage m = _motions[motionId]; 
+        MotionsRepo.Motion storage m = _motions[motionId];
+
+        IRegisterOfMembers _rom = _getROM();
+        IBookOfDirectors _bod = _getBOD();
 
         if (_isDocApproval(motionId)) {
             IRepoOfDocs _rod = _getDocRepo(motionId);
@@ -183,8 +190,8 @@ contract MeetingMinutes is IMeetingMinutes, BOASetting, BODSetting, BOHSetting, 
 
     function _getDocRepo(uint256 motionId) private view returns(IRepoOfDocs _rod) {
         uint16 seqOfVR = uint16(motionId >> 160);
-        if (seqOfVR == 8 || seqOfVR == 16) _rod = _boh;
-        else _rod = _boa;
+        if (seqOfVR == 8 || seqOfVR == 16) _rod = IRepoOfDocs(_gk.getBook(uint8(TitleOfBooks.BookOfSHA)));
+        else _rod = IRepoOfDocs(_gk.getBook(uint8(TitleOfBooks.BookOfIA)));
     }
 
     // ==== execute ====
