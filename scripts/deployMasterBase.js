@@ -15,17 +15,18 @@ async function main() {
 	// ==== Libraries ====		
 	let libArrayUtils = await deployTool(deployer, "ArrayUtils", undefined);
 	let libDelegateMap = await deployTool(deployer, "DelegateMap", undefined);
+	let libBallotsBox = await deployTool(deployer, "BallotsBox", undefined);
+	let libCheckpoints = await deployTool(deployer, "Checkpoints", undefined);
 	let libEnumerableSet = await deployTool(deployer, "EnumerableSet", undefined);
 	let libRolesRepo = await deployTool(deployer, "RolesRepo", undefined);
 	let libSNParser = await deployTool(deployer, "SNParser", undefined);
 	let libSNFactory = await deployTool(deployer, "SNFactory", undefined);
 	let libTopChain = await deployTool(deployer, "TopChain", undefined);
-	let libCheckpoints = await deployTool(deployer, "Checkpoints", undefined);
-
+	
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address
 	};
-	let libBallotsBox = await deployTool(deployer, "BallotsBox", libraries);
+	
 	let libSigsRepo = await deployTool(deployer, "SigsRepo", libraries);
 
 	libraries = {
@@ -45,8 +46,6 @@ async function main() {
 
 	libraries = {
 		"BallotsBox": libBallotsBox.address,
-		"DelegateMap": libDelegateMap.address,
-		"EnumerableSet": libEnumerableSet.address,
 		"SNParser": libSNParser.address
 	};
 	let libMotionsRepo = await deployTool(deployer, "MotionsRepo", libraries);

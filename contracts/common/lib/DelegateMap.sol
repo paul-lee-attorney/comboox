@@ -7,11 +7,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/rom/IRegisterOfMembers.sol";
-import "./ArrayUtils.sol";
+// import "../../books/rom/IRegisterOfMembers.sol";
+// import "./ArrayUtils.sol";
 
 library DelegateMap {
-    using ArrayUtils for uint40[];
+    // using ArrayUtils for uint40[];
 
     struct Voter {
         uint40 delegate;

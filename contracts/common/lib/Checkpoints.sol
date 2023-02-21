@@ -7,10 +7,10 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+// import "./EnumerableSet.sol";
 
 library Checkpoints {
-    using EnumerableSet for EnumerableSet.UintSet;
+    // using EnumerableSet for EnumerableSet.UintSet;
 
     struct Checkpoint {
         uint48 timestamp;
