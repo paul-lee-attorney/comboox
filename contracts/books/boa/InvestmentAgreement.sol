@@ -10,14 +10,12 @@ pragma solidity ^0.8.8;
 import "../../common/lib/EnumerableSet.sol";
 import "../../common/lib/SNParser.sol";
 
-import "../../common/components/SigPage.sol";
+import "../../common/access/AccessControl.sol";
+import "../../common/ruting/SigPageSetting.sol";
 
 import "./IInvestmentAgreement.sol";
 
-contract InvestmentAgreement is
-    IInvestmentAgreement,
-    SigPage
-{
+contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using SNParser for bytes32;
 
@@ -29,7 +27,6 @@ contract InvestmentAgreement is
 
     // seq => Deal
     mapping(uint256 => Deal) private _deals;
-
     EnumerableSet.Bytes32Set private _dealsList;
 
     //##################
@@ -53,7 +50,7 @@ contract InvestmentAgreement is
         uint64 paid,
         uint64 par,
         uint48 closingDate
-    ) external attorneyOrKeeper() {
+    ) external attorneyOrKeeper {
         require(par != 0, "IA.createDeal: par is ZERO");
         require(par >= paid, "IA.createDeal: paid overflow");
 
@@ -73,21 +70,19 @@ contract InvestmentAgreement is
         uint40 seller = sn.sellerOfDeal();
         uint40 buyer = sn.buyerOfDeal();
 
-        if (finalized()) {
-            if (
-                seller != 0 &&
-                sn.typeOfDeal() != uint8(TypeOfDeal.DragAlong) &&
-                sn.typeOfDeal() != uint8(TypeOfDeal.FreeGift)
-            ) _addBlank(seller, seq);
-            _addBlank(buyer, seq);
+        // if (finalized()) {
+            // if (
+            //     seller != 0 &&
+            //     sn.typeOfDeal() != uint8(TypeOfDeal.DragAlong) &&
+            //     sn.typeOfDeal() != uint8(TypeOfDeal.FreeGift)
+            // ) _page.addBlank(seq, seller);
+            // _page.addBlank(seq, buyer);
 
-            emit CreateDeal(sn, paid, par, closingDate);
-        } else {
-            if (seller != 0) _addBlank(seller, 0);
-            _addBlank(buyer, 0);
-        }
-
-        
+            // emit CreateDeal(sn, paid, par, closingDate);
+        if (!finalized()) {
+            if (seller != 0) _page.addBlank(0, seller);
+            _page.addBlank(0, buyer);
+        }      
     }
 
     function updateDeal(
@@ -116,10 +111,10 @@ contract InvestmentAgreement is
         uint40 seller = sn.sellerOfDeal();
 
         if (seller != 0) {
-            removeBlank(seller, seq);
+            _page.removeBlank(seq, seller);
         }
 
-        removeBlank(sn.buyerOfDeal(), seq);
+        _page.removeBlank(seq, sn.buyerOfDeal());
 
         if (_dealsList.remove(sn)) {
             delete _deals[seq];

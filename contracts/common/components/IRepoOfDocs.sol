@@ -8,17 +8,32 @@
 pragma solidity ^0.8.8;
 
 import "../lib/SigsRepo.sol";
+import "./ISigPage.sol";
 
 interface IRepoOfDocs {
+    
     enum RODStates {
-        ZeroPoint,
-        Created,
-        Circulated,
-        Established,
-        Proposed,
-        Voted,
-        Executed,
-        Revoked
+        ZeroPoint,  // 0
+        Created,    // 1
+        Circulated, // 2
+        Established,// 3
+        Proposed,   // 4
+        Voted,      // 5
+        Executed,   // 6
+        Revoked     // 7
+    }
+
+    enum TypeOfDoc {
+        SigPage,                // 0
+        InvestmentAgreement,    // 1
+        MockResults,            // 2
+        FirstRefusalDeals,      // 3
+        ShareHoldersAgreement,  // 4
+        LockUp,                 // 5
+        AntiDilution,           // 6
+        DragAlong,              // 7
+        TagAlong,               // 8
+        Options                 // 9
     }
 
     struct Head {
@@ -34,7 +49,7 @@ interface IRepoOfDocs {
         Head head;
         bytes32 docUrl;
         bytes32 docHash;
-        SigsRepo.Page sigPage;
+        address sigPage;
     }
 
     //##############
@@ -53,7 +68,7 @@ interface IRepoOfDocs {
 
     function setTemplate(address body, uint8 typeOfDoc) external;
 
-    function createDoc(uint8 docType, uint40 creator) external returns (address body);
+    function createDoc(uint8 docType, uint40 creator) external returns (address body, address sigPage);
 
     function removeDoc(address body) external;
 
@@ -64,36 +79,17 @@ interface IRepoOfDocs {
         bytes32 docHash
     ) external;
 
-    function pushToNextState(address body) external;
-
-    // ==== Drafting ====
-    
-    function setSigDeadline(uint48 deadline) external; 
-
-    function setClosingDeadline(uint48 deadline) external;
-
-    function addBlank(uint40 acct, uint16 seq) external;
-
-    function removeBlank(uint40 acct, uint16 seq) external;
-
-    // ==== Execution ====
-
-    function signDeal(
-        address body, 
-        uint16 seq, 
-        uint40 caller, 
-        bytes32 sigHash
-    ) external;
-
-    function signDoc(address body, uint40 caller, bytes32 sigHash) external;
-
-    function acceptDoc(address body, uint40 caller, bytes32 sigHash) external;
+    function setStateOfDoc(address body, uint8 state) external;
 
     //##################
     //##   read I/O   ##
     //##################
 
     function template(uint8 typeOfDoc) external view returns (address);
+
+    function tempsList() external view returns (uint256[] memory);
+
+    function tempReadyFor(uint8 typeOfDoc) external view returns (bool flag);
 
     function isRegistered(address body) external view returns (bool);
 
@@ -109,54 +105,9 @@ interface IRepoOfDocs {
         view
         returns (bytes32 docUrl, bytes32 docHash); 
 
-    // ==== SigPage ====
-
-    function established(address body) external view
-        returns (bool);
-
-    function parasOfPage(address body) 
-        external 
-        view 
-        returns (SigsRepo.Signature memory); 
-
-    function sigDeadline(address body)
+    function sigPageOfDoc(address body)
         external
         view
-        returns (uint48);
-
-    function closingDeadline(address body)
-        external
-        view
-        returns (uint48);
-
-    function isParty(address body, uint40 acct)
-        external
-        view
-        returns(bool);
-
-    function isInitSigner(address body, uint40 acct) 
-        external 
-        view 
-        returns (bool);
-
-    function qtyOfParties(address body)
-        external
-        view
-        returns (uint256);
-
-    function partiesOfDoc(address body)
-        external
-        view
-        returns (uint40[] memory);
-
-    function sigOfDeal(address body, uint16 seq, uint40 acct) 
-        external
-        view
-        returns (SigsRepo.Signature memory);
-
-    function sigOfDoc(address body, uint40 acct) 
-        external
-        view
-        returns (SigsRepo.Signature memory);
+        returns (ISigPage sigPage); 
 
 }

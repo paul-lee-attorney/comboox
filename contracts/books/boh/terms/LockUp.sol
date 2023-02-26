@@ -137,8 +137,7 @@ contract LockUp is ILockUp, BOASetting, BODSetting, AccessControl {
         uint40[] memory consentParties = _getBOD().
             getCaseOfAttitude(motionId,1).voters;
 
-        uint40[] memory signers = _getBOA().
-            partiesOfDoc(ia);
+        uint40[] memory signers = ISigPageSetting(ia).getSigPage().partiesOfDoc();
 
         uint40[] memory agreedParties = consentParties.combine(signers);
 

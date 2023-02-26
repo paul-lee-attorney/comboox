@@ -62,7 +62,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         _;
     }
 
-    modifier onlyAttorney() {
+    modifier onlyAttorney {
         require(
             _roles.hasRole(ATTORNEYS, _msgSender()),
             "AC.ot: not Attorney"
@@ -70,7 +70,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         _;
     }
 
-    modifier attorneyOrKeeper() {
+    modifier attorneyOrKeeper {
         require(
             _roles.hasRole(ATTORNEYS, _msgSender()) ||
                 _gk.isKeeper(msg.sender),

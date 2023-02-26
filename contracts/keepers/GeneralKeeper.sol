@@ -299,13 +299,13 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  BOHKeeper   ##
     // ##################
 
-    function setTempOfSHA(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
-        IBOHKeeper(_keepers[3]).setTempOfSHA(temp, typeOfDoc);
+    function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
+        IBOHKeeper(_keepers[3]).setTempOfBOH(temp, typeOfDoc);
     }
 
-    function setTermTemplate(uint8 title, address addr) external onlyDirectKeeper {
-        IBOHKeeper(_keepers[3]).setTermTemplate(title, addr);
-    }
+    // function setTermTemplate(uint8 title, address addr) external onlyDirectKeeper {
+    //     IBOHKeeper(_keepers[3]).setTermTemplate(title, addr);
+    // }
 
     function createSHA(uint8 docType) external {
         IBOHKeeper(_keepers[3]).createSHA(docType, _msgSender());
@@ -571,25 +571,23 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ======== First Refusal ========
 
     function execFirstRefusal(
-        bytes32 rule,
+        uint16 seqOfRule,
         uint256 seqOfRightholder,
         address ia,
         bytes32 sn,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[8]).execFirstRefusal(rule, seqOfRightholder, ia, sn, _msgSender(), sigHash);
+        ISHAKeeper(_keepers[8]).execFirstRefusal(seqOfRule, seqOfRightholder, ia, sn, _msgSender(), sigHash);
     }
 
     function acceptFirstRefusal(
         address ia,
-        bytes32 snOfOrg,
-        uint16 ssnOfFR,
+        bytes32 snOfDeal,
         bytes32 sigHash
     ) external {
         ISHAKeeper(_keepers[8]).acceptFirstRefusal(
                 ia,
-                snOfOrg,
-                ssnOfFR,
+                snOfDeal,
                 _msgSender(),
                 sigHash
             );

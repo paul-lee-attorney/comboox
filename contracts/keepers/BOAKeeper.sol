@@ -28,22 +28,28 @@ import "../common/ruting/BODSetting.sol";
 import "../common/ruting/BOHSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
+import "../common/ruting/SigPageSetting.sol";
 
-import "../common/ruting/IRODSetting.sol";
-
-
-contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting, ROMSetting, AccessControl {
+contract BOAKeeper is 
+    IBOAKeeper, 
+    BOASetting, 
+    BODSetting, 
+    BOHSetting, 
+    BOSSetting, 
+    ROMSetting, 
+    AccessControl 
+{
     using SNFactory for bytes;
     using SNParser for bytes32;
 
     IShareholdersAgreement.TermTitle[] private _termsForCapitalIncrease = [
-        IShareholdersAgreement.TermTitle.ANTI_DILUTION
+        IShareholdersAgreement.TermTitle.AntiDilution
     ];
 
     IShareholdersAgreement.TermTitle[] private _termsForShareTransfer = [
-        IShareholdersAgreement.TermTitle.LOCK_UP,
-        IShareholdersAgreement.TermTitle.TAG_ALONG,
-        IShareholdersAgreement.TermTitle.DRAG_ALONG
+        IShareholdersAgreement.TermTitle.LockUp,
+        IShareholdersAgreement.TermTitle.TagAlong,
+        IShareholdersAgreement.TermTitle.DragAlong
     ];
 
     // ##################
@@ -51,7 +57,7 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
     // ##################
 
     modifier notEstablished(address body) {
-        require(!_getBOA().established(body), "Doc ALREADY Established");
+        require(!_getBOA().sigPageOfDoc(body).established(), "Doc ALREADY Established");
         _;
     }
 
@@ -64,7 +70,7 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
     }
 
     modifier onlyPartyOf(address ia, uint40 caller) {
-        require(_getBOA().isParty(ia, caller), "NOT Owner of Doc");
+        require(_getBOA().sigPageOfDoc(ia).isParty(caller), "NOT Party of Doc");
         _;
     }
 
@@ -80,7 +86,7 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
         require(_getROM().isMember(caller), 
             "caller not MEMBER");
 
-        address ia = _getBOA().createDoc(typOfIA, caller);
+        (address ia, address sigPage) = _getBOA().createDoc(typOfIA, caller);
 
         IAccessControl(ia).init(
             caller,
@@ -88,7 +94,15 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
             address(_rc),
             address(_gk)
         );
-        IRODSetting(ia).setROD(_getBOA());
+
+        IAccessControl(sigPage).init(
+            caller,
+            address(this),
+            address(_rc),
+            address(_gk)
+        );
+
+        ISigPageSetting(ia).setSigPage(sigPage);
     }
 
     function removeIA(address ia, uint40 caller)
@@ -109,6 +123,12 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
     ) external onlyDirectKeeper onlyOwnerOf(ia, caller) {
         IAccessControl(ia).lockContents();
         IAccessControl(ia).setOwner(0);
+
+        address sigPage = address(ISigPageSetting(ia).getSigPage());
+
+        IAccessControl(sigPage).lockContents();
+        IAccessControl(sigPage).setOwner(0);
+
         _getBOA().circulateIA(ia, docUrl, docHash);
     }
 
@@ -126,10 +146,10 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
 
         _lockDealsOfParty(ia, caller);
 
-        _getBOA().signDoc(ia, caller, sigHash);
+        _getBOA().sigPageOfDoc(ia).signDoc(caller, sigHash);
 
-        if (_getBOA().established(ia))
-            _getBOA().pushToNextState(ia);
+        if (_getBOA().sigPageOfDoc(ia).established())
+            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Established));
     }
 
     function _lockDealsOfParty(address ia, uint40 caller) private {
@@ -168,7 +188,7 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
         );
 
         require(
-            closingDate <= _getBOA().closingDeadline(ia),
+            closingDate <= uint48(_getBOA().sigPageOfDoc(ia).parasOfPage().blocknumber),
             "closingDate LATER than deadline"
         );
 
@@ -251,7 +271,7 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
 
         //验证hashKey, 执行Deal
         if (IInvestmentAgreement(ia).closeDeal(seq, hashKey))
-            _getBOA().pushToNextState(ia);
+            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
         uint32 ssn = sn.ssnOfDeal();
 
@@ -340,7 +360,7 @@ contract BOAKeeper is IBOAKeeper, BOASetting, BODSetting, BOHSetting, BOSSetting
         );
 
         if (IInvestmentAgreement(ia).revokeDeal(seq, hashKey))
-            _getBOA().pushToNextState(ia);
+            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
         if (IInvestmentAgreement(ia).releaseDealSubject(seq))
             _getBOS().increaseCleanPar(sn.ssnOfDeal(), IInvestmentAgreement(ia).getDeal(seq).par);

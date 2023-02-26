@@ -25,7 +25,7 @@ library SigsRepo {
     //     signer: sigCounter;
     //     sigDate: sigDeadline;
     //     blocknumber: closingDeadline;
-    //     sigHash: established;
+    //     sigHash: docBody;
     // }
 
     struct Page {
@@ -34,41 +34,38 @@ library SigsRepo {
         EnumerableSet.UintSet parties;
     }
 
-    //####################
-    //##    modifier    ##
-    //####################
-
-    modifier onlyFutureTime(uint48 date) {
-        require(
-            date > block.timestamp,
-            "SR.OFT: NOT future"
-        );
-        _;
-    }
-
     //###################
     //##    设置接口    ##
     //###################
 
-    function getSig(Page storage p, uint256 seq, uint256 acct) 
-        public view returns(Signature storage sig)
+    function getSigId(uint256 seq, uint256 acct) 
+        public pure returns(uint256 sigId)
     {
-        require(acct > 0, "SR.CSI: zero acct");
-        return p.signatures[(seq << 40) + acct]; 
+        require(acct > 0, "SR.GSI: zero acct");
+        sigId = (seq << 40) + acct;
     }
 
-    function setSigDeadline(Page storage p, uint48 deadline)
-        public
-        onlyFutureTime(deadline)
-    {
-        p.signatures[0].sigDate = deadline;
+    function setBodyOfSigs(
+        Page storage p,
+        address body
+    ) public {
+        p.signatures[0].sigHash = bytes32(uint256(uint160(body)));
     }
 
-    function setClosingDeadline(Page storage p, uint48 deadline)
-        public
-        onlyFutureTime(deadline)
-    {
-        p.signatures[0].blocknumber = deadline;
+    function setParasOfDoc(
+        Page storage p,
+        uint48 sigDeadline, 
+        uint48 closingDeadline
+    ) public {
+        
+        require(sigDeadline > block.timestamp && 
+            closingDeadline > sigDeadline, 
+            "SR.SD: not logical time");
+
+        require(!established(p), "SR.SD: doc already established");
+
+        p.signatures[0].sigDate = sigDeadline;
+        p.signatures[0].blocknumber = closingDeadline;
     }
 
     function addBlank(
@@ -76,20 +73,16 @@ library SigsRepo {
         uint16 seq,
         uint40 acct
     ) public {
-        Signature storage sig = getSig(p, seq, acct);
+        Signature storage sig = p.signatures[getSigId(seq, acct)];
 
         if (sig.signer == 0) {
-
             sig.seq = seq;
             sig.signer = acct;
 
-            p.parties.add(acct);
-
             p.signatures[0].seq++;
 
-            if (p.signatures[0].sigHash != bytes32(0))
-                p.signatures[0].sigHash = bytes32(0);
-        }
+            p.parties.add(acct);
+        }        
     }
 
     function removeBlank(
@@ -97,15 +90,13 @@ library SigsRepo {
         uint16 seq,
         uint40 acct
     ) public {
-        Signature storage sig = getSig(p, seq, acct);
+        uint256 sigId = getSigId(seq, acct);
 
-        if (sig.signer == acct && sig.sigDate == 0) {
-            sig.signer = 0;
-            sig.seq = 0;            
+        if (p.signatures[sigId].sigDate == 0) {
+            delete p.signatures[sigId];
+            p.signatures[0].seq--;
 
             p.parties.remove(acct);
-
-            p.signatures[0].seq--;
         }
     }
 
@@ -114,22 +105,24 @@ library SigsRepo {
         uint16 seq,
         uint40 acct,
         bytes32 sigHash
-    ) public {
-        Signature storage sig = getSig(p, seq, acct);
-        
-        if (sig.signer == acct && sig.sigDate == 0) {
+    ) public returns (bool flag)
+    {
+        uint256 sigId = getSigId(seq, acct);
 
-            sig.seq = seq;
-            sig.signer = acct;
+        Signature storage sig = p.signatures[sigId];
+        
+        if (sig.seq == seq &&
+            sig.signer == acct && 
+            sig.sigDate == 0) 
+        {
+
             sig.sigDate = uint48(block.timestamp);
             sig.blocknumber = uint64(block.number);
             sig.sigHash = sigHash;
 
             p.signatures[0].signer++;
 
-            if (p.signatures[0].seq == p.signatures[0].signer) {
-                p.signatures[0].sigHash = bytes32("T");
-            }
+            flag = true;
         }
     }
 
@@ -137,46 +130,22 @@ library SigsRepo {
     //##    查询接口     ##
     //####################
 
-    // function isParty(Page storage p, uint40 acct) public view returns (bool) {
-    //     return p.parties.contains(acct);
-    // }
-
-    // function qtyOfParties(Page storage p) public view returns (uint256) {
-    //     return p.parties.length();
-    // }
-
-    // function partiesOfDoc(Page storage p)
-    //     public
-    //     view
-    //     returns (uint256[] memory)
-    // {
-    //     return p.parties.values();
-    // }
-
     function sigOfDeal(
         Page storage p,
         uint16 seq,
         uint40 acct
     )
-        public
-        view
+        public view
         returns (Signature memory )
     {
-        return getSig(p, seq, acct);
+        return p.signatures[getSigId(seq, acct)];
     }
 
-    function parasOfPage(Page storage p)
+    function established(Page storage p)
         public view
-        returns (Signature memory)
+        returns (bool flag)
     {
-        return p.signatures[0];
-    }
-
-    // ==== parasOfPage ====
-
-    function established(Page storage p) public view
-        returns (bool) 
-    {
-        return p.signatures[0].sigHash == bytes32("T");
+        flag = (p.signatures[0].seq > 0 && 
+            p.signatures[0].seq == p.signatures[0].signer);
     }
 }

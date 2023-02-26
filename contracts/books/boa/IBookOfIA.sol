@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../../common/components/IRepoOfDocs.sol";
+import "../../common/lib/FRClaims.sol";
 
 interface IBookOfIA is IRepoOfDocs {
     //##################
@@ -18,9 +19,17 @@ interface IBookOfIA is IRepoOfDocs {
 
     function circulateIA(address ia, bytes32 docUrl, bytes32 docHash) external;
 
-    function createFRDeals(address ia, uint40 creator)
-        external
-        returns (address frd);
+    function execFirstRefusalRight(
+        address ia,
+        uint16 seqOfDeal,
+        uint40 caller
+    ) external returns (bool flag);
+
+    function acceptFirstRefusalClaims(
+        address ia,
+        uint16 seqOfDeal
+    ) external returns (FRClaims.Claim[] memory output);
+
 
     function createMockResults(address ia, uint40 creator)
         external
@@ -32,7 +41,8 @@ interface IBookOfIA is IRepoOfDocs {
 
     // ======== BookOfIA ========
 
-    function frDealsOfIA(address ia) external view returns (address);
+    function claimsOfFR(address ia, uint256 seqOfDeal)
+        external returns(FRClaims.Claim[] memory);
 
     function mockResultsOfIA(address ia) external view returns (address);
 }

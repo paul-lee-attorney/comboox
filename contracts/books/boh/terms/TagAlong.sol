@@ -66,7 +66,7 @@ contract TagAlong is BOASetting, BOGSetting, DragAlong {
             1
         ).voters;
 
-        uint40[] memory signers = _getBOA().partiesOfDoc(ia);
+        uint40[] memory signers = ISigPageSetting(ia).getSigPage().partiesOfDoc();
 
         _supporters.emptyItems();
 

@@ -9,15 +9,15 @@ pragma solidity ^0.8.8;
 
 import "../../common/components/ISigPage.sol";
 
-interface IShareholdersAgreement is ISigPage {
+interface IShareholdersAgreement {
 
     enum TermTitle {
         ZeroPoint, //            0
-        LOCK_UP, //              1
-        ANTI_DILUTION, //        2
-        DRAG_ALONG, //           3
-        TAG_ALONG, //            4
-        OPTIONS //               5
+        LockUp, //              1
+        AntiDilution, //        2
+        DragAlong, //           3
+        TagAlong, //            4
+        Options //               5
     }
 
     // ==== Rules ========

@@ -12,6 +12,7 @@ import "./SNParser.sol";
 import "./BallotsBox.sol";
 import "./DelegateMap.sol";
 
+import "../ruting/ISigPageSetting.sol";
 import "../components/ISigPage.sol";
 import "../components/IRepoOfDocs.sol";
 
@@ -157,12 +158,12 @@ library MotionsRepo {
     function getDocApproval(
         Motion storage m,
         uint256 motionId,
-        IRepoOfDocs _rod,
+        // IRepoOfDocs _rod,
         IRegisterOfMembers _rom,
         IBookOfDirectors _bod
     ) public view returns (bool flag) {
         VoteCalBase memory base = _getVoteBase(m, _rom, _bod);
-        base = _getDocApprovalBase(m, motionId, _rod, _rom, _bod, base);
+        base = _getDocApprovalBase(m, motionId, _rom, _bod, base);
         flag = _getVoteResult(m, base);
     }
 
@@ -203,7 +204,7 @@ library MotionsRepo {
     function _getDocApprovalBase(
         Motion storage m,
         uint256 motionId,
-        IRepoOfDocs _rod,
+        // IRepoOfDocs _rod,
         IRegisterOfMembers _rom,
         IBookOfDirectors _bod,
         VoteCalBase memory base
@@ -211,7 +212,7 @@ library MotionsRepo {
     {
         if (!m.votingRule.onlyAttendanceOfVR()) {
 
-            uint40[] memory parties =  _rod.partiesOfDoc((address(uint160(motionId)))) ;
+            uint40[] memory parties =  ISigPageSetting((address(uint160(motionId)))).getSigPage().partiesOfDoc();
             uint256 len = parties.length;
 
             if (m.votingRule.seqOfRule() < 9) {

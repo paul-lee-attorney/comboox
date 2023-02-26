@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -59,10 +59,10 @@ interface ISHAKeeper {
     // ======== FirstRefusal ========
 
     function execFirstRefusal(
-        bytes32 rule,
+        uint16 seqOfFRRule,
         uint256 seqOfRightholder,
         address ia,
-        bytes32 sn,
+        bytes32 snOfDeal,
         uint40 caller,
         bytes32 sigHash
     ) external;
@@ -70,7 +70,6 @@ interface ISHAKeeper {
     function acceptFirstRefusal(
         address ia,
         bytes32 snOfOD,
-        uint16 ssnOfFR,
         uint40 caller,
         bytes32 sigHash
     ) external;

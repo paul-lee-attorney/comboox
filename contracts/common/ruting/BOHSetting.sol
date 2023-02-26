@@ -19,6 +19,6 @@ contract BOHSetting is RegCenterSetting {
     }
 
     function _getSHA() internal view returns(IShareholdersAgreement _sha) {
-        _sha = IShareholdersAgreement(IBookOfSHA(_gk.getBook(uint8(TitleOfBooks.BookOfSHA))).pointer());
+        _sha = IShareholdersAgreement(_getBOH().pointer());
     }
 }

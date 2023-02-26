@@ -15,12 +15,12 @@ contract ROMSetting is RegCenterSetting {
     // IRegisterOfMembers internal _getROM();
 
     modifier onlyMember() {
-        require(_getROM().isMember(_msgSender()), "NOT Member");
+        require(_getROM().isMember(_msgSender()), "ROMS.mf.OM: NOT Member");
         _;
     }
 
     modifier memberExist(uint40 acct) {
-        require(_getROM().isMember(acct), "member NOT exist");
+        require(_getROM().isMember(acct), "ROMS.mf.ME: NOT member");
         _;
     }
 

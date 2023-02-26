@@ -167,8 +167,8 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         IBookOfDirectors _bod = _getBOD();
 
         if (_isDocApproval(motionId)) {
-            IRepoOfDocs _rod = _getDocRepo(motionId);
-            flag = m.getDocApproval(motionId, _rod, _rom, _bod);
+            // IRepoOfDocs _rod = _getDocRepo(motionId);
+            flag = m.getDocApproval(motionId, _rom, _bod);
         } else {
             flag = m.getVoteResult(_rom, _bod);
         }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -12,9 +12,7 @@ interface IBOHKeeper {
     // ##  SHA   ##
     // ############
 
-    function setTempOfSHA(address temp, uint8 typeOfDoc) external;
-
-    function setTermTemplate(uint8 title, address body) external;
+    function setTempOfBOH(address temp, uint8 typeOfDoc) external;
 
     function createSHA(uint8 docType, uint40 caller) external;
 

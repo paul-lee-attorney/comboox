@@ -20,10 +20,14 @@ import "../../common/lib/EnumerableSet.sol";
 
 import "../../common/utils/CloneFactory.sol";
 
+import "../../common/ruting/SigPageSetting.sol";
+import "../../common/ruting/BOHSetting.sol";
+
 contract ShareholdersAgreement is
     IShareholdersAgreement,
     CloneFactory,
-    SigPage
+    BOHSetting,
+    SigPageSetting
 {
     using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -48,13 +52,13 @@ contract ShareholdersAgreement is
         _;
     }
 
-    // modifier tempReadyFor(uint8 title) {
-    //     require(
-    //         _rod.tempReady(title),
-    //         "SHA.tempReadyFor: Template NOT ready"
-    //     );
-    //     _;
-    // }
+    modifier tempReady(uint8 title) {
+        require(
+            _getBOH().tempReadyFor(title),
+            "SHA.tempReadyFor: Template NOT ready"
+        );
+        _;
+    }
 
     //##################
     //##  Write I/O   ##
@@ -66,7 +70,7 @@ contract ShareholdersAgreement is
         tempReady(title)
         returns (address body)
     {
-        body = createClone(_rod.template(title));
+        body = createClone(_getBOH().template(title));
 
         uint40 owner = getOwner();
         uint40 gc = getGeneralCounsel();

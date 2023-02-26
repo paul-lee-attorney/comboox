@@ -39,7 +39,7 @@ contract FirstRefusalDeals is IFirstRefusalDeals, ROMSetting, AccessControl {
         uint40 acct
     ) external onlyDirectKeeper {
         uint64 weight = _getROM().votesInHand(acct);
-        require(weight != 0, "first refusal request has ZERO weight");
+        require(weight != 0, "FRD.EFRR: ZERO weight");
 
         if (_frDeals[seqOfOD].claims[seqOfFR].weight == 0) {
             _frDeals[seqOfOD].sumOfWeight += weight;

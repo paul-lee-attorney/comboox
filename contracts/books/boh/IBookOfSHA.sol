@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -10,6 +10,7 @@ pragma solidity ^0.8.8;
 import "../../common/components/IRepoOfDocs.sol";
 
 interface IBookOfSHA is IRepoOfDocs {
+
     //##############
     //##  Event   ##
     //##############
@@ -20,10 +21,10 @@ interface IBookOfSHA is IRepoOfDocs {
     //##    写接口    ##
     //##################
 
-    function setTermTemplate(
-        uint8 title,
-        address add
-    ) external;
+    // function setTermTemplate(
+    //     uint8 title,
+    //     address add
+    // ) external;
 
     function changePointer(address body) external;
 
@@ -33,7 +34,7 @@ interface IBookOfSHA is IRepoOfDocs {
 
     function pointer() external view returns (address);
 
-    function hasTemplate(uint8 title) external view returns (bool);
+    // function hasTemplate(uint8 title) external view returns (bool);
 
-    function getTermTemplate(uint8 title) external view returns (address);
+    // function getTermTemplate(uint8 title) external view returns (address);
 }

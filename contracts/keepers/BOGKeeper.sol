@@ -27,6 +27,7 @@ import "../common/lib/SNParser.sol";
 import "../common/lib/MotionsRepo.sol";
 
 import "../common/components/IRepoOfDocs.sol";
+import "../common/components/ISigPage.sol";
 
 contract BOGKeeper is
     IBOGKeeper,
@@ -81,38 +82,36 @@ contract BOGKeeper is
         onlyDirectKeeper
         memberExist(caller)
     {
+        ISigPage _page = ISigPageSetting(doc).getSigPage();
+        require(
+            _page.isParty(caller),
+            "BOGK.PD: NOT Party of Doc"
+        );
+
         IRepoOfDocs rod;
         if (seqOfVR != 8 && seqOfVR != 18) rod = _getBOA();
         else if (seqOfVR == 8 || seqOfVR == 18) rod = _getBOH();
         else revert("BOGK.PD: wrong seqOfVR");
 
-        require(
-            rod.isParty(doc, caller),
-            "BOGK.PD: NOT Party of Doc"
-        );
+        IRepoOfDocs.Head memory headOfDoc = rod.getHeadOfDoc(doc);
 
         require(
-            rod.getHeadOfDoc(doc).state == uint8(IRepoOfDocs.RODStates.Established),
+            headOfDoc.state == uint8(IRepoOfDocs.RODStates.Established),
             "BOGK.PD: doc not on Established"
         );
 
-        IRepoOfDocs.Head memory headOfDoc = rod.getHeadOfDoc(doc);
-
-        // uint48 shaExecDeadline = rod.getHeadOfDoc(doc).shaExecDeadline;
-        // uint48 proposeDeadline = rod.getHeadOfDoc(doc).proposeDeadline;
-
         require(
             headOfDoc.shaExecDeadline < block.timestamp,
-            "BOGKeeper.proposeMotion: IA not passed review procedure"
+            "BOGK.PM: IA not passed review procedure"
         );
 
         require(
             headOfDoc.proposeDeadline == headOfDoc.shaExecDeadline || 
             headOfDoc.proposeDeadline >= block.timestamp,
-            "missed votingDeadline"
+            "BOGK.PM: missed votingDeadline"
         );
 
-        rod.pushToNextState(doc);
+        rod.setStateOfDoc(doc, uint8(IRepoOfDocs.RODStates.Proposed));
 
         _getBOG().proposeDoc(doc, seqOfVR, caller, 0);
     }

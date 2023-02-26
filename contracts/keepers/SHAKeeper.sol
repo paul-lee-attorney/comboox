@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -20,6 +20,7 @@ import "../books/boa/IFirstRefusalDeals.sol";
 import "../books/boa/IMockResults.sol";
 
 import "../common/components/RepoOfDocs.sol";
+
 import "../common/components/ISigPage.sol";
 
 import "../common/access/AccessControl.sol";
@@ -30,8 +31,11 @@ import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/IIASetting.sol";
 import "../common/ruting/ROMSetting.sol";
 
+import "../common/ruting/ISigPageSetting.sol";
+
 import "../common/lib/SNParser.sol";
 import "../common/lib/SNFactory.sol";
+import "../common/lib/FRClaims.sol";
 
 import "./ISHAKeeper.sol";
 
@@ -52,7 +56,7 @@ contract SHAKeeper is
 
     modifier withinExecPeriod(address ia) {
         require(
-            _getBOA().getHeadOfDoc(ia).shaExecDeadline >= block.timestamp,
+            _getBOA().getHeadOfDoc(ia).shaExecDeadline > block.timestamp,
             "missed review period"
         );
         _;
@@ -60,7 +64,7 @@ contract SHAKeeper is
 
     modifier afterExecPeriod(address ia) {
         require(
-            _getBOA().getHeadOfDoc(ia).shaExecDeadline < block.timestamp,
+            _getBOA().getHeadOfDoc(ia).shaExecDeadline <= block.timestamp,
             "still within review period"
         );
         _;
@@ -119,7 +123,7 @@ contract SHAKeeper is
         _lockDealSubject(ia, alongSN, par);
 
         if (!dragAlong)
-            _getBOA().signDeal(ia, alongSN.seqOfDeal(), caller, sigHash);
+            ISigPageSetting(ia).getSigPage().signDeal(alongSN.seqOfDeal(), caller, sigHash);
     }
 
     function _addAlongDeal(
@@ -136,10 +140,10 @@ contract SHAKeeper is
 
         address term = dragAlong
             ? _getSHA().getTerm(
-                uint8(IShareholdersAgreement.TermTitle.DRAG_ALONG)
+                uint8(IShareholdersAgreement.TermTitle.DragAlong)
             )
             : _getSHA().getTerm(
-                uint8(IShareholdersAgreement.TermTitle.TAG_ALONG)
+                uint8(IShareholdersAgreement.TermTitle.TagAlong)
             );
 
         require(ITerm(term).isTriggered(ia, sn), "not triggered");
@@ -150,7 +154,7 @@ contract SHAKeeper is
         );
 
         require(
-            !_getBOA().isInitSigner(ia, shareNumber.shareholder()),
+            !ISigPageSetting(ia).getSigPage().isInitSigner(shareNumber.shareholder()),
             "follower is an InitSigner of IA"
         );
 
@@ -246,7 +250,7 @@ contract SHAKeeper is
 
         IMockResults(mock).mockDealOfBuy(sn, amount);
 
-        _getBOA().signDeal(ia, seq, caller, sigHash);
+        ISigPageSetting(ia).getSigPage().signDeal(seq, caller, sigHash);
     }
 
     // ======== AntiDilution ========
@@ -264,12 +268,12 @@ contract SHAKeeper is
         );
 
         require(
-            !_getBOA().isInitSigner(ia, caller),
+            !ISigPageSetting(ia).getSigPage().isInitSigner(caller),
             "caller is an InitSigner of IA"
         );
 
         address ad = _getSHA().getTerm(
-            uint8(IShareholdersAgreement.TermTitle.ANTI_DILUTION)
+            uint8(IShareholdersAgreement.TermTitle.AntiDilution)
         );
 
         uint64 giftPar = IAntiDilution(ad).giftPar(sn, shareNumber);
@@ -300,8 +304,7 @@ contract SHAKeeper is
                     caller
                 );
 
-                _getBOA().signDeal(
-                    ia,
+                ISigPageSetting(ia).getSigPage().signDeal(
                     snOfGiftDeal.seqOfDeal(),
                     caller,
                     sigHash
@@ -396,79 +399,108 @@ contract SHAKeeper is
     // ======== FirstRefusal ========
 
     function execFirstRefusal(
-        bytes32 rule,
+        uint16 seqOfFRRule,
         uint256 seqOfRightholder,
         address ia,
-        bytes32 snOfOD,
+        bytes32 snOfDeal,
         uint40 caller,
         bytes32 sigHash
-    ) external onlyDirectKeeper onlyEstablished(ia) withinExecPeriod(ia) {
-        require(!_getBOA().isInitSigner(ia, caller), "caller is an init signer");
+    ) external onlyDirectKeeper withinExecPeriod(ia) {
+        
+        IBookOfIA _boa = _getBOA();
+        uint16 seqOfDeal = snOfDeal.seqOfDeal();
+        
+        bytes32 rule = _getSHA().getRule(seqOfFRRule);
+
+        require(rule.dealTypeOfFR() == snOfDeal.typeOfDeal(), 
+            "SHAK.EFR: rule and deal are not same type");
 
         require(
             (rule.membersEqualOfFR() && _getROM().isMember(caller)) || 
             rule.rightholdersOfFR(seqOfRightholder) == caller,
-            "SHAKeeper.efr: caller NOT rightholder"
+            "SHAK.EFR: caller NOT rightholder"
         );
 
-        // ==== create FR deal in IA ====
-        bytes32 snOfFR = _createFRDeal(ia, snOfOD, caller);
+        if (_boa.execFirstRefusalRight(ia, seqOfDeal, caller)) {
 
-        _getBOA().signDeal(ia, snOfFR.seqOfDeal(), caller, sigHash);
+            ISigPage _page = ISigPageSetting(ia).getSigPage();
 
-        // ==== record FR deal in frDeals ====
-        address frd = _getBOA().frDealsOfIA(ia);
-        if (frd == address(0)) {
-            frd = _getBOA().createFRDeals(ia, caller);
-            IAccessControl(frd).init(
-                caller,
-                address(this),
-                address(_rc),
-                address(_gk)
+            _page.addBlank(seqOfDeal, caller);
+            _page.signDeal(seqOfDeal, caller, sigHash);
+        }
+    }
+
+    function acceptFirstRefusal(
+        address ia,
+        bytes32 snOfOD,
+        uint40 caller,
+        bytes32 sigHash
+    ) external onlyDirectKeeper afterExecPeriod(ia) {
+        uint16 seqOfDeal = snOfOD.seqOfDeal();
+
+        if (
+            snOfOD.typeOfDeal() ==
+            uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
+        )
+            require(
+                _getROM().groupRep(caller) == _getROM().controllor(),
+                "SHAK.AFR: caller not belong to controller group"
             );
-            // IROMSetting(frd).setROM();
+        else require(caller == snOfOD.sellerOfDeal(), "SHAK.AFR: not seller of Deal");
+
+        IBookOfIA _boa = _getBOA();
+
+        FRClaims.Claim[] memory cls = _boa.acceptFirstRefusalClaims(ia, seqOfDeal);
+
+        uint256 len = cls.length;
+
+        while (len > 0) {
+            _createFRDeal(ia, cls[len-1]);
+            len--;
         }
 
-        IFirstRefusalDeals(frd).execFirstRefusalRight(
-            snOfOD.seqOfDeal(),
-            snOfFR.seqOfDeal(),
-            caller
-        );
+        ISigPage _page = ISigPageSetting(ia).getSigPage();
+
+        _page.addBlank(seqOfDeal, caller);
+        _page.signDeal(seqOfDeal, caller, sigHash);
     }
+
 
     function _createFRDeal(
         address ia,
-        bytes32 snOfOD,
-        uint40 caller
-    ) private returns (bytes32 snOfFR) {
-        uint32 ssnOfOD = snOfOD.ssnOfDeal();
+        FRClaims.Claim memory cl
+    ) private {
+
+        IInvestmentAgreement _ia = IInvestmentAgreement(ia);
+
+        IInvestmentAgreement.Deal memory deal = _ia.getDeal(cl.seqOfDeal);
+
+        uint32 ssnOfOD = deal.sn.ssnOfDeal();
 
         IBookOfShares.Share memory share;
 
         if (ssnOfOD != 0) share = _getBOS().getShare(ssnOfOD);
 
-        uint16 seq = IInvestmentAgreement(ia).counterOfDeals() + 1;
-        uint16 seqOfOD = snOfOD.seqOfDeal();
+        uint16 seq = _ia.counterOfDeals() + 1;
+        // uint16 seqOfOD = deal.sn.seqOfDeal();
 
-        snOfFR = createDealSN(
-            snOfOD.class(),
+        bytes32 snOfFR = createDealSN(
+            deal.sn.class(),
             seq,
             ssnOfOD == 0
                 ? uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
                 : uint8(IInvestmentAgreement.TypeOfDeal.FirstRefusal),
             share.shareNumber.shareholder(),
-            caller,
-            _getROM().groupRep(caller),
-            share.shareNumber.ssn(),
-            snOfOD.priceOfDeal(),
-            seqOfOD
+            cl.rightholder,
+            _getROM().groupRep(cl.rightholder),
+            ssnOfOD,
+            deal.sn.priceOfDeal(),
+            cl.seqOfDeal
         );
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(
-            seqOfOD
-        );
+        _ia.createDeal(snOfFR, (deal.paid * cl.ratio) / 10000, (deal.par * cl.ratio) / 10000, deal.closingDate);
 
-        IInvestmentAgreement(ia).createDeal(snOfFR, deal.paid, deal.par, deal.closingDate);
+        _ia.lockDealSubject(seq);
     }
 
     function createDealSN(
@@ -497,58 +529,30 @@ contract SHAKeeper is
         sn = _sn.bytesToBytes32();
     }
 
-    function acceptFirstRefusal(
-        address ia,
-        bytes32 snOfOD,
-        uint16 ssnOfFR,
-        uint40 caller,
-        bytes32 sigHash
-    ) external onlyDirectKeeper onlyEstablished(ia) afterExecPeriod(ia) {
-        uint16 ssnOfOD = snOfOD.seqOfDeal();
+    // function _acceptFR(
+    //     address ia,
+    //     uint16 ssnOfOD,
+    //     uint16 ssnOfFR
+    // ) private returns (uint64 ratio) {
+    //     address frDeals = _getBOA().frDealsOfIA(ia);
 
-        if (
-            snOfOD.typeOfDeal() ==
-            uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
-        )
-            require(
-                _getROM().groupRep(caller) == _getROM().controllor(),
-                "caller not belong to controller group"
-            );
-        else require(caller == snOfOD.sellerOfDeal(), "not seller of Deal");
+    //     ratio = IFirstRefusalDeals(frDeals).acceptFirstRefusal(
+    //         ssnOfOD,
+    //         ssnOfFR
+    //     );
+    // }
 
-        uint64 ratio = _acceptFR(ia, ssnOfOD, ssnOfFR);
+    // function _updateFRDeal(
+    //     address ia,
+    //     uint16 ssnOfOD,
+    //     uint16 ssnOfFR,
+    //     uint64 ratio
+    // ) private {
 
-        _updateFRDeal(ia, ssnOfOD, ssnOfFR, ratio);
+    //     IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(
+    //         ssnOfOD
+    //     );
 
-        IInvestmentAgreement(ia).lockDealSubject(ssnOfFR);
-
-        _getBOA().signDeal(ia, ssnOfFR, caller,  sigHash);
-    }
-
-    function _acceptFR(
-        address ia,
-        uint16 ssnOfOD,
-        uint16 ssnOfFR
-    ) private returns (uint64 ratio) {
-        address frDeals = _getBOA().frDealsOfIA(ia);
-
-        ratio = IFirstRefusalDeals(frDeals).acceptFirstRefusal(
-            ssnOfOD,
-            ssnOfFR
-        );
-    }
-
-    function _updateFRDeal(
-        address ia,
-        uint16 ssnOfOD,
-        uint16 ssnOfFR,
-        uint64 ratio
-    ) private {
-
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(
-            ssnOfOD
-        );
-
-        IInvestmentAgreement(ia).updateDeal(ssnOfFR, (deal.paid * ratio) / 10000, (deal.par * ratio) / 10000, deal.closingDate);
-    }
+    //     IInvestmentAgreement(ia).updateDeal(ssnOfFR, (deal.paid * ratio) / 10000, (deal.par * ratio) / 10000, deal.closingDate);
+    // }
 }
