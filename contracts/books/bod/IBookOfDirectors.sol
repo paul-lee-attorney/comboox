@@ -42,20 +42,20 @@ interface IBookOfDirectors is IMeetingMinutes {
     event SetMaxQtyOfDirectors(uint8 max);
 
     event AppointOfficer(
-        uint40 indexed acct,
+        uint256 indexed acct,
         uint8 title,
-        uint40 appointer
+        uint256 appointer
     );
 
     event AddDirector(
-        uint40 indexed acct,
+        uint256 indexed acct,
         uint8 title,
-        uint40 appointer,
+        uint256 appointer,
         uint48 startDate,
         uint48 endDate
     );
 
-    event RemoveDirector(uint40 indexed acct);
+    event RemoveDirector(uint256 indexed acct);
 
     //##################
     //##    写接口    ##
@@ -66,15 +66,15 @@ interface IBookOfDirectors is IMeetingMinutes {
     function setMaxQtyOfDirectors(uint8 max) external;
 
     function appointOfficer(
-        uint16 seqOfVR,
+        uint256 seqOfVR,
         uint8 title,
-        uint40 nominator,
-        uint40 candidate
+        uint256 nominator,
+        uint256 candidate
     ) external;
 
-    function removeDirector(uint40 acct) external;
+    function removeDirector(uint256 acct) external;
 
-    function takePosition(bytes32 bsRule, uint8 titile, uint40 candidate, uint40 nominator) external;
+    function takePosition(uint256 seqOfBSR, uint8 titile, uint256 candidate, uint256 nominator) external;
 
     //##################
     //##    读接口    ##
@@ -84,18 +84,18 @@ interface IBookOfDirectors is IMeetingMinutes {
 
     function qtyOfDirectors() external view returns (uint16);
 
-    function isDirector(uint40 acct) external view returns (bool);
+    function isDirector(uint256 acct) external view returns (bool);
 
-    function isOfficer(uint40 acct) external view returns (bool);
+    function isOfficer(uint256 acct) external view returns (bool);
 
     function whoIs(uint8 title) external view returns (uint40);
 
-    function getDirector(uint40 acct)
+    function getDirector(uint256 acct)
         external
         view
         returns(Officer memory director);
 
-    function directors() external view returns (uint40[] memory);
+    function directors() external view returns (uint256[] memory);
 
     function boardSeatsOf(uint256 acct) external view returns(uint256);    
 }

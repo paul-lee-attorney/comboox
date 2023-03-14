@@ -15,10 +15,10 @@ import "./IOptions.sol";
 
 contract Options is IOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Repo;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using OptionsRepo for OptionsRepo.Option;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    OptionsRepo.Repo private _options;
+    OptionsRepo.Repo private _repo;
 
     // ################
     // ##   写接口   ##
@@ -26,16 +26,43 @@ contract Options is IOptions, AccessControl {
 
     function createOption(
         bytes32 sn,
-        uint40 rightholder,
-        uint40[] memory obligors,
+        uint256 rightholder,
+        uint256 obligor,
         uint64 paid,
         uint64 par
-    ) external onlyAttorney returns (bytes32 _sn) {
-        _sn = _options.createOption(sn, rightholder, obligors, paid, par);
+    ) external onlyAttorney returns (uint32 seqOfOpt) {
+        seqOfOpt = _repo.createOption(sn, rightholder, obligor, paid, par);
     }
 
-    function delOption(bytes32 sn) external onlyAttorney {
-        _options.removeOption(sn);
+    function delOption(uint256 seqOfOpt) external onlyAttorney {
+        delete _repo.options[seqOfOpt];
+    }
+
+    function addObligorIntoOpt(
+        uint256 seqOfOpt,
+        uint256 obligor
+    ) external onlyAttorney returns (bool flag) {
+        if (isOption(seqOfOpt)) 
+            flag = _repo.records[seqOfOpt].obligors.add(obligor);
+    }
+
+    function removeObligorFromOpt(
+        uint256 seqOfOpt,
+        uint256 obligor
+    ) external onlyAttorney returns (bool flag) {
+        if (isOption(seqOfOpt)) 
+            flag = _repo.records[seqOfOpt].obligors.remove(obligor);
+    }
+
+    function optRegistered(uint256 seqOfOpt)
+        external 
+    {
+        require (msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfOptions)), 
+            "OP.USOO: msgSender is not BOO");
+
+        require (isOption(seqOfOpt), "OP.USOO: opt not exist");
+
+        _repo.options[seqOfOpt].head.state = uint8(OptionsRepo.OptStates.Issued);
     }
 
     // ################
@@ -43,44 +70,37 @@ contract Options is IOptions, AccessControl {
     // ################
 
     function counterOfOpts() external view returns (uint32) {
-        return uint32(_options.options[0].rightholder);
+        return _repo.counterOfOptions();
     }
 
-    function isOption(bytes32 sn) external view returns (bool) {
-        return _options.snList.contains(sn);
+    function isOption(uint256 seqOfOpt) public view returns (bool) {
+        return _repo.options[seqOfOpt].head.state > 0;
     }
 
-    function qtyOfOpts() external view returns (uint256) {
-        return _options.snList.length();
+    function isObligor(uint256 seqOfOpt, uint256 acct) external view returns (bool) {
+        return _repo.records[seqOfOpt].obligors.contains(acct);
     }
 
-    function isObligor(bytes32 sn, uint40 acct) external view returns (bool) {
-        return _options.options[sn].obligors.contains(acct);
-    }
-
-    function getOption(bytes32 sn)
+    function getOption(uint256 seqOfOpt)
         external
         view
         returns (
-            uint40 rightholder,
-            uint64 paid,
-            uint64 par
-        )
+        OptionsRepo.Head memory head, 
+        OptionsRepo.Body memory body)   
     {
-        rightholder = _options.options[sn].rightholder;
-        paid = _options.options[sn].paid[0];
-        par = _options.options[sn].par[0];
+        require (isOption(seqOfOpt), "OP.GO: opt not exist");
+
+        head = _repo.options[seqOfOpt].head;
+        body = _repo.options[seqOfOpt].body;
     }
 
-    function obligorsOfOption(bytes32 sn)
+    function obligorsOfOption(uint256 seqOfOpt)
         external
         view
-        returns (uint40[] memory)
+        returns (uint256[] memory)
     {
-        return _options.options[sn].obligors.valuesToUint40();
-    }
-
-    function optsList() external view returns (bytes32[] memory) {
-        return _options.snList.values();
+        require (isOption(seqOfOpt), "OP.GO: opt not exist");
+    
+        return _repo.records[seqOfOpt].obligors.values();
     }
 }

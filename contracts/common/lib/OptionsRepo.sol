@@ -7,470 +7,532 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/lib/SNFactory.sol";
-import "../../common/lib/SNParser.sol";
 import "../../common/lib/EnumerableSet.sol";
 import "../../common/lib/Checkpoints.sol";
+import "./PledgesRepo.sol";
+
 
 import "../../books/bos/IBookOfShares.sol";
+// import "../../books/bop/IBookOfPledges.sol";
 
 library OptionsRepo {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
     using Checkpoints for Checkpoints.History;
-    using SNFactory for bytes;
-    using SNParser for bytes32;
+
+    enum OptTypes {
+        CallPrice,          // 0
+        PutPrice,           // 1
+        CallRoe,            // 2
+        PutRoe,             // 3
+        CallIrr,            // 4
+        PutIrr,             // 5
+        CallPriceWithCnds,  // 6
+        PutPriceWithCnds,   // 7
+        CallRoeWithCnds,    // 8
+        PutRoeWithCnds,     // 9
+        CallIrrWithCnds,    // 10
+        PutIrrWithCnds      // 11
+    }
+
+    enum OptStates {
+        Pending,    // 0
+        Issued,     // 1    
+        Executed,   // 2
+        Futured,    // 3
+        Pledged,    // 4
+        Closed,     // 5
+        Revoked,    // 6
+        Expired     // 7
+    }
+
+    enum FutureStates{
+        Pending,
+        Issued,
+        Closed,
+        Revoked,
+        Expired
+    }
+
+    enum LogOps {
+        NotApplicable,
+        And,
+        Or,
+        AndOr,
+        OrAnd,
+        Equal,
+        NotEqual
+    }
+
+    enum ComOps {
+        NotApplicable,
+        Equal,
+        NotEqual,
+        Bigger,
+        Smaller,
+        BiggerOrEqual,
+        SmallerOrEqual
+    }
+
+    struct Head {
+        uint32 seqOfOpt;    //4     0
+        uint8 typeOfOpt;      //1 5   4
+        uint32 rate;        //4 9   5
+        uint48 triggerDate; //6 15  9
+        uint8 execDays;     //1 16  15
+        uint8 closingDays;  //1 17  16
+        uint16 classOfShare;    //2 19  17
+        uint8 logicOperator;    //1 20  19
+        uint8 compOperator1;   //1 21    20
+        uint32 para1;          //4 25  21
+        uint8 compOperator2;   //1 26 25
+        uint32 para2;          //4 30  26
+        uint8 state;            //1 31  30
+    }
+
+    struct Body {
+        uint48 closingDate;
+        uint40 rightholder;
+        uint40 obligor;
+        uint64 paid;
+        uint64 par;
+    }
+
+    struct Future {
+        uint32 seqOfFuture;
+        uint32 seqOfShare;
+        uint40 buyer;
+        uint64 paid;
+        uint64 par;
+        uint8 state;
+    }
+
+    struct Oracle {
+        uint48 timestamp;
+        uint32 data1;
+        uint32 data2;
+    }
 
     struct Option {
-        // bytes32 sn;
+        Head head;
+        Body body;
         bytes32 hashLock;
-        uint40 rightholder;
-        uint48 closingDate;
-        uint8 state; // 0-pending; 1-issued; 2-executed; 3-futureReady; 4-pledgeReady; 5-closed; 6-revoked; 7-expired;
-        uint64[2] par;
-        uint64[3] paid; // 0-optValue; 1-futureValue;
-        EnumerableSet.UintSet obligors;
-        Checkpoints.History oracles;
-        EnumerableSet.Bytes32Set futures;
-        EnumerableSet.Bytes32Set pledges;
     }
 
-    // bytes32 snInfo{
-    //      uint8 typeOfOpt; 0, 1  //0-call(price); 1-put(price); 2-call(roe); 3-put(roe); 4-call(price) & cnds; 5-put(price) & cnds; 6-call(roe) & cnds; 7-put(roe) & cnds;
-    //      uint32 seqOfOpt; 1, 4
-    //      uint48 triggerDate; 5, 6
-    //      uint8 exerciseDays; 11, 1
-    //      uint8 closingDays; 12, 1
-    //      uint16 class; 13, 2
-    //      uint32 rate; 15, 4 // Price, ROE, IRR or other key rate to deduce price.
-    //      uint8 logicOperator; 19, 1 // 0-not applicable; 1-and; 2-or; ...
-    //      uint8 compareOperator_1; 20, 1 // 0-not applicable; 1-bigger; 2-smaller; 3-bigger or equal; 4-smaller or equal; ...
-    //      uint32 para_1; 21, 4
-    //      uint8 compareOperator_2; 25, 1 // 0-not applicable; 1-bigger; 2-smaller; 3-bigger or equal; 4-smaller or equal; ...
-    //      uint32 para_2; 26, 4
-    // }
-
-    // struct Oracle {
-    //     uint48 timestamp;
-    //     uint32 data_1;
-    //     uint32 data_2;
-    // }
-
-    // struct Future {
-    //     uint32 ssn;
-    //     uint64 paid;
-    //     uint64 par;
-    // }
-
-    // _options[0].rightholder: counterOfOpts;
+    struct Record {
+        EnumerableSet.UintSet obligors;
+        mapping(uint256 => Future) futures;
+        mapping(uint256 => PledgesRepo.Pledge) pledges;
+        Checkpoints.History oracles;
+    }
 
     struct Repo {
-        mapping(bytes32 => Option) options;
-        EnumerableSet.Bytes32Set snList;
+        mapping(uint256 => Option) options;
+        mapping(uint256 => Record) records;
     }
 
-    // ################
-    // ##  Modifier  ##
-    // ################
-
-    modifier optionExist(Repo storage repo, bytes32 sn) {
-        require(repo.snList.contains(sn), "OR.optionExist: option NOT exist");
-        _;
-    }
-
-    // ################
+    // ###############
     // ##   写接口   ##
-    // ################
+    // ###############
+
+    // ==== Repo ====
+
+    function snParser(bytes32 sn) public pure returns (Head memory head) {
+        head = Head({
+            seqOfOpt: uint32(bytes4(sn)),
+            typeOfOpt: uint8(sn[4]),
+            rate: uint32(bytes4(sn<<40)),
+            triggerDate: uint48(bytes6(sn<<72)),
+            execDays: uint8(sn[15]),
+            closingDays: uint8(sn[16]),
+            classOfShare: uint16(bytes2(sn<<128)),
+            logicOperator: uint8(sn[18]),
+            compOperator1: uint8(sn[19]),
+            para1: uint32(bytes4(sn<<160)),
+            compOperator2: uint8(sn[25]),
+            para2: uint32(bytes4(sn<<200)),
+            state: uint8(sn[30])
+        });
+    }
+
+    function issueOption(
+        Repo storage repo,
+        bytes32 sn,
+        uint256 rightholder,
+        uint256 obligor,
+        uint64 paid,
+        uint64 par
+    ) public returns (uint32 seqOfOpt) {
+
+        Head memory head = snParser(sn);
+        seqOfOpt = createOption(repo, head, rightholder, obligor, paid, par);
+    }
 
     function createOption(
         Repo storage repo,
-        bytes32 sn,
-        uint40 rightholder,
-        uint40[] memory obligors,
+        Head memory head,
+        uint256 rightholder,
+        uint256 obligor,
         uint64 paid,
         uint64 par
-    ) public returns (bytes32 _sn) {
+    ) public returns(uint32 seqOfOpt) {
+
+        require(head.rate > 0, "OR.CO: ZERO rate");
         require(
-            sn.triggerDateOfOpt() > block.timestamp,
-            "OR.createOption: trigger date has passed"
+            head.triggerDate > block.timestamp,
+            "OR.CO: triggerDate not future"
         );
         require(
-            sn.exerciseDaysOfOpt() > 0,
-            "OR.createOption: ZERO exerciseDays"
+            head.execDays > 0,
+            "OR.CO: ZERO execDays"
         );
-        require(sn.closingDaysOfOpt() > 0, "OR.createOption: ZERO closingDays");
-        require(sn.rateOfOpt() > 0, "OR.createOption: rate is ZERO");
+        require(head.closingDays > 0, "OR.CO: ZERO closingDays");
 
-        require(rightholder > 0, "OR.createOption: ZERO rightholder");
-        require(obligors.length > 0, "OR.createOption: ZERO obligors");
+        require(rightholder > 0, "OR.CO: ZERO rightholder");
+        require(obligor > 0, "OR.CO: ZERO obligor");
 
-        require(paid > 0, "OR.createOption: ZERO paid");
-        require(par >= paid, "OR.createOption: INSUFFICIENT par");
+        require(paid > 0, "OR.CO: ZERO paid");
+        require(par >= paid, "OR.CO: INSUFFICIENT par");
 
-        repo.options[0].rightholder++;
+        increaseCounterOfOptions(repo);
 
-        uint32 seq = uint32(repo.options[0].rightholder);
+        seqOfOpt = counterOfOptions(repo);
 
-        _sn = _updateSequence(sn, seq);
+        head.seqOfOpt = seqOfOpt;        
+        head.state = uint8(OptStates.Pending);
 
-        if (repo.snList.add(_sn)) {
-            Option storage opt = repo.options[_sn];
+        Option storage opt = repo.options[seqOfOpt];
 
-            // opt.sn = _sn;
-            opt.rightholder = rightholder;
-            opt.state = 1;
-            opt.paid[0] = paid;
-            opt.par[0] = par;
+        opt.head = head;
+        opt.body = Body({
+            closingDate: (head.triggerDate + uint48(head.execDays + head.closingDays) * 86400),
+            rightholder: uint40(rightholder),
+            obligor: uint40(obligor),
+            paid: paid,
+            par: par
+        });
 
-            uint256 len = obligors.length;
-
-            while (len != 0) {
-                opt.obligors.add(obligors[len - 1]);
-                len--;
-            }
-
-            return _sn;
-        } else return bytes32(0);
+        repo.records[seqOfOpt].obligors.add(obligor);
     }
 
-    function _updateSequence(bytes32 sn, uint32 seq)
-        private
-        pure
-        returns (bytes32)
-    {
-        bytes memory _sn = abi.encodePacked(sn);
-
-        _sn = _sn.ssnToSN(1, seq);
-
-        return _sn.bytesToBytes32();
-    }
-
-    function addObligorIntoOption(
-        Repo storage repo,
-        bytes32 sn,
-        uint40 obligor
-    ) public optionExist(repo, sn) returns (bool flag) {
-        if (repo.options[sn].obligors.add(obligor)) {
-            flag = true;
-        }
-    }
-
-    function removeObligorFromOption(
-        Repo storage repo,
-        bytes32 sn,
-        uint40 obligor
-    ) public optionExist(repo, sn) returns (bool flag) {
-        if (repo.options[sn].obligors.remove(obligor)) {
-            flag = true;
-        }
-    }
-
-    function removeOption(Repo storage repo, bytes32 sn)
-        public
-        returns (bool flag)
-    {
-        if (repo.snList.remove(sn)) {
-            delete repo.options[sn];
-            flag = true;
-        }
-    }
-
-    function updateOracle(
-        Repo storage repo,
-        bytes32 sn,
-        uint32 d1,
-        uint32 d2
-    ) public optionExist(repo, sn) {
-        repo.options[sn].oracles.push(d1, d2, 0);
-    }
+    // ==== Option ====
 
     function execOption(
         Repo storage repo,
-        bytes32 sn
-    ) public optionExist(repo, sn) {
-        Option storage opt = repo.options[sn];
-
-        uint48 triggerDate = sn.triggerDateOfOpt();
-        uint48 exerciseDays = sn.exerciseDaysOfOpt();
-        uint48 closingDays = sn.closingDaysOfOpt();
+        uint256 seqOfOpt
+    ) public {
+        Option storage opt = repo.options[seqOfOpt]; 
+        Record storage rcd = repo.records[seqOfOpt];
 
         require(
-            opt.state == 1,
-            "OR.createOption: option's state is NOT correct"
+            opt.head.state == uint8(OptStates.Issued),
+            "OR.EO: wrong state of Opt"
         );
         require(
-            block.timestamp >= triggerDate,
-            "OR.createOption: NOT reached TriggerDate"
+            block.timestamp >= opt.head.triggerDate,
+            "OR.EO: NOT reached TriggerDate"
         );
 
-        if (exerciseDays != 0)
+        if (opt.head.execDays > 0)
             require(
-                block.timestamp <= triggerDate + exerciseDays * 86400,
-                "OR.createOption: NOT in exercise period"
+                block.timestamp <= opt.head.triggerDate + opt.head.execDays * 86400,
+                "OR.EO: NOT in exercise period"
             );
 
-        Checkpoints.Checkpoint memory cp = opt.oracles.latest();
+        Checkpoints.Checkpoint memory cp = rcd.oracles.latest();
 
-        if (sn.typeOfOpt() > 3)
+        if (opt.head.typeOfOpt > uint8(OptTypes.PutIrr))
             require(
-                sn.checkConditions(uint32(cp.paid), uint32(cp.par)),
-                "OR.createOption: conditions NOT satisfied"
+                checkConditions(opt.head, uint32(cp.paid), uint32(cp.par)),
+                "OR.EO: conditions NOT satisfied"
             );
 
-        opt.closingDate = uint48(block.timestamp) + closingDays * 86400;
-        opt.state = 2;
+        opt.body.closingDate = uint48(block.timestamp) + opt.head.closingDays * 86400;
+        opt.head.state = uint8(OptStates.Executed);
     }
+
+    // --- Head ----
+
+    function checkConditions(
+        Head memory head,
+        uint32 data1,
+        uint32 data2
+    ) public pure returns (bool flag) {
+        bool flag1;
+        bool flag2;
+
+        if (head.compOperator1 == uint8(ComOps.Equal)) flag1 = data1 == head.para1;
+        else if (head.compOperator1 == uint8(ComOps.NotEqual)) flag1 = data1 != head.para1;
+        else if (head.compOperator1 == uint8(ComOps.Bigger)) flag1 = data1 > head.para1;
+        else if (head.compOperator1 == uint8(ComOps.Smaller)) flag1 = data1 < head.para1;
+        else if (head.compOperator1 == uint8(ComOps.BiggerOrEqual)) flag1 = data1 >= head.para1;
+        else if (head.compOperator1 == uint8(ComOps.SmallerOrEqual)) flag1 = data1 <= head.para1;
+
+        if (head.compOperator2 == uint8(ComOps.Equal)) flag2 = data2 == head.para2;
+        else if (head.compOperator2 == uint8(ComOps.NotEqual)) flag2 = data2 != head.para2;
+        else if (head.compOperator2 == uint8(ComOps.Bigger)) flag2 = data2 > head.para2;
+        else if (head.compOperator2 == uint8(ComOps.Smaller)) flag2 = data2 < head.para2;
+        else if (head.compOperator2 == uint8(ComOps.BiggerOrEqual)) flag2 = data2 >= head.para2;
+        else if (head.compOperator2 == uint8(ComOps.SmallerOrEqual)) flag2 = data2 <= head.para2;
+
+        if (head.logicOperator == uint8(LogOps.And)) flag = flag1 && flag2;
+        else if (head.logicOperator == uint8(LogOps.Or)) flag = flag1 || flag2;
+        else if (head.logicOperator == uint8(LogOps.AndOr)) flag = flag1;
+        else if (head.logicOperator == uint8(LogOps.OrAnd)) flag = flag2;
+        else if (head.logicOperator == uint8(LogOps.Equal)) flag = flag1 == flag2;
+        else if (head.logicOperator == uint8(LogOps.NotEqual)) flag = flag1 != flag2;
+    }
+
+    // ==== Futures ====
 
     function addFuture(
         Repo storage repo,
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint64 paid,
-        uint64 par,
-        IBookOfShares _bos
-    ) public optionExist(repo, sn) returns (bool flag) {
-        Option storage opt = repo.options[sn];
+        uint256 seqOfOpt,
+        IBookOfShares.Share memory share,
+        Future memory future
+    ) public returns (bool flag) {
+        Option storage opt = repo.options[seqOfOpt];
+        Record storage rcd = repo.records[seqOfOpt];
 
         require(
-            block.timestamp <= opt.closingDate,
-            "OR.addFuture: MISSED closingDate"
+            block.timestamp <= opt.body.closingDate,
+            "OR.AF: MISSED closingDate"
         );
-        require(opt.state == 2, "OR.addFuture: option NOT executed");
+        require(opt.head.state == uint8(OptStates.Executed), 
+            "OR.AF: option NOT executed");
 
-        uint8 typeOfOpt = sn.typeOfOpt();
-
-        uint32 shortOfShare = shareNumber.ssn();
-
-        require(_bos.isShare(shortOfShare), "OR.addFuture: share NOT exist");
-
-        if (typeOfOpt == 1)
+        if (opt.head.typeOfOpt % 2 == 1) {
             require(
-                opt.rightholder == shareNumber.shareholder(),
-                "OR.addFuture: WRONG shareholder"
+                opt.body.rightholder == share.head.shareholder,
+                "OR.AF: WRONG shareholder"
             );
-        else
+            require (
+                rcd.obligors.contains(future.buyer),
+                "OR.AF: wrong future buyer"
+            );
+        } else {
             require(
-                opt.obligors.contains(shareNumber.shareholder()),
-                "OR.addFuture: WRONG sharehoder"
+                rcd.obligors.contains(share.head.shareholder),
+                "OR.AF: WRONG sharehoder"
             );
-
-        require(opt.paid[0] >= opt.paid[1] + paid, "NOT sufficient paid");
-        opt.paid[1] += paid;
-
-        require(opt.par[0] >= opt.par[1] + par, "NOT sufficient par");
-        opt.par[1] += par;
-
-        bytes32 ft = _createFt(shareNumber.ssn(), paid, par);
-
-        if (repo.options[sn].futures.add(ft)) {
-            if (opt.par[0] == opt.par[1] && opt.paid[0] == opt.paid[1])
-                opt.state = 3;
-            flag = true;
+            require(
+                opt.body.rightholder == future.buyer,
+                "OR.AF: Wrong future buyer"
+            );
         }
-    }
 
-    function _createFt(
-        uint32 ssn,
-        uint64 paid,
-        uint64 par
-    ) private pure returns (bytes32 sn) {
-        bytes memory _sn = new bytes(32);
+        require(opt.body.paid >= rcd.futures[0].paid + future.paid, 
+            "NOT sufficient paid");
+        require(opt.body.par >= rcd.futures[0].par + future.par, 
+            "NOT sufficient par");
+        
+        rcd.futures[0].paid += future.paid;
+        rcd.futures[0].par += future.par;
+        
+        _increaseCounterOfFutures(rcd);
+        future.seqOfFuture = counterOfFutures(rcd);
 
-        _sn = _sn.ssnToSN(0, ssn);
-        _sn = _sn.amtToSN(4, paid);
-        _sn = _sn.amtToSN(12, par);
+        rcd.futures[future.seqOfFuture] = future;
 
-        sn = _sn.bytesToBytes32();
+        if (opt.body.par == rcd.futures[0].par && 
+            opt.body.paid == rcd.futures[0].paid) 
+        {
+            opt.head.state = uint8(OptStates.Futured);
+        }
+        
+        flag = true;
     }
 
     function removeFuture(
         Repo storage repo,
-        bytes32 sn,
-        bytes32 ft
-    ) public optionExist(repo, sn) returns (bool flag) {
-        if (repo.options[sn].futures.remove(ft)) flag = true;
-    }
+        uint256 seqOfOpt,
+        uint256 seqOfFt
+    ) public returns (bool flag) {
+        Future storage ft = repo.records[seqOfOpt].futures[seqOfFt];
 
-    function requestPledge(
-        Repo storage repo,
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint64 paid
-    ) public optionExist(repo, sn) returns (bool flag) {
-        Option storage opt = repo.options[sn];
-
-        require(opt.state < 5, "OR.requestPledge: WRONG state");
-        require(opt.state > 1, "OR.requestPledge: WRONG state");
-
-        uint8 typeOfOpt = sn.typeOfOpt();
-
-        if (typeOfOpt % 2 == 1)
-            require(
-                opt.obligors.contains(shareNumber.shareholder()),
-                "OR.requestPledge: WRONG shareholder"
-            );
-        else
-            require(
-                opt.rightholder == shareNumber.shareholder(),
-                "OR.requestPledge: WRONG sharehoder"
-            );
-
-        require(
-            opt.paid[0] >= opt.paid[2] + paid,
-            "OR.requestPledge: pledge paid OVERFLOW"
-        );
-        opt.paid[2] += paid;
-
-        bytes32 pld = _createFt(shareNumber.ssn(), paid, paid);
-
-        if (opt.pledges.add(pld)) {
-            if (opt.paid[0] == opt.paid[2]) opt.state = 4;
+        if (ft.par > 0 && repo.options[seqOfOpt].body.closingDate < block.timestamp) {
+            ft.state = uint8(FutureStates.Revoked);
             flag = true;
         }
     }
 
-    function lockOption(
+    // ==== Pledge ====
+
+    function requestPledge(
         Repo storage repo,
-        bytes32 sn,
+        uint256 seqOfOpt,
+        IBookOfShares.Share memory share,
+        uint64 paid,
+        uint64 par
+    ) public returns (bool flag) {
+        Option storage opt = repo.options[seqOfOpt];
+        Record storage rcd = repo.records[seqOfOpt];
+
+        require(opt.head.state < uint8(OptStates.Closed), "OR.RP: WRONG state");
+        require(opt.head.state > uint8(OptStates.Issued), "OR.RP: WRONG state");
+
+        // uint8 typeOfOpt = sn.typeOfOpt();
+
+        if (opt.head.typeOfOpt % 2 == 1)
+            require(
+                rcd.obligors.contains(share.head.shareholder),
+                "OR.RP: WRONG shareholder"
+            );
+        else
+            require(
+                opt.body.rightholder == share.head.shareholder,
+                "OR.RP: WRONG sharehoder"
+            );
+
+        require(
+            opt.body.paid >= rcd.pledges[0].body.pledgedPar + paid,
+            "OR.RP: pledge paid OVERFLOW"
+        );
+
+        rcd.pledges[0].body.pledgedPar += paid;
+
+        _increaseCounterOfPledges(rcd);
+
+        PledgesRepo.Pledge memory pld = PledgesRepo.Pledge({
+            head: PledgesRepo.Head({
+                seqOfShare: share.head.seq,
+                seqOfPledge: counterOfPledges(rcd),
+                createDate: uint48(block.timestamp),
+                expireDate: opt.body.closingDate,
+                pledgor: share.head.shareholder,
+                debtor: share.head.shareholder
+            }),
+            body: PledgesRepo.Body({
+                creditor: opt.body.rightholder,
+                pledgedPaid: paid,
+                pledgedPar: par,
+                guaranteedAmt: paid
+            })
+        });
+
+        rcd.pledges[pld.head.seqOfPledge] = pld;
+
+        if (opt.body.paid == rcd.pledges[0].body.pledgedPar) 
+            opt.head.state = uint8(OptStates.Pledged);
+
+        flag = true;
+    }
+
+    // ==== Option ====
+
+    function lockOption(
+        Option storage opt,
         bytes32 hashLock
-    ) public optionExist(repo, sn) {
-        Option storage opt = repo.options[sn];
-        require(opt.state > 1, "OR.lockOption: WRONG state");
+    ) public {
+        require(opt.head.state > uint8(OptStates.Issued), 
+            "OR.LO: WRONG state");
+
         opt.hashLock = hashLock;
     }
 
     function closeOption(
-        Repo storage repo,
-        bytes32 sn,
+        Option storage opt,
         string memory hashKey
-    ) public optionExist(repo, sn) {
-        Option storage opt = repo.options[sn];
-
-        require(opt.state > 1, "OR.closeOption: WRONG state");
-        require(opt.state < 5, "OR.closeOption: WRONG state");
+    ) public {
+        require(opt.head.state > uint8(OptStates.Issued), 
+            "OR.CO: WRONG state");
+        require(opt.head.state < uint8(OptStates.Closed), 
+            "OR.CO: WRONG state");
         require(
-            block.timestamp <= opt.closingDate,
-            "OR.closeOption: MISSED closingDate"
+            block.timestamp <= opt.body.closingDate,
+            "OR.CO: MISSED closingDate"
         );
         require(
             opt.hashLock == keccak256(bytes(hashKey)),
-            "OR.closeOption: WRONG key"
+            "OR.CO: WRONG key"
         );
 
-        opt.state = 5;
+        opt.head.state = uint8(OptStates.Closed);
     }
 
-    function revokeOption(Repo storage repo, bytes32 sn)
-        public
-        optionExist(repo, sn)
-    {
-        Option storage opt = repo.options[sn];
+    function revokeOption(Option storage opt) public {
+        require(opt.head.state < uint8(OptStates.Closed), "OR.RO: WRONG state");
+        require(block.timestamp > opt.body.closingDate, "OR.RO: closingDate NOT expired");
 
-        require(opt.state < 5, "WRONG state");
-        require(block.timestamp > opt.closingDate, "closing period NOT expired");
-
-        opt.state = 6;
+        opt.head.state = uint8(OptStates.Revoked);
     }
 
     // ################
     // ##  查询接口  ##
     // ################
 
+    // ==== Repo ====
+
+    function increaseCounterOfOptions(Repo storage repo) public {
+        repo.options[0].head.seqOfOpt++;
+    } 
+
     function counterOfOptions(Repo storage repo)
-        public
-        view
-        returns (uint32)
+        public view returns (uint32)
     {
-        return uint32(repo.options[0].rightholder);
+        return repo.options[0].head.seqOfOpt;
+    }
+    
+    function optionsOfRepo(Repo storage repo) 
+        external view returns (Option[] memory) 
+    {
+        uint256 len = counterOfOptions(repo);
+        Option[] memory output = new Option[](len);
+        
+        while (len > 0) {
+            output[len-1] = repo.options[len];
+            len--;
+        }
+        return output;
     }
 
-    // function qtyOfOptions(Repo storage repo) public view returns (uint256) {
-    //     return repo.snList.length();
-    // }
+    // ==== Record ====
+    
+    function _increaseCounterOfFutures(Record storage rcd) private {
+        rcd.futures[0].seqOfFuture++;
+    }
 
-    // function isOption(Repo storage repo, bytes32 sn)
-    //     public
-    //     view
-    //     returns (bool)
-    // {
-    //     return repo.snList.contains(sn);
-    // }
+    function counterOfFutures(Record storage rcd)
+        public view returns (uint32)
+    {
+        return rcd.futures[0].seqOfFuture;
+    }
 
-    // function getOption(Repo storage repo, bytes32 sn)
-    //     public
-    //     view
-    //     returns (
-    //         uint40 rightholder,
-    //         uint64 closingBN,
-    //         uint64 paid,
-    //         uint64 par,
-    //         bytes32 hashLock
-    //     )
-    // {
-    //     Option storage opt = repo.options[sn];
-    //     rightholder = opt.rightholder;
-    //     closingBN = opt.closingBN;
-    //     paid = opt.paid[0];
-    //     par = opt.par[0];
-    //     hashLock = opt.hashLock;
-    // }
+    function futuresOfOption(Record storage rcd)
+        public view returns (Future[] memory)
+    {
+        uint256 len = counterOfFutures(rcd);
+        Future[] memory output = new Future[](len);
 
-    // function isObligor(
-    //     Repo storage repo,
-    //     bytes32 sn,
-    //     uint40 acct
-    // ) public view returns (bool) {
-    //     return repo.options[sn].obligors.contains(acct);
-    // }
+        while (len > 0) {
+            output[len - 1] = rcd.futures[len];
+            len--;
+        }
 
-    // function obligorsOfOption(Repo storage repo, bytes32 sn)
-    //     public
-    //     view
-    //     returns (uint40[] memory)
-    // {
-    //     return repo.options[sn].obligors.valuesToUint40();
-    // }
+        return output;
+    }
 
-    // function stateOfOption(Repo storage repo, bytes32 sn)
-    //     public
-    //     view
-    //     returns (uint8)
-    // {
-    //     return repo.options[sn].state;
-    // }
+    function _increaseCounterOfPledges(Record storage rcd) private {
+        rcd.pledges[0].head.seqOfPledge++;
+    }
 
-    // function futures(Repo storage repo, bytes32 sn)
-    //     public
-    //     view
-    //     returns (bytes32[] memory)
-    // {
-    //     return repo.options[sn].futures.values();
-    // }
+    function counterOfPledges(Record storage rcd) 
+        public view
+        returns (uint32)
+    {
+        return rcd.pledges[0].head.seqOfPledge;
+    }
 
-    // function pledges(Repo storage repo, bytes32 sn)
-    //     public
-    //     view
-    //     returns (bytes32[] memory)
-    // {
-    //     return repo.options[sn].pledges.values();
-    // }
+    function pledgesOfOption(Record storage rcd)
+        public view returns (PledgesRepo.Pledge[] memory)
+    {
+        uint256 len = counterOfPledges(rcd);
+        PledgesRepo.Pledge[] memory output = new PledgesRepo.Pledge[](len);
 
-    // function oracle(
-    //     Repo storage repo,
-    //     bytes32 sn,
-    //     uint64 blocknumber
-    // ) public view returns (uint32, uint32) {
-    //     (uint64 d1, uint64 d2) = repo.options[sn].oracles.getAtBlock(
-    //         blocknumber
-    //     );
-    //     return (uint32(d1), uint32(d2));
-    // }
+        while (len > 0) {
+            output[len - 1] = rcd.pledges[len];
+            len--;
+        }
 
-    // function optsList(Repo storage repo)
-    //     public
-    //     view
-    //     returns (bytes32[] memory)
-    // {
-    //     return repo.snList.values();
-    // }
+        return output;
+    }
 }

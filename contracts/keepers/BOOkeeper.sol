@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -14,35 +14,39 @@ import "../common/access/AccessControl.sol";
 import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 
-import "../common/lib/SNParser.sol";
+import "../common/lib/RulesParser.sol";
+import "../common/lib/OptionsRepo.sol";
+import "../common/lib/PledgesRepo.sol";
 
 contract BOOKeeper is IBOOKeeper, BOOSetting, BOSSetting, AccessControl {
-    using SNParser for bytes32;
+    using RulesParser for bytes32;
 
     // ##################
     // ##   Modifier   ##
     // ##################
 
-    modifier onlyRightholder(bytes32 sn, uint40 caller) {
-        (uint40 rightholder, , , , ) = _getBOO().getOption(sn);
-        require(caller == rightholder, "NOT rightholder");
+    modifier onlyRightholder(uint256 seqOfOpt, uint256 caller) {
+        require(caller == _getBOO().getOption(seqOfOpt).body.rightholder, 
+            "NOT rightholder");
         _;
     }
 
-    modifier onlySeller(bytes32 sn, uint40 caller) {
-        if (sn.typeOfOpt() % 2 == 1) {
-            (uint40 rightholder, , , , ) = _getBOO().getOption(sn);
-            require(caller == rightholder, "msgSender NOT rightholder");
-        } else require(_getBOO().isObligor(sn, caller), "msgSender NOT seller");
+    modifier onlySeller(uint256 seqOfOpt, uint256 caller) {
+        OptionsRepo.Option memory opt = _getBOO().getOption(seqOfOpt);
+
+        if (opt.head.typeOfOpt % 2 == 1) {
+            require(caller == opt.body.rightholder, "BOOK.mf.OS: NOT rightholder of PutOption");
+        } else require(_getBOO().isObligor(seqOfOpt, caller), "BOOK.mf.OS: NOT obligor of CallOption");
         _;
     }
 
-    modifier onlyBuyer(bytes32 sn, uint40 caller) {
-        if (sn.typeOfOpt() % 2 == 1)
-            require(_getBOO().isObligor(sn, caller), "caller NOT obligor");
+    modifier onlyBuyer(uint256 seqOfOpt, uint256 caller) {
+        OptionsRepo.Option memory opt = _getBOO().getOption(seqOfOpt);
+
+        if (opt.head.typeOfOpt % 2 == 1)
+            require(_getBOO().isObligor(seqOfOpt, caller), "BOOK.mf.OB: NOT obligor of PutOption");
         else {
-            (uint40 rightholder, , , , ) = _getBOO().getOption(sn);
-            require(caller == rightholder, "caller NOT rightholder");
+            require(caller == opt.body.rightholder, "BOOK.mf.OB: NOT rightholder of CallOption");
         }
 
         _;
@@ -52,142 +56,191 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, BOSSetting, AccessControl {
     // ##    Option    ##
     // ##################
 
-    function createOption(
+    function issueOption(
         bytes32 sn,
-        uint40 rightholder,
+        uint256 rightholder,
         uint64 paid,
         uint64 par,
-        uint40 caller
+        uint256 caller
     ) external onlyDirectKeeper {
-        uint40[] memory obligors = new uint40[](1);
-        obligors[0] = caller;
+        // uint40[] memory obligors = new uint40[](1);
+        // obligors[0] = caller;
 
-        _getBOO().createOption(sn, rightholder, obligors, paid, par);
+        _getBOO().issueOption(sn, rightholder, caller, paid, par);
     }
 
-    function joinOptionAsObligor(bytes32 sn, uint40 caller) external onlyDirectKeeper {
-        _getBOO().addObligorIntoOption(sn, caller);
+    function joinOptionAsObligor(uint256 seqOfOpt, uint256 caller) external onlyDirectKeeper {
+        _getBOO().addObligorIntoOption(seqOfOpt, caller);
     }
 
     function removeObligorFromOption(
-        bytes32 sn,
-        uint40 obligor,
-        uint40 caller
-    ) external onlyDirectKeeper onlyRightholder(sn, caller) {
-        _getBOO().removeObligorFromOption(sn, obligor);
+        uint256 seqOfOpt,
+        uint256 obligor,
+        uint256 caller
+    ) external onlyDirectKeeper onlyRightholder(seqOfOpt, caller) {
+        _getBOO().removeObligorFromOption(seqOfOpt, obligor);
     }
 
     function updateOracle(
-        bytes32 sn,
+        uint256 seqOfOpt,
         uint32 d1,
         uint32 d2
     ) external onlyDirectKeeper {
-        _getBOO().updateOracle(sn, d1, d2);
+        _getBOO().updateOracle(seqOfOpt, d1, d2);
     }
 
-    function execOption(bytes32 sn, uint40 caller)
+    function execOption(uint256 seqOfOpt, uint256 caller)
         external
         onlyDirectKeeper
-        onlyRightholder(sn, caller)
+        onlyRightholder(seqOfOpt, caller)
     {
-        _getBOO().execOption(sn);
+        _getBOO().execOption(seqOfOpt);
     }
 
     function addFuture(
-        bytes32 sn,
-        bytes32 shareNumber,
+        uint256 seqOfOpt,
+        uint256 seqOfShare,
         uint64 paid,
-        uint40 caller
-    ) external onlyDirectKeeper onlyRightholder(sn, caller) {
-        _getBOS().decreaseCleanPar(shareNumber.ssn(), paid);
-        _getBOO().addFuture(sn, shareNumber, paid, paid);
+        uint64 par,
+        uint256 caller
+    ) external onlyDirectKeeper onlyRightholder(seqOfOpt, caller) {
+        _getBOS().decreaseCleanAmt(seqOfShare, paid, par);
+
+        OptionsRepo.Option memory opt = _getBOO().getOption(seqOfOpt);
+
+        IBookOfShares.Share memory share = _getBOS().getShare(seqOfShare);
+        OptionsRepo.Future memory ft = OptionsRepo.Future({
+            seqOfFuture: 0,
+            seqOfShare: uint32(seqOfShare),
+            buyer: (opt.head.typeOfOpt % 2 == 1) ? 
+                opt.body.obligor :
+                uint40(caller),
+            paid: paid,
+            par: par,
+            state: 0
+        });
+
+        _getBOO().addFuture(seqOfOpt, share, ft);
     }
 
     function removeFuture(
-        bytes32 sn,
-        bytes32 ft,
-        uint40 caller
-    ) external onlyDirectKeeper onlyRightholder(sn, caller) {
-        _getBOO().removeFuture(sn, ft);
-        _getBOS().increaseCleanPar(ft.shortShareNumberOfFt(), ft.paidOfFt());
+        uint256 seqOfOpt,
+        uint256 seqOfFt,
+        uint256 caller
+    ) external onlyDirectKeeper onlyRightholder(seqOfOpt, caller) {
+
+        OptionsRepo.Future memory ft = _getBOO().getFutureOfOption(seqOfOpt, seqOfFt);
+
+        _getBOO().removeFuture(seqOfOpt, seqOfFt);
+        _getBOS().increaseCleanAmt(ft.seqOfShare, ft.paid, ft.par);
     }
 
     function requestPledge(
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint64 paidPar,
-        uint40 caller
-    ) external onlyDirectKeeper onlySeller(sn, caller) {
-        _getBOS().decreaseCleanPar(shareNumber.ssn(), paidPar);
-        _getBOO().requestPledge(sn, shareNumber, paidPar);
+        uint256 seqOfOpt,
+        uint256 seqOfShare,
+        uint64 paid,
+        uint64 par,
+        uint256 caller
+    ) external onlyDirectKeeper onlySeller(seqOfOpt, caller) {
+        IBookOfShares _bos = _getBOS();
+
+        _bos.decreaseCleanAmt(seqOfShare, paid, par);
+
+        IBookOfShares.Share memory share = _bos.getShare(seqOfShare);
+
+        _getBOO().requestPledge(seqOfOpt, share, paid, par);
     }
 
     function lockOption(
-        bytes32 sn,
+        uint256 seqOfOpt,
         bytes32 hashLock,
-        uint40 caller
-    ) external onlyDirectKeeper onlySeller(sn, caller) {
-        _getBOO().lockOption(sn, hashLock);
+        uint256 caller
+    ) external onlyDirectKeeper onlySeller(seqOfOpt, caller) {
+        _getBOO().lockOption(seqOfOpt, hashLock);
     }
 
-    function _recoverCleanPar(bytes32[] memory plds) private {
+    function _recoverCleanPaidOfPlds(PledgesRepo.Pledge[] memory plds) private {
         uint256 len = plds.length;
 
-        while (len != 0) {
-            _getBOS().increaseCleanPar(
-                plds[len - 1].shortShareNumberOfFt(),
-                plds[len - 1].paidOfFt()
+        while (len > 0) {
+            _getBOS().increaseCleanAmt(
+                plds[len - 1].head.seqOfShare,
+                plds[len - 1].body.pledgedPaid,
+                plds[len - 1].body.pledgedPar
+            );
+            len--;
+        }
+    }
+
+    function _recoverCleanPaidOfFts(OptionsRepo.Future[] memory fts) private {
+        uint256 len = fts.length;
+
+        while (len > 0) {
+            _getBOS().increaseCleanAmt(
+                fts[len - 1].seqOfShare,
+                fts[len - 1].paid,
+                fts[len - 1].par
             );
             len--;
         }
     }
 
     function closeOption(
-        bytes32 sn,
+        uint256 seqOfOpt,
         string memory hashKey,
         // uint32 closingDate,
-        uint40 caller
-    ) external onlyDirectKeeper onlyBuyer(sn, caller) {
-        uint32 price = sn.rateOfOpt();
+        uint256 caller
+    ) external onlyDirectKeeper onlyBuyer(seqOfOpt, caller) {
+        OptionsRepo.Option memory opt = _getBOO().getOption(seqOfOpt);
 
-        _getBOO().closeOption(sn, hashKey);
+        // uint32 price = sn.rateOfOpt();
 
-        bytes32[] memory fts = _getBOO().futures(sn);
+        _getBOO().closeOption(seqOfOpt, hashKey);
 
-        _recoverCleanPar(fts);
+        OptionsRepo.Future[] memory fts = _getBOO().futuresOfOption(seqOfOpt);
+
+        _recoverCleanPaidOfFts(fts);
 
         for (uint256 i = 0; i < fts.length; i++) {
             _getBOS().transferShare(
-                fts[i].shortShareNumberOfFt(),
-                fts[i].paidOfFt(),
-                fts[i].parOfFt(),
-                caller,
-                price
+                fts[i].seqOfShare,
+                fts[i].paid,
+                fts[i].par,
+                uint40(caller),
+                opt.head.rate
             );
         }
 
-        _recoverCleanPar(_getBOO().pledges(sn));
+        _recoverCleanPaidOfPlds(_getBOO().pledgesOfOption(seqOfOpt));
     }
 
-    function revokeOption(bytes32 sn, uint40 caller)
+    function revokeOption(uint256 seqOfOpt, uint256 caller)
         external
         onlyDirectKeeper
-        onlyRightholder(sn, caller)
+        onlyRightholder(seqOfOpt, caller)
     {
-        _getBOO().revokeOption(sn);
+        OptionsRepo.Option memory opt = _getBOO().getOption(seqOfOpt);
 
-        if (sn.typeOfOpt() != 0) _recoverCleanPar(_getBOO().futures(sn));
-        else _recoverCleanPar(_getBOO().pledges(sn));
+        IBookOfOptions _boo = _getBOO();
+
+        _boo.revokeOption(seqOfOpt);
+
+        if (opt.head.typeOfOpt % 2 != 0) _recoverCleanPaidOfFts(_boo.futuresOfOption(seqOfOpt));
+        else _recoverCleanPaidOfPlds(_boo.pledgesOfOption(seqOfOpt));
     }
 
-    function releasePledges(bytes32 sn, uint40 caller)
+    function releasePledges(uint256 seqOfOpt, uint256 caller)
         external
         onlyDirectKeeper
-        onlyRightholder(sn, caller)
+        onlyRightholder(seqOfOpt, caller)
     {
-        require(_getBOO().stateOfOption(sn) == 6, "option NOT revoked");
+        IBookOfOptions _boo = _getBOO();
 
-        if (sn.typeOfOpt() != 0) _recoverCleanPar(_getBOO().pledges(sn));
-        else _recoverCleanPar(_getBOO().futures(sn));
+        OptionsRepo.Option memory opt = _boo.getOption(seqOfOpt);
+
+        require(_boo.stateOfOption(seqOfOpt) == 6, "option NOT revoked");
+
+        if (opt.head.typeOfOpt % 2 != 0) _recoverCleanPaidOfPlds(_boo.pledgesOfOption(seqOfOpt));
+        else _recoverCleanPaidOfFts(_boo.futuresOfOption(seqOfOpt));
     }
 }

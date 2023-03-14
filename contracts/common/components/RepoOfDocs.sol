@@ -10,19 +10,19 @@ pragma solidity ^0.8.8;
 import "./IRepoOfDocs.sol";
 
 import "../lib/EnumerableSet.sol";
-import "../lib/SNParser.sol";
+import "../lib/RulesParser.sol";
 
 import "../access/AccessControl.sol";
 import "../components/ISigPage.sol";
-import "../ruting/ISigPageSetting.sol";
+// import "../ruting/ISigPageSetting.sol";
 import "../utils/CloneFactory.sol";
 
 contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using SNParser for bytes32;
+    using RulesParser for bytes32;
 
-    // docType => address // 0-SigPage ;
+    // typeOfDoc => address // 0-SigPage ;
     mapping(uint256 => address) private _templates;
     EnumerableSet.UintSet private _tempsList;
 
@@ -34,7 +34,7 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     //##    modifier    ##
     //####################
 
-    modifier tempReady(uint8 typeOfDoc) {
+    modifier tempReady(uint256 typeOfDoc) {
         require(_tempsList.contains(typeOfDoc), 
             "ROD.md.TR: template NOT set");
         _;
@@ -68,7 +68,7 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     //##    写接口     ##
     //##################
 
-    function setTemplate(address body, uint8 typeOfDoc) 
+    function setTemplate(address body, uint256 typeOfDoc) 
         external 
         onlyDirectKeeper 
     {
@@ -77,14 +77,14 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         _tempsList.add(typeOfDoc);
     }
 
-    function createDoc(uint8 docType, uint40 creator)
+    function createDoc(uint256 typeOfDoc, uint256 creator)
         public
         onlyDirectKeeper
-        tempReady(docType)
+        tempReady(typeOfDoc)
         tempReady(uint8(TypeOfDoc.SigPage))
-        returns (address body, address sigPage)
+        returns (address body)
     {
-        address temp = createClone(_templates[docType]);
+        address temp = createClone(_templates[typeOfDoc]);
 
         if (_docsList.add(temp)) {
             body = temp;
@@ -92,17 +92,17 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
             emit UpdateStateOfDoc(body, uint8(RODStates.Created));
 
             _docs[body].head = Head({
-                docType: docType,
-                creator: creator,
+                typeOfDoc: uint8(typeOfDoc),
+                creator: uint40(creator),
                 createDate: uint48(block.timestamp),
                 shaExecDeadline: 0,
                 proposeDeadline: 0,
                 state: uint8(RODStates.Created)
             });
 
-            sigPage = createClone(_templates[uint8(TypeOfDoc.SigPage)]);
+            // sigPage = createClone(_templates[uint8(TypeOfDoc.SigPage)]);
 
-            _docs[body].sigPage = sigPage;
+            // _docs[body].sigPage = sigPage;
         }
     }
 
@@ -113,14 +113,13 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     {
         if (_docsList.remove(body)) {
             emit RemoveDoc(body);
-            delete _docs[body].sigPage;
             delete _docs[body];
         }
     }
 
     function circulateDoc(
         address body,
-        bytes32 rule,
+        RulesParser.VotingRule memory vr,
         bytes32 docUrl,
         bytes32 docHash
     ) public onlyDirectKeeper onlyForPending(body) {
@@ -129,16 +128,16 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
 
         Doc storage doc = _docs[body];
 
-        uint48 execDays = rule.shaExecDaysOfVR();
-        uint48 reviewDays = rule.reviewDaysOfVR();
+        // uint48 execDays = rule.shaExecDaysOfVR();
+        // uint48 reviewDays = rule.reviewDaysOfVR();
 
         doc.head.shaExecDeadline =
             uint48(block.timestamp) +
-            execDays * 86400;
+            uint48(vr.shaExecDays) * 86400;
 
         doc.head.proposeDeadline =
             doc.head.shaExecDeadline +
-            reviewDays * 86400;
+            uint48(vr.reviewDays) * 86400;
 
         doc.docUrl = docUrl;
         doc.docHash = docHash;
@@ -155,7 +154,7 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     //##   read I/O   ##
     //##################
 
-    function template(uint8 typeOfDoc) external view returns (address) {
+    function template(uint256 typeOfDoc) external view returns (address) {
         return _templates[typeOfDoc];
     }
 
@@ -163,7 +162,7 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         return _tempsList.values();
     }
 
-    function tempReadyFor(uint8 typeOfDoc) public view returns (bool) {
+    function tempReadyFor(uint256 typeOfDoc) public view returns (bool) {
         return _tempsList.contains(typeOfDoc);
     }
 
@@ -180,7 +179,7 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     }
 
     function getHeadOfDoc(address body)
-        external
+        public
         view
         onlyRegistered(body)
         returns (Head memory head)
@@ -198,13 +197,13 @@ contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
         docHash = _docs[body].docHash;
     }
 
-    function sigPageOfDoc(address body)
-        external
-        view
-        onlyRegistered(body)
-        returns (ISigPage sigPage)
-    {
-        sigPage = ISigPage(_docs[body].sigPage);
-    }
+    // function sigPageOfDoc(address body)
+    //     external
+    //     view
+    //     onlyRegistered(body)
+    //     returns (ISigPage sigPage)
+    // {
+    //     sigPage = ISigPage(_docs[body].sigPage);
+    // }
 
 }

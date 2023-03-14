@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -15,33 +15,33 @@ interface IAntiDilution is ITerm {
     // ################
     function setMaxQtyOfMarks(uint16 max) external;
 
-    function addBenchmark(uint16 class, uint32 price) external;
+    function addBenchmark(uint256 class, uint32 price) external;
 
     function updateBenchmark(
-        uint16 class,
+        uint256 class,
         uint32 deltaPrice,
         bool increase
     ) external;
 
-    function delBenchmark(uint16 class) external;
+    function delBenchmark(uint256 class) external;
 
-    function addObligor(uint16 class, uint40 obligor) external;
+    function addObligor(uint256 class, uint256 obligor) external;
 
-    function removeObligor(uint16 class, uint40 obligor) external;
+    function removeObligor(uint256 class, uint256 obligor) external;
 
     // ############
     // ##  read  ##
     // ############
 
-    function isMarked(uint16 class) external view returns (bool);
+    function isMarked(uint256 class) external view returns (bool);
 
-    function markedClasses() external view returns (uint40[] memory);
+    function markedClasses() external view returns (uint256[] memory);
 
-    function getBenchmark(uint16 class) external view returns (uint64);
+    function getBenchmark(uint256 class) external view returns (uint64);
 
-    function obligors(uint16 class) external view returns (uint40[] memory);
+    function obligors(uint256 class) external view returns (uint256[] memory);
 
-    function giftPar(bytes32 snOfDeal, bytes32 shareNumber)
+    function giftPar(address ia, uint256 snOfDeal, uint256 seqOfShare)
         external
         view
         returns (uint64);

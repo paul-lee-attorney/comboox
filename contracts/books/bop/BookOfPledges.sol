@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -10,146 +10,120 @@ pragma solidity ^0.8.8;
 import "./IBookOfPledges.sol";
 
 import "../../common/access/AccessControl.sol";
-
-import "../../common/lib/SNFactory.sol";
-import "../../common/lib/SNParser.sol";
+import "../../common/lib/PledgesRepo.sol";
 
 contract BookOfPledges is IBookOfPledges, AccessControl {
-    using SNFactory for bytes;
-    using SNParser for bytes32;
+    using PledgesRepo for PledgesRepo.Repo;
+    using PledgesRepo for PledgesRepo.Pledge;
 
-    // struct snInfo {
-    //     uint32 ssnOfShare; 4
-    //     uint16 sequence; 2
-    //     uint48 createDate; 6
-    //     uint40 pledgor; 5
-    //     uint40 debtor; 5
-    // }
-
-    // _pledges[ssn][0].creditor : counterOfPledge
-
-    // ssn => seq => Pledge
-    mapping(uint256 => mapping(uint256 => Pledge)) private _pledges;
-
-    //##################
-    //##   Modifier   ##
-    //##################
-
-    modifier pledgeExist(bytes32 sn) {
-        require(isPledge(sn), "BOP.pledgeExist: pledge NOT exist");
-        _;
-    }
+    PledgesRepo.Repo private _repo;
 
     //##################
     //##    写接口    ##
     //##################
 
     function createPledge(
-        bytes32 sn,
-        uint40 creditor,
+        PledgesRepo.Head memory head,
+        uint256 creditor,
         uint16 monOfGuarantee,
+        uint64 pledgedPaid,
         uint64 pledgedPar,
         uint64 guaranteedAmt
     ) external onlyDirectKeeper {
-        uint32 ssn = sn.ssnOfPld();
-        uint16 seq = _increaseCounterOfPledges(ssn);
 
-        sn = _updateSN(sn, seq);
-
-        uint48 expireDate = uint48(block.timestamp) +
-            monOfGuarantee * 2592000;
-
-        _pledges[ssn][seq] = Pledge({
-            sn: sn,
-            creditor: creditor,
-            expireDate: expireDate,
-            pledgedPar: pledgedPar,
-            guaranteedAmt: guaranteedAmt
-        });
+        head = _repo.createPledge(
+                head, 
+                creditor, 
+                monOfGuarantee,
+                pledgedPaid,
+                pledgedPar, 
+                guaranteedAmt
+            );
 
         emit CreatePledge(
-            sn,
+            head.seqOfShare,
+            head.seqOfPledge,
             creditor,
-            monOfGuarantee,
+            pledgedPaid,
             pledgedPar,
             guaranteedAmt
         );
     }
 
-    function _updateSN(bytes32 sn, uint16 seq) private view returns (bytes32) {
-        bytes memory _sn = abi.encodePacked(sn);
+    function regPledge(
+        PledgesRepo.Pledge memory pld
+    ) external onlyKeeper {
+        PledgesRepo.Head memory head = _repo.regPledge(pld);
 
-        _sn = _sn.seqToSN(4, seq);
-        _sn = _sn.dateToSN(6, uint48(block.timestamp));
+        emit CreatePledge(
+            head.seqOfShare, 
+            head.seqOfPledge, 
+            pld.body.creditor,
+            pld.body.pledgedPaid, 
+            pld.body.pledgedPar, 
+            pld.body.guaranteedAmt
+        );
 
-        return _sn.bytesToBytes32();
-    }
-
-    function _increaseCounterOfPledges(uint32 ssn) private returns (uint16) {
-        _pledges[ssn][0].creditor++;
-        return uint16(_pledges[ssn][0].creditor);
     }
 
     function updatePledge(
-        bytes32 sn,
-        uint40 creditor,
+        uint256 seqOfShare,
+        uint256 seqOfPledge,
+        uint256 creditor,
         uint48 expireDate,
+        uint64 pledgedPaid,
         uint64 pledgedPar,
         uint64 guaranteedAmt
-    ) external onlyDirectKeeper pledgeExist(sn) {
+    ) external onlyDirectKeeper {
+
         require(
             expireDate > block.timestamp || expireDate == 0,
-            "BOP.updatePledge: expireDate is passed"
+            "PR.UP: expireDate is passed"
         );
 
-        Pledge storage pld = _pledges[sn.ssnOfPld()][sn.seqOfPld()];
+        _repo.pledges[seqOfShare][seqOfPledge].
+            updatePledge(creditor, expireDate, pledgedPaid, pledgedPar, guaranteedAmt);
 
-        pld.creditor = creditor;
-        pld.expireDate = expireDate;
-        pld.pledgedPar = pledgedPar;
-        pld.guaranteedAmt = guaranteedAmt;
+        emit UpdatePledge(
+            seqOfShare, 
+            seqOfPledge, 
+            creditor, 
+            expireDate,
+            pledgedPaid, 
+            pledgedPar,
+            guaranteedAmt
+        );
 
-        emit UpdatePledge(sn, creditor, expireDate, pledgedPar, guaranteedAmt);
     }
 
     //##################
     //##    读接口    ##
     //##################
 
-    function pledgesOf(uint32 ssn) external view returns (bytes32[] memory) {
-        uint16 seq = uint16(_pledges[ssn][0].creditor);
-
-        require(seq > 0, "BOP.pledgesOf: no pledges found");
-
-        bytes32[] memory output = new bytes32[](seq);
-
-        while (seq > 0) {
-            output[seq - 1] = _pledges[ssn][seq].sn;
-            seq--;
-        }
-
-        return output;
-    }
-
-    function counterOfPledges(uint32 ssn) external view returns (uint16) {
-        return uint16(_pledges[ssn][0].creditor);
-    }
-
-    function isPledge(bytes32 sn) public view returns (bool) {
-        uint32 ssn = sn.ssnOfPld();
-        uint32 seq = sn.seqOfPld();
-
-        return _pledges[ssn][seq].sn == sn;
-    }
-
-    function getPledge(bytes32 sn)
-        external
-        view
-        pledgeExist(sn)
-        returns (
-            Pledge memory pld
-        )
+    function counterOfPledges(uint256 seqOfShare) 
+        public view 
+        returns (uint32) 
     {
-        pld = _pledges[sn.ssnOfPld()][sn.seqOfPld()];
+        return _repo.pledges[seqOfShare][0].head.seqOfPledge;
+    }
+
+    function isPledge(uint256 seqOfShare, uint256 seqOfPledge) 
+        external view returns (bool) {
+        return _repo.pledges[seqOfShare][seqOfPledge].head.createDate > 0;
+    }
+
+    function getPledge(uint256 seqOfShare, uint256 seqOfPledge)
+        public
+        view
+        returns (PledgesRepo.Pledge memory pld)
+    {
+        pld = _repo.pledges[seqOfShare][seqOfPledge];
+    }
+
+    function pledgesOfShare(uint256 seqOfShare) 
+        external view 
+        returns (PledgesRepo.Pledge[] memory) 
+    {
+        return _repo.pledgesOfShare(seqOfShare);
     }
 }

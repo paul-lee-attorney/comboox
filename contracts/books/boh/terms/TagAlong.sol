@@ -8,82 +8,47 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
-import "../../boa/IBookOfIA.sol";
+// import "../../boa/IBookOfIA.sol";
 import "../../bog/IBookOfGM.sol";
 
 import "../../../common/ruting/BOASetting.sol";
 import "../../../common/ruting/BOGSetting.sol";
 import "../../../common/lib/EnumerableSet.sol";
-import "../../../common/lib/SNParser.sol";
+import "../../../common/lib/ArrayUtils.sol";
+// import "../../../common/lib/SNParser.sol";
 
 import "./DragAlong.sol";
 
 contract TagAlong is BOASetting, BOGSetting, DragAlong {
     using EnumerableSet for EnumerableSet.UintSet;
-    using SNParser for bytes32;
-
-    // struct linkRule {
-    //     uint40 drager;
-    //     uint40 group;
-    //     // 0-no condition; 1- biggest && shareRatio > threshold;
-    //     uint8 triggerType;
-    //     bool basedOnPar;
-    //     // threshold to define material control party
-    //     uint32 threshold;
-    //     // false - free amount; true - pro rata (transfered parValue : original parValue)
-    //     bool proRata;
-    //     uint32 unitPrice;
-    //     uint32 ROE;
-    // }
-
-    EnumerableSet.UintSet private _supporters;
+    using ArrayUtils for uint40[];
+    using ArrayUtils for uint256[];
 
     // #############
     // ##  写接口  ##
     // #############
 
-    function _inputArray(uint40[] memory arr) private {
-        uint256 len = arr.length;
-
-        while (len != 0) {
-            _supporters.add(arr[len - 1]);
-            len--;
-        }
-    }
-
-    function isExempted(address ia, bytes32 sn) external returns (bool) {
+    function isExempted(address ia, uint256 seqOfDeal) external view returns (bool) {
         IBookOfGM _bog = _getBOG();
         
         require(_bog.isPassed(uint256(uint160(ia))), "motion NOT passed");
 
-        if (!isTriggered(ia, sn)) return true;
-
-        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
-        uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
+        if (!isTriggered(ia, seqOfDeal)) return true;
 
         uint40[] memory consentParties = _bog.getCaseOfAttitude(
-            motionId,
+            uint256(uint160(ia)),
             1
         ).voters;
 
-        uint40[] memory signers = ISigPageSetting(ia).getSigPage().partiesOfDoc();
+        uint256[] memory signers = ISigPage(ia).partiesOfDoc();
 
-        _supporters.emptyItems();
+        IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
 
-        _inputArray(consentParties);
+        uint256[] memory agreedParties = consentParties.mixCombine(signers);
 
-        _inputArray(signers);
+        uint256[] memory rightholders = _dragers[head.seller].followers.values();
 
-        uint40[] memory rightholders = _followers[_links[sn.sellerOfDeal()]]
-            .valuesToUint40();
+        return rightholders.fullyCoveredBy(agreedParties);
 
-        uint256 len = rightholders.length;
-
-        while (len != 0) {
-            if (!_supporters.contains(rightholders[len - 1])) return false;
-            len--;
-        }
-
-        return true;
     }
 }

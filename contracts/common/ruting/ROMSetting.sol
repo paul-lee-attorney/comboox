@@ -12,14 +12,13 @@ import "../access/RegCenterSetting.sol";
 import "../../books/rom/IRegisterOfMembers.sol";
 
 contract ROMSetting is RegCenterSetting {
-    // IRegisterOfMembers internal _getROM();
 
     modifier onlyMember() {
         require(_getROM().isMember(_msgSender()), "ROMS.mf.OM: NOT Member");
         _;
     }
 
-    modifier memberExist(uint40 acct) {
+    modifier memberExist(uint256 acct) {
         require(_getROM().isMember(acct), "ROMS.mf.ME: NOT member");
         _;
     }

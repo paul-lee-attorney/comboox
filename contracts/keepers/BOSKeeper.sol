@@ -11,11 +11,11 @@ import "../common/access/AccessControl.sol";
 
 import "../common/ruting/BOSSetting.sol";
 
-import "../common/lib/SNParser.sol";
+// import "../common/lib/SNParser.sol";
 import "./IBOSKeeper.sol";
 
 contract BOSKeeper is IBOSKeeper, BOSSetting, AccessControl {
-    using SNParser for bytes32;
+    // using SNParser for bytes32;
 
     // #############
     // ##   BOS   ##
@@ -37,14 +37,14 @@ contract BOSKeeper is IBOSKeeper, BOSSetting, AccessControl {
     }
 
     function decreaseCapital(
-        uint32 ssn,
+        uint256 seqOfShare,
         uint64 paid,
         uint64 par
     ) external onlyDirectKeeper {
-        _getBOS().decreaseCapital(ssn, paid, par);
+        _getBOS().decreaseCapital(seqOfShare, paid, par);
     }
 
-    function updatePaidInDeadline(uint32 ssn, uint32 line) external onlyDirectKeeper {
-        _getBOS().updatePaidInDeadline(ssn, line);
+    function updatePaidInDeadline(uint256 seqOfShare, uint48 line) external onlyDirectKeeper {
+        _getBOS().updatePaidInDeadline(seqOfShare, line);
     }
 }

@@ -26,26 +26,13 @@
             ],
             "name": "SetRegCenter",
             "type": "event"
-        },
-        {
-            "inputs": [],
-            "name": "getBOA",
-            "outputs": [
-                {
-                    "internalType": "contract IBookOfIA",
-                    "name": "_boa",
-                    "type": "address"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
         }
     ],
-    "metadata": "{\"compiler\":{\"version\":\"0.8.8+commit.dddeac2f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gk\",\"type\":\"address\"}],\"name\":\"SetGeneralKeeper\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"rc\",\"type\":\"address\"}],\"name\":\"SetRegCenter\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getBOA\",\"outputs\":[{\"internalType\":\"contract IBookOfIA\",\"name\":\"_boa\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOASetting.sol\":\"BOASetting\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/boa/IBookOfIA.sol\":{\"keccak256\":\"0x71a27eca68fb258027af4f629c8f21232f70a94383ee1b0fe196d0fb784d2693\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://275bfa2713219a07143deba3c620bbeb2e38f7f5f8e93e5a24581caad391350c\",\"dweb:/ipfs/QmZNgofvm6Sw1JzaZxe4TLKtz4tck3UECqkuxVJBcxYcxB\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/IRegCenter.sol\":{\"keccak256\":\"0x7887f4a79405cc7ef5bbedb3b4f45e01a7c55f0eb4d104837dd3332c9c281fc8\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://56efdca09c3620ad89060fd06682724be19acb8b0a3d5f703569809315a6f05a\",\"dweb:/ipfs/QmWtfVn7VGXuZDAcSbZhQbmkRudAXS6QXwkptf8y7zfWUV\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol\":{\"keccak256\":\"0xae85a3596053fc4bed9d01d6c49ff6efca8149b71e058b67293124a06ae341ff\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://6bed9cec944419ad07dd171b497cb9508ddf7f22a4281b34e54d7ed9f33b9e1e\",\"dweb:/ipfs/QmWFnVfjU8txerbDXtZyefKfNm9YLJxcogQgztH43KaF1k\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/IRepoOfDocs.sol\":{\"keccak256\":\"0x521dbd5ea10da287d5f76c39913cd5092bd01ca209fca38c8cc6aecee493edf4\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9c6b7159bbd91951ead6bd67a5e430b63e02125c5338a4ac644a9ae63348d59b\",\"dweb:/ipfs/QmR3hjwbT59qmtyqoPw1XF1aoiuuSrs7hZjfKVwK6918Wt\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/EnumerableSet.sol\":{\"keccak256\":\"0xcbb298284b4d0120fe5d2593696ce2dd0f263c45f899da84ef7212c9a1289b4c\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://9ac3d5723fb9afe52b3832e1801d82abc9ce62315dbbd6b88c8c3e622fd5d57e\",\"dweb:/ipfs/QmdJQyrMooECMVntWA5RB6MVexgbAbqtZAE88oZDDq1GWC\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/SigsRepo.sol\":{\"keccak256\":\"0xffc8e1a6041d9efd51bb53890c596715e9a5599691fc3dec7481b51de12a057f\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://0164f25bb1db57ef9adbab41f96da5c15b5641e7f2f3d176a4bac69f543a6ab6\",\"dweb:/ipfs/QmeCTUCfF4AvobhDc9QydzBbtjVBVBEzcHKGnBVPiq3gaD\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOASetting.sol\":{\"keccak256\":\"0x937104e5586c1a29e08140dcd1b1aa742fcd892de163fdb975ffa0b61940679c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://466fbd67c4cbd07a9cd95e7c09392efe4db0dde4f3e646a0e5bcfc762df7d789\",\"dweb:/ipfs/QmQf5ei9U1cNPF8heFCECSTM4VFbkMk75SuWuncSX6cVmc\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/keepers/IGeneralKeeper.sol\":{\"keccak256\":\"0x11fe5eba17f5500b953f9daeaab05768c223c6106ccaa05b81534d5514f5500c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://14e4c691f4c4e7f76b6775208d7a3f724c4e21aaa7dbfd035a71a0112096f77e\",\"dweb:/ipfs/QmNctvLmm4ZUDa5UuLDnyCCPK4uwzmcJiJitegKAGgT7RE\"]}},\"version\":1}",
-    "bytecode": "608060405234801561001057600080fd5b50610131806100206000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063acd2d05714602d575b600080fd5b6033604f565b6040516001600160a01b03909116815260200160405180910390f35b60015460405163381baea360e21b8152600060048201819052916001600160a01b03169063e06eba8c9060240160206040518083038186803b158015609357600080fd5b505afa15801560a6573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019060c8919060cd565b905090565b60006020828403121560de57600080fd5b81516001600160a01b038116811460f457600080fd5b939250505056fea2646970667358221220dea258e86cf01029812bef6d6d79ff92eb543b2268d5d7437769a991d5a6eedc64736f6c63430008080033",
-    "deployedBytecode": "6080604052348015600f57600080fd5b506004361060285760003560e01c8063acd2d05714602d575b600080fd5b6033604f565b6040516001600160a01b03909116815260200160405180910390f35b60015460405163381baea360e21b8152600060048201819052916001600160a01b03169063e06eba8c9060240160206040518083038186803b158015609357600080fd5b505afa15801560a6573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019060c8919060cd565b905090565b60006020828403121560de57600080fd5b81516001600160a01b038116811460f457600080fd5b939250505056fea2646970667358221220dea258e86cf01029812bef6d6d79ff92eb543b2268d5d7437769a991d5a6eedc64736f6c63430008080033",
-    "sourceMap": "238:179:6:-:0;;;;;;;;;;;;;;;;;;;",
-    "deployedSourceMap": "238:179:6:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;284:131;;;:::i;:::-;;;-1:-1:-1;;;;;194:32:8;;;176:51;;164:2;149:18;284:131:6;;;;;;;;366:3;;:41;;-1:-1:-1;;;366:41:6;;323:14;366:41;;;513:36:8;;;323:14:6;-1:-1:-1;;;;;366:3:6;;:11;;486:18:8;;366:41:6;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;349:59;;284:131;:::o;560:290:8:-;630:6;683:2;671:9;662:7;658:23;654:32;651:52;;;699:1;696;689:12;651:52;725:16;;-1:-1:-1;;;;;770:31:8;;760:42;;750:70;;816:1;813;806:12;750:70;839:5;560:290;-1:-1:-1;;;560:290:8:o",
+    "metadata": "{\"compiler\":{\"version\":\"0.8.8+commit.dddeac2f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gk\",\"type\":\"address\"}],\"name\":\"SetGeneralKeeper\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"rc\",\"type\":\"address\"}],\"name\":\"SetRegCenter\",\"type\":\"event\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOASetting.sol\":\"BOASetting\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/boa/IBookOfIA.sol\":{\"keccak256\":\"0x36f6d75640e21e5e7aedf7e1bf66f1b6aab04f9e0a1ddd9c298cf0244f09021f\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://386306dccc43711861c156c6948e52c3b57971ed330f1542f5fcc97c76810b76\",\"dweb:/ipfs/QmTH8c3PBRq3R9JQgG1gF1h16D4HnzeWdp98jQtfEPRHx2\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/boa/IInvestmentAgreement.sol\":{\"keccak256\":\"0xbaa4b786f2a17d7c91893cbdd616c25a343063a8a838491e0834f4910e61dc55\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://3bedbdb3c8157a06d2c1c152ee9817f53f0d597c24989e427cd63c11e00ddd49\",\"dweb:/ipfs/QmWByRmsfDCstUc5CFdRJLHfVGRmzy5wCixqQppxxZrXoN\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/rom/IRegisterOfMembers.sol\":{\"keccak256\":\"0x78dbc7062e895b83ad9bfd69b6dc953c0f4ba70e8e2fa40f8b036fd2bd7a1634\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://734c96dc49e20b20f26699094486981ba2960de066cc700d6b0083077fb7be4c\",\"dweb:/ipfs/QmPBEJsgRnRovyvtUxEXyH7ZqG3JRN9pyBTZRum3uELTyt\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/IRegCenter.sol\":{\"keccak256\":\"0xddcc0235c50faed2334a6256f6df8cda76c5b09ee44bc1380c79e85bfd590551\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://655a52b8d45d7bba3f7b97090eb60499afeab5e2fe0470242e07d08a4fd624e6\",\"dweb:/ipfs/QmfGjtU9NVws9EN6TZtuBYySWpQrKaZ4nVGMtEBau35oCv\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol\":{\"keccak256\":\"0xae85a3596053fc4bed9d01d6c49ff6efca8149b71e058b67293124a06ae341ff\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://6bed9cec944419ad07dd171b497cb9508ddf7f22a4281b34e54d7ed9f33b9e1e\",\"dweb:/ipfs/QmWFnVfjU8txerbDXtZyefKfNm9YLJxcogQgztH43KaF1k\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/IRepoOfDocs.sol\":{\"keccak256\":\"0x1c51cb9c928bd44bcc8ec858566f25ba1ee6db16cba1d5603373b4dbafad85db\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://0eaa529c8e004c3560093ee5bd308b0bc9bbfeaf1d277331ebca877052d68b47\",\"dweb:/ipfs/QmWQcYt1XKQn22iRDYHtU6Ta9bzELLZ3ETikFzceuBocqv\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/ISigPage.sol\":{\"keccak256\":\"0x28066344fea5e3352f0f8aaead56d23b58b05335cee1db9c2417e16ee3a860b9\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9d15d5fdb669793a2e59a36521e16b21009b9e6754faa38e8d056acded02acb8\",\"dweb:/ipfs/QmQ68XEWxqBbqXKRcNysPkxtmfFek1N5PD5XXA8Dn2kF4m\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/Checkpoints.sol\":{\"keccak256\":\"0x39c4ddd738288395be5afdba2fcff6472feceb9dcdbb5aab975dd64d0a364797\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://90e273e2f2bd93cb28f84bf334ab19d83c890ae7422f8b0fbda15de11d23f827\",\"dweb:/ipfs/QmaMULXkR6pq89gcLs8SNDPiHiEMuamBLX5oEDy6UJEyyp\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/EnumerableSet.sol\":{\"keccak256\":\"0x8fd09b92673a7129e79d2a2e2d99a271ea29714f0a163a7f52dc3162a0c9be5e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a61b6bf47471f111b074428521a9b9f6393500ae16702c0602895944f2863ee1\",\"dweb:/ipfs/QmaaNSW74QPieRwhk3i7BNEHWTFio6s6cXxjgieST8gw5f\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/FRClaims.sol\":{\"keccak256\":\"0xa3f931c1d3d0a3dd7b5d5d627125bac4bf240c2a7c0597823d9fba195490c15c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://a9169c8f4746dcc27088c8fd8831d433b2d174f1c78032904be72cf5cc0adcd1\",\"dweb:/ipfs/QmSAQYpzqKYZqM8im4aFJsRWowJGcz2H65C1qL938u6spC\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/MembersRepo.sol\":{\"keccak256\":\"0xd20558b3acdaea1ec017c11a5f2b23895300185807f347995ea27a2f23f27dc9\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://1a3c985b3e6b867cd3f26dd96651f1680536bae72e2b7091d685e567703377bc\",\"dweb:/ipfs/QmVHrW6GGoTfxXShRoT5f3DvdkQn2xWzvNP75ZMWtNei1X\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/RulesParser.sol\":{\"keccak256\":\"0x801c3b96e09fb44786508526a6bbb99f9bf7577f1d4adb5ed1ca49a5cad6f457\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://650167eaea8b5b81c07a1ea6c045d8b965da2924250c9c52c64ae0cacb207393\",\"dweb:/ipfs/QmTQPxBmZ5XUDtWdS8nhyTrX7GXPGNYSmtpZ2LC6Zv9Nfi\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/SigsRepo.sol\":{\"keccak256\":\"0x7d06a0a32e9c2829b89eda808c0c6f6665bb950880d3f23902b5e85037b57f50\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://ff3b766ebb097eb8abb00016492e1a14484460c48e3fa197f0de6528aefd12d6\",\"dweb:/ipfs/QmPifVktHN8c5DMhmY2A11Ymj8faYDfPBUnMWM6J4N1rum\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/TopChain.sol\":{\"keccak256\":\"0x18de8777f0e12eb2b4ade4cf2fed09370aded2623d6266d965974d7feddccef0\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://62dfa645f971f28b0942203e41686fb661a4a273bcbb7f7c701d6c545fe2428b\",\"dweb:/ipfs/QmNcQRU3nRycH1TbmTA3UfihykW4ngvqJMosa1JCkrvekd\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOASetting.sol\":{\"keccak256\":\"0xe64b0031adec963c422b1cc63bd6346da5ef6284a6d91f14a8612549d4b59d5c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://f6a236c9983c37ab0b164ba8aaaca9a6b98ab54167ccf193061c9384500724aa\",\"dweb:/ipfs/QmQ16cmChnFZGq5PF8SdqRztcktU31W4djWfJsQuJecsrB\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/keepers/IGeneralKeeper.sol\":{\"keccak256\":\"0x11fe5eba17f5500b953f9daeaab05768c223c6106ccaa05b81534d5514f5500c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://14e4c691f4c4e7f76b6775208d7a3f724c4e21aaa7dbfd035a71a0112096f77e\",\"dweb:/ipfs/QmNctvLmm4ZUDa5UuLDnyCCPK4uwzmcJiJitegKAGgT7RE\"]}},\"version\":1}",
+    "bytecode": "6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea2646970667358221220dcab5800e6f91c3016ca07857213cac82a2719ce59d71e30d7b95c4a68bff1af64736f6c63430008080033",
+    "deployedBytecode": "6080604052600080fdfea2646970667358221220dcab5800e6f91c3016ca07857213cac82a2719ce59d71e30d7b95c4a68bff1af64736f6c63430008080033",
+    "sourceMap": "238:182:14:-:0;;;;;;;;;;;;;;;;;;;",
+    "deployedSourceMap": "238:182:14:-:0;;;;;",
     "sourcePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOASetting.sol",
     "compiler": {
         "name": "solc",
@@ -55,36 +42,60 @@
         "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOASetting.sol",
         "exportedSymbols": {
             "BOASetting": [
-                1781
+                6329
+            ],
+            "Checkpoints": [
+                1485
             ],
             "EnumerableSet": [
-                1344
+                2102
+            ],
+            "FRClaims": [
+                2365
             ],
             "IBookOfIA": [
-                46
+                124
             ],
             "IGeneralKeeper": [
-                1814
+                6362
+            ],
+            "IInvestmentAgreement": [
+                355
             ],
             "IRegCenter": [
-                273
+                842
+            ],
+            "IRegisterOfMembers": [
+                672
             ],
             "IRepoOfDocs": [
-                640
+                1110
+            ],
+            "ISigPage": [
+                1199
+            ],
+            "MembersRepo": [
+                3049
             ],
             "RegCenterSetting": [
-                371
+                940
+            ],
+            "RulesParser": [
+                3833
             ],
             "SigsRepo": [
-                1754
+                4296
+            ],
+            "TopChain": [
+                6302
             ]
         },
-        "id": 1782,
+        "id": 6330,
         "license": "UNLICENSED",
         "nodeType": "SourceUnit",
         "nodes": [
             {
-                "id": 1756,
+                "id": 6304,
                 "literals": [
                     "solidity",
                     "^",
@@ -92,29 +103,29 @@
                     ".8"
                 ],
                 "nodeType": "PragmaDirective",
-                "src": "130:23:6"
+                "src": "130:23:14"
             },
             {
                 "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/books/boa/IBookOfIA.sol",
                 "file": "../../books/boa/IBookOfIA.sol",
-                "id": 1757,
+                "id": 6305,
                 "nameLocation": "-1:-1:-1",
                 "nodeType": "ImportDirective",
-                "scope": 1782,
-                "sourceUnit": 47,
-                "src": "155:39:6",
+                "scope": 6330,
+                "sourceUnit": 125,
+                "src": "155:39:14",
                 "symbolAliases": [],
                 "unitAlias": ""
             },
             {
                 "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol",
                 "file": "../access/RegCenterSetting.sol",
-                "id": 1758,
+                "id": 6306,
                 "nameLocation": "-1:-1:-1",
                 "nodeType": "ImportDirective",
-                "scope": 1782,
-                "sourceUnit": 372,
-                "src": "196:40:6",
+                "scope": 6330,
+                "sourceUnit": 941,
+                "src": "196:40:14",
                 "symbolAliases": [],
                 "unitAlias": ""
             },
@@ -123,51 +134,51 @@
                 "baseContracts": [
                     {
                         "baseName": {
-                            "id": 1759,
+                            "id": 6307,
                             "name": "RegCenterSetting",
                             "nodeType": "IdentifierPath",
-                            "referencedDeclaration": 371,
-                            "src": "261:16:6"
+                            "referencedDeclaration": 940,
+                            "src": "261:16:14"
                         },
-                        "id": 1760,
+                        "id": 6308,
                         "nodeType": "InheritanceSpecifier",
-                        "src": "261:16:6"
+                        "src": "261:16:14"
                     }
                 ],
                 "contractDependencies": [],
                 "contractKind": "contract",
                 "fullyImplemented": true,
-                "id": 1781,
+                "id": 6329,
                 "linearizedBaseContracts": [
-                    1781,
-                    371
+                    6329,
+                    940
                 ],
                 "name": "BOASetting",
-                "nameLocation": "247:10:6",
+                "nameLocation": "247:10:14",
                 "nodeType": "ContractDefinition",
                 "nodes": [
                     {
                         "body": {
-                            "id": 1779,
+                            "id": 6327,
                             "nodeType": "Block",
-                            "src": "339:76:6",
+                            "src": "342:76:14",
                             "statements": [
                                 {
                                     "expression": {
-                                        "id": 1777,
+                                        "id": 6325,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": false,
                                         "lValueRequested": false,
                                         "leftHandSide": {
-                                            "id": 1766,
+                                            "id": 6314,
                                             "name": "_boa",
                                             "nodeType": "Identifier",
                                             "overloadedDeclarations": [],
-                                            "referencedDeclaration": 1764,
-                                            "src": "349:4:6",
+                                            "referencedDeclaration": 6312,
+                                            "src": "352:4:14",
                                             "typeDescriptions": {
-                                                "typeIdentifier": "t_contract$_IBookOfIA_$46",
+                                                "typeIdentifier": "t_contract$_IBookOfIA_$124",
                                                 "typeString": "contract IBookOfIA"
                                             }
                                         },
@@ -181,28 +192,28 @@
                                                             "arguments": [
                                                                 {
                                                                     "expression": {
-                                                                        "id": 1772,
+                                                                        "id": 6320,
                                                                         "name": "TitleOfBooks",
                                                                         "nodeType": "Identifier",
                                                                         "overloadedDeclarations": [],
-                                                                        "referencedDeclaration": 286,
-                                                                        "src": "384:12:6",
+                                                                        "referencedDeclaration": 855,
+                                                                        "src": "387:12:14",
                                                                         "typeDescriptions": {
-                                                                            "typeIdentifier": "t_type$_t_enum$_TitleOfBooks_$286_$",
+                                                                            "typeIdentifier": "t_type$_t_enum$_TitleOfBooks_$855_$",
                                                                             "typeString": "type(enum RegCenterSetting.TitleOfBooks)"
                                                                         }
                                                                     },
-                                                                    "id": 1773,
+                                                                    "id": 6321,
                                                                     "isConstant": false,
                                                                     "isLValue": false,
                                                                     "isPure": true,
                                                                     "lValueRequested": false,
                                                                     "memberName": "BookOfIA",
                                                                     "nodeType": "MemberAccess",
-                                                                    "referencedDeclaration": 278,
-                                                                    "src": "384:21:6",
+                                                                    "referencedDeclaration": 847,
+                                                                    "src": "387:21:14",
                                                                     "typeDescriptions": {
-                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$286",
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$855",
                                                                         "typeString": "enum RegCenterSetting.TitleOfBooks"
                                                                     }
                                                                 }
@@ -210,30 +221,30 @@
                                                             "expression": {
                                                                 "argumentTypes": [
                                                                     {
-                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$286",
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$855",
                                                                         "typeString": "enum RegCenterSetting.TitleOfBooks"
                                                                     }
                                                                 ],
-                                                                "id": 1771,
+                                                                "id": 6319,
                                                                 "isConstant": false,
                                                                 "isLValue": false,
                                                                 "isPure": true,
                                                                 "lValueRequested": false,
                                                                 "nodeType": "ElementaryTypeNameExpression",
-                                                                "src": "378:5:6",
+                                                                "src": "381:5:14",
                                                                 "typeDescriptions": {
                                                                     "typeIdentifier": "t_type$_t_uint8_$",
                                                                     "typeString": "type(uint8)"
                                                                 },
                                                                 "typeName": {
-                                                                    "id": 1770,
+                                                                    "id": 6318,
                                                                     "name": "uint8",
                                                                     "nodeType": "ElementaryTypeName",
-                                                                    "src": "378:5:6",
+                                                                    "src": "381:5:14",
                                                                     "typeDescriptions": {}
                                                                 }
                                                             },
-                                                            "id": 1774,
+                                                            "id": 6322,
                                                             "isConstant": false,
                                                             "isLValue": false,
                                                             "isPure": true,
@@ -241,7 +252,7 @@
                                                             "lValueRequested": false,
                                                             "names": [],
                                                             "nodeType": "FunctionCall",
-                                                            "src": "378:28:6",
+                                                            "src": "381:28:14",
                                                             "tryCall": false,
                                                             "typeDescriptions": {
                                                                 "typeIdentifier": "t_uint8",
@@ -257,32 +268,32 @@
                                                             }
                                                         ],
                                                         "expression": {
-                                                            "id": 1768,
+                                                            "id": 6316,
                                                             "name": "_gk",
                                                             "nodeType": "Identifier",
                                                             "overloadedDeclarations": [],
-                                                            "referencedDeclaration": 292,
-                                                            "src": "366:3:6",
+                                                            "referencedDeclaration": 861,
+                                                            "src": "369:3:14",
                                                             "typeDescriptions": {
-                                                                "typeIdentifier": "t_contract$_IGeneralKeeper_$1814",
+                                                                "typeIdentifier": "t_contract$_IGeneralKeeper_$6362",
                                                                 "typeString": "contract IGeneralKeeper"
                                                             }
                                                         },
-                                                        "id": 1769,
+                                                        "id": 6317,
                                                         "isConstant": false,
                                                         "isLValue": false,
                                                         "isPure": false,
                                                         "lValueRequested": false,
                                                         "memberName": "getBook",
                                                         "nodeType": "MemberAccess",
-                                                        "referencedDeclaration": 1813,
-                                                        "src": "366:11:6",
+                                                        "referencedDeclaration": 6361,
+                                                        "src": "369:11:14",
                                                         "typeDescriptions": {
                                                             "typeIdentifier": "t_function_external_view$_t_uint16_$returns$_t_address_$",
                                                             "typeString": "function (uint16) view external returns (address)"
                                                         }
                                                     },
-                                                    "id": 1775,
+                                                    "id": 6323,
                                                     "isConstant": false,
                                                     "isLValue": false,
                                                     "isPure": false,
@@ -290,7 +301,7 @@
                                                     "lValueRequested": false,
                                                     "names": [],
                                                     "nodeType": "FunctionCall",
-                                                    "src": "366:41:6",
+                                                    "src": "369:41:14",
                                                     "tryCall": false,
                                                     "typeDescriptions": {
                                                         "typeIdentifier": "t_address",
@@ -305,18 +316,18 @@
                                                         "typeString": "address"
                                                     }
                                                 ],
-                                                "id": 1767,
+                                                "id": 6315,
                                                 "name": "IBookOfIA",
                                                 "nodeType": "Identifier",
                                                 "overloadedDeclarations": [],
-                                                "referencedDeclaration": 46,
-                                                "src": "356:9:6",
+                                                "referencedDeclaration": 124,
+                                                "src": "359:9:14",
                                                 "typeDescriptions": {
-                                                    "typeIdentifier": "t_type$_t_contract$_IBookOfIA_$46_$",
+                                                    "typeIdentifier": "t_type$_t_contract$_IBookOfIA_$124_$",
                                                     "typeString": "type(contract IBookOfIA)"
                                                 }
                                             },
-                                            "id": 1776,
+                                            "id": 6324,
                                             "isConstant": false,
                                             "isLValue": false,
                                             "isPure": false,
@@ -324,105 +335,102 @@
                                             "lValueRequested": false,
                                             "names": [],
                                             "nodeType": "FunctionCall",
-                                            "src": "356:52:6",
+                                            "src": "359:52:14",
                                             "tryCall": false,
                                             "typeDescriptions": {
-                                                "typeIdentifier": "t_contract$_IBookOfIA_$46",
+                                                "typeIdentifier": "t_contract$_IBookOfIA_$124",
                                                 "typeString": "contract IBookOfIA"
                                             }
                                         },
-                                        "src": "349:59:6",
+                                        "src": "352:59:14",
                                         "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IBookOfIA_$46",
+                                            "typeIdentifier": "t_contract$_IBookOfIA_$124",
                                             "typeString": "contract IBookOfIA"
                                         }
                                     },
-                                    "id": 1778,
+                                    "id": 6326,
                                     "nodeType": "ExpressionStatement",
-                                    "src": "349:59:6"
+                                    "src": "352:59:14"
                                 }
                             ]
                         },
-                        "functionSelector": "acd2d057",
-                        "id": 1780,
+                        "id": 6328,
                         "implemented": true,
                         "kind": "function",
                         "modifiers": [],
-                        "name": "getBOA",
-                        "nameLocation": "293:6:6",
+                        "name": "_getBOA",
+                        "nameLocation": "293:7:14",
                         "nodeType": "FunctionDefinition",
                         "parameters": {
-                            "id": 1761,
+                            "id": 6309,
                             "nodeType": "ParameterList",
                             "parameters": [],
-                            "src": "299:2:6"
+                            "src": "300:2:14"
                         },
                         "returnParameters": {
-                            "id": 1765,
+                            "id": 6313,
                             "nodeType": "ParameterList",
                             "parameters": [
                                 {
                                     "constant": false,
-                                    "id": 1764,
+                                    "id": 6312,
                                     "mutability": "mutable",
                                     "name": "_boa",
-                                    "nameLocation": "333:4:6",
+                                    "nameLocation": "336:4:14",
                                     "nodeType": "VariableDeclaration",
-                                    "scope": 1780,
-                                    "src": "323:14:6",
+                                    "scope": 6328,
+                                    "src": "326:14:14",
                                     "stateVariable": false,
                                     "storageLocation": "default",
                                     "typeDescriptions": {
-                                        "typeIdentifier": "t_contract$_IBookOfIA_$46",
+                                        "typeIdentifier": "t_contract$_IBookOfIA_$124",
                                         "typeString": "contract IBookOfIA"
                                     },
                                     "typeName": {
-                                        "id": 1763,
+                                        "id": 6311,
                                         "nodeType": "UserDefinedTypeName",
                                         "pathNode": {
-                                            "id": 1762,
+                                            "id": 6310,
                                             "name": "IBookOfIA",
                                             "nodeType": "IdentifierPath",
-                                            "referencedDeclaration": 46,
-                                            "src": "323:9:6"
+                                            "referencedDeclaration": 124,
+                                            "src": "326:9:14"
                                         },
-                                        "referencedDeclaration": 46,
-                                        "src": "323:9:6",
+                                        "referencedDeclaration": 124,
+                                        "src": "326:9:14",
                                         "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IBookOfIA_$46",
+                                            "typeIdentifier": "t_contract$_IBookOfIA_$124",
                                             "typeString": "contract IBookOfIA"
                                         }
                                     },
                                     "visibility": "internal"
                                 }
                             ],
-                            "src": "322:16:6"
+                            "src": "325:16:14"
                         },
-                        "scope": 1781,
-                        "src": "284:131:6",
+                        "scope": 6329,
+                        "src": "284:134:14",
                         "stateMutability": "view",
                         "virtual": false,
-                        "visibility": "public"
+                        "visibility": "internal"
                     }
                 ],
-                "scope": 1782,
-                "src": "238:179:6",
+                "scope": 6330,
+                "src": "238:182:14",
                 "usedErrors": []
             }
         ],
-        "src": "130:288:6"
+        "src": "130:291:14"
     },
-    "functionHashes": {
-        "getBOA()": "acd2d057"
-    },
+    "functionHashes": {},
     "gasEstimates": {
         "creation": {
-            "codeDepositCost": "61000",
-            "executionCost": "111",
-            "totalCost": "61111"
+            "codeDepositCost": "12600",
+            "executionCost": "66",
+            "totalCost": "12666"
         },
-        "external": {
-            "getBOA()": "infinite"
+        "internal": {
+            "_getBOA()": "infinite"
         }
     }
 }

@@ -56,6 +56,9 @@ interface IShareholdersAgreement {
     |  768  | GroupUpdateOrder  |  GroupUpdate | Grouping Members as per their relationship |
     ...
 
+    |  1024  | LinkRule  |  GroupUpdate | Grouping Members as per their relationship |
+    ...
+
 */
 
     //##################
@@ -71,7 +74,7 @@ interface IShareholdersAgreement {
     // ==== Rules ====
     function addRule(bytes32 rule) external;
 
-    function removeRule(uint16 seq) external;
+    function removeRule(uint256 seq) external;
 
     //##################
     //##    读接口    ##
@@ -90,13 +93,13 @@ interface IShareholdersAgreement {
     function termIsTriggered(
         uint256 title,
         address ia,
-        bytes32 snOfDeal
+        uint256 snOfDeal
     ) external view returns (bool);
 
     function termIsExempted(
         uint256 title,
         address ia,
-        bytes32 snOfDeal
+        uint256 snOfDeal
     ) external view returns (bool);
 
     // ==== Rules ====

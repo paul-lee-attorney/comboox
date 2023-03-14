@@ -66,7 +66,7 @@ library RolesRepo {
         
         self.generalCounsel = gc;
 
-        if (acct != 0) {
+        if (gc > 0) {
             self.roles[ATTORNEYS].admin = gc;
             self.roles[ATTORNEYS].isMember[gc] = true;
         }
@@ -77,8 +77,8 @@ library RolesRepo {
     function setRoleAdmin(
         Roles storage self,
         bytes32 role,
-        uint40 caller,
-        uint40 acct
+        uint256 caller,
+        uint256 acct
     ) public {
 
         require(
@@ -86,14 +86,14 @@ library RolesRepo {
             "RR.setRoleAdmin: caller not owner"
         );
 
-        self.roles[role].admin = acct;
+        self.roles[role].admin = uint40(acct);
     }
 
     function grantRole(
         Roles storage self,
         bytes32 role,
-        uint40 caller,
-        uint40 acct
+        uint256 caller,
+        uint256 acct
     ) public {
         require(
             caller == roleAdmin(self, role),
@@ -105,10 +105,11 @@ library RolesRepo {
     function revokeRole(
         Roles storage self,
         bytes32 role,
-        uint40 originator,
-        uint40 acct
+        uint256 originator,
+        uint256 acct
     ) public {
-        require(originator == roleAdmin(self, role), "RR.revokeRole: originator not admin");
+        require(originator == roleAdmin(self, role), 
+            "RR.revokeRole: originator not admin");
 
         delete self.roles[role].isMember[acct];
     }
@@ -116,7 +117,7 @@ library RolesRepo {
     function renounceRole(
         Roles storage self,
         bytes32 role,
-        uint40 originator
+        uint256 originator
     ) public {
         delete self.roles[role].isMember[originator];
     }
@@ -185,7 +186,7 @@ library RolesRepo {
     function roleAdmin(Roles storage self, bytes32 role)
         public
         view
-        returns (uint256)
+        returns (uint40)
     {
         return self.roles[role].admin;
     }

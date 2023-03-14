@@ -25,9 +25,9 @@ interface IGeneralKeeper {
     // ##   Event   ##
     // ###############
 
-    event SetBook(uint16 title, address book);
+    event SetBook(uint256 title, address book);
 
-    event SetBookeeper(uint16 title, address keeper);
+    event SetBookeeper(uint256 title, address keeper);
 
     event SetRegNumberHash(bytes32 numHash);
 
@@ -37,5 +37,5 @@ interface IGeneralKeeper {
 
     function isKeeper(address caller) external view returns (bool flag);
 
-    function getBook(uint16) external view returns(address book);
+    function getBook(uint256) external view returns(address book);
 }

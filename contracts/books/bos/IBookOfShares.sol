@@ -8,14 +8,29 @@
 pragma solidity ^0.8.8;
 
 interface IBookOfShares {
-    //Share 股票
-    struct Share {
-        bytes32 shareNumber; //出资证明书编号（股票编号）
+
+    struct Head {
+        uint16 class; // Class of shares as per the evaluation of company for corresponding investment;
+        uint32 seq; // sequence number of shares;
+        uint32 preSeq;
+        uint48 issueDate;
+        uint48 paidInDeadline; //出资期限（时间戳）
+        uint40 shareholder;
+        uint32 price; 
+        uint8 state; //股票状态 （0:正常，1:查封）        
+    }
+
+    struct Body {
         uint64 paid; //实缴出资
         uint64 par; //票面金额（注册资本面值）
-        uint64 cleanPar; //清洁金额（扣除出质、远期票面金额）
-        uint48 paidInDeadline; //出资期限（时间戳）
-        uint8 state; //股票状态 （0:正常，1:查封）
+        uint64 cleanPaid; //清洁金额（扣除出质、远期票面金额）
+        uint64 cleanPar;
+    }
+
+    //Share 股票
+    struct Share {
+        Head head; //出资证明书编号（股票编号）
+        Body body;
     }
 
     //##################
@@ -23,40 +38,39 @@ interface IBookOfShares {
     //##################
 
     event IssueShare(
-        bytes32 indexed shareNumber,
+        uint256 indexed seq,
         uint64 paid,
-        uint64 par,
-        uint48 paidInDeadline
+        uint64 par
     );
 
     event PayInCapital(
-        bytes32 indexed shareNumber,
+        uint256 indexed seq,
         uint64 amount,
         uint48 paidInDate
     );
 
     event SubAmountFromShare(
-        bytes32 indexed shareNumber,
+        uint256 indexed seq,
         uint64 paid,
         uint64 par
     );
 
-    event DeregisterShare(bytes32 indexed shareNumber);
+    event DeregisterShare(uint256 indexed seq);
 
-    event UpdateStateOfShare(bytes32 indexed shareNumber, uint8 state);
+    event UpdateStateOfShare(uint256 indexed seq, uint8 state);
 
     event UpdatePaidInDeadline(
-        bytes32 indexed shareNumber,
+        uint256 indexed seq,
         uint48 paidInDeadline
     );
 
-    event DecreaseCleanPar(bytes32 indexed shareNumber, uint64 paid);
+    event DecreaseCleanAmt(uint256 indexed seq, uint64 paid, uint64 par);
 
-    event IncreaseCleanPar(bytes32 indexed shareNumber, uint64 paid);
+    event IncreaseCleanAmt(uint256 indexed seq, uint64 paid, uint64 par);
 
-    event SetPayInAmount(bytes32 indexed sn, uint64 amount);
+    event SetPayInAmt(bytes32 indexed sn, uint64 amount);
 
-    event WithdrawPayInAmount(bytes32 indexed sn);
+    event WithdrawPayInAmt(bytes32 indexed sn);
 
     //##################
     //##    写接口    ##
@@ -65,50 +79,46 @@ interface IBookOfShares {
     function issueShare(
         bytes32 shareNumber,
         uint64 paid,
-        uint64 par,
-        uint48 paidInDeadline
+        uint64 par
     ) external;
 
-    function setPayInAmount(bytes32 sn, uint64 amount) external;
+    function regShare(
+        Head memory head,
+        uint64 paid,
+        uint64 par
+    ) external;
+
+    function setPayInAmt(bytes32 sn, uint64 amount) external;
 
     function requestPaidInCapital(bytes32 sn, string memory hashKey) external;
 
-    function withdrawPayInAmount(bytes32 sn) external;
+    function withdrawPayInAmt(bytes32 sn) external;
 
     function transferShare(
-        uint32 ssn,
+        uint256 seq,
         uint64 paid,
         uint64 par,
         uint40 to,
         uint32 unitPrice
     ) external;
 
-    function createShareNumber(
-        uint16 class,
-        uint32 ssn,
-        uint48 issueDate,
-        uint40 shareholder,
-        uint32 unitPrice,
-        uint32 preSSN
-    ) external pure returns (bytes32 sn);
-
     function decreaseCapital(
-        uint32 ssn,
+        uint256 seq,
         uint64 paid,
         uint64 par
     ) external;
 
-    // ==== CleanPar ====
+    // ==== CleanPaid ====
 
-    function decreaseCleanPar(uint32 ssn, uint64 paid) external;
+    function decreaseCleanAmt(uint256 seq, uint64 paid, uint64 par) external;
 
-    function increaseCleanPar(uint32 ssn, uint64 paid) external;
+    function increaseCleanAmt(uint256 seq, uint64 paid, uint64 par) external;
 
     // ==== State & PaidInDeadline ====
 
-    function updateStateOfShare(uint32 ssn, uint8 state) external;
+    function updateStateOfShare(uint256 seq, uint8 state) external;
 
-    function updatePaidInDeadline(uint32 ssn, uint48 paidInDeadline) external;
+    function updatePaidInDeadline(uint256 seq, uint48 paidInDeadline) external;
 
     // ##################
     // ##   查询接口   ##
@@ -120,14 +130,23 @@ interface IBookOfShares {
 
     function counterOfClasses() external view returns (uint16);
 
-    function isShare(uint32 ssn) external view returns (bool);
+    function isShare(uint256 seq) external view returns (bool);
 
-    function cleanPar(uint32 ssn) external view returns (uint64);
+    function getHeadOfShare(uint256 seq)
+        external
+        view
+        returns (Head memory head);
 
-    function getShare(uint32 ssn)
+    function getBodyOfShare(uint256 seq)
+        external
+        view
+        returns (Body memory body);
+
+    function getShare(uint256 seq)
         external
         view
         returns (Share memory share);
+
 
     function getLocker(bytes32 sn) external view returns (uint64 amount);
 }

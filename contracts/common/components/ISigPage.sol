@@ -13,71 +13,70 @@ import "../lib/SigsRepo.sol";
 
 interface ISigPage {
 
-    event SetParasOfDoc (uint48 SigDeadline, uint48 ClosingDeadline);
+    event SetSigDeadline (bool initPage, uint48 SigDeadline);
 
-    event SignDeal (uint16 seq, uint40 signer, bytes32 sigHash);
-
-    function setBodyOfSigs(address body) external;
-
-    function setParasOfDoc(
-        uint48 sigDeadline, 
-        uint48 closingDeadline
+    function setSigDeadline(
+        bool initPage,
+        uint48 sigDeadline
     ) external;
 
-    function addBlank(uint16 seq, uint40 acct) external;
+    // function addParty(uint256 acct) external;
 
-    function removeBlank(uint16 seq, uint40 acct) external;
+    function signDoc(bool initPage, uint256 caller, bytes32 sigHash) external;    
 
-    function addParty(uint40 acct) external;
+    function regSig(uint256 seqOfDeal, uint256 signer, uint48 sigDate, bytes32 sigHash)
+        external returns(bool flag);
 
-    // ==== Execution ====
-
-    function signDeal(uint16 seq, uint40 signer, bytes32 sigHash) external;
-
-    function signDoc(uint40 caller, bytes32 sigHash) external;
-
-    function acceptDoc(uint40 caller, bytes32 sigHash) external;
+    // function signDeal(uint256 seqOfDeal, uint256 caller, bytes32 sigHash) external;
 
     //##################
     //##   read I/O   ##
     //##################
 
+    function getParasOfPage(bool initPage) 
+        external 
+        view 
+        returns (SigsRepo.Signature memory);
+
     function established() external view
-        returns (bool);
+        returns (bool flag);
 
-    function isParty(uint40 acct)
+    function isBuyer(bool initPage, uint256 acct)
         external
         view
-        returns(bool);
+        returns(bool flag);
 
-    function isInitSigner(uint40 acct) 
+    function isSeller(bool initPage, uint256 acct)
+        external
+        view
+        returns(bool flag);
+
+    function isParty(bool initPage, uint256 acct)
+        external
+        view
+        returns(bool flag);
+
+    function isSigner(bool initPage, uint256 acct)
         external 
         view 
-        returns (bool);
+        returns (bool flag);
 
-    function qtyOfParties()
+    function getBuyers(bool initPage)
         external
         view
-        returns (uint256);
+        returns (uint256[] memory buyers);
 
-    function partiesOfDoc()
+    function getSellers(bool initPage)
         external
         view
-        returns (uint40[] memory);
+        returns (uint256[] memory sellers);
 
-    function sigOfDeal(uint16 seq, uint40 acct) 
+    function getSigOfParty(bool initParty, uint256 acct) 
         external
         view
-        returns (SigsRepo.Signature memory);
+        returns (uint256[] memory seqOfDeals, SigsRepo.Signature memory sig);
 
-    function sigOfDoc(uint40 acct) 
-        external
-        view
-        returns (SigsRepo.Signature memory);
-    
-    function parasOfPage() 
-        external 
-        view 
-        returns (SigsRepo.Signature memory);
-
+    function getSigsOfPage(bool initPage) 
+        external view
+        returns (SigsRepo.Signature[] memory sigsOfBuyer, SigsRepo.Signature[] memory sigsOfSeller);
 }

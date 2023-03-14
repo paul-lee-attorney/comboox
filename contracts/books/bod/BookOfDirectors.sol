@@ -12,11 +12,11 @@ import "./IBookOfDirectors.sol";
 import "../../common/components/MeetingMinutes.sol";
 
 import "../../common/lib/EnumerableSet.sol";
-import "../../common/lib/SNParser.sol";
+import "../../common/lib/RulesParser.sol";
 
 contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     using EnumerableSet for EnumerableSet.UintSet;
-    using SNParser for bytes32;
+    using RulesParser for bytes32;
 
 /*  _dirctors[0] {
         title: maxQtyOfDirectors;
@@ -50,10 +50,10 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     }
 
     function _addDirector(
-        bytes32 bsRule,
-        uint40 candidate,
+        RulesParser.BoardSeatsRule memory bsr,
+        uint256 candidate,
         uint8 title,
-        uint40 appointer
+        uint256 appointer
     ) private {
         if (!isDirector(candidate))
             require(
@@ -63,28 +63,28 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
 
         uint48 startDate = uint48(block.timestamp);
 
-        bytes32 governingRule = _getSHA().getRule(0);
+        RulesParser.GovernanceRule memory gr = _getSHA().getRule(0).governanceRuleParser();
 
         uint48 endDate = startDate +
-            governingRule.tenureOfBoard() * 31536000;
+            uint48(gr.tenureOfBoard) * 31536000;
 
-        require(bsRule.qtyOfBoardSeats() < _appointmentCounter[appointer], 
+        require(bsr.qtyOfBoardSeats < _appointmentCounter[appointer], 
             "BOD.addDirector: Board seets used up");
 
         _officers[candidate] = Officer({
             title: title,
-            acct: candidate,
-            appointer: appointer,
+            acct: uint40(candidate),
+            appointer: uint40(appointer),
             startDate: startDate,
             endDate: endDate
         });
 
         if (title == uint8(TitleOfDirectors.Chairman)) {
             if (_officers[0].appointer == 0)
-                _officers[0].appointer = candidate;
+                _officers[0].appointer = uint40(candidate);
             else revert("BOD.addDirector: Chairman's position is occupied");
         } else if (title == uint8(TitleOfDirectors.ViceChairman)) {
-            if (_officers[0].acct == 0) _officers[0].acct = candidate;
+            if (_officers[0].acct == 0) _officers[0].acct = uint40(candidate);
             else revert("BOD.addDirector: ViceChairman's position is occupied");
         }
 
@@ -96,15 +96,16 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     }
 
     function takePosition(
-        bytes32 bsRule, 
+        uint256 seqOfBSR, 
         uint8 title, 
-        uint40 candidate, 
-        uint40 nominator
+        uint256 candidate, 
+        uint256 nominator
     ) external onlyDirectKeeper {
-        _addDirector(bsRule, candidate, title, nominator);
+        RulesParser.BoardSeatsRule memory bsr = RulesParser.boardSeatsRuleParser(_getSHA().getRule(seqOfBSR));
+        _addDirector(bsr, candidate, title, nominator);
     }
 
-    function removeDirector(uint40 acct) external onlyDirectKeeper {
+    function removeDirector(uint256 acct) external onlyDirectKeeper {
         if (isDirector(acct)) {
             if (_officers[acct].title == uint8(TitleOfDirectors.Chairman)) {
                 _officers[0].appointer = 0;
@@ -125,24 +126,25 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     // ==== Officer ====
 
     function appointOfficer(
-        uint16 seqOfVR,
+        uint256 seqOfVR,
         uint8 title,
-        uint40 nominator,
-        uint40 candidate
+        uint256 nominator,
+        uint256 candidate
     ) external onlyDirectKeeper {
         require(isDirector(candidate) || !isOfficer(candidate), 
             "BODK.AO: officer needs to quit first");
 
-        bytes32 vrRule = _getSHA().getRule(seqOfVR);
-        require((vrRule.ratioAmountOfVR() == 0) && 
-            (vrRule.ratioHeadOfVR() == 0), "BOD.AO: nomination needs to vote");
+        RulesParser.VotingRule memory vr = _getSHA().getRule(seqOfVR).votingRuleParser();
+
+        require((vr.amountRatio == 0) && 
+            (vr.headRatio == 0), "BOD.AO: nomination needs to vote");
 
         emit AppointOfficer(candidate, title, nominator);
 
         _officers[candidate] = Officer({
             title: title,
-            acct: candidate,
-            appointer: nominator,
+            acct: uint40(candidate),
+            appointer: uint40(nominator),
             startDate: uint48(block.timestamp),
             endDate: 0
         });
@@ -160,11 +162,11 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         return uint16(_board.length());
     }
 
-    function isOfficer(uint40 acct) public view returns (bool) {
+    function isOfficer(uint256 acct) public view returns (bool) {
         return _officers[acct].acct == acct;
     }
 
-    function isDirector(uint40 acct) public view returns (bool) {
+    function isDirector(uint256 acct) public view returns (bool) {
         return _board.contains(acct);
     }
 
@@ -176,18 +178,17 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         else revert("BOD.whoIs: value of title overflow");
     }
 
-    function getDirector(uint40 acct)
+    function getDirector(uint256 acct)
         external
         view
         returns(Officer memory)
     {
-        require(_board.contains(acct), "BOD.GD: acct is not Director");
-        
+        require(_board.contains(acct), "BOD.GD: acct is not Director");        
         return _officers[acct];
     }
 
-    function directors() external view returns (uint40[] memory) {
-        return _board.valuesToUint40();
+    function directors() external view returns (uint256[] memory) {
+        return _board.values();
     }
 
     function boardSeatsOf(uint256 acct) external view returns(uint256) {

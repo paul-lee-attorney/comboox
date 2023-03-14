@@ -237,20 +237,20 @@ library EnumerableSet {
      ***/
 
     // shall be checked at front-end so as to avoid overflow
-    function valuesToUint8(UintSet storage set)
-        public
-        view
-        returns (uint8[] memory)
-    {
-        bytes32[] memory store = _values(set._inner);
-        uint8[] memory result;
+    // function valuesToUint8(UintSet storage set)
+    //     public
+    //     view
+    //     returns (uint8[] memory)
+    // {
+    //     bytes32[] memory store = _values(set._inner);
+    //     uint8[] memory result;
 
-        assembly {
-            result := store
-        }
+    //     assembly {
+    //         result := store
+    //     }
 
-        return result;
-    }
+    //     return result;
+    // }
 
     // function valuesToUint16(UintSet storage set)
     //     public
@@ -268,36 +268,36 @@ library EnumerableSet {
     // }
     
     // shall be checked at front-end so as to avoid overflow
-    function valuesToUint32(UintSet storage set)
-        public
-        view
-        returns (uint32[] memory)
-    {
-        bytes32[] memory store = _values(set._inner);
-        uint32[] memory result;
+    // function valuesToUint32(UintSet storage set)
+    //     public
+    //     view
+    //     returns (uint32[] memory)
+    // {
+    //     bytes32[] memory store = _values(set._inner);
+    //     uint32[] memory result;
 
-        assembly {
-            result := store
-        }
+    //     assembly {
+    //         result := store
+    //     }
 
-        return result;
-    }
+    //     return result;
+    // }
 
     // shall be checked at front-end so as to avoid overflow
-    function valuesToUint40(UintSet storage set)
-        public
-        view
-        returns (uint40[] memory)
-    {
-        bytes32[] memory store = _values(set._inner);
-        uint40[] memory result;
+    // function valuesToUint40(UintSet storage set)
+    //     public
+    //     view
+    //     returns (uint40[] memory)
+    // {
+    //     bytes32[] memory store = _values(set._inner);
+    //     uint40[] memory result;
 
-        assembly {
-            result := store
-        }
+    //     assembly {
+    //         result := store
+    //     }
 
-        return result;
-    }
+    //     return result;
+    // }
 
     // // shall be checked at front-end so as to avoid overflow
     // function valuesToUint88(UintSet storage set)

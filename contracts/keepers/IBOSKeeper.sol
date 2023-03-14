@@ -21,10 +21,10 @@ interface IBOSKeeper {
     function withdrawPayInAmount(bytes32 sn) external;
 
     function decreaseCapital(
-        uint32 ssn,
+        uint256 seqOfShare,
         uint64 paid,
         uint64 par
     ) external;
 
-    function updatePaidInDeadline(uint32 ssn, uint32 line) external;
+    function updatePaidInDeadline(uint256 seqOfShare, uint48 line) external;
 }

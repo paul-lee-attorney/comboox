@@ -7,11 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-// import "../../books/rom/IRegisterOfMembers.sol";
-// import "./ArrayUtils.sol";
-
 library DelegateMap {
-    // using ArrayUtils for uint40[];
 
     struct Voter {
         uint40 delegate;
@@ -31,8 +27,8 @@ library DelegateMap {
 
     function entrustDelegate(
         Map storage map,
-        uint40 principal,
-        uint40 delegate,
+        uint256 principal,
+        uint256 delegate,
         uint64 weight
     ) public returns (bool flag) {
         require(principal != 0, "DM.ED: zero principal");
@@ -45,7 +41,7 @@ library DelegateMap {
             Voter storage p = map.voters[principal];
             Voter storage d = map.voters[delegate];
 
-            p.delegate = delegate;
+            p.delegate = uint40(delegate);
             p.weight = weight;
             p.repWeight += weight;
             p.repHead ++;
@@ -53,7 +49,7 @@ library DelegateMap {
             d.repHead += p.repHead;
             d.repWeight += p.repWeight;
            
-            d.principals.push(principal);
+            d.principals.push(uint40(principal));
 
             flag = true;
         }

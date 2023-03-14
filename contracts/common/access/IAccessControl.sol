@@ -16,7 +16,7 @@ interface IAccessControl {
     // ##################
 
     event Init(
-        uint40 owner,
+        uint256 owner,
         address directKeeper,
         address regCenter,
         address generalKeeper
@@ -35,7 +35,7 @@ interface IAccessControl {
     // ##################
 
     function init(
-        uint40 owner,
+        uint256 owner,
         address directKeeper,
         address regCenter,
         address generalKeeper
@@ -43,19 +43,19 @@ interface IAccessControl {
 
     function setDirectKeeper(address keeper) external;
 
-    function setOwner(uint40 acct) external;
+    function setOwner(uint256 acct) external;
 
-    function setGeneralCounsel(uint40 acct) external;
+    function setGeneralCounsel(uint256 acct) external;
 
-    function grantRole(bytes32 role, uint40 acct) external;
+    function setRoleAdmin(bytes32 role, uint256 acct) external;
 
-    function revokeRole(bytes32 role, uint40 acct) external;
+    function grantRole(bytes32 role, uint256 acct) external;
+
+    function revokeRole(bytes32 role, uint256 acct) external;
 
     function renounceRole(bytes32 role) external;
 
     function abandonRole(bytes32 role) external;
-
-    function setRoleAdmin(bytes32 role, uint40 acct) external;
 
     function lockContents() external;
 
@@ -72,5 +72,5 @@ interface IAccessControl {
 
     function finalized() external view returns (bool);
 
-    function hasRole(bytes32 role, uint40 acct) external view returns (bool);
+    function hasRole(bytes32 role, uint256 acct) external view returns (bool);
 }

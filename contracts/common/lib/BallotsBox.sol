@@ -29,7 +29,7 @@ library BallotsBox {
     struct Case {
         uint32 sumOfHead;
         uint64 sumOfWeight;
-        uint40[] voters;
+        uint256[] voters;
     }
 
     struct Box {
@@ -43,12 +43,13 @@ library BallotsBox {
 
     function castVote(
         Box storage box,
-        uint40 acct,
+        uint256 acct,
         uint8 attitude,
         uint32 head,
         uint64 weight,
         bytes32 sigHash
-    ) public returns (bool flag) {        
+    ) public returns (bool flag) {
+        uint40 voter = uint40(acct);        
         require(
             attitude == uint8(AttitudeOfVote.Support) ||
                 attitude == uint8(AttitudeOfVote.Against) ||
@@ -56,9 +57,9 @@ library BallotsBox {
             "BB.CV: attitude overflow"
         );
 
-        if (box.ballots[acct].sigDate == 0) {
-            box.ballots[acct] = Ballot({
-                acct: acct,
+        if (box.ballots[voter].sigDate == 0) {
+            box.ballots[voter] = Ballot({
+                acct: voter,
                 attitude: attitude,
                 head: head,
                 weight: weight,
@@ -69,46 +70,13 @@ library BallotsBox {
 
             box.cases[attitude].sumOfHead += head;
             box.cases[attitude].sumOfWeight += weight;
-            box.cases[attitude].voters.push(acct);
+            box.cases[attitude].voters.push(voter);
 
             box.cases[uint8(AttitudeOfVote.All)].sumOfHead += head;
             box.cases[uint8(AttitudeOfVote.All)].sumOfWeight += weight;
-            box.cases[uint8(AttitudeOfVote.All)].voters.push(acct);
+            box.cases[uint8(AttitudeOfVote.All)].voters.push(voter);
 
             flag = true;
         }
     }
-
-    // ################
-    // ##    Read    ##
-    // ################
-
-    // function isVoted(Box storage box, uint40 acct) public view returns (bool) {
-    //     return box.ballots[acct].sigDate > 0;
-    // }
-
-    // function isVotedFor(Box storage box, uint40 acct, uint8 attitude) public view returns (bool) {
-    //     return box.ballots[acct].attitude == attitude;
-    // }
-
-    // function getCaseOfAttitude(Box storage box, uint8 attitude) 
-    //     public view returns (Case memory) 
-    // {
-    //     return box.cases[attitude];
-    // }
-
-    // function getWeightOfAttitude(Box storage box, uint8 attitude) public view returns (uint64) {
-    //     return box.cases[attitude].sumOfWeight;
-    // }
-
-    // function getHeadOfAttitude(Box storage box, uint8 attitude) public view returns (uint32) {
-    //     return box.cases[attitude].sumOfHead;
-    // }
-
-    // function getBallot(Box storage box, uint40 acct) 
-    //     public view 
-    //     returns (Ballot memory b) 
-    // {
-    //     b = box.ballots[acct];
-    // }
 }

@@ -8,41 +8,32 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
-import "../../boa/IMockResults.sol";
-import "../../boa/IBookOfIA.sol";
-
-import "../../rom/IRegisterOfMembers.sol";
 
 import "../../../common/ruting/BOASetting.sol";
 import "../../../common/ruting/ROMSetting.sol";
 
-import "../../../common/lib/SNParser.sol";
+import "../../../common/lib/RulesParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
+
 import "../../../common/components/IRepoOfDocs.sol";
 import "../../../common/access/AccessControl.sol";
 
 import "./IAlongs.sol";
 
 contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
-    using SNParser for bytes32;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using RulesParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    EnumerableSet.UintSet private _dragers;
-    EnumerableSet.Bytes32Set private _rules;
-
-    // rule => followers
-    mapping(bytes32 => EnumerableSet.UintSet) internal _followers;
-
-    // drager => rule
-    mapping(uint256 => bytes32) internal _links;
+    // drager => Drager
+    mapping(uint256 => Drager) internal _dragers;
+    EnumerableSet.UintSet private _dragersList;
 
     // ################
     // ##  modifier  ##
     // ################
 
-    modifier dragerExist(uint40 drager) {
-        require(_dragers.contains(drager), "WRONG drager ID");
+    modifier dragerExist(uint256 drager) {
+        require(_dragersList.contains(drager), "DA.mf.DE: drager not exist");
         _;
     }
 
@@ -50,32 +41,26 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     // ##   写接口   ##
     // ################
 
-    function createLink(bytes32 rule, uint40 drager) external onlyAttorney {
-        if (_dragers.add(drager) && _rules.add(rule)) {
-            _links[drager] = rule;
+    function createLink(bytes32 rule, uint256 drager) external onlyAttorney {
+        if (_dragersList.add(drager)) {
+            _dragers[drager].linkRule = rule.linkRuleParser();
         }
     }
 
-    function addFollower(uint40 drager, uint40 follower) external onlyAttorney {
-        _followers[_links[drager]].add(follower);
+    function addFollower(uint256 drager, uint256 follower) external onlyAttorney {
+        _dragers[drager].followers.add(follower);
     }
 
-    function removeFollower(uint40 drager, uint40 follower)
+    function removeFollower(uint256 drager, uint256 follower)
         external
         onlyAttorney
     {
-        _followers[_links[drager]].remove(follower);
+        _dragers[drager].followers.remove(follower);
     }
 
-    function removeDrager(uint40 drager) external onlyAttorney {
-        if (_dragers.remove(drager)) {
-            delete _links[drager];
-        }
-    }
-
-    function delLink(bytes32 rule) external onlyAttorney {
-        if (_rules.remove(rule)) {
-            delete _followers[rule];
+    function removeDrager(uint256 drager) external onlyAttorney {
+        if (_dragersList.remove(drager)) {
+            delete _dragers[drager];
         }
     }
 
@@ -83,76 +68,62 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     // ##  查询接口  ##
     // ################
 
-    function linkRule(uint40 drager) external view returns (bytes32) {
-        return _links[drager];
+    function linkRule(uint256 drager) external view returns (RulesParser.LinkRule memory) {
+        return _dragers[drager].linkRule;
     }
 
-    function isDrager(uint40 drager) external view returns (bool) {
-        return _dragers.contains(drager);
+    function isDrager(uint256 drager) external view returns (bool) {
+        return _dragersList.contains(drager);
     }
 
-    function isLinked(uint40 drager, uint40 follower)
+    function isLinked(uint256 drager, uint256 follower)
         public
         view
         returns (bool)
     {
-        return _followers[_links[drager]].contains(follower);
+        return _dragers[drager].followers.contains(follower);
     }
 
-    function dragers() external view returns (uint40[] memory) {
-        return _dragers.valuesToUint40();
+    function dragers() external view returns (uint256[] memory) {
+        return _dragersList.values();
     }
 
-    function followers(uint40 drager) external view returns (uint40[] memory) {
-        return _followers[_links[drager]].valuesToUint40();
+    function followers(uint256 drager) external view returns (uint256[] memory) {
+        return _dragers[drager].followers.values();
     }
 
     function priceCheck(
         address ia,
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint40 caller
+        IInvestmentAgreement.Deal memory deal,
+        IBookOfShares.Share memory share,
+        uint256 caller
     ) external view returns (bool) {
-        if (!isTriggered(ia, sn)) return false;
-
-        uint40 drager = sn.sellerOfDeal();
-
-        require(
-            caller == drager,
-            "DA.priceCheck: caller is not drager of DragAlong"
-        );
+                
+        if (!isTriggered(ia, deal)) return false;
 
         require(
-            isLinked(caller, shareNumber.shareholder()),
-            "DA.PriceCheck: caller and target shareholder NOT linked"
+            caller == deal.head.seller,
+            "DA.PC: caller is not drager"
         );
 
-        uint32 dealPrice = sn.priceOfDeal();
-        uint48 closingDate = IInvestmentAgreement(ia).getDeal(
-            sn.seqOfDeal()
-        ).closingDate;
-
-        bytes32 rule = _links[caller];
+        RulesParser.LinkRule memory lr = _dragers[caller].linkRule;
 
         if (
-            rule.triggerTypeOfLink() <
+            lr.triggerType <
             uint8(TriggerTypeOfAlongs.ControlChangedWithHigherPrice)
         ) return true;
 
         if (
-            rule.triggerTypeOfLink() ==
+            lr.triggerType ==
             uint8(TriggerTypeOfAlongs.ControlChangedWithHigherPrice)
         ) {
-            if (dealPrice >= rule.unitPriceOfLink()) return true;
+            if (deal.head.price >= lr.unitPrice) return true;
             else return false;
         }
 
-        uint32 issuePrice = shareNumber.issuePrice();
-        uint48 issueDate = shareNumber.issueDate();
-
         if (
-            _roeOfDeal(dealPrice, issuePrice, closingDate, issueDate) >=
-            rule.roeOfLink()
+            _roeOfDeal(deal.head.price, share.head.price, deal.head.closingDate, share.head.issueDate) >=
+            lr.roe
         ) return true;
 
         return false;
@@ -162,36 +133,34 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, bytes32 sn) public view returns (bool) {
+    function isTriggered(address ia, IInvestmentAgreement.Deal memory deal) public view returns (bool) {
+        
         if (_getBOA().getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
             return false;
 
         if (
-            sn.typeOfDeal() ==
+            deal.head.typeOfDeal ==
             uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease) ||
-            sn.typeOfDeal() == uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
+            deal.head.typeOfDeal == uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
         ) return false;
 
-        uint40 seller = sn.sellerOfDeal();
+        if (!_dragersList.contains(deal.head.seller)) return false;
 
-        if (!_dragers.contains(seller)) return false;
+        RulesParser.LinkRule memory rule = _dragers[deal.head.seller].linkRule;
 
-        bytes32 rule = _links[seller];
-
-        if (rule.triggerTypeOfLink() == uint8(TriggerTypeOfAlongs.NoConditions))
+        if (rule.triggerType == uint8(TriggerTypeOfAlongs.NoConditions))
             return true;
 
         uint40 controllor = _getROM().controllor();
 
-        if (controllor != _getROM().groupRep(seller)) return false;
+        if (controllor != _getROM().groupRep(deal.head.seller)) return false;
 
-        (uint40 newControllor, uint64 ratio) = IMockResults(
-            _getBOA().mockResultsOfIA(ia)
-        ).topGroup();
+        (uint40 newControllor, uint16 shareRatio) = 
+            _getBOA().mockResultsOfIA(ia);
 
         if (controllor != newControllor) return true;
 
-        if (ratio <= rule.thresholdOfLink()) return true;
+        if (shareRatio <= rule.shareRatioThreshold) return true;
 
         return false;
     }
@@ -202,8 +171,8 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
         uint48 closingDate,
         uint48 issueDateOfShare
     ) internal pure returns (uint32 roe) {
-        require(dealPrice > issuePrice, "NEGATIVE selling price");
-        require(closingDate > issueDateOfShare, "NEGATIVE holding period");
+        require(dealPrice > issuePrice, "ROE: NEGATIVE selling price");
+        require(closingDate > issueDateOfShare, "ROE: NEGATIVE holding period");
 
         uint32 deltaPrice = dealPrice - issuePrice;
         uint32 deltaDate = uint32(closingDate - issueDateOfShare);

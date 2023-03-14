@@ -24,19 +24,20 @@ interface ISHAKeeper {
 
     function execAlongRight(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         bool dragAlong,
-        bytes32 shareNumber,
+        uint256 seqOfShare,
         uint64 paid,
         uint64 par,
-        uint40 caller,
+        uint256 caller,
         bytes32 sigHash
     ) external;
 
     function acceptAlongDeal(
         address ia,
-        bytes32 sn,
-        uint40 caller,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
+        uint256 caller,
         bytes32 sigHash
     ) external;
 
@@ -44,33 +45,33 @@ interface ISHAKeeper {
 
     function execAntiDilution(
         address ia,
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint40 caller,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
+        uint256 caller,
         bytes32 sigHash
     ) external;
 
     function takeGiftShares(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         uint40 caller
     ) external;
 
     // ======== FirstRefusal ========
 
     function execFirstRefusal(
-        uint16 seqOfFRRule,
+        uint256 seqOfFRRule,
         uint256 seqOfRightholder,
         address ia,
-        bytes32 snOfDeal,
-        uint40 caller,
+        uint256 seqOfDeal,
+        uint256 caller,
         bytes32 sigHash
     ) external;
 
     function acceptFirstRefusal(
         address ia,
-        bytes32 snOfOD,
-        uint40 caller,
+        uint256 seqOfDeal,
+        uint256 caller,
         bytes32 sigHash
     ) external;
 }

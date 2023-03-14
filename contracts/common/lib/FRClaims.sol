@@ -8,26 +8,23 @@
 pragma solidity ^0.8.8;
 
 
-import "./EnumerableSet.sol";
 import "../../books/rom/IRegisterOfMembers.sol";
 
 library FRClaims {
-    using EnumerableSet for EnumerableSet.UintSet;
 
     struct Claim {
         uint16 seqOfDeal;
         uint40 rightholder;
-        uint64 weight; // Claimer's voting weight
+        uint64 weight;
         uint64 ratio;
+        uint48 sigDate;
+        bytes32 sigHash;
     }
 
     struct Package {
         uint64 sumOfWeight;
-        // claimer => Claim
-        // mapping(uint256 => Claim) claimOf;
         Claim[] claims;
         mapping(uint256 => bool) isClaimer;
-        // EnumerableSet.UintSet claimers;
     }
 
     // ==== FRDeals ====
@@ -35,6 +32,8 @@ library FRClaims {
     struct Claims {
         // seqOfDeal => Package
         mapping(uint256 => Package) claimsFor;
+        // acct => bool
+        mapping(uint256 => bool) isClaimer;
     }
 
     //##################
@@ -43,30 +42,32 @@ library FRClaims {
 
     function execFirstRefusalRight(
         Claims storage cls,
-        uint16 seqOfDeal,
-        uint40 acct
+        uint256 seqOfDeal,
+        uint256 acct,
+        bytes32 sigHash
     ) public returns (bool flag) {
 
         Package storage p = cls.claimsFor[seqOfDeal];
 
         if (!p.isClaimer[acct]){
-            p.claims.push(
-                Claim({
-                    seqOfDeal: seqOfDeal,
-                    rightholder: acct,
+            p.claims.push(Claim({
+                    seqOfDeal: uint16(seqOfDeal),
+                    rightholder: uint40(acct),
                     weight: 0,
-                    ratio: 0
-                })
-            );
-
+                    ratio: 0,
+                    sigDate: uint48(block.timestamp),
+                    sigHash: sigHash
+                }));
             p.isClaimer[acct] = true;
+
+            cls.isClaimer[acct] = true;
             flag = true;
         }
     }
 
     function acceptFirstRefusalClaims(
         Claims storage cls,
-        uint16 seqOfDeal,
+        uint256 seqOfDeal,
         IRegisterOfMembers rom
     ) public returns (Claim[] memory output) {
 
@@ -74,9 +75,8 @@ library FRClaims {
 
         Package storage p = cls.claimsFor[seqOfDeal];
 
-        if (p.sumOfWeight == 0) {                    
-
-            uint256 num = p.claims.length;
+        if (p.sumOfWeight == 0) {
+            uint256 num = p.claims.length;            
             uint256 i;
 
             while (i < num) {
@@ -105,15 +105,15 @@ library FRClaims {
     //  ################################
 
     function isTargetDeal(Claims storage cls, uint256 seqOfDeal) public view returns (bool) {
-        return cls.claimsFor[seqOfDeal].claims[0].rightholder > 0;
+        return cls.claimsFor[seqOfDeal].claims.length > 0;
     }
 
     function claimsOfFR(Claims storage cls, uint256 seqOfDeal)
         public
         view
-        returns (Claim[] memory)
+        returns (Claim[] memory output)
     {
-        require(isTargetDeal(cls, seqOfDeal), "FRD.COFR: not a targetDeal");                        
-        return cls.claimsFor[seqOfDeal].claims;
+        require(isTargetDeal(cls, seqOfDeal), "FRD.COFR: not a targetDeal");
+        output = cls.claimsFor[seqOfDeal].claims;
     }
 }

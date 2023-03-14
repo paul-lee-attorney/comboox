@@ -13,139 +13,261 @@ library SigsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
     struct Signature {
-        uint16 seq;
         uint40 signer;
         uint48 sigDate;
         uint64 blocknumber;
         bytes32 sigHash;
     }
 
-    // signatures[0] {
-    //     seq: blankCounter;
+    struct Blank{
+        EnumerableSet.UintSet seqOfDeals;
+        Signature sig;
+    }
+
+    // blanks[0].sig {
     //     signer: sigCounter;
     //     sigDate: sigDeadline;
-    //     blocknumber: closingDeadline;
-    //     sigHash: docBody;
+    //     blocknumber: blankCounter;
+    //     sigHash: established;
     // }
 
     struct Page {
-        // seq & party => Signature
-        mapping(uint256 => Signature) signatures;
-        EnumerableSet.UintSet parties;
+        // party => Blank
+        mapping(uint256 => Blank) blanks;
+        EnumerableSet.UintSet buyers;
+        EnumerableSet.UintSet sellers;
     }
 
     //###################
     //##    设置接口    ##
     //###################
 
-    function getSigId(uint256 seq, uint256 acct) 
-        public pure returns(uint256 sigId)
-    {
-        require(acct > 0, "SR.GSI: zero acct");
-        sigId = (seq << 40) + acct;
-    }
-
-    function setBodyOfSigs(
+    function setSigDeadline(
         Page storage p,
-        address body
-    ) public {
-        p.signatures[0].sigHash = bytes32(uint256(uint160(body)));
-    }
-
-    function setParasOfDoc(
-        Page storage p,
-        uint48 sigDeadline, 
-        uint48 closingDeadline
+        uint48 sigDeadline
     ) public {
         
-        require(sigDeadline > block.timestamp && 
-            closingDeadline > sigDeadline, 
-            "SR.SD: not logical time");
+        require(sigDeadline > block.timestamp, 
+                "SR.SD: not future time");
 
         require(!established(p), "SR.SD: doc already established");
 
-        p.signatures[0].sigDate = sigDeadline;
-        p.signatures[0].blocknumber = closingDeadline;
+        p.blanks[0].sig.sigDate = sigDeadline;
     }
 
     function addBlank(
         Page storage p,
-        uint16 seq,
-        uint40 acct
+        bool beBuyer,
+        uint256 seq,
+        uint256 acct
     ) public {
-        Signature storage sig = p.signatures[getSigId(seq, acct)];
+        require (seq > 0, "SR.AB: zero seq");
+        require (acct > 0, "SR.AB: zero acct");
 
-        if (sig.signer == 0) {
-            sig.seq = seq;
-            sig.signer = acct;
+        
+        if (beBuyer) {
+            require(!p.sellers.contains(acct), "SR.AB: seller intends to buy");
+            p.buyers.add(acct);
+        } else {
+            require(!p.buyers.contains(acct), "SR.AB: buyer intends to sell");
+            p.sellers.add(acct);
+        }
 
-            p.signatures[0].seq++;
-
-            p.parties.add(acct);
-        }        
+        if (p.blanks[acct].seqOfDeals.add(seq))
+            p.blanks[0].sig.blocknumber++;
     }
 
     function removeBlank(
         Page storage p,
-        uint16 seq,
-        uint40 acct
+        uint256 seq,
+        uint256 acct
     ) public {
-        uint256 sigId = getSigId(seq, acct);
+        if (p.buyers.contains(acct) || p.sellers.contains(acct)) {
+            if (p.blanks[acct].seqOfDeals.remove(seq))
+                p.blanks[0].sig.blocknumber--;
 
-        if (p.signatures[sigId].sigDate == 0) {
-            delete p.signatures[sigId];
-            p.signatures[0].seq--;
-
-            p.parties.remove(acct);
+            if (p.blanks[acct].seqOfDeals.length() == 0) {
+                delete p.blanks[acct]; 
+                p.buyers.remove(acct) || p.sellers.remove(acct);
+            }
         }
     }
 
-    function signDeal(
-        Page storage p,
-        uint16 seq,
-        uint40 acct,
-        bytes32 sigHash
-    ) public returns (bool flag)
+    function signDoc(Page storage p, uint256 acct, bytes32 sigHash) 
+        public returns (bool flag)
     {
-        uint256 sigId = getSigId(seq, acct);
+        require(p.blanks[0].sig.sigDate >= block.timestamp,
+            "SR.SD: missed sigDeadline");
 
-        Signature storage sig = p.signatures[sigId];
-        
-        if (sig.seq == seq &&
-            sig.signer == acct && 
-            sig.sigDate == 0) 
+        require(!established(p),
+            "SR.SD: Doc already established");
+
+        if ((p.buyers.contains(acct) || p.sellers.contains(acct)) &&
+            p.blanks[acct].sig.sigDate == 0) {
+
+            // uint40 numOfBlanks = uint40(p.blanks[acct].seqOfDeals.length() - 
+            //     p.blanks[acct].signedDeals.length());
+
+            // if (numOfBlanks > 0) {
+            p.blanks[acct].sig = Signature({
+                signer: uint40(acct),
+                sigDate: uint48(block.timestamp),
+                blocknumber: uint64(block.number),
+                sigHash: sigHash
+            });
+
+            p.blanks[0].sig.signer += uint40(p.blanks[acct].seqOfDeals.length()); 
+
+            if (p.blanks[0].sig.blocknumber == p.blanks[0].sig.signer)
+                p.blanks[0].sig.sigHash = bytes32("true");
+
+            flag = true;   
+            // }
+        }
+    }
+
+    function regSig(Page storage p, uint256 seqOfDeal, uint256 acct, uint48 sigDate, bytes32 sigHash)
+        public returns (bool flag)
+    {
+        require(p.blanks[0].sig.sigDate >= block.timestamp,
+            "SR.SD: missed sigDeadline");
+
+        require(!established(p),
+            "SR.SD: Doc already established");
+
+        if ((p.buyers.contains(acct) ||
+            p.sellers.contains(acct)) && 
+            p.blanks[acct].seqOfDeals.add(seqOfDeal))
         {
+            p.blanks[acct].sig = Signature({
+                signer: uint40(acct),
+                sigDate: sigDate,
+                blocknumber: uint64(block.number),
+                sigHash: sigHash
+            });
 
-            sig.sigDate = uint48(block.timestamp);
-            sig.blocknumber = uint64(block.number);
-            sig.sigHash = sigHash;
+            p.blanks[0].sig.signer++;
 
-            p.signatures[0].signer++;
+            if (p.blanks[0].sig.blocknumber == p.blanks[0].sig.signer)
+                p.blanks[0].sig.sigHash = bytes32("true");
 
             flag = true;
         }
+
     }
+
+    // function signDeal(
+    //     Page storage p,
+    //     uint256 seqOfDeal,
+    //     uint256 acct,
+    //     bytes32 sigHash
+    // ) public returns (bool flag)
+    // {
+
+    //     require(p.blanks[0].sig.sigDate >= block.timestamp,
+    //         "SR.SD: missed sigDeadline");
+
+    //     require(!established(p),
+    //         "SR.SD: Doc already established");
+
+    //     if (p.parties.contains(acct) && 
+    //         p.blanks[acct].seqOfDeals.contains(seqOfDeal) &&
+    //         p.blanks[acct].signedDeals.add(seqOfDeal))
+    //     {
+    //         p.blanks[acct].sig = Signature({
+    //             signer: uint40(acct),
+    //             sigDate: uint48(block.timestamp),
+    //             blocknumber: uint64(block.number),
+    //             sigHash: sigHash
+    //         });
+
+    //         p.blanks[0].sig.signer++;
+
+    //         if (p.blanks[0].sig.blocknumber == p.blanks[0].sig.signer)
+    //             p.blanks[0].sig.sigHash = bytes32("true");
+
+    //         flag = true;
+    //     }
+
+    // }
 
     //####################
     //##    查询接口     ##
     //####################
 
-    function sigOfDeal(
-        Page storage p,
-        uint16 seq,
-        uint40 acct
-    )
-        public view
-        returns (Signature memory )
+    // function isSeller(Page storage p, uint256 acct)
+    //     public view returns(bool flag) 
+    // {
+    //     flag = p.sellers.contains(acct);
+    // }
+
+    // function isBuyer(Page storage p, uint256 acct)
+    //     public view returns(bool flag) 
+    // {
+    //     flag = p.buyers.contains(acct);
+    // }
+
+    // function isParty(Page storage p, uint256 acct) 
+    //     public view returns (bool flag) 
+    // {
+    //     flag = isBuyer(p, acct) || isSeller(p, acct);
+    // }
+
+    function isSigner(Page storage p, uint256 acct) 
+        public view returns (bool flag) 
     {
-        return p.signatures[getSigId(seq, acct)];
+        flag = acct & p.blanks[acct].sig.sigDate > 0;
     }
+
+    // function counterOfSigs(Page storage page) 
+    //     public view 
+    //     returns(uint40) 
+    // {
+    //     return page.blanks[0].sig.signer;
+    // }
 
     function established(Page storage p)
         public view
         returns (bool flag)
     {
-        flag = (p.signatures[0].seq > 0 && 
-            p.signatures[0].seq == p.signatures[0].signer);
+        flag = p.blanks[0].sig.sigHash > bytes32(0);
     }
+
+    function sigOfParty(
+        Page storage p,
+        uint256 acct
+    )
+        public view
+        returns (uint256[] memory seqOfDeals, Signature memory sig)
+    {
+        seqOfDeals = p.blanks[acct].seqOfDeals.values();
+        sig = p.blanks[acct].sig;
+    }
+
+    function sigsOfPage(Page storage p) 
+        public view
+        returns (Signature[] memory sigsOfBuyer, Signature[]memory sigsOfSeller)
+    {
+        sigsOfBuyer = sigsOfSide(p, p.buyers);
+        sigsOfSeller = sigsOfSide(p, p.sellers);
+    }
+
+    function sigsOfSide(Page storage p, EnumerableSet.UintSet storage partiesOfSide) 
+        public view
+        returns (Signature[] memory)
+    {
+        uint256[] memory parties = partiesOfSide.values();
+        uint256 len = parties.length;
+
+        Signature[] memory sigs = new Signature[](len);
+
+        while (len > 0) {
+            sigs[len-1] = p.blanks[parties[len-1]].sig;
+            len--;
+        }
+
+        return sigs;
+    }
+
+
 }

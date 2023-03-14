@@ -13,7 +13,7 @@ import "../access/RegCenterSetting.sol";
 
 contract BODSetting is RegCenterSetting {
 
-    modifier directorExist(uint40 acct) {
+    modifier directorExist(uint256 acct) {
         require(_getBOD().isDirector(acct), "director NOT exist");
         _;
     }

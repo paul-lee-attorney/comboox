@@ -22,9 +22,10 @@ import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
 
-import "../common/lib/SNFactory.sol";
-import "../common/lib/SNParser.sol";
+// import "../common/lib/SNFactory.sol";
+// import "../common/lib/SNParser.sol";
 import "../common/lib/MotionsRepo.sol";
+import "../common/lib/RulesParser.sol";
 
 import "../common/components/IRepoOfDocs.sol";
 import "../common/components/ISigPage.sol";
@@ -40,8 +41,9 @@ contract BOGKeeper is
     ROMSetting,
     AccessControl
 {
-    using SNFactory for bytes;
-    using SNParser for bytes32;
+    using RulesParser for bytes32;
+    // using SNFactory for bytes;
+    // using SNParser for bytes32;
 
     // ######################
     // ##   Corp Setting   ##
@@ -62,36 +64,36 @@ contract BOGKeeper is
     // ==== propose ====
 
     function nominateOfficer(
-        bytes32 bsRule, 
-        uint8 seqOfTitle, 
-        uint40 nominator, 
-        uint40 candidate
+        uint256 seqOfBSR, 
+        uint256 seqOfTitle, 
+        uint256 nominator, 
+        uint256 candidate
     ) external onlyDirectKeeper memberExist(nominator){
-        require(bsRule.rightholderOfBSR() == nominator, "BOGK.NO: caller not rightholder");
-        require(_getBOD().boardSeatsOf(nominator) > bsRule.qtyOfBoardSeats(), "BOGK.NO: board has no seats");
+        RulesParser.BoardSeatsRule memory bsr = 
+            _getSHA().getRule(seqOfBSR).boardSeatsRuleParser();
 
-        uint16 seqOfVR = bsRule.vrSeqOfNomination(seqOfTitle);
-        uint8 title = bsRule.nominateTitle(seqOfTitle);
+        require(bsr.rightholder == nominator, "BOGK.NO: caller not rightholder");
+        require(_getBOD().boardSeatsOf(nominator) > bsr.qtyOfBoardSeats, 
+            "BOGK.NO: board has no seats");
+
+        uint256 seqOfVR = bsr.vrSeqOfNomination[seqOfTitle];
+        uint8 title = bsr.nominationTitle[seqOfTitle];
 
         if (seqOfVR <= 10) _getBOG().nominateOfficer(seqOfVR, title, nominator, candidate);
         else _getBOD().nominateOfficer(seqOfVR, title, nominator, candidate);
     }
 
-    function proposeDoc(address doc, uint8 seqOfVR, uint40 caller)
+    function proposeDoc(address doc, uint256 seqOfVR, uint256 caller)
         external
         onlyDirectKeeper
         memberExist(caller)
     {
-        ISigPage _page = ISigPageSetting(doc).getSigPage();
-        require(
-            _page.isParty(caller),
-            "BOGK.PD: NOT Party of Doc"
-        );
+        // ISigPage _page = ISigPageSetting(doc).getSigPage();
+        require(ISigPage(doc).isParty(caller), "BOGK.PD: NOT Party of Doc");
 
         IRepoOfDocs rod;
         if (seqOfVR != 8 && seqOfVR != 18) rod = _getBOA();
         else if (seqOfVR == 8 || seqOfVR == 18) rod = _getBOH();
-        else revert("BOGK.PD: wrong seqOfVR");
 
         IRepoOfDocs.Head memory headOfDoc = rod.getHeadOfDoc(doc);
 
@@ -118,16 +120,16 @@ contract BOGKeeper is
 
 
     function proposeAction(
-        uint8 actionType,
+        uint8 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 submitter,
-        uint40 executor
+        uint256 submitter,
+        uint256 executor
     ) external onlyDirectKeeper memberExist(submitter) {
         _getBOG().proposeAction(
-            actionType,
+            typeOfAction,
             targets,
             values,
             params,
@@ -141,48 +143,46 @@ contract BOGKeeper is
 
     function entrustDelegate(
         uint256 actionId,
-        uint40 caller,
-        uint40 delegate
+        uint256 caller,
+        uint256 delegate
     ) external onlyDirectKeeper memberExist(caller) memberExist(delegate) {
         _getBOG().entrustDelegate(actionId, caller, delegate);
     }
-
 
     // ==== vote ====
 
     function castVote(
         uint256 motionId,
-        uint40 caller,
+        uint256 caller,
         uint8 attitude,
         bytes32 sigHash
     ) external onlyDirectKeeper memberExist(caller) {
         _getBOG().castVote(motionId, caller, attitude, sigHash);
     }
 
-    function voteCounting(uint256 motionId, uint40 caller)
+    function voteCounting(uint256 motionId, uint256 caller)
         external
         onlyDirectKeeper
         memberExist(caller)
     {
         _getBOG().voteCounting(motionId);
-        // if (address(_rod) > address(0)) _rod.pushToNextState(address(uint160(motionId)));
     }
 
     // ==== execute ====
 
     function execAction(
-        uint8 actionType,
+        uint8 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 caller
+        uint256 caller
     ) external returns (uint256) {
         require(_getBOD().isDirector(caller), "caller is not a Director");
         require(!_rc.isCOA(caller), "caller is not an EOA");
         return
             _getBOG().execAction(
-                actionType,
+                typeOfAction,
                 targets,
                 values,
                 params,
@@ -193,12 +193,14 @@ contract BOGKeeper is
 
     function requestToBuy(
         uint256 motionId,
-        bytes32 snOfDeal,
-        uint40 againstVoter,
-        uint40 caller
+        uint256 seqOfDeal,
+        uint256 againstVoter,
+        uint256 caller
     ) external onlyDirectKeeper {
 
-        require(caller == snOfDeal.sellerOfDeal(), "BOGKeeper.RTB: caller NOT Seller");
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(address(uint160(motionId))).getDeal(seqOfDeal);
+
+        require(caller == deal.head.seller, "BOGKeeper.RTB: caller NOT Seller");
 
         MotionsRepo.Head memory m = _getBOG().getHeadOfMotion(motionId);
 
@@ -207,54 +209,47 @@ contract BOGKeeper is
             "BOGKeeper.RTB: NO need to buy"
         );
 
-        bytes32 vr = _getBOG().getVotingRuleOfMotion(motionId);
+        RulesParser.VotingRule memory vr = _getBOG().getVotingRuleOfMotion(motionId);
 
-        require(block.timestamp < m.voteStartDate + (vr.votingDaysOfVR() + vr.execDaysForPutOptOfVR()) * 86400, 
-            "BOGKeeper.RTB: missed EXEC date");
+        require(block.timestamp < m.voteStartDate + (uint48(vr.votingDays) + uint48(vr.execDaysForPutOpt)) * 86400, 
+            "BOGK.RTB: missed EXEC date");
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(address(uint160(motionId))).getDeal(snOfDeal.seqOfDeal());
+        uint8 closingDays = uint8((deal.head.closingDate - uint48(block.timestamp) + 12 hours) / (24 hours));
 
-        uint8 closingDays = uint8((deal.closingDate - uint48(block.timestamp) + 12 hours) / (24 hours));
-
-        bytes32 snOfOpt = _createOptSN(
-            uint8(IBookOfOptions.TypeOfOption.Put_Price),
-            uint48(block.number),
-            1,
-            closingDays,
-            snOfDeal.classOfDeal(),
-            snOfDeal.priceOfDeal()
-        );
-
-        uint40[] memory obligors = new uint40[](1);
-        obligors[0] = againstVoter;
+        OptionsRepo.Head memory headOfOpt =
+            OptionsRepo.Head({
+                seqOfOpt: 0,
+                typeOfOpt: uint8(OptionsRepo.OptTypes.PutPrice),
+                rate: deal.head.price,
+                triggerDate: uint48(block.timestamp),
+                execDays: 1,
+                closingDays: closingDays,
+                classOfShare: deal.head.classOfShare,
+                logicOperator: 0,
+                compOperator1: 0,
+                para1: 0,
+                compOperator2: 0,
+                para2: 0,
+                state: 0
+            });
 
         IBookOfOptions _boo = _getBOO();
 
-        snOfOpt = _boo.createOption(snOfOpt, caller, obligors, deal.paid, deal.par);
+        uint256 seqOfOpt = _boo.createOption(headOfOpt, caller, againstVoter, deal.body.paid, deal.body.par);
 
-        IBookOfShares.Share memory share  = _getBOS().getShare(snOfDeal.ssnOfDeal());
+        IBookOfShares.Share memory share  = _getBOS().getShare(deal.head.seqOfShare);
 
-        _boo.execOption(snOfOpt);
-        _boo.addFuture(snOfOpt, share.shareNumber, deal.paid, deal.par);
-    }
+        _boo.execOption(seqOfOpt);
 
-    function _createOptSN(
-        uint8 typeOfOpt,
-        uint48 triggerDate,
-        uint8 execDays,
-        uint8 closingDays,
-        uint16 classOfOpt,
-        uint32 rateOfOpt
-    ) private pure returns (bytes32 sn) {
-        bytes memory _sn = new bytes(32);
+        OptionsRepo.Future memory future = OptionsRepo.Future({
+            seqOfFuture: 0,
+            seqOfShare: deal.head.seqOfShare,
+            buyer: uint40(againstVoter),
+            paid: deal.body.paid,
+            par: deal.body.par,
+            state: 0
+        });
 
-        _sn[0] = bytes1(typeOfOpt);
-        _sn = _sn.dateToSN(5, triggerDate);
-        _sn[11] = bytes1(execDays);
-        _sn[12] = bytes1(closingDays);
-        _sn = _sn.seqToSN(13, classOfOpt);
-        _sn = _sn.ssnToSN(15, rateOfOpt);
-
-        sn = _sn.bytesToBytes32();
+        _boo.addFuture(seqOfOpt, share, future);
     }
 }

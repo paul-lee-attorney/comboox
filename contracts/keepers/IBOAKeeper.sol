@@ -12,22 +12,22 @@ interface IBOAKeeper {
     // ##   Write IO  ##
     // #################
 
-    function setTempOfIA(address temp, uint8 typeOfDoc) external;
+    function setTempOfIA(address temp, uint256 typeOfDoc) external;
 
-    function createIA(uint8 docType, uint40 caller) external;
+    function createIA(uint256 typeOfDoc, uint256 caller) external;
 
-    function removeIA(address ia, uint40 caller) external;
+    function removeIA(address ia, uint256 caller) external;
 
     function circulateIA(
         address ia,
-        uint40 caller,
+        uint256 caller,
         bytes32 docUrl,
         bytes32 docHash
     ) external;
 
     function signIA(
         address ia,
-        uint40 caller,
+        uint256 caller,
         bytes32 sigHash
     ) external;
 
@@ -35,31 +35,31 @@ interface IBOAKeeper {
 
     function pushToCoffer(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         bytes32 hashLock,
         uint48 closingDate,
-        uint40 caller
+        uint256 caller
     ) external;
 
     function closeDeal(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         string memory hashKey,
-        uint40 caller
+        uint256 caller
     ) external;
 
     function transferTargetShare(
         address ia,
-        bytes32 sn,
-        uint40 caller
+        uint256 seqOfDeal,
+        uint256 caller
     ) external;
 
-    function issueNewShare(address ia, bytes32 sn) external;
+    function issueNewShare(address ia, uint256 seqOfDeal) external;
 
     function revokeDeal(
         address ia,
-        bytes32 sn,
-        uint40 caller,
+        uint256 seqOfDeal,
+        uint256 caller,
         string memory hashKey
     ) external;
 }

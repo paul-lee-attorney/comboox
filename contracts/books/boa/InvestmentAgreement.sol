@@ -8,35 +8,38 @@
 pragma solidity ^0.8.8;
 
 import "../../common/lib/EnumerableSet.sol";
-import "../../common/lib/SNParser.sol";
+import "../../common/lib/SigsRepo.sol";
 
 import "../../common/access/AccessControl.sol";
-import "../../common/ruting/SigPageSetting.sol";
+// import "../../common/ruting/SigPageSetting.sol";
+
+import "../../common/components/SigPage.sol";
 
 import "./IInvestmentAgreement.sol";
 
-contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
-    using SNParser for bytes32;
+contract InvestmentAgreement is IInvestmentAgreement, SigPage {
+    using EnumerableSet for EnumerableSet.UintSet;
+    using SigsRepo for SigsRepo.Page;
+    // using SNParser for bytes32;
 
-    // _deals[0] {
-    //     paid: counterOfClosedDeal;
-    //     par: counterOfDeal;
-    //     state: typeOfIA;
+    // _deals[0].head {
+    //     seq: counterOfClosedDeal;
+    //     preSeq: counterOfDeal;
+    //     typeOfDeal: typeOfIA;
     // }    
 
     // seq => Deal
     mapping(uint256 => Deal) private _deals;
-    EnumerableSet.Bytes32Set private _dealsList;
+    EnumerableSet.UintSet private _seqList;
 
     //##################
     //##   Modifier   ##
     //##################
 
-    modifier onlyCleared(uint16 seq) {
+    modifier onlyCleared(uint256 seq) {
         require(
-            _deals[seq].state == uint8(StateOfDeal.Cleared),
-            "IA.onlyCleared: wrong stateOfDeal"
+            _deals[seq].head.state == uint8(StateOfDeal.Cleared),
+            "IA.mf.OC: wrong stateOfDeal"
         );
         _;
     }
@@ -45,107 +48,112 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
     //##    写接口    ##
     //#################
 
+    function _headParser(bytes32 sn) private pure returns(Head memory head) {
+        return Head({
+            typeOfDeal: uint8(sn[0]),
+            classOfShare: uint16(bytes2(sn<<8)),
+            seqOfShare: uint32(bytes4(sn<<24)),
+            seller: uint40(bytes5(sn<<56)),
+            price: uint32(bytes4(sn<<96)),
+            seq: uint32(bytes4(sn<<128)),
+            preSeq: uint32(bytes4(sn<<160)),
+            closingDate: uint48(bytes6(sn<<192)),
+            state: uint8(sn[30])
+        });
+    } 
+
     function createDeal(
         bytes32 sn,
+        uint40 buyer,
+        uint40 groupOfBuyer,
         uint64 paid,
-        uint64 par,
-        uint48 closingDate
+        uint64 par
     ) external attorneyOrKeeper {
-        require(par != 0, "IA.createDeal: par is ZERO");
-        require(par >= paid, "IA.createDeal: paid overflow");
 
-        _deals[0].par++;
+        Deal memory deal;
 
-        uint16 seq = uint16(_deals[0].par);
+        deal.head = _headParser(sn);
 
-        Deal storage deal = _deals[seq];
+        deal.body = Body({
+            buyer: buyer,
+            groupOfBuyer: groupOfBuyer,
+            paid: paid,
+            par: par
+        });
 
-        deal.sn = sn;
-        deal.paid = paid;
-        deal.par = par;
-        deal.closingDate = closingDate;
+        regDeal(deal);
+    }
 
-        _dealsList.add(sn);
+    function regDeal(Deal memory deal) 
+        public attorneyOrKeeper 
+        returns(uint32 seqOfDeal) 
+    {
+        require(deal.body.par != 0, "IA.createDeal: par is ZERO");
+        require(deal.body.par >= deal.body.paid, "IA.createDeal: paid overflow");
 
-        uint40 seller = sn.sellerOfDeal();
-        uint40 buyer = sn.buyerOfDeal();
+        _increaseCounterOfDeal();
 
-        // if (finalized()) {
-            // if (
-            //     seller != 0 &&
-            //     sn.typeOfDeal() != uint8(TypeOfDeal.DragAlong) &&
-            //     sn.typeOfDeal() != uint8(TypeOfDeal.FreeGift)
-            // ) _page.addBlank(seq, seller);
-            // _page.addBlank(seq, buyer);
+        seqOfDeal = counterOfDeal();
 
-            // emit CreateDeal(sn, paid, par, closingDate);
+        deal.head.seq = seqOfDeal;
+
+        _deals[seqOfDeal] = Deal({
+            head: deal.head,
+            body: deal.body,
+            hashLock: bytes32(0)
+        });
+
+        _seqList.add(seqOfDeal);
+
         if (!finalized()) {
-            if (seller != 0) _page.addBlank(0, seller);
-            _page.addBlank(0, buyer);
-        }      
+            if (deal.head.seller != 0) _sigPages[0].addBlank(false, seqOfDeal, deal.head.seller);
+            _sigPages[0].addBlank(true, seqOfDeal, deal.body.buyer);
+        } else {
+            if (deal.head.seller != 0) _sigPages[1].addBlank(false, seqOfDeal, deal.head.seller);
+            _sigPages[1].addBlank(true, seqOfDeal, deal.body.buyer);
+        }     
     }
 
-    function updateDeal(
-        uint16 seq,
-        uint64 paid,
-        uint64 par,
-        uint48 closingDate
-    ) external attorneyOrKeeper() {
-        require(isDeal(seq), "IA.updateDeal: deal not exist");
+    function delDeal(uint256 seq) external onlyAttorney {
+        if (_seqList.remove(seq)) {
 
-        Deal storage deal = _deals[seq];
+            Deal memory deal = _deals[seq];
 
-        if (finalized()) emit UpdateDeal(deal.sn, paid, par, closingDate);
+            if (deal.head.seller != 0) {
+                _sigPages[0].removeBlank(deal.head.seq, deal.head.seller);
+            }
 
-        deal.paid = paid;
-        deal.par = par;
-        deal.closingDate = closingDate;
-    }
+            _sigPages[0].removeBlank(deal.head.seq, deal.body.buyer);
 
-    function setTypeOfIA(uint8 t) external onlyAttorney {
-        _deals[0].state = t;
-    }
-
-    function delDeal(uint16 seq) external onlyAttorney {
-        bytes32 sn = _deals[seq].sn;
-        uint40 seller = sn.sellerOfDeal();
-
-        if (seller != 0) {
-            _page.removeBlank(seq, seller);
-        }
-
-        _page.removeBlank(seq, sn.buyerOfDeal());
-
-        if (_dealsList.remove(sn)) {
             delete _deals[seq];
-            _deals[0].par--;
+
+            _deals[0].head.preSeq--;
         }
 
     }
 
-    function lockDealSubject(uint16 seq) external onlyKeeper returns (bool flag) {
+    function lockDealSubject(uint256 seq) external onlyKeeper returns (bool flag) {
         Deal storage deal = _deals[seq];
-        if (deal.state == uint8(StateOfDeal.Drafting)) {
-            deal.state = uint8(StateOfDeal.Locked);
+        if (deal.head.state == uint8(StateOfDeal.Drafting)) {
+            deal.head.state = uint8(StateOfDeal.Locked);
             flag = true;
         }
     }
 
-    function releaseDealSubject(uint16 seq)
+    function releaseDealSubject(uint256 seq)
         external
         onlyDirectKeeper
         returns (bool flag)
     {
         Deal storage deal = _deals[seq];
-        if (deal.state >= uint8(StateOfDeal.Locked)) {
-            deal.state = uint8(StateOfDeal.Drafting);
+        if (deal.head.state >= uint8(StateOfDeal.Locked)) {
+            deal.head.state = uint8(StateOfDeal.Drafting);
             flag = true;
-            // emit ReleaseDealSubject(deal.sn);
         }
     }
 
     function clearDealCP(
-        uint16 seq,
+        uint256 seq,
         bytes32 hashLock,
         uint48 closingDate
     ) external onlyDirectKeeper {
@@ -153,21 +161,20 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
 
         require(
             block.timestamp < closingDate,
-            "closingDate shall be FUTURE time"
+            "IA.CDCP: not FUTURE time"
         );
 
-        require(deal.state == uint8(StateOfDeal.Locked), "Deal state wrong");
+        require(deal.head.state == uint8(StateOfDeal.Locked), 
+            "IA.CDCP: wrong Deal state");
 
-        deal.state = uint8(StateOfDeal.Cleared);
-
+        emit ClearDealCP(deal.head.seq, deal.head.state, hashLock, deal.head.closingDate);
+        deal.head.state = uint8(StateOfDeal.Cleared);
         deal.hashLock = hashLock;
+        if (closingDate != 0) deal.head.closingDate = closingDate;
 
-        if (closingDate != 0) deal.closingDate = closingDate;
-
-        emit ClearDealCP(deal.sn, deal.state, hashLock, deal.closingDate);
     }
 
-    function closeDeal(uint16 seq, string memory hashKey)
+    function closeDeal(uint256 seq, string memory hashKey)
         external
         onlyCleared(seq)
         onlyDirectKeeper
@@ -181,20 +188,19 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
         );
 
         require(
-            block.timestamp <= deal.closingDate,
+            block.timestamp <= deal.head.closingDate,
             "IA.closeDeal: MISSED closing date"
         );
 
-        deal.state = uint8(StateOfDeal.Closed);
+        deal.head.state = uint8(StateOfDeal.Closed);
 
-        emit CloseDeal(deal.sn, hashKey);
+        emit CloseDeal(deal.head.seq, hashKey);
+        _increaseCounterOfClosedDeal();
 
-        _deals[0].paid++;
-
-        return (_deals[0].paid == _deals[0].par);
+        return (counterOfDeal() == counterOfClosedDeal());
     }
 
-    function revokeDeal(uint16 seq, string memory hashKey)
+    function revokeDeal(uint256 seq, string memory hashKey)
         external
         onlyCleared(seq)
         onlyDirectKeeper
@@ -203,17 +209,17 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
         Deal storage deal = _deals[seq];
 
         require(
-            deal.closingDate < block.timestamp,
+            deal.head.closingDate < block.timestamp,
             "NOT reached closing date"
         );
 
         require(
-            deal.sn.typeOfDeal() != uint8(TypeOfDeal.FreeGift),
+            deal.head.typeOfDeal != uint8(TypeOfDeal.FreeGift),
             "FreeGift deal cannot be revoked"
         );
 
         require(
-            deal.state == uint8(StateOfDeal.Cleared),
+            deal.head.state == uint8(StateOfDeal.Cleared),
             "wrong state of Deal"
         );
 
@@ -222,16 +228,26 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
             "hashKey NOT correct"
         );
 
-        deal.state = uint8(StateOfDeal.Terminated);
+        deal.head.state = uint8(StateOfDeal.Terminated);
 
-        emit RevokeDeal(deal.sn, hashKey);
+        emit RevokeDeal(deal.head.seq, hashKey);
 
-        _deals[0].paid ++;
+        // _deals[0].paid ++;
+        _increaseCounterOfClosedDeal();
 
-        return (_deals[0].paid == _deals[0].par);
+        return (counterOfDeal() == counterOfClosedDeal());
     }
 
-    function takeGift(uint16 seq)
+    function terminateDeal(uint256 seqOfDeal) external onlyKeeper {
+        Head storage head = _deals[seqOfDeal].head;
+
+        require(head.state == uint8(StateOfDeal.Locked), "IA.TD: wrong stateOfDeal");
+
+        emit TerminateDeal(seqOfDeal);
+        head.state = uint8(StateOfDeal.Terminated);
+    }
+
+    function takeGift(uint256 seq)
         external
         onlyKeeper
         returns (bool)
@@ -239,54 +255,79 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPageSetting {
         Deal storage deal = _deals[seq];
 
         require(
-            deal.sn.typeOfDeal() == uint8(TypeOfDeal.FreeGift),
+            deal.head.typeOfDeal == uint8(TypeOfDeal.FreeGift),
             "not a gift deal"
         );
 
         require(
-            _deals[deal.sn.preSeqOfDeal()].state == uint8(StateOfDeal.Closed),
+            _deals[deal.head.preSeq].head.state == uint8(StateOfDeal.Closed),
             "Capital Increase not closed"
         );
 
-        require(deal.state == uint8(StateOfDeal.Locked), "wrong state");
+        require(deal.head.state == uint8(StateOfDeal.Locked), "wrong state");
 
-        emit CloseDeal(deal.sn, "0");
-        deal.state = uint8(StateOfDeal.Closed);
+        emit CloseDeal(deal.head.seq, "0");
+        deal.head.state = uint8(StateOfDeal.Closed);
 
-        _deals[0].paid++;
+        // _deals[0].paid++;
+        _increaseCounterOfClosedDeal();
 
-        return (_deals[0].paid == _deals[0].par);
+        return (counterOfDeal() == counterOfClosedDeal());
+    }
+
+    function setTypeOfIA(uint8 t) external onlyAttorney {
+        _deals[0].head.typeOfDeal = t;
     }
 
     //  #################################
     //  ##       查询接口               ##
     //  ################################
 
-    function typeOfIA() external view returns (uint8) {
-        return _deals[0].state;
+    function getTypeOfIA() external view returns (uint8) {
+        return _deals[0].head.typeOfDeal;
     }
 
-    function isDeal(uint16 seq) public view returns (bool) {
-        return _dealsList.contains(_deals[seq].sn);
+    function _increaseCounterOfDeal() private {
+        _deals[0].head.preSeq++;
     }
 
-    function counterOfDeals() external view returns (uint16) {
-        return uint16(_deals[0].par);
+    function counterOfDeal() public view returns (uint32) {
+        return _deals[0].head.preSeq;
     }
 
-    function getDeal(uint16 seq)
-        external
-        view
-        returns (Deal memory deal)
+    function _increaseCounterOfClosedDeal() private {
+        _deals[0].head.seq++;
+    }
+
+    function counterOfClosedDeal() public view returns (uint32) {
+        return _deals[0].head.seq;
+    }
+
+    function isDeal(uint256 seq) public view returns (bool) {
+        return _seqList.contains(seq);
+    }
+
+    function getHeadOfDeal(uint256 seq) external view returns (Head memory)
     {
-        deal = _deals[seq];
+        return _deals[seq].head;
     }
 
-    // function closingDateOfDeal(uint16 seq) external view returns (uint48) {
-    //     return _deals[seq].closingDate;
-    // }
+    function getBodyOfDeal(uint256 seq) external view returns (Body memory)
+    {
+        return _deals[seq].body;
+    }
 
-    function dealsList() external view returns (bytes32[] memory) {
-        return _dealsList.values();
+    function hashLockOfDeal(uint256 seq) external view returns (bytes32)
+    {
+        return _deals[seq].hashLock;
+    }
+    
+    function getDeal(uint256 seq) external view returns (Deal memory)
+    {
+        return _deals[seq];
+    }
+
+    function seqList() external view returns (uint256[] memory) {
+        return _seqList.values();
     }
 }

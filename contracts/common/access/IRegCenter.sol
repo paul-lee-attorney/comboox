@@ -8,20 +8,41 @@
 pragma solidity ^0.8.8;
 
 interface IRegCenter {
+
+    struct User {
+        bool isCOA;
+        uint32 counterOfV;
+        uint216 balance;
+        address primeKey;
+        uint96 attr;
+        address backupKey;
+        uint96 para;
+    }
+
+    struct Reward {
+        uint32 eoaRewards;
+        uint32 coaRewards;
+        uint32 offAmt;
+        uint16 discRate;
+        uint16 distRatio;
+        uint64 ceiling;
+        uint64 floor;
+    }
+
+    struct Locker {
+        uint40 from;
+        uint40 to;
+        uint48 expireDate;
+        bytes16 hashLock;
+    }
+
     // ##################
     // ##    Event     ##
     // ##################
 
     // ==== Options ====
 
-    event SetBlockSpeed(uint64 speed);
-
-    event SetRewards(
-        uint32 eoaRewards,
-        uint32 coaRewards,
-        uint16 discRate,
-        uint32 offAmt
-    );
+    event SetRewards(bytes32 sn);
 
     event TransferOwnership(address newOwner);
 
@@ -29,29 +50,7 @@ interface IRegCenter {
 
     // ==== Points ====
 
-    event MintPointsTo(uint40 indexed userNo, uint96 amt);
-
-    event TransferPointsTo(
-        uint40 indexed sender,
-        uint40 indexed receiver,
-        uint96 amt
-    );
-
-    event LockPoints(bytes32 indexed sn, uint96 amt);
-
-    event TakePoints(bytes32 indexed sn, uint96 amt);
-
-    event ChargeFee(uint40 indexed userNo, uint32 fee);
-
-    // ==== User ====
-
-    event RegUser(uint40 indexed userNo, address primeKey, bool isCOA);
-
-    event SetBackupKey(uint40 indexed userNo, address backupKey);
-
-    // event AcceptMember(uint40 indexed userNo, address member);
-
-    // event DismissMember(uint40 indexed userNo, address member);
+    event MintPointsTo(uint256 indexed userNo, uint256 amt);
 
     // ##################
     // ##    写端口    ##
@@ -59,14 +58,7 @@ interface IRegCenter {
 
     // ==== Opts Setting ====
 
-    function setBlockSpeed(uint64 speed) external;
-
-    function setRewards(
-        uint32 eoaRewards,
-        uint32 coaRewards,
-        uint16 discRate,
-        uint32 offAmt
-    ) external;
+    function setRewards(bytes32 sn) external;
 
     // ==== Power transfer ====
 
@@ -76,27 +68,25 @@ interface IRegCenter {
 
     // ==== Mint/Sell Points ====
 
-    function mintPointsTo(uint40 to, uint96 amt) external;
+    function mintPointsTo(uint256 to, uint256 amt) external;
 
-    function lockPoints(bytes32 sn, uint96 amt) external;
+    function lockPoints(bytes32 sn, uint256 amt) external;
 
-    function rechargePointsTo(uint40 to, uint96 amt) external;
+    function rechargePointsTo(uint256 to, uint256 amt) external;
 
-    function sellPoints(bytes32 sn, uint96 amt) external;
+    function sellPoints(bytes32 sn, uint256 amt) external;
 
     function fetchPoints(bytes32 sn, string memory hashKey) external;
 
     function withdrawPoints(bytes32 sn, string memory hashKey) external;
+
+    function checkLocker(bytes32 sn) external view returns (uint216 amount);
 
     // ==== User ====
 
     function regUser() external;
 
     function setBackupKey(address bKey) external;
-
-    // function acceptMember(address member) external;
-
-    // function dismissMember(address member) external;
 
     // ##################
     // ##   查询端口   ##
@@ -106,31 +96,16 @@ interface IRegCenter {
 
     function getBookeeper() external view returns (address);
 
-    function blocksPerHour() external view returns (uint64);
-
-    function getRewards()
+    function getRewardsSetting()
         external
         view
-        returns (
-            uint32 eoaRewards,
-            uint32 coaRewards,
-            uint16 discRate,
-            uint32 offAmt
-        );
-
-    function counterOfUsers() external view returns (uint40);
+        returns (Reward memory);
 
     function isKey(address key) external view returns (bool);
 
-    function primeKey(uint40 user) external view returns (address);
+    function isCOA(uint256 acct) external view returns(bool);
 
-    function backupKey(uint40 user) external view returns (address);
+    function getUser(uint256 acct) external view returns (User memory);
 
-    function isCOA(uint40 user) external view returns (bool);
-
-    function qtyOfMembers(uint40 user) external view returns (uint32);
-
-    function userNo(address targetAddr) external returns (uint40 target);
-
-    function balanceOf(uint40 user) external view returns (uint96);
+    function userNo(address targetAddr) external returns (uint40);
 }

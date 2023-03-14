@@ -7,6 +7,9 @@
 
 pragma solidity ^0.8.8;
 
+import "../../books/boa/IInvestmentAgreement.sol";
+
+
 library TopChain {
     struct Node {
         uint40 prev;
@@ -18,6 +21,7 @@ library TopChain {
     }
 
     struct Chain {
+        // usrNo => Node
         mapping(uint256 => Node) nodes;
     }
 
@@ -30,7 +34,7 @@ library TopChain {
         cat: basedOnPar;
     } */
 
-    modifier memberExist(Chain storage chain, uint40 acct) {
+    modifier memberExist(Chain storage chain, uint256 acct) {
         require(isMember(chain, acct), "TC.memberExist: acct not member");
         _;
     }
@@ -57,7 +61,7 @@ library TopChain {
 
     // ==== Node ====
 
-    function addNode(Chain storage chain, uint40 acct)
+    function addNode(Chain storage chain, uint256 acct)
         public
         returns (bool flag)
     {
@@ -71,18 +75,18 @@ library TopChain {
 
             _increaseQtyOfMembers(chain);
 
-            n.ptr = acct;
+            n.ptr = uint40(acct);
 
             // append to tail
             n.prev = chain.nodes[0].prev;
-            chain.nodes[n.prev].next = acct;
-            chain.nodes[0].prev = acct;
+            chain.nodes[n.prev].next = uint40(acct);
+            chain.nodes[0].prev = uint40(acct);
 
             flag = true;
         }
     }
 
-    function delNode(Chain storage chain, uint40 acct)
+    function delNode(Chain storage chain, uint256 acct)
         public
         returns (bool flag)
     {
@@ -97,7 +101,7 @@ library TopChain {
 
     function changeAmt(
         Chain storage chain,
-        uint40 acct,
+        uint256 acct,
         uint64 deltaAmt,
         bool increase
     ) public memberExist(chain, acct) returns (bool flag) {
@@ -122,44 +126,44 @@ library TopChain {
             else r.sum -= deltaAmt;
 
             flag = _move(chain, n.ptr, increase);
-        } else flag = _move(chain, acct, increase);
+        } else flag = _move(chain, uint40(acct), increase);
     }
 
     // ==== jumpChain ====
 
     function top2Sub(
         Chain storage chain,
-        uint40 acct,
-        uint40 root
+        uint256 acct,
+        uint256 root
     )
         public
         memberExist(chain, acct)
         memberExist(chain, root)
         returns (bool flag)
     {
-        require(acct != root, "TC.to2Sub: self grouping");
+        require(acct != root, "TC.T2S: self grouping");
 
-        require(chain.nodes[acct].cat == 0, "TC.top2Sub: already in a branch");
+        require(chain.nodes[acct].cat == 0, "TC.T2S: already in a branch");
 
-        require(chain.nodes[root].cat < 2, "TC.top2Sub: leaf as root");
+        require(chain.nodes[root].cat < 2, "TC.T2S: leaf as root");
 
-        flag = _carveOut(chain, acct) && _vInsert(chain, acct, root);
+        flag = _carveOut(chain, acct) && _vInsert(chain, uint40(acct), uint40(root));
     }
 
-    function sub2Top(Chain storage chain, uint40 acct)
+    function sub2Top(Chain storage chain, uint256 acct)
         public
         memberExist(chain, acct)
         returns (bool flag)
     {
         Node storage n = chain.nodes[acct];
 
-        require(n.cat > 0, "TC.sub2Top: not in a branch");
+        require(n.cat > 0, "TC.S2T: not in a branch");
 
         if (_carveOut(chain, acct)) {
             n.cat = 0;
             n.sum = n.amt;
 
-            (uint40 prev, uint40 next) = getPos(
+            (uint256 prev, uint256 next) = getPos(
                 chain,
                 n.sum,
                 chain.nodes[0].prev,
@@ -167,7 +171,7 @@ library TopChain {
                 true
             );
 
-            flag = _hInsert(chain, acct, prev, next);
+            flag = _hInsert(chain, uint40(acct), uint40(prev), uint40(next));
         }
     }
 
@@ -176,9 +180,10 @@ library TopChain {
     function restoreChain(Chain storage chain, Node[] memory snapshot)
         public
     {
+        // copy parasOfTopChain
         chain.nodes[0] = snapshot[0];
 
-        uint40 acct = snapshot[0].next;
+        uint256 acct = snapshot[0].next;
         uint256 i = 1;
 
         while (acct > 0) {
@@ -190,7 +195,7 @@ library TopChain {
 
     // ==== CarveOut ====
 
-    function _branchOff(Chain storage chain, uint40 root)
+    function _branchOff(Chain storage chain, uint256 root)
         private
         returns (bool flag)
     {
@@ -202,7 +207,7 @@ library TopChain {
         flag = true;
     }
 
-    function _carveOut(Chain storage chain, uint40 acct)
+    function _carveOut(Chain storage chain, uint256 acct)
         private
         memberExist(chain, acct)
         returns (bool flag)
@@ -311,7 +316,7 @@ library TopChain {
     ) private returns (bool flag) {
         Node storage n = chain.nodes[acct];
 
-        (uint40 prev, uint40 next) = getPos(
+        (uint256 prev, uint256 next) = getPos(
             chain,
             n.sum,
             n.prev,
@@ -320,7 +325,7 @@ library TopChain {
         );
 
         if (next != n.next || prev != n.prev) {
-            flag = _branchOff(chain, acct) && _hInsert(chain, acct, prev, next);
+            flag = _branchOff(chain, acct) && _hInsert(chain, acct, uint40(prev), uint40(next));
         }
     }
 
@@ -346,7 +351,7 @@ library TopChain {
     //##    读接口    ##
     //##################
 
-    function isMember(Chain storage chain, uint40 acct)
+    function isMember(Chain storage chain, uint256 acct)
         public
         view
         returns (bool)
@@ -388,11 +393,11 @@ library TopChain {
 
     function getPos(
         Chain storage chain,
-        uint64 amount,
-        uint40 prev,
-        uint40 next,
+        uint256 amount,
+        uint256 prev,
+        uint256 next,
         bool increase
-    ) public view returns (uint40, uint40) {
+    ) public view returns (uint256, uint256) {
         if (increase)
             while (prev > 0 && chain.nodes[prev].sum < amount) {
                 next = prev;
@@ -407,10 +412,10 @@ library TopChain {
         return (prev, next);
     }
 
-    function nextNode(Chain storage chain, uint40 acct)
+    function nextNode(Chain storage chain, uint256 acct)
         public
         view
-        returns (uint40 next)
+        returns (uint256 next)
     {
         Node storage n = chain.nodes[acct];
 
@@ -423,46 +428,32 @@ library TopChain {
         }
     }
 
-    function getNode(Chain storage chain, uint40 acct)
+    function getNode(Chain storage chain, uint256 acct)
         public
         view
-        returns (
-            uint40 prev,
-            uint40 next,
-            uint40 ptr,
-            uint64 amt,
-            uint64 sum,
-            uint8 cat
-        )
+        returns (Node memory n)
     {
-        Node storage n = chain.nodes[acct];
-
-        prev = n.prev;
-        next = n.next;
-        ptr = n.ptr;
-        amt = n.amt;
-        sum = n.sum;
-        cat = n.cat;
+        n = chain.nodes[acct];
     }
 
     // ==== group ====
 
-    function rootOf(Chain storage chain, uint40 acct)
+    function rootOf(Chain storage chain, uint256 acct)
         public
         view
         memberExist(chain, acct)
         returns (uint40 group)
     {
         Node storage n = chain.nodes[acct];
-        group = (n.cat < 2) ? acct : n.ptr;
+        group = (n.cat < 2) ? uint40(acct) : n.ptr;
     }
 
     function qtyOfBranches(Chain storage chain)
         public
         view
-        returns (uint32 len)
+        returns (uint256 len)
     {
-        uint40 cur = head(chain);
+        uint256 cur = head(chain);
 
         while (cur > 0) {
             len++;
@@ -470,11 +461,11 @@ library TopChain {
         }
     }
 
-    function deepOfBranch(Chain storage chain, uint40 acct)
+    function deepOfBranch(Chain storage chain, uint256 acct)
         public
         view
         memberExist(chain, acct)
-        returns (uint32 deep)
+        returns (uint256 deep)
     {
         Node storage n = chain.nodes[acct];
 
@@ -483,10 +474,10 @@ library TopChain {
         else deep = _deepOfBranch(chain, n.ptr);
     }
 
-    function _deepOfBranch(Chain storage chain, uint40 root)
+    function _deepOfBranch(Chain storage chain, uint256 root)
         private
         view
-        returns (uint32 deep)
+        returns (uint256 deep)
     {
         deep = 1;
 
@@ -498,21 +489,21 @@ library TopChain {
         }
     }
 
-    function votesOfGroup(Chain storage chain, uint40 acct)
+    function votesOfGroup(Chain storage chain, uint256 acct)
         public
         view
         returns (uint64 votes)
     {
-        uint40 group = rootOf(chain, acct);
+        uint256 group = rootOf(chain, acct);
         votes = chain.nodes[group].sum;
     }
 
-    function membersOfGroup(Chain storage chain, uint40 acct)
+    function membersOfGroup(Chain storage chain, uint256 acct)
         public
         view
-        returns (uint40[] memory)
+        returns (uint256[] memory)
     {
-        uint40 start = rootOf(chain, acct);
+        uint256 start = rootOf(chain, acct);
         uint256 len = deepOfBranch(chain, acct);
 
         return _subList(chain, start, len);
@@ -520,8 +511,8 @@ library TopChain {
 
     function affiliated(
         Chain storage chain,
-        uint40 acct1,
-        uint40 acct2
+        uint256 acct1,
+        uint256 acct2
     )
         public
         view
@@ -540,23 +531,23 @@ library TopChain {
     function membersList(Chain storage chain)
         public
         view
-        returns (uint40[] memory)
+        returns (uint256[] memory)
     {
         uint256 len = qtyOfMembers(chain);
-        uint40 start = chain.nodes[0].next;
+        uint256 start = chain.nodes[0].next;
 
         return _subList(chain, start, len);
     }
 
     function _subList(
         Chain storage chain,
-        uint40 start,
+        uint256 start,
         uint256 len
-    ) private view returns (uint40[] memory) {
-        uint40[] memory list = new uint40[](len);
+    ) private view returns (uint256[] memory) {
+        uint256[] memory list = new uint256[](len);
         uint256 i = 0;
 
-        uint40 next = start;
+        uint256 next = start;
 
         while (i < len) {
             list[i] = next;
@@ -580,17 +571,71 @@ library TopChain {
 
         list[0] = chain.nodes[0];
 
-        uint40 cur = chain.nodes[0].next;
+        uint256 cur = chain.nodes[0].next;
         uint256 i = 1;
 
         while (i <= len) {
             list[i] = chain.nodes[cur];
-
             cur = nextNode(chain, cur);
-
             i++;
         }
 
         return list;
     }
+
+    // ==== MockDeals ====
+
+    function mockDealsOfIA(
+        Chain storage chain,
+        IInvestmentAgreement _ia
+    ) public {
+        uint256[] memory seqList = _ia.seqList();
+
+        uint256 len = seqList.length;
+
+        while (len > 0) {
+            IInvestmentAgreement.Deal memory deal = _ia.getDeal(seqList[len-1]);
+
+            uint64 amount = basedOnPar(chain) ? deal.body.par : deal.body.paid;
+
+            if (deal.head.seller > 0) {
+                mockDealOfSell(chain, deal.head.seller, amount);
+            }
+
+            mockDealOfBuy(chain, deal.body.buyer, deal.body.groupOfBuyer, amount);
+
+            len--;
+        }
+    }
+
+    function mockDealOfSell(
+        Chain storage chain, 
+        uint256 seller, 
+        uint64 amount
+    ) public returns (bool flag)
+    {
+        changeAmt(chain, seller, amount, false);
+        
+        if (chain.nodes[seller].amt == 0)
+            delNode(chain, seller);
+        flag = true;
+    }
+
+    function mockDealOfBuy(
+        Chain storage chain, 
+        uint256 buyer, 
+        uint256 group,
+        uint64 amount
+    ) public returns (bool flag) {
+        if (!isMember(chain, buyer))
+            addNode(chain, buyer);
+
+        changeAmt(chain, buyer, amount, true);
+
+        if (rootOf(chain, buyer) != group)
+            top2Sub(chain, buyer, group);
+
+        flag = true;
+    }
+
 }

@@ -9,49 +9,34 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfShares.sol";
 
-import "../../common/lib/SNFactory.sol";
-import "../../common/lib/SNParser.sol";
-
 import "../../common/access/AccessControl.sol";
 
 import "../../common/ruting/ROMSetting.sol";
 
 contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
-    using SNFactory for bytes;
-    using SNParser for bytes32;
 
-    // SNInfo: 股票编号编码规则
-    // struct SNInfo {
-    //     uint16 class; //股份类别（投资轮次）
-    //     uint32 ssn; //顺序编码
-    //     uint48 issueDate; //发行日期
-    //     uint32 issuePrice; //取得价格
-    //     uint40 shareholder; //股东编号
-    //     uint32 preSN; //来源股票编号索引
-    // }
-
-    // _shares[0] {
+    // _shares[0].body {
     //     paid: counterOfShares;
     //     par: counterOfClass;
     // }
 
-    // ssn => Share
+    // seq => Share
     mapping(uint256 => Share) private _shares;
 
     // zero(16b) & ssn & expireDate & shareholder & hashLock (128b) => amount
-    mapping(bytes32 => uint64) private _lockers;
+    mapping(bytes32 => uint256) private _lockers;
 
     //##################
     //##   Modifier   ##
     //##################
 
-    modifier shareExist(uint32 ssn) {
-        require(isShare(ssn), "BOS.shareExist: ssn NOT exist");
+    modifier shareExist(uint256 seq) {
+        require(isShare(seq), "BOS.mf.SE: seq NOT exist");
         _;
     }
 
-    modifier notFreezed(uint32 ssn) {
-        require(_shares[ssn].state == 0, "BOS.notFreezed: share is freezed");
+    modifier notFreezed(uint256 seq) {
+        require(_shares[seq].head.state == 0, "BOS.mf.NF: share is freezed");
         _;
     }
 
@@ -61,42 +46,54 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
     // ==== IssueShare ====
 
+    function snParser(bytes32 sn) public pure returns(Head memory head) {
+        head = Head({
+            class: uint16(bytes2(sn)),
+            seq: uint32(bytes4(sn<<16)),
+            preSeq: uint32(bytes4(sn<<48)), 
+            issueDate: uint48(bytes6(sn<<80)),
+            paidInDeadline: uint48(bytes6(sn<<128)),
+            shareholder: uint40(bytes5(sn<<176)),
+            price: uint32(bytes4(sn<<216)),
+            state: uint8(sn[31])
+        });
+    }
+
     function issueShare(
         bytes32 shareNumber,
         uint64 paid,
-        uint64 par,
-        uint48 paidInDeadline
+        uint64 par
     ) external onlyKeeper {
-        require(
-            shareNumber.shareholder() != 0,
-            "BOS.issueShare: zero shareholder"
-        );
-
-        uint48 issueDate = shareNumber.issueDate();
-        if (issueDate == 0) issueDate = uint48(block.timestamp);
-        else
-            require(
-                issueDate <= block.timestamp,
-                "BOS.issueShare: future issueDate"
-            );
+        Head memory head = snParser(shareNumber);
 
         require(
-            issueDate <= paidInDeadline,
-            "BOS.issueShare: issueDate LATER than paidInDeadline"
+            head.shareholder != 0,
+            "BOS.IS: zero shareholder"
         );
 
-        require(paid <= par, "BOS.issueShare: paid BIGGER than par");
+        // uint48 issueDate = sharenumber.issueDate();
+        if (head.issueDate == 0) head.issueDate = uint48(block.timestamp);
+        else require( head.issueDate <= block.timestamp,
+            "BOS.IS: future issueDate");
+
+        require(head.issueDate <= head.paidInDeadline, 
+            "BOS.IS: issueDate LATER than paidInDeadline");
+
+        require(paid <= par, "BOS.IS: paid BIGGER than par");
 
         // 判断是否需要添加新股东，若添加是否会超过法定人数上限
-        _getROM().addMember(shareNumber.shareholder());
+        _getROM().addMember(head.shareholder);
 
-        shareNumber = _assignSSN(shareNumber, issueDate);
+        if (head.class > counterOfClasses()) {
+            _increaseCounterOfClasses();
+            head.class = counterOfClasses();
+        }
 
         // 在《股权簿》中添加新股票（签发新的《出资证明书》）
-        _issueShare(shareNumber, paid, par, paidInDeadline);
+        regShare(head, paid, par);
 
         // 将股票编号加入《股东名册》记载的股东名下
-        _getROM().addShareToMember(counterOfShares(), shareNumber.shareholder());
+        // _getROM().addShareToMember(head.seq, head.shareholder);
 
         // 增加“认缴出资”和“实缴出资”金额
         _getROM().capIncrease(paid, par);
@@ -104,292 +101,246 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
     // ==== PayInCapital ====
 
-    function setPayInAmount(bytes32 sn, uint64 amount) external onlyDirectKeeper {
-        require(_lockers[sn] == 0, "BOS.setPayInAmount: locker occupied");
+    function setPayInAmt(bytes32 hashLock, uint64 amount) external onlyDirectKeeper {
+        require(_lockers[hashLock] == 0, "BOS.SPIA: locker occupied");
 
-        _lockers[sn] = amount;
-
-        emit SetPayInAmount(sn, amount);
+        emit SetPayInAmt(hashLock, amount);
+        _lockers[hashLock] = amount;
     }
 
-    function requestPaidInCapital(bytes32 sn, string memory hashKey)
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
         external
         onlyDirectKeeper
     {
+        Share storage share = _shares[uint32(bytes4(hashLock))];
+
         require(
-            _shares[sn.ssn()].paidInDeadline >= block.timestamp + 15 minutes,
-            "BOS.requestPaidInCapital: missed expireDate"
+            share.head.paidInDeadline >= block.timestamp,
+            "BOS.RPIC: missed paidInDate"
         );
 
         require(
-            sn.hashLockOfBOSLocker() == keccak256(bytes(hashKey)).hashTrim(),
-            "BOS.requestPaidInCapital: wrong key"
+            bytes28(hashLock << 32) == bytes28(keccak256(bytes(hashKey)) << 32),
+            "BOS.RPIC: wrong key"
         );
 
-        uint64 amount = _lockers[sn];
+        uint64 amount = uint64(_lockers[hashLock]);
 
         // 增加“股票”项下实缴出资金额
-        _payInCapital(sn.ssn(), amount);
+        _payInCapital(share, amount);
 
-        _getROM().changeAmtOfMember(sn.shareholder(), amount, 0, true);
+        _getROM().changeAmtOfMember(share.head.shareholder, amount, 0, true);
 
         // 增加公司的“实缴出资”总额
         _getROM().capIncrease(amount, 0);
 
         // remove payInAmount;
-        delete _lockers[sn];
+        delete _lockers[hashLock];
     }
 
-    function withdrawPayInAmount(bytes32 sn) external onlyDirectKeeper {
+    function withdrawPayInAmt(bytes32 hashLock) external onlyDirectKeeper {
         require(
-            _shares[sn.ssn()].paidInDeadline < block.timestamp - 15 minutes,
-            "BOS.withdrawPayInAmount: still within effective period"
+            _shares[uint32(bytes4(hashLock))].head.paidInDeadline < block.timestamp,
+            "BOS.WPIA: still within effective period"
         );
 
-        delete _lockers[sn];
-
-        emit WithdrawPayInAmount(sn);
+        emit WithdrawPayInAmt(hashLock);
+        delete _lockers[hashLock];
     }
 
     // ==== TransferShare ====
 
     function transferShare(
-        uint32 ssn,
+        uint256 seq,
         uint64 paid,
         uint64 par,
         uint40 to,
-        uint32 unitPrice
-    ) external onlyKeeper shareExist(ssn) notFreezed(ssn) {
-        uint16 class = _shares[ssn].shareNumber.class();
+        uint32 price
+    ) external onlyKeeper shareExist(seq) notFreezed(seq) {
+        Share storage share = _shares[seq];
 
-        require(to != 0, "BOS.transferShare: shareholder userNo is ZERO");
-        // require(to <= _rc.counterOfUsers(), "shareholder userNo overflow");
+        require(to != 0, "BOS.TS: shareholder is ZERO");
 
-        _decreaseShareAmount(ssn, paid, par);
+        _decreaseShareAmt(share, paid, par);
 
         // 判断是否需要新增股东，若需要判断是否超过法定人数上限
         _getROM().addMember(to);
 
-        _increaseCounterOfShares();
+        Head memory head = Head({
+            class: share.head.class,
+            seq: 0,
+            preSeq: share.head.seq,            
+            issueDate: uint48(block.timestamp),
+            paidInDeadline: share.head.paidInDeadline,
+            shareholder: to,
+            price: price,
+            state: 0
+        });
 
-        uint48 issueDate = uint48(block.timestamp);
-
-        // 在“新股东”名下增加新的股票
-        bytes32 shareNumber_1 = createShareNumber(
-            class,
-            counterOfShares(),
-            issueDate,
-            to,
-            unitPrice,
-            ssn
-        );
-
-        _issueShare(shareNumber_1, paid, par, _shares[ssn].paidInDeadline);
-
-        _getROM().addShareToMember(counterOfShares(), to);
-    }
-
-    function createShareNumber(
-        uint16 class,
-        uint32 ssn,
-        uint48 issueDate,
-        uint40 shareholder,
-        uint32 unitPrice,
-        uint32 preSSN
-    ) public pure returns (bytes32 shareNumber) {
-        bytes memory _sn = new bytes(32);
-
-        _sn = _sn.seqToSN(0, class);
-        _sn = _sn.ssnToSN(2, ssn);
-        _sn = _sn.dateToSN(6, issueDate);
-        _sn = _sn.acctToSN(12, shareholder);
-        _sn = _sn.ssnToSN(17, unitPrice);
-        _sn = _sn.ssnToSN(21, preSSN);
-
-        shareNumber = _sn.bytesToBytes32();
+        regShare(head, paid, par);
     }
 
     // ==== DecreaseCapital ====
 
     function decreaseCapital(
-        uint32 ssn,
+        uint256 seq,
         uint64 paid,
         uint64 par
-    ) external onlyDirectKeeper shareExist(ssn) notFreezed(ssn) {
+    ) external onlyDirectKeeper shareExist(seq) notFreezed(seq) {
+        Share storage share = _shares[seq];
+
         // 减少特定“股票”项下的认缴和实缴金额
-        _decreaseShareAmount(ssn, paid, par);
+        _decreaseShareAmt(share, paid, par);
 
         // 减少公司“注册资本”和“实缴出资”总额
         _getROM().capDecrease(paid, par);
     }
 
-    // ==== CleanPar ====
+    // ==== cleanAmt ====
 
-    function decreaseCleanPar(uint32 ssn, uint64 paid)
+    function decreaseCleanAmt(uint256 seq, uint64 paid, uint64 par)
         external
         onlyKeeper
-        shareExist(ssn)
-        notFreezed(ssn)
+        shareExist(seq)
+        notFreezed(seq)
     {
-        // require(paid != 0, "ZERO paid");
+        Share storage share = _shares[seq];
 
-        Share storage share = _shares[ssn];
+        require(paid <= share.body.cleanPaid, "BOS.DCA: INSUFFICIENT cleanPaid");
+        require(par <= share.body.cleanPar, "BOS.DCA: INSUFFICIENT cleanPar");
 
-        require(
-            paid <= share.cleanPar,
-            "BOS.decreaseCleanPar: INSUFFICIENT cleanPar"
-        );
+        emit DecreaseCleanAmt(seq, paid, par);
 
-        share.cleanPar -= paid;
-
-        emit DecreaseCleanPar(share.shareNumber, paid);
+        share.body.cleanPaid -= paid;
+        share.body.cleanPar -= par;
     }
 
-    function increaseCleanPar(uint32 ssn, uint64 paid)
+    function increaseCleanAmt(uint256 seq, uint64 paid, uint64 par)
         external
         onlyKeeper
-        shareExist(ssn)
-        notFreezed(ssn)
+        shareExist(seq)
+        notFreezed(seq)
     {
-        // require(paid != 0, "ZERO paid");
-
-        Share storage share = _shares[ssn];
-
+        Share storage share = _shares[seq];
         require(
-            share.paid >= (share.cleanPar + paid),
-            "BOS.increaseCleanPar: paid overflow"
+            share.body.paid >= (share.body.cleanPaid + paid),
+            "BOS.ICA: paid overflow"
         );
-        share.cleanPar += paid;
+        require(
+            share.body.par >= (share.body.cleanPar + par),
+            "BOS.ICA: par overflow"
+        );
 
-        emit IncreaseCleanPar(share.shareNumber, paid);
+        emit IncreaseCleanAmt(seq, paid, par);
+
+        share.body.cleanPaid += paid;
+        share.body.cleanPar += par;
     }
 
     // ==== State & PaidInDeadline ====
 
-    /// @param ssn - 股票短号
+    /// @param seq - 股票短号
     /// @param state - 股票状态 （0:正常，1:查封 ）
-    function updateStateOfShare(uint32 ssn, uint8 state)
+    function updateStateOfShare(uint256 seq, uint8 state)
         external
         onlyDirectKeeper
-        shareExist(ssn)
+        shareExist(seq)
     {
-        _shares[ssn].state = state;
-
-        emit UpdateStateOfShare(_shares[ssn].shareNumber, state);
+        emit UpdateStateOfShare(seq, state);
+        _shares[seq].head.state = state;
     }
 
-    /// @param ssn - 股票短号
+    /// @param seq - 股票短号
     /// @param paidInDeadline - 实缴出资期限
-    function updatePaidInDeadline(uint32 ssn, uint48 paidInDeadline)
+    function updatePaidInDeadline(uint256 seq, uint48 paidInDeadline)
         external
         onlyDirectKeeper
-        shareExist(ssn)
+        shareExist(seq)
     {
-        _shares[ssn].paidInDeadline = paidInDeadline;
-
-        emit UpdatePaidInDeadline(_shares[ssn].shareNumber, paidInDeadline);
+        emit UpdatePaidInDeadline(seq, paidInDeadline);
+        _shares[seq].head.paidInDeadline = paidInDeadline;
     }
 
     // ==== private funcs ====
 
     function _increaseCounterOfShares() private {
-        _shares[0].paid++;
+        _shares[0].body.paid++;
     }
 
     function _increaseCounterOfClasses() private {
-        _shares[0].par++;
+        _shares[0].body.par++;
     }
 
-    function _assignSSN(bytes32 shareNumber, uint48 issueDate)
-        private
-        returns (bytes32)
-    {
-        bytes memory _sn = abi.encodePacked(shareNumber);
-
-        uint16 class = shareNumber.class();
-
-        if (class > counterOfClasses()) {
-            _increaseCounterOfClasses();
-            _sn = _sn.seqToSN(0, counterOfClasses());
-        }
+    function regShare(
+        Head memory head,
+        uint64 paid,
+        uint64 par
+    ) public onlyKeeper {
 
         _increaseCounterOfShares();
+        head.seq = counterOfShares();
 
-        _sn = _sn.ssnToSN(2, counterOfShares());
-        _sn = _sn.dateToSN(6, issueDate);
+        Share storage share = _shares[head.seq];
 
-        return _sn.bytesToBytes32();
+        emit IssueShare(head.seq, paid, par);
+
+        share.head = head;
+
+        share.body = Body({
+            paid: paid,
+            par: par,
+            cleanPaid: paid,
+            cleanPar: par
+        });
+
+        _getROM().addShareToMember(head.seq, head.shareholder);
     }
 
-    function _issueShare(
-        bytes32 shareNumber,
-        uint64 paid,
-        uint64 par,
-        uint48 paidInDeadline
-    ) private {
-        uint32 ssn = shareNumber.ssn();
-
-        Share storage share = _shares[ssn];
-
-        share.shareNumber = shareNumber;
-        share.paid = paid;
-        share.par = par;
-        share.cleanPar = paid;
-        share.paidInDeadline = paidInDeadline;
-
-        emit IssueShare(shareNumber, paid, par, paidInDeadline);
+    function _deregisterShare(uint256 seq) private {
+        emit DeregisterShare(seq);
+        delete _shares[seq];
     }
 
-    function _deregisterShare(uint32 ssn) private {
-        bytes32 shareNumber = _shares[ssn].shareNumber;
-
-        delete _shares[ssn];
-
-        emit DeregisterShare(shareNumber);
-    }
-
-    function _payInCapital(uint32 ssn, uint64 amount) private {
+    function _payInCapital(Share storage share, uint64 amount) private {
         uint48 paidInDate = uint48(block.timestamp);
 
-        Share storage share = _shares[ssn];
-
         require(
-            paidInDate <= share.paidInDeadline,
-            "BOS._payInCapital: missed payInDeadline"
+            paidInDate < share.head.paidInDeadline,
+            "BOS.PIC: missed payInDeadline"
         );
         require(
-            share.paid + amount <= share.par,
-            "BOS._payInCapital: amount overflow"
+            share.body.paid + amount <= share.body.par,
+            "BOS.PIC: amount overflow"
         );
 
-        share.paid += amount; //溢出校验已通过
-        share.cleanPar += amount;
+        emit PayInCapital(share.head.seq, amount, paidInDate);
+        share.body.paid += amount; //溢出校验已通过
 
-        emit PayInCapital(share.shareNumber, amount, paidInDate);
+        share.body.cleanPaid += amount;
+        share.body.cleanPar += amount;
     }
 
-    function _decreaseShareAmount(
-        uint32 ssn,
+    function _decreaseShareAmt(
+        Share storage share,
         uint64 paid,
         uint64 par
     ) private {
-        Share storage share = _shares[ssn];
 
         require(par > 0, "par is ZERO");
-        // require(share.par >= par, "par OVERFLOW");
-        require(share.cleanPar >= par, "cleanPar OVERFLOW");
+        require(share.body.cleanPar >= par, "par OVERFLOW");
+        require(share.body.cleanPaid >= paid, "cleanPaid OVERFLOW");
         // require(share.state < 4, "FREEZED share");
         require(paid <= par, "paid BIGGER than par");
 
         // 若拟降低的面值金额等于股票面值，则删除相关股票
-        if (par == share.par) {
-            _getROM().removeShareFromMember(ssn, share.shareNumber.shareholder());
-            _deregisterShare(ssn);
+        if (par == share.body.par) {
+            _getROM().removeShareFromMember(share.head.seq, share.head.shareholder);
+            _deregisterShare(share.head.seq);
         } else {
             // 仅调低认缴和实缴金额，保留原股票
-            _subAmountFromShare(ssn, paid, par);
+            _subAmountFromShare(share, paid, par);
             _getROM().changeAmtOfMember(
-                share.shareNumber.shareholder(),
+                share.head.shareholder,
                 paid,
                 par,
                 false
@@ -398,18 +349,18 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     }
 
     function _subAmountFromShare(
-        uint32 ssn,
+        Share storage share,
         uint64 paid,
         uint64 par
     ) private {
-        Share storage share = _shares[ssn];
 
-        share.paid -= paid;
-        share.par -= par;
+        emit SubAmountFromShare(share.head.seq, paid, par);
 
-        share.cleanPar -= paid;
+        share.body.paid -= paid;
+        share.body.par -= par;
 
-        emit SubAmountFromShare(share.shareNumber, paid, par);
+        share.body.cleanPaid -= paid;
+        share.body.cleanPar -= par;
     }
 
     // ##################
@@ -417,40 +368,49 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     // ##################
 
     function counterOfShares() public view returns (uint32) {
-        return uint32(_shares[0].paid);
+        return uint32(_shares[0].body.paid);
     }
 
     function counterOfClasses() public view returns (uint16) {
-        return uint16(_shares[0].par);
+        return uint16(_shares[0].body.par);
     }
 
     // ==== SharesRepo ====
 
-    function isShare(uint32 ssn) public view returns (bool) {
-        return _shares[ssn].shareNumber > bytes32(0);
+    function isShare(uint256 seq) public view returns (bool) {
+        return _shares[seq].head.seq > 0;
     }
 
-    function cleanPar(uint32 ssn)
+    function getHeadOfShare(uint256 seq)
         external
         view
-        shareExist(ssn)
-        returns (uint64)
+        shareExist(seq)
+        returns (Head memory head)
     {
-        return _shares[ssn].cleanPar;
+        head = _shares[seq].head;
     }
 
-    function getShare(uint32 ssn)
+    function getBodyOfShare(uint256 seq)
         external
         view
-        shareExist(ssn)
+        shareExist(seq)
+        returns (Body memory body)
+    {
+        body = _shares[seq].body;
+    }
+
+    function getShare(uint256 seq)
+        external
+        view
+        shareExist(seq)
         returns (Share memory share)
     {
-        share = _shares[ssn];
+        share = _shares[seq];
     }
 
     // ==== PayInCapital ====
 
-    function getLocker(bytes32 sn) external view returns (uint64 amount) {
-        amount = _lockers[sn];
+    function getLocker(bytes32 hashLock) external view returns (uint64 amount) {
+        amount = uint64(_lockers[hashLock]);
     }
 }

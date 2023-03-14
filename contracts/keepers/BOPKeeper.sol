@@ -11,12 +11,12 @@ import "../common/access/AccessControl.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/BOPSetting.sol";
 
-import "../common/lib/SNParser.sol";
+import "../common/lib/PledgesRepo.sol";
 
 import "./IBOPKeeper.sol";
 
 contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
-    using SNParser for bytes32;
+    using PledgesRepo for bytes32;
 
     // ################
     // ##   Pledge   ##
@@ -24,77 +24,88 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
 
     function createPledge(
         bytes32 sn,
-        bytes32 shareNumber,
-        uint40 creditor,
+        uint256 creditor,
         uint16 monOfGuarantee,
+        uint64 pledgedPaid,
         uint64 pledgedPar,
         uint64 guaranteedAmt,
-        uint40 caller
+        uint256 caller
     ) external onlyDirectKeeper {
-        require(
-            sn.ssnOfPld() == shareNumber.ssn(),
-            "BOPKeeper.createPledge: wrong shareNumber"
-        );
-        require(shareNumber.shareholder() == caller, "NOT shareholder");
 
-        _getBOS().decreaseCleanPar(shareNumber.ssn(), pledgedPar);
+        PledgesRepo.Head memory head = sn.snParser();
+
+        IBookOfShares _bos = _getBOS();
+
+        IBookOfShares.Share memory share = _bos.getShare(head.seqOfShare);
+
+        require(share.head.shareholder == caller, "BOPK.CP: NOT shareholder");
+        require(head.pledgor == caller, "BOPK.CP: NOT pledgor");
+
+        _bos.decreaseCleanAmt(head.seqOfShare, pledgedPaid, pledgedPar);
 
         _getBOP().createPledge(
-            sn,
+            head,
             creditor,
             monOfGuarantee,
+            pledgedPaid,
             pledgedPar,
             guaranteedAmt
         );
     }
 
     function updatePledge(
-        bytes32 sn,
-        uint40 creditor,
+        uint256 seqOfShare,
+        uint256 seqOfPledge,
+        uint256 creditor,
         uint48 expireDate,
+        uint64 pledgedPaid,
         uint64 pledgedPar,
         uint64 guaranteedAmt,
-        uint40 caller
+        uint256 caller
     ) external onlyDirectKeeper {
-        require(pledgedPar != 0, "BOPKeeper.updatePledge: ZERO pledgedPar");
 
-        uint32 shortShareNumber = sn.ssnOfPld();
+        require(pledgedPaid != 0, "BOPK.UP: ZERO pledgedPaid");
 
-        IBookOfPledges.Pledge memory pld = _getBOP().getPledge(sn);
+        PledgesRepo.Pledge memory pld = _getBOP().getPledge(seqOfShare, seqOfPledge);
 
-        if (pledgedPar < pld.pledgedPar || expireDate < pld.expireDate) {
-            require(
-                caller == pld.creditor,
-                "BOPKeeper.updatePledge: NOT creditor"
+        if (pledgedPaid < pld.body.pledgedPaid ||
+            pledgedPar < pld.body.pledgedPar || 
+            expireDate < pld.head.expireDate ||
+            creditor != pld.body.creditor) 
+        {   require(caller == pld.body.creditor, "BOPK.UP: NOT creditor");
+
+            _getBOS().increaseCleanAmt(
+                seqOfShare,
+                pld.body.pledgedPaid - pledgedPaid > 0 ? pld.body.pledgedPaid - pledgedPaid : 0,
+                pld.body.pledgedPar - pledgedPar > 0 ? pld.body.pledgedPar - pledgedPar : 0
             );
-            _getBOS().increaseCleanPar(shortShareNumber, pld.pledgedPar - pledgedPar);
-        } else if (pledgedPar > pld.pledgedPar || expireDate > pld.expireDate) {
-            require(
-                caller == sn.pledgorOfPld(),
-                "BOPKeeper.updatePledge: NOT pledgor"
+
+        } else if (pledgedPaid > pld.body.pledgedPaid || 
+            pledgedPar > pld.body.pledgedPar ||
+            expireDate > pld.head.expireDate) 
+        {
+            require(caller == pld.head.pledgor,"BOPK.UP: NOT pledgor");
+
+            _getBOS().decreaseCleanAmt(
+                seqOfShare, 
+                pledgedPaid - pld.body.pledgedPaid > 0 ? pledgedPaid - pld.body.pledgedPaid : 0,
+                pledgedPar - pld.body.pledgedPar > 0 ? pledgedPar - pld.body.pledgedPar : 0
             );
-            _getBOS().decreaseCleanPar(shortShareNumber, pledgedPar - pld.pledgedPar);
         }
 
-        if (creditor != pld.creditor) {
-            require(
-                caller == pld.creditor,
-                "BOPKeeper.updatePledge: NOT creditor"
-            );
-        }
-
-        _getBOP().updatePledge(sn, creditor, expireDate, pledgedPar, guaranteedAmt);
+        _getBOP().updatePledge(seqOfShare, seqOfPledge, creditor, expireDate, pledgedPaid, pledgedPar, guaranteedAmt);
     }
 
-    function delPledge(bytes32 sn, uint40 caller) external onlyDirectKeeper {
+    function delPledge(uint256 seqOfShare, uint256 seqOfPledge, uint256 caller) external onlyDirectKeeper {
         
-        IBookOfPledges.Pledge memory pld = _getBOP().getPledge(sn);
+        PledgesRepo.Pledge memory pld = _getBOP().getPledge(seqOfShare, seqOfPledge);
 
-        if (block.timestamp < pld.expireDate)
-            require(caller == pld.creditor, "NOT creditor");
+        if (block.timestamp < pld.head.expireDate)
+            require(caller == pld.body.creditor, "NOT creditor");
+        else require(caller == pld.head.pledgor, "NOT Pledgor");
 
-        _getBOS().increaseCleanPar(sn.ssnOfPld(), pld.pledgedPar);
+        _getBOS().increaseCleanAmt(seqOfShare, pld.body.pledgedPaid, pld.body.pledgedPar);
 
-        _getBOP().updatePledge(sn, pld.creditor, 0, 0, 0);
+        _getBOP().updatePledge(seqOfShare, seqOfPledge, pld.body.creditor, 0, 0, 0, 0);
     }
 }

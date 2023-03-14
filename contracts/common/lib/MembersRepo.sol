@@ -9,18 +9,23 @@ pragma solidity ^0.8.8;
 
 // pragma experimental ABIEncoderV2;
 
+import "../../books/boa/IInvestmentAgreement.sol";
+// import "../../books/bos/IBookOfShares.sol";
+// import "../../books/rom/IRegisterOfMembers.sol";
+
 import "./TopChain.sol";
 import "./Checkpoints.sol";
 import "./EnumerableSet.sol";
+// import "./RulesParser.sol";
 
 library MembersRepo {
     using Checkpoints for Checkpoints.History;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.UintSet;
     using TopChain for TopChain.Chain;
 
     struct Member {
         Checkpoints.History votesInHand;
-        EnumerableSet.Bytes32Set sharesInHand;
+        EnumerableSet.UintSet sharesInHand;
     }
 
     /*
@@ -48,45 +53,73 @@ library MembersRepo {
     //##    写接口    ##
     //##################
 
-    function setVoteBase(GeneralMeeting storage gm, bool onPar)
-        public
-        returns (bool)
-    {
-        return gm.chain.setVoteBase(onPar);
+    function mockDealsOfIA(
+        GeneralMeeting storage gm,
+        IInvestmentAgreement _ia
+    ) public {
+        uint256[] memory seqList = _ia.seqList();
+
+        uint256 len = seqList.length;
+
+        while (len > 0) {
+            IInvestmentAgreement.Deal memory deal = _ia.getDeal(seqList[len-1]);
+
+            uint64 amount = gm.chain.basedOnPar() ? deal.body.par : deal.body.paid;
+
+            if (deal.head.seller != 0) {
+                mockDealOfSell(gm, deal.head.seller, amount);
+            }
+
+            mockDealOfBuy(gm, deal.body.buyer, deal.body.groupOfBuyer, amount);
+
+            len--;
+        }
     }
 
-    // ==== restore mapping ====
+    function mockDealOfSell(
+        GeneralMeeting storage gm, 
+        uint40 seller, 
+        uint64 amount
+    ) public returns (bool flag)
+    {
+        gm.chain.changeAmt(seller, amount, false);
+        
+        if (gm.chain.nodes[seller].amt == 0)
+            delMember(gm, seller);
+        flag = true;
+    }
 
-    function restoreChain(
-        GeneralMeeting storage gm,
-        TopChain.Node[] memory snapshot
-    ) public {
-        gm.chain.restoreChain(snapshot);
+    function mockDealOfBuy(
+        GeneralMeeting storage gm, 
+        uint40 buyer, 
+        uint40 group,
+        uint64 amount
+    ) public returns (bool flag) {
+        if (!gm.chain.isMember(buyer))
+            gm.chain.addNode(buyer);
+
+        gm.chain.changeAmt(buyer, amount, true);
+
+        if (gm.chain.rootOf(buyer) != group)
+            gm.chain.top2Sub(buyer, group);
+
+        flag = true;
     }
 
     // ==== Zero Node Setting ====
-
-    function setMaxQtyOfMembers(GeneralMeeting storage gm, uint32 max)
-        public
-    {
-        gm.chain.setMaxQtyOfMembers(max);
-    }
 
     function setAmtBase(GeneralMeeting storage gm, bool _basedOnPar)
         public
         returns (bool flag)
     {
-        if (basedOnPar(gm) != _basedOnPar) {
-            uint40[] memory members = gm.chain.membersList();
+        if (gm.chain.basedOnPar() != _basedOnPar) {
+            uint256[] memory members = gm.chain.membersList();
             uint256 len = members.length;
 
             while (len > 0) {
-                uint40 cur = members[len - 1];
+                uint256 cur = members[len - 1];
 
-                Checkpoints.Checkpoint memory cp = gm
-                    .members[cur]
-                    .votesInHand
-                    .latest();
+                Checkpoints.Checkpoint memory cp = gm.members[cur].votesInHand.latest();
 
                 if (cp.paid != cp.par) {
                     if (_basedOnPar)
@@ -105,13 +138,6 @@ library MembersRepo {
 
     // ==== Member ====
 
-    function addMember(GeneralMeeting storage gm, uint40 acct)
-        public
-        returns (bool flag)
-    {
-        flag = gm.chain.addNode(acct);
-    }
-
     function delMember(GeneralMeeting storage gm, uint40 acct)
         public
         returns (bool flag)
@@ -124,37 +150,22 @@ library MembersRepo {
 
     function addShareToMember(
         GeneralMeeting storage gm,
-        bytes32 shareNumber,
+        uint32 seqOfShare,
         uint40 acct
     ) public returns (bool flag) {
-        if (addShareNumberToList(gm, shareNumber)) {
-            flag = gm.members[acct].sharesInHand.add(shareNumber);
+        if (addSeqOfShareToList(gm, seqOfShare)) {
+            flag = gm.members[acct].sharesInHand.add(seqOfShare);
         }
     }
 
     function removeShareFromMember(
         GeneralMeeting storage gm,
-        bytes32 shareNumber,
+        uint32 seqOfShare,
         uint40 acct
     ) public returns (bool flag) {
-        if (removeShareNumberFromList(gm, shareNumber)) {
-            flag = gm.members[acct].sharesInHand.remove(shareNumber);
+        if (removeSeqOfShareFromList(gm, seqOfShare)) {
+            flag = gm.members[acct].sharesInHand.remove(seqOfShare);
         }
-    }
-
-    function addMemberToGroup(
-        GeneralMeeting storage gm,
-        uint40 acct,
-        uint40 root
-    ) public returns (bool flag) {
-        flag = gm.chain.top2Sub(acct, root);
-    }
-
-    function removeMemberFromGroup(GeneralMeeting storage gm, uint40 acct)
-        public
-        returns (bool flag)
-    {
-        flag = gm.chain.sub2Top(acct);
     }
 
     function changeAmtOfMember(
@@ -163,8 +174,8 @@ library MembersRepo {
         uint64 deltaPaid,
         uint64 deltaPar,
         bool increase
-    ) public returns (uint48 timestamp) {
-        uint64 deltaAmt = (basedOnPar(gm)) ? deltaPar : deltaPaid;
+    ) public {
+        uint64 deltaAmt = (gm.chain.basedOnPar()) ? deltaPar : deltaPaid;
         gm.chain.changeAmt(acct, deltaAmt, increase);
 
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.latest();
@@ -177,7 +188,7 @@ library MembersRepo {
             cp.par -= deltaPar;
         }
 
-        timestamp = gm.members[acct].votesInHand.push(cp.paid, cp.par, cp.cleanPar);
+        gm.members[acct].votesInHand.push(cp.paid, cp.par, cp.cleanPaid);
     }
 
     function changeAmtOfCap(
@@ -185,169 +196,48 @@ library MembersRepo {
         uint64 deltaPaid,
         uint64 deltaPar,
         bool increase
-    ) public returns (uint48 timestamp) {
-        (uint64 paid, uint64 par) = ownersEquity(gm);
+    ) public {
+        Checkpoints.Checkpoint memory cp = gm.members[0].votesInHand.latest();
 
         if (increase) {
-            paid += deltaPaid;
-            par += deltaPar;
+            cp.paid += deltaPaid;
+            cp.par += deltaPar;
         } else {
-            paid -= deltaPaid;
-            par -= deltaPar;
+            cp.paid -= deltaPaid;
+            cp.par -= deltaPar;
         }
 
-        timestamp = updateOwnersEquity(gm, paid, par);
+        updateOwnersEquity(gm, cp);
     }
 
     // ==== Zero Node Setting ====
 
-    function addShareNumberToList(
+    function addSeqOfShareToList(
         GeneralMeeting storage gm,
-        bytes32 shareNumber
+        uint32 seqOfShare
     ) public returns (bool flag) {
-        flag = gm.members[0].sharesInHand.add(shareNumber);
+        flag = gm.members[0].sharesInHand.add(seqOfShare);
     }
 
-    function removeShareNumberFromList(
+    function removeSeqOfShareFromList(
         GeneralMeeting storage gm,
-        bytes32 shareNumber
+        uint32 seqOfShare
     ) public returns (bool flag) {
-        flag = gm.members[0].sharesInHand.remove(shareNumber);
+        flag = gm.members[0].sharesInHand.remove(seqOfShare);
     }
 
     function updateOwnersEquity(
         GeneralMeeting storage gm,
-        uint64 paid,
-        uint64 par
-    ) public returns (uint48 timestamp) {
-        timestamp = gm.members[0].votesInHand.push(paid, par, 0);
+        Checkpoints.Checkpoint memory cp
+    ) public {
+        gm.members[0].votesInHand.push(cp.paid, cp.par, cp.cleanPaid);
     }
 
     //##################
     //##    读接口    ##
     //##################
 
-    function basedOnPar(GeneralMeeting storage gm)
-        public
-        view
-        returns (bool)
-    {
-        return gm.chain.basedOnPar();
-    }
-
-    // ==== Zero Node ====
-
-    function maxQtyOfMembers(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint32)
-    {
-        return gm.chain.maxQtyOfMembers();
-    }
-
-    function tailOfChain(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint40)
-    {
-        return gm.chain.tail();
-    }
-
-    function controllor(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint40)
-    {
-        return gm.chain.head();
-    }
-
-    function totalVotes(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint64)
-    {
-        return gm.chain.totalVotes();
-    }
-
-    // ==== shares ====
-
-    function sharesList(GeneralMeeting storage gm)
-        public
-        view
-        returns (bytes32[] memory)
-    {
-        return gm.members[0].sharesInHand.values();
-    }
-
-    function isShareNumber(GeneralMeeting storage gm, bytes32 sharenumber)
-        public
-        view
-        returns (bool)
-    {
-        return gm.members[0].sharesInHand.contains(sharenumber);
-    }
-
-    // ==== members ====
-
-    function isMember(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (bool)
-    {
-        return gm.chain.isMember(acct);
-    }
-
-    function qtyOfMembers(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint32 qty)
-    {
-        qty = gm.chain.qtyOfMembers();
-    }
-
-    function membersList(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint40[] memory)
-    {
-        return gm.chain.membersList();
-    }
-
-    function nextMember(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint40 next)
-    {
-        return gm.chain.nextNode(acct);
-    }
-
     // ==== member ====
-
-    function paidOfMember(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint64 paid)
-    {
-        Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.latest();
-        paid = cp.paid;
-    }
-
-    function parOfMember(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint64 par)
-    {
-        Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.latest();
-        par = cp.par;
-    }
-
-    function votesInHand(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint64 votes)
-    {
-        votes = gm.chain.nodes[acct].amt;
-    }
 
     function votesAtDate(
         GeneralMeeting storage gm,
@@ -355,133 +245,6 @@ library MembersRepo {
         uint48 date
     ) public view returns (uint64 vote) {
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.getAtDate(date);
-        vote = basedOnPar(gm) ? cp.par : cp.paid;
-    }
-
-    function sharesInHand(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (bytes32[] memory)
-    {
-        return gm.members[acct].sharesInHand.values();
-    }
-
-    function qtyOfSharesInHand(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint256)
-    {
-        return gm.members[acct].sharesInHand.length();
-    }
-
-    // ==== group ====
-
-    function groupRep(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint40)
-    {
-        return gm.chain.rootOf(acct);
-    }
-
-    function qtyOfGroups(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint32)
-    {
-        return gm.chain.qtyOfBranches();
-    }
-
-    function votesOfHead(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint64)
-    {
-        uint40 head = controllor(gm);
-        return gm.chain.nodes[head].sum;
-    }
-
-    function isGroupRep(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (bool)
-    {
-        return gm.chain.rootOf(acct) == acct;
-    }
-
-    function votesOfGroup(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint64)
-    {
-        return gm.chain.votesOfGroup(acct);
-    }
-
-    function membersOfGroup(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint40[] memory)
-    {
-        return gm.chain.membersOfGroup(acct);
-    }
-
-    function affiliated(
-        GeneralMeeting storage gm,
-        uint40 acct1,
-        uint40 acct2
-    ) public view returns (bool) {
-        return gm.chain.affiliated(acct1, acct2);
-    }
-
-    function deepOfGroup(GeneralMeeting storage gm, uint40 acct)
-        public
-        view
-        returns (uint32)
-    {
-        return gm.chain.deepOfBranch(acct);
-    }
-
-    function ownersEquity(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint64 paid, uint64 par)
-    {
-        Checkpoints.Checkpoint memory cp = gm.members[0].votesInHand.latest();
-        paid = cp.paid;
-        par = cp.par;
-    }
-
-    function paidCap(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint64 paid)
-    {
-        (paid, ) = ownersEquity(gm);
-    }
-
-    function parCap(GeneralMeeting storage gm)
-        public
-        view
-        returns (uint64 par)
-    {
-        (, par) = ownersEquity(gm);
-    }
-
-    function capAtDate(GeneralMeeting storage gm, uint48 date)
-        public
-        view
-        returns (uint64 paid, uint64 par)
-    {
-        Checkpoints.Checkpoint memory cp = gm.members[0].votesInHand.getAtDate(date);
-        paid = cp.paid;
-        par = cp.par;
-    }
-
-    function getSnapshot(GeneralMeeting storage gm)
-        public
-        view
-        returns (TopChain.Node[] memory)
-    {
-        return gm.chain.getSnapshot();
+        vote = gm.chain.basedOnPar() ? cp.par : cp.paid;
     }
 }

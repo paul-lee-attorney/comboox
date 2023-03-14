@@ -11,15 +11,6 @@ pragma solidity ^0.8.8;
 
 interface IInvestmentAgreement {
 
-    struct Deal {
-        bytes32 sn;
-        uint64 paid;
-        uint64 par;
-        uint48 closingDate;
-        uint8 state;
-        bytes32 hashLock;
-    }
-
     enum TypeOfDeal {
         ZeroPoint,
         CapitalIncrease,
@@ -44,6 +35,30 @@ interface IInvestmentAgreement {
         Terminated
     }
 
+    struct Head {
+        uint8 typeOfDeal;
+        uint16 classOfShare;
+        uint32 seqOfShare;
+        uint40 seller;
+        uint32 price;
+        uint32 seq;
+        uint32 preSeq;
+        uint48 closingDate;
+        uint8 state;
+    }
+
+    struct Body {
+        uint40 buyer;
+        uint40 groupOfBuyer;
+        uint64 paid;
+        uint64 par;
+    }
+
+    struct Deal {
+        Head head;
+        Body body;
+        bytes32 hashLock;
+    }
 
     //##################
     //##    Event     ##
@@ -51,30 +66,18 @@ interface IInvestmentAgreement {
 
     // ======== normalDeal ========
 
-    event CreateDeal(
-        bytes32 indexed sn,
-        uint64 paid,
-        uint64 par,
-        uint48 closingDate
-    );
-
-    event UpdateDeal(
-        bytes32 indexed sn,
-        uint64 paid,
-        uint64 par,
-        uint48 closingDate
-    );
-
     event ClearDealCP(
-        bytes32 indexed sn,
+        uint256 indexed seq,
         uint8 state,
         bytes32 hashLock,
         uint48 closingDate
     );
 
-    event CloseDeal(bytes32 indexed sn, string hashKey);
+    event CloseDeal(uint256 indexed seq, string hashKey);
 
-    event RevokeDeal(bytes32 indexed sn, string hashKey);
+    event RevokeDeal(uint256 indexed seq, string hashKey);
+
+    event TerminateDeal(uint256 indexed seq);
 
     //##################
     //##    写接口    ##
@@ -84,59 +87,61 @@ interface IInvestmentAgreement {
 
     function createDeal(
         bytes32 sn,
+        uint40 buyer,
+        uint40 groupOfBuyer,
         uint64 paid,
-        uint64 par,
-        uint48 closingDate
+        uint64 par
     ) external;
 
-    function updateDeal(
-        uint16 seq,
-        uint64 paid,
-        uint64 par,
-        uint48 closingDate
-    ) external;
+    function regDeal(Deal memory deal) external returns(uint32 seqOfDeal);
 
-    function setTypeOfIA(uint8 t) external;
+    function delDeal(uint256 seq) external;
 
-    function delDeal(uint16 seq) external;
+    function lockDealSubject(uint256 seq) external returns (bool flag);
 
-    function lockDealSubject(uint16 seq) external returns (bool flag);
-
-    function releaseDealSubject(uint16 seq) external returns (bool flag);
+    function releaseDealSubject(uint256 seq) external returns (bool flag);
 
     function clearDealCP(
-        uint16 seq,
+        uint256 seq,
         bytes32 hashLock,
         uint48 closingDate
     ) external;
 
-    function closeDeal(uint16 seq, string memory hashKey)
+    function closeDeal(uint256 seq, string memory hashKey)
         external
         returns (bool);
 
-    function revokeDeal(uint16 seq, string memory hashKey)
+    function revokeDeal(uint256 seq, string memory hashKey)
         external
         returns (bool);
 
-    function takeGift(uint16 seq) external returns(bool);
+    function terminateDeal(uint256 seqOfDeal) external;
+
+
+    function takeGift(uint256 seq) external returns(bool);
+
+    function setTypeOfIA(uint8 t) external;
 
     //  ######################
     //  ##     查询接口     ##
     //  ######################
 
     // ======== InvestmentAgreement ========
-    function typeOfIA() external view returns (uint8);
+    function getTypeOfIA() external view returns (uint8);
 
-    function isDeal(uint16 seq) external view returns (bool);
+    function counterOfDeal() external view returns (uint32);
 
-    function counterOfDeals() external view returns (uint16);
+    function counterOfClosedDeal() external view returns (uint32);
 
-    function getDeal(uint16 seq)
-        external
-        view
-        returns (Deal memory deal);
+    function isDeal(uint256 seq) external view returns (bool);
 
-    // function closingDateOfDeal(uint16 seq) external view returns (uint48);
+    function getHeadOfDeal(uint256 seq) external view returns (Head memory);
 
-    function dealsList() external view returns (bytes32[] memory);
+    function getBodyOfDeal(uint256 seq) external view returns (Body memory);
+
+    function hashLockOfDeal(uint256 seq) external view returns (bytes32);
+
+    function getDeal(uint256 seq) external view returns (Deal memory);
+
+    function seqList() external view returns (uint256[] memory);
 }

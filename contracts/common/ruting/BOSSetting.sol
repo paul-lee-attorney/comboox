@@ -20,7 +20,7 @@ contract BOSSetting is RegCenterSetting {
     modifier onlyBOS() {
         require(
             msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfShares)),
-            "ROM.onlyBOS: msgSender is not bos"
+            "ROM.onlyBOS: msgSender is not BOS"
         );
         _;
     }

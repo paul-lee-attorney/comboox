@@ -13,150 +13,136 @@ import "../access/AccessControl.sol";
 
 import "../lib/SigsRepo.sol";
 import "../lib/EnumerableSet.sol";
+import "../lib/ArrayUtils.sol";
 
 contract SigPage is ISigPage, AccessControl {
     using SigsRepo for SigsRepo.Page;
     using EnumerableSet for EnumerableSet.UintSet;
+    using ArrayUtils for uint256[];
 
-    SigsRepo.Page private _sigPage;
-
-    modifier onlyBody {
-        require(uint256(uint160(msg.sender)) == uint256(_sigPage.signatures[0].sigHash), 
-            "SP.OB: caller is not body");
-        _;
-    }
-
-    modifier bodyOrKeeper {
-        require(
-            uint256(uint160(msg.sender)) == uint256(_sigPage.signatures[0].sigHash) ||
-            _gk.isKeeper(msg.sender),
-            "SP.mf.BOK: neither body nor keeper"
-        );
-        _;
-    }
-
+    SigsRepo.Page[2] internal _sigPages;
 
     //####################
     //##    设置接口     ##
     //####################
 
-    function setBodyOfSigs(
-        address body
-    ) external onlyBody {
-        require (_sigPage.signatures[0].sigHash != bytes32(0), "SP.SBOSP: body already set");
-        _sigPage.setBodyOfSigs(body);
-    }
-
-    function setParasOfDoc(
-        uint48 sigDeadline, 
-        uint48 closingDeadline
+    function setSigDeadline(
+        bool initPage,
+        uint48 sigDeadline
         ) external onlyAttorney
     {
-        _sigPage.setParasOfDoc(sigDeadline, closingDeadline);
-        emit SetParasOfDoc(sigDeadline, closingDeadline);
+        if (initPage) _sigPages[0].setSigDeadline(sigDeadline);
+        else _sigPages[1].setSigDeadline(sigDeadline);
+        emit SetSigDeadline(initPage, sigDeadline);
     }
 
-    function addBlank(uint16 seq, uint40 acct) external bodyOrKeeper{
-        _sigPage.addBlank(seq, acct);
-    }
-
-    function removeBlank(uint16 seq, uint40 acct) external onlyBody {
-        _sigPage.removeBlank(seq, acct);
-    }
-
-    function addParty(uint40 acct) external onlyAttorney {
-        _sigPage.addBlank(0, acct);
-    }
-
-    // ==== Execution ====
-
-    function signDeal(uint16 seq, uint40 signer, bytes32 sigHash)
-        public onlyKeeper
+    function regSig(uint256 seqOfDeal, uint256 signer, uint48 sigDate, bytes32 sigHash)
+        external onlyKeeper returns (bool flag)
     {
-        if (_sigPage.signDeal(seq, signer, sigHash))
-            emit SignDeal(seq, signer, sigHash);
+        flag = _sigPages[1].regSig(seqOfDeal, signer, sigDate, sigHash);
     }
 
-    function signDoc(uint40 caller, bytes32 sigHash)
+    function signDoc(bool initPage, uint256 caller, bytes32 sigHash)
         external
-        onlyDirectKeeper
+        onlyKeeper
     {
-        signDeal(0, caller, sigHash);
-    }
-
-    function acceptDoc(uint40 caller, bytes32 sigHash) 
-        external 
-        onlyDirectKeeper
-    {
-        require(_sigPage.established(),
-            "SP.AD: Doc not established");
-        
-        signDeal(0, caller, sigHash);
+        if (initPage) {
+            _sigPages[0].signDoc(caller, sigHash);
+        } else {
+            _sigPages[1].signDoc(caller, sigHash);
+        }
     }
 
     //##################
     //##   read I/O   ##
     //##################
 
-    function established() external view
-        returns (bool) 
-    {
-        return _sigPage.established();
-    }
-
-    function isParty(uint40 acct)
-        public
-        view
-        returns(bool)
-    {
-        return _sigPage.parties.contains(acct);
-    }
-
-    function isInitSigner(uint40 acct)
-        external 
-        view 
-        returns (bool) 
-    {
-        return isParty(acct) && _sigPage.signatures[acct].signer == acct;
-    }
-
-    function qtyOfParties()
-        external
-        view
-        returns (uint256)
-    {
-        return _sigPage.parties.length();
-    }
-
-    function partiesOfDoc()
-        external
-        view
-        returns (uint40[] memory)
-    {
-        return _sigPage.parties.valuesToUint40();
-    }
-
-    function sigOfDeal(uint16 seq, uint40 acct) 
-        external
-        view
-        returns (SigsRepo.Signature memory)
-    {
-        return _sigPage.sigOfDeal(seq, acct);
-    }
-
-    function sigOfDoc(uint40 acct) 
-        external
-        view
-        returns (SigsRepo.Signature memory)
-    {
-        return _sigPage.sigOfDeal(0, acct);
-    }
-    
-    function parasOfPage() 
+    function getParasOfPage(bool initPage) 
         external 
         view
         returns (SigsRepo.Signature memory) 
     {
-        return _sigPage.signatures[0];
+        return initPage ? _sigPages[0].blanks[0].sig :
+            _sigPages[1].blanks[0].sig;
+    }
+    
+    function established() external view
+        returns (bool flag) 
+    {
+        flag =  _sigPages[1].buyers.length() > 0 ?
+                    _sigPages[1].established() && _sigPages[0].established() :
+                    _sigPages[0].established();
+    }
+
+    function isBuyer(bool initPage, uint256 acct)
+        public view returns(bool flag)
+    {
+        flag = initPage ? _sigPages[0].buyers.contains(acct) :
+            _sigPages[1].buyers.contains(acct);
+    }
+
+    function isSeller(bool initPage, uint256 acct)
+        public view returns(bool flag)
+    {
+        flag = initPage ? _sigPages[0].sellers.contains(acct) :
+            _sigPages[1].sellers.contains(acct);
+    }
+
+    function isParty(bool initPage, uint256 acct)
+        public
+        view
+        returns(bool flag)
+    {
+        flag = isBuyer(initPage, acct) || isSeller(initPage, acct);
+    }
+
+    function isSigner(bool initPage, uint256 acct)
+        external 
+        view 
+        returns (bool flag) 
+    {
+        flag = initPage ? _sigPages[0].isSigner(acct) :
+            _sigPages[1].isSigner(acct);
+    }
+
+    function getBuyers(bool initPage)
+        external
+        view
+        returns (uint256[] memory buyers)
+    {
+        buyers = initPage ? _sigPages[0].buyers.values() :
+            _sigPages[0].buyers.values();
+    }
+
+    function getSellers(bool initPage)
+        external
+        view
+        returns (uint256[] memory sellers)
+    {
+        sellers = initPage ? _sigPages[0].sellers.values():
+            _sigPages[1].sellers.values();
+    }
+
+    function getSigOfParty(bool initPage, uint256 acct) 
+        external
+        view
+        returns (uint256[] memory seqOfDeals, SigsRepo.Signature memory sig)
+    {
+        if (initPage) {
+            return _sigPages[0].sigOfParty(acct);
+        } else {
+            return _sigPages[1].sigOfParty(acct);
+        }
+    }
+    
+    function getSigsOfPage(bool initPage) 
+        external view
+        returns (SigsRepo.Signature[] memory sigsOfBuyer, SigsRepo.Signature[] memory sigsOfSeller) 
+    {
+        if (initPage) {
+            return _sigPages[0].sigsOfPage();
+        } else {
+            return _sigPages[1].sigsOfPage();
+        }
     }
 }

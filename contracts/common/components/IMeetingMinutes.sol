@@ -10,6 +10,7 @@ pragma solidity ^0.8.8;
 import "../lib/MotionsRepo.sol";
 import "../lib/DelegateMap.sol";
 import "../lib/BallotsBox.sol";
+import "../lib/RulesParser.sol";
 
 import "./IRepoOfDocs.sol";
 
@@ -21,21 +22,21 @@ interface IMeetingMinutes {
 
     event ProposeMotion(
         uint256 indexed motionId,
-        bytes32 rule,
-        uint40 proposer,
-        uint40 executor
+        uint256 seqOfRule,
+        uint256 proposer,
+        uint256 executor
     );
 
     event EntrustDelegate(
         uint256 indexed motionId,
-        uint40 principal,
-        uint40 delegate,
+        uint256 principal,
+        uint256 delegate,
         uint64 weight
     );
 
     event CastVote(
         uint256 indexed motionId,
-        uint40 caller,
+        uint256 caller,
         uint8 attitude,
         bytes32 sigHash
     );
@@ -50,46 +51,46 @@ interface IMeetingMinutes {
 
     function proposeMotion(
         uint256 motionId,
-        uint16 seqOfVR,
-        uint40 proposer,
-        uint40 executor
+        uint256 seqOfVR,
+        uint256 proposer,
+        uint256 executor
     ) external;
 
     function nominateOfficer(
-        uint16 seqOfVR,
+        uint256 seqOfVR,
         uint8 title, 
-        uint40 nominator, 
-        uint40 candidate
+        uint256 nominator, 
+        uint256 candidate
     ) external;
 
     function proposeDoc(
         address doc,
-        uint16 seqOfVR,
-        uint40 proposer,
-        uint40 executor
+        uint256 seqOfVR,
+        uint256 proposer,
+        uint256 executor
     ) external;
 
     function proposeAction(
-        uint16 seqOfVR,
+        uint256 seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 proposer,
-        uint40 executor
+        uint256 proposer,
+        uint256 executor
     ) external;
 
     // ==== delegate ====
 
     function entrustDelegate(
         uint256 motionId,
-        uint40 principal,
-        uint40 delegate
+        uint256 principal,
+        uint256 delegate
     ) external;
 
     function castVote(
         uint256 motionId,
-        uint40 caller,
+        uint256 caller,
         uint8 attitude,
         bytes32 sigHash
     ) external;
@@ -99,11 +100,11 @@ interface IMeetingMinutes {
     function motionExecuted(uint256 motionId) external;
 
     function execAction(
-        uint16 seqOfVR,
+        uint256 seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
-        uint40 caller,
+        uint256 caller,
         bytes32 desHash
     ) external returns (uint256);
 
@@ -113,12 +114,12 @@ interface IMeetingMinutes {
 
     // ==== delegate ====
 
-    function getVoterOfDelegateMap(uint256 motionId, uint40 acct)
+    function getVoterOfDelegateMap(uint256 motionId, uint256 acct)
         external
         view
         returns (DelegateMap.Voter memory v);
 
-    function getDelegateOf(uint256 motionId, uint40 acct)
+    function getDelegateOf(uint256 motionId, uint256 acct)
         external
         view
         returns (uint40);
@@ -132,18 +133,18 @@ interface IMeetingMinutes {
         view
         returns (MotionsRepo.Head memory head);
 
-    function getVotingRuleOfMotion(uint256 motionId) external view returns (bytes32);
+    function getVotingRuleOfMotion(uint256 motionId) external view returns (RulesParser.VotingRule memory);
 
     // ==== voting ====
 
-    function isVoted(uint256 motionId, uint40 acct) 
+    function isVoted(uint256 motionId, uint256 acct) 
         external 
         view 
         returns (bool);
 
     function isVotedFor(
         uint256 motionId,
-        uint40 acct,
+        uint256 acct,
         uint8 atti
     ) external view returns (bool);
 
@@ -152,7 +153,7 @@ interface IMeetingMinutes {
         view
         returns (BallotsBox.Case memory);
 
-    function getBallot(uint256 motionId, uint40 acct)
+    function getBallot(uint256 motionId, uint256 acct)
         external
         view
         returns (BallotsBox.Ballot memory);

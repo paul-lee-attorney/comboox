@@ -7,22 +7,23 @@
 
 pragma solidity ^0.8.8;
 
-import "./SNParser.sol";
+// import "./SNParser.sol";
 // import "./EnumerableSet.sol";
 import "./BallotsBox.sol";
 import "./DelegateMap.sol";
+import "./RulesParser.sol";
 
-import "../ruting/ISigPageSetting.sol";
+// import "../ruting/ISigPageSetting.sol";
 import "../components/ISigPage.sol";
 import "../components/IRepoOfDocs.sol";
 
 import "../../books/rom/IRegisterOfMembers.sol";
-import "../../books/boh/IShareholdersAgreement.sol";
+// import "../../books/boh/IShareholdersAgreement.sol";
 import "../../books/bod/IBookOfDirectors.sol";
 
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
-    using SNParser for bytes32;
+    // using RulesParser for bytes32;
 
     enum StateOfMotion {
         ZeroPoint,
@@ -45,7 +46,7 @@ library MotionsRepo {
 
     struct Motion {
         Head head;
-        bytes32 votingRule;
+        RulesParser.VotingRule votingRule;
         DelegateMap.Map map;
         BallotsBox.Box box;
     }
@@ -65,23 +66,21 @@ library MotionsRepo {
 
     function proposeMotion(
         Motion storage m,
-        bytes32 rule,
-        uint40 proposer,
-        uint40 executor
+        RulesParser.VotingRule memory rule,
+        uint256 proposer,
+        uint256 executor
     ) public returns (bool flag) {
         if (!isProposed(m)) {
 
             uint48 timestamp = uint48(block.timestamp);
-            uint48 shaExecDays = rule.shaExecDaysOfVR();
-            uint48 reviewDays = rule.reviewDaysOfVR();
 
             m.head = Head({
                 state: uint8(StateOfMotion.Proposed),
-                proposer: proposer,
-                executor: executor,
+                proposer: uint40(proposer),
+                executor: uint40(executor),
                 proposeDate: timestamp,
-                shareRegDate: timestamp + shaExecDays * 86400,
-                voteStartDate: timestamp + (shaExecDays + reviewDays) * 86400
+                shareRegDate: timestamp + rule.shaExecDays * 86400,
+                voteStartDate: timestamp + (rule.shaExecDays + rule.reviewDays) * 86400
             });
 
             m.votingRule = rule; 
@@ -94,7 +93,7 @@ library MotionsRepo {
 
     function castVote(
         Motion storage m,
-        uint40 acct,
+        uint256 acct,
         uint8 attitude,
         uint64 weight,
         bytes32 sigHash
@@ -140,7 +139,7 @@ library MotionsRepo {
         returns (bool)
     {
         return isProposed(m) && m.head.voteStartDate + 
-            m.votingRule.votingDaysOfVR() * 86400 
+            m.votingRule.votingDays * 86400 
             < block.timestamp;
     }
 
@@ -158,7 +157,6 @@ library MotionsRepo {
     function getDocApproval(
         Motion storage m,
         uint256 motionId,
-        // IRepoOfDocs _rod,
         IRegisterOfMembers _rom,
         IBookOfDirectors _bod
     ) public view returns (bool flag) {
@@ -178,19 +176,19 @@ library MotionsRepo {
     {
         require (voteEnded(m), "MR.VC: vote not ended yet");
 
-        if (m.votingRule.onlyAttendanceOfVR()) {
+        if (m.votingRule.onlyAttendance) {
             BallotsBox.Case memory caseOfAll = m.box.cases[uint8(BallotsBox.AttitudeOfVote.All)];
             base.totalHead = caseOfAll.sumOfHead;
             base.totalWeight = caseOfAll.sumOfWeight;
         } else {
-            if (m.votingRule.authorityOfVR() == 1) {
+            if (m.votingRule.authority == 1) {
                 base.totalHead = _rom.qtyOfMembers();
                 base.totalWeight = _rom.votesAtDate(0, m.head.shareRegDate);
-            } else if (m.votingRule.authorityOfVR() == 0) {
+            } else if (m.votingRule.authority == 0) {
                 base.totalHead = _bod.qtyOfDirectors();
             }                
             // members not cast vote
-            if (m.votingRule.impliedConsentOfVR()) {
+            if (m.votingRule.impliedConsent) {
                 base.supportHead = (base.totalHead -
                     m.box.cases[uint8(BallotsBox.AttitudeOfVote.Against)].sumOfHead -
                     m.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)].sumOfHead);
@@ -204,18 +202,17 @@ library MotionsRepo {
     function _getDocApprovalBase(
         Motion storage m,
         uint256 motionId,
-        // IRepoOfDocs _rod,
         IRegisterOfMembers _rom,
         IBookOfDirectors _bod,
         VoteCalBase memory base
     ) private view returns (VoteCalBase memory)
     {
-        if (!m.votingRule.onlyAttendanceOfVR()) {
+        if (!m.votingRule.onlyAttendance) {
 
-            uint40[] memory parties =  ISigPageSetting((address(uint160(motionId)))).getSigPage().partiesOfDoc();
+            uint256[] memory parties =  ISigPage((address(uint160(motionId)))).partiesOfDoc();
             uint256 len = parties.length;
 
-            if (m.votingRule.seqOfRule() < 9) {
+            if (m.votingRule.seq < 9) {
 
                 while (len > 0) {
                     uint64 voteAmt = _rom.votesAtDate(
@@ -225,8 +222,8 @@ library MotionsRepo {
 
                     // party has voting right at block
                     if (voteAmt > 0) {
-                        if (m.votingRule.partyAsConsentOfVR()) {
-                            if (!m.votingRule.impliedConsentOfVR()) {
+                        if (m.votingRule.partyAsConsent) {
+                            if (!m.votingRule.impliedConsent) {
                                 base.supportHead++;
                                 base.supportWeight += voteAmt;
                             }
@@ -234,7 +231,7 @@ library MotionsRepo {
                                 base.totalHead--;
                                 base.totalWeight -= voteAmt;
 
-                            if (m.votingRule.impliedConsentOfVR()) {
+                            if (m.votingRule.impliedConsent) {
                                 base.supportHead--;
                                 base.supportWeight -= voteAmt;
                             }
@@ -245,21 +242,21 @@ library MotionsRepo {
                 }
                 return base;
 
-            } else if (m.votingRule.seqOfRule() < 17) {
+            } else if (m.votingRule.seq < 17) {
 
                 while (len > 0) {
                     uint32 voteHead = uint32(_bod.boardSeatsOf(parties[len - 1]));
 
                     // party has voting right
                     if (voteHead > 0) {
-                        if (m.votingRule.partyAsConsentOfVR()) {
-                            if (!m.votingRule.impliedConsentOfVR()) {
+                        if (m.votingRule.partyAsConsent) {
+                            if (!m.votingRule.impliedConsent) {
                                 base.supportHead += voteHead;
                             }
                         } else {
                             base.totalHead--;
 
-                            if (m.votingRule.impliedConsentOfVR()) {
+                            if (m.votingRule.impliedConsent) {
                                 base.supportHead -= voteHead;
                             }
                         }
@@ -282,25 +279,25 @@ library MotionsRepo {
         bool flag2;
 
         if (
-            !_isVetoed(m, m.votingRule.vetoerOfVR()) &&
-            !_isVetoed(m, m.votingRule.vetoer2OfVR()) &&
-            !_isVetoed(m, m.votingRule.vetoer3OfVR())
+            !_isVetoed(m, m.votingRule.vetoers[0]) &&
+            !_isVetoed(m, m.votingRule.vetoers[1]) &&
+            !_isVetoed(m, m.votingRule.vetoers[2])
         ) {
-            flag1 = m.votingRule.ratioHeadOfVR() > 0
+            flag1 = m.votingRule.headRatio > 0
                 ? base.totalHead > 0
                     ? ((m.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
                         .sumOfHead + base.supportHead) * 10000) /
                         base.totalHead >=
-                        m.votingRule.ratioHeadOfVR()
+                        m.votingRule.headRatio
                     : false
                 : true;
 
-            flag2 = m.votingRule.ratioAmountOfVR() > 0
+            flag2 = m.votingRule.amountRatio > 0
                 ? base.totalWeight > 0
                     ? ((m.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
                         .sumOfWeight + base.supportWeight) * 10000) /
                         base.totalWeight >=
-                        m.votingRule.ratioAmountOfVR()
+                        m.votingRule.amountRatio
                     : false
                 : true;
         }
@@ -308,7 +305,7 @@ library MotionsRepo {
         flag = flag1 && flag2;
     }
 
-    function _isVetoed(Motion storage m, uint40 vetoer)
+    function _isVetoed(Motion storage m, uint256 vetoer)
         private
         view
         returns (bool)

@@ -43,7 +43,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         regNumHash = _regNumHash;
     }
 
-    function setOwner(uint40 acct)
+    function setOwner(uint256 acct)
         external
         override
         onlyOwner
@@ -51,7 +51,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         _roles.setOwner(acct);
     }
 
-    function setBookeeper(uint16 title, address keeper) external onlyDirectKeeper {
+    function setBookeeper(uint256 title, address keeper) external onlyDirectKeeper {
 
         emit SetBookeeper(title, keeper);
         _keepers[title] = keeper;
@@ -71,12 +71,12 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         return false;
     }
 
-    function setBook(uint16 title, address book) external onlyDirectKeeper {
+    function setBook(uint256 title, address book) external onlyDirectKeeper {
         emit SetBook(title, book);
         _books[title] = book;
     } 
 
-    function getBook(uint16 title) external view returns (address) {
+    function getBook(uint256 title) external view returns (address) {
         return _books[title];
     }
 
@@ -84,11 +84,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   BOAKeeper   ##
     // ###################
 
-    function setTempOfIA(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
+    function setTempOfIA(address temp, uint256 typeOfDoc) external onlyDirectKeeper {
         IBOAKeeper(_keepers[0]).setTempOfIA(temp, typeOfDoc);
     }
 
-    function createIA(uint8 typeOfIA) external {
+    function createIA(uint256 typeOfIA) external {
         IBOAKeeper(_keepers[0]).createIA(typeOfIA, _msgSender());
     }
 
@@ -108,50 +108,50 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function pushToCoffer(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         bytes32 hashLock,
         uint48 closingDate
     ) external {
-        IBOAKeeper(_keepers[0]).pushToCoffer(ia, sn, hashLock, closingDate, _msgSender());
+        IBOAKeeper(_keepers[0]).pushToCoffer(ia, seqOfDeal, hashLock, closingDate, _msgSender());
     }
 
     function closeDeal(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         string memory hashKey
     ) external {
-        IBOAKeeper(_keepers[0]).closeDeal(ia, sn, hashKey, _msgSender());
+        IBOAKeeper(_keepers[0]).closeDeal(ia, seqOfDeal, hashKey, _msgSender());
     }
 
-    function transferTargetShare(address ia, bytes32 sn) external {
-        IBOAKeeper(_keepers[0]).transferTargetShare(ia, sn, _msgSender());
+    function transferTargetShare(address ia, uint256 seqOfDeal) external {
+        IBOAKeeper(_keepers[0]).transferTargetShare(ia, seqOfDeal, _msgSender());
     }
 
-    function issueNewShare(address ia, bytes32 sn) external onlyDirectKeeper {
-        IBOAKeeper(_keepers[0]).issueNewShare(ia, sn);
+    function issueNewShare(address ia, uint256 seqOfDeal) external onlyDirectKeeper {
+        IBOAKeeper(_keepers[0]).issueNewShare(ia, seqOfDeal);
     }
 
     function revokeDeal(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         string memory hashKey
     ) external {
-        IBOAKeeper(_keepers[0]).revokeDeal(ia, sn, _msgSender(), hashKey);
+        IBOAKeeper(_keepers[0]).revokeDeal(ia, seqOfDeal, _msgSender(), hashKey);
     }
 
     // ###################
     // ##   BODKeeper   ##
     // ###################
 
-    function appointOfficer(bytes32 bsRule, uint8 seqOfTitle, uint40 candidate) external {
-        IBODKeeper(_keepers[1]).appointOfficer(bsRule, seqOfTitle, _msgSender(), candidate);
+    function appointOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint256 candidate) external {
+        IBODKeeper(_keepers[1]).appointOfficer(seqOfBSR, seqOfTitle, _msgSender(), candidate);
     }
 
-    function takePosition(bytes32 bsRule, uint8 seqOfTitle, uint256 motionId) external {
-        IBODKeeper(_keepers[1]).takePosition(bsRule, seqOfTitle, motionId, _msgSender());
+    function takePosition(uint256 seqOfBSR, uint256 seqOfTitle, uint256 motionId) external {
+        IBODKeeper(_keepers[1]).takePosition(seqOfBSR, seqOfTitle, motionId, _msgSender());
     }
 
-    function removeDirector(uint40 director) external {
+    function removeDirector(uint256 director) external {
         IBODKeeper(_keepers[1]).removeDirector(director, _msgSender());
     }
 
@@ -161,22 +161,22 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     // ==== resolution ====
 
-    function entrustDirectorDelegate(uint40 delegate, uint256 actionId)
+    function entrustDirectorDelegate(uint256 delegate, uint256 actionId)
         external
     {
         IBODKeeper(_keepers[1]).entrustDelegate(_msgSender(), delegate, actionId);
     }
 
     function proposeBoardAction(
-        uint8 actionType,
+        uint256 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 executor
+        uint256 executor
     ) external {
         IBODKeeper(_keepers[1]).proposeAction(
-                actionType,
+                typeOfAction,
                 targets,
                 values,
                 params,
@@ -199,14 +199,14 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function execBoardAction(
-        uint8 actionType,
+        uint256 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash
     ) external {
         IBODKeeper(_keepers[1]).execAction(
-                actionType,
+                typeOfAction,
                 targets,
                 values,
                 params,
@@ -227,28 +227,28 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOGKeeper(_keepers[2]).createBoardSeal();
     }
 
-    function entrustMemberDelegate(uint40 delegate, uint256 motionId) external {
+    function entrustMemberDelegate(uint256 delegate, uint256 motionId) external {
         IBOGKeeper(_keepers[2]).entrustDelegate(motionId, _msgSender(), delegate);
     }
 
-    function nominateOfficer(bytes32 bsRule, uint8 seqOfTitle, uint40 candidate) external {
-        IBOGKeeper(_keepers[2]).nominateOfficer(bsRule, seqOfTitle, _msgSender(), candidate);
+    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint256 candidate) external {
+        IBOGKeeper(_keepers[2]).nominateOfficer(seqOfBSR, seqOfTitle, _msgSender(), candidate);
     }
 
-    function proposeIA(address ia, uint8 typeOfDoc) external {
+    function proposeIA(address ia, uint256 typeOfDoc) external {
         IBOGKeeper(_keepers[2]).proposeDoc(ia, typeOfDoc, _msgSender());
     }
 
     function proposeGMAction(
-        uint8 actionType,
+        uint256 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 executor
+        uint256 executor
     ) external {
         IBOGKeeper(_keepers[2]).proposeAction(
-                actionType,
+                typeOfAction,
                 targets,
                 values,
                 params,
@@ -271,14 +271,14 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function execAction(
-        uint8 actionType,
+        uint256 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash
     ) external returns (uint256) {
         return IBOGKeeper(_keepers[2]).execAction(
-                    actionType,
+                    typeOfAction,
                     targets,
                     values,
                     params,
@@ -289,17 +289,17 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function requestToBuy(
         uint256 motionId,
-        bytes32 snOfDeal,
-        uint40 againstVoter
+        uint256 seqOfDeal,
+        uint256 againstVoter
     ) external {
-        IBOGKeeper(_keepers[2]).requestToBuy(motionId, snOfDeal, againstVoter, _msgSender());
+        IBOGKeeper(_keepers[2]).requestToBuy(motionId, seqOfDeal, againstVoter, _msgSender());
     }
 
     // ##################
     // ##  BOHKeeper   ##
     // ##################
 
-    function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
+    function setTempOfBOH(address temp, uint256 typeOfDoc) external onlyDirectKeeper {
         IBOHKeeper(_keepers[3]).setTempOfBOH(temp, typeOfDoc);
     }
 
@@ -307,16 +307,16 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     //     IBOHKeeper(_keepers[3]).setTermTemplate(title, addr);
     // }
 
-    function createSHA(uint8 docType) external {
-        IBOHKeeper(_keepers[3]).createSHA(docType, _msgSender());
+    function createSHA(uint256 typeOfDoc) external {
+        IBOHKeeper(_keepers[3]).createSHA(typeOfDoc, _msgSender());
     }
 
     function removeSHA(address body) external {
         IBOHKeeper(_keepers[3]).removeSHA(body, _msgSender());
     }
 
-    function circulateSHA(address body, bytes32 rule, bytes32 docUrl, bytes32 docHash) external {
-        IBOHKeeper(_keepers[3]).circulateSHA(body, _msgSender(), rule, docUrl, docHash);
+    function circulateSHA(address body, uint256 seqOfVR, bytes32 docUrl, bytes32 docHash) external {
+        IBOHKeeper(_keepers[3]).circulateSHA(body, _msgSender(), seqOfVR, docUrl, docHash);
     }
 
     function signSHA(address sha, bytes32 sigHash) external  {
@@ -336,69 +336,69 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  BOOKeeper  ##
     // #################
 
-    function createOption(
+    function issueOption(
         bytes32 sn,
-        uint40 rightholder,
+        uint256 rightholder,
         uint64 paid,
         uint64 par
     ) external {
-        IBOOKeeper(_keepers[4]).createOption(sn, rightholder, paid, par, _msgSender());
+        IBOOKeeper(_keepers[4]).issueOption(sn, rightholder, paid, par, _msgSender());
     }
 
-    function joinOptionAsObligor(bytes32 sn) external {
-        IBOOKeeper(_keepers[4]).joinOptionAsObligor(sn, _msgSender());
+    function joinOptionAsObligor(uint256 seqOfOpt) external {
+        IBOOKeeper(_keepers[4]).joinOptionAsObligor(seqOfOpt, _msgSender());
     }
 
-    function removeObligorFromOption(bytes32 sn, uint40 obligor) external {
-        IBOOKeeper(_keepers[4]).removeObligorFromOption(sn, obligor, _msgSender());
+    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external {
+        IBOOKeeper(_keepers[4]).removeObligorFromOption(seqOfOpt, obligor, _msgSender());
     }
 
     function updateOracle(
-        bytes32 sn,
+        uint256 seqOfOpt,
         uint32 d1,
         uint32 d2
     ) external onlyDirectKeeper {
-        IBOOKeeper(_keepers[4]).updateOracle(sn, d1, d2);
+        IBOOKeeper(_keepers[4]).updateOracle(seqOfOpt, d1, d2);
     }
 
-    function execOption(bytes32 sn) external {
-        IBOOKeeper(_keepers[4]).execOption(sn, _msgSender());
+    function execOption(uint256 seqOfOpt) external {
+        IBOOKeeper(_keepers[4]).execOption(seqOfOpt, _msgSender());
     }
 
     function addFuture(
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint64 paidPar
+        uint256 seqOfOpt,
+        uint256 seqOfShare,
+        uint64 paid
     ) external {
-        IBOOKeeper(_keepers[4]).addFuture(sn, shareNumber, paidPar, _msgSender());
+        IBOOKeeper(_keepers[4]).addFuture(seqOfOpt, seqOfShare, paid, _msgSender());
     }
 
-    function removeFuture(bytes32 sn, bytes32 ft) external {
-        IBOOKeeper(_keepers[4]).removeFuture(sn, ft, _msgSender());
+    function removeFuture(uint256 seqOfOpt, uint256 seqOfFt) external {
+        IBOOKeeper(_keepers[4]).removeFuture(seqOfOpt, seqOfFt, _msgSender());
     }
 
     function requestPledge(
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint64 paidPar
+        uint256 seqOfOpt,
+        uint256 seqOfShare,
+        uint64 paid
     ) external {
-        IBOOKeeper(_keepers[4]).requestPledge(sn, shareNumber, paidPar, _msgSender());
+        IBOOKeeper(_keepers[4]).requestPledge(seqOfOpt, seqOfShare, paid, _msgSender());
     }
 
-    function lockOption(bytes32 sn, bytes32 hashLock) external {
-        IBOOKeeper(_keepers[4]).lockOption(sn, hashLock, _msgSender());
+    function lockOption(uint256 seqOfOpt, bytes32 hashLock) external {
+        IBOOKeeper(_keepers[4]).lockOption(seqOfOpt, hashLock, _msgSender());
     }
 
-    function closeOption(bytes32 sn, string memory hashKey) external {
-        IBOOKeeper(_keepers[4]).closeOption(sn, hashKey, _msgSender());
+    function closeOption(uint256 seqOfOpt, string memory hashKey) external {
+        IBOOKeeper(_keepers[4]).closeOption(seqOfOpt, hashKey, _msgSender());
     }
 
-    function revokeOption(bytes32 sn) external {
-        IBOOKeeper(_keepers[4]).revokeOption(sn, _msgSender());
+    function revokeOption(uint256 seqOfOpt) external {
+        IBOOKeeper(_keepers[4]).revokeOption(seqOfOpt, _msgSender());
     }
 
-    function releasePledges(bytes32 sn) external {
-        IBOOKeeper(_keepers[4]).releasePledges(sn, _msgSender());
+    function releasePledges(uint256 seqOfOpt) external {
+        IBOOKeeper(_keepers[4]).releasePledges(seqOfOpt, _msgSender());
     }
 
     // ###################
@@ -407,7 +407,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function createPledge(
         bytes32 sn,
-        bytes32 shareNumber,
+        // uint256 seqOfShare,
         uint64 pledgedPar,
         uint40 creditor,
         uint16 monOfGuarantee,
@@ -415,7 +415,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     ) external {
         IBOPKeeper(_keepers[5]).createPledge(
                 sn,
-                shareNumber,
+                // seqOfShare,
                 creditor,
                 monOfGuarantee,
                 pledgedPar,
@@ -425,14 +425,16 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function updatePledge(
-        bytes32 sn,
-        uint40 creditor,
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        uint256 creditor,
         uint48 expireDate,
         uint64 pledgedPar,
         uint64 guaranteedAmt
     ) external {
         IBOPKeeper(_keepers[5]).updatePledge(
-                sn,
+                seqOfShare,
+                seqOfPld,
                 creditor,
                 expireDate,
                 pledgedPar,
@@ -441,8 +443,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
             );
     }
 
-    function delPledge(bytes32 sn) external {
-        IBOPKeeper(_keepers[5]).delPledge(sn, _msgSender());
+    function delPledge(uint256 seqOfShare, uint256 seqOfPld) external {
+        IBOPKeeper(_keepers[5]).delPledge(seqOfShare, seqOfPld, _msgSender());
     }
 
     // ###################
@@ -462,15 +464,15 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function decreaseCapital(
-        uint32 ssn,
+        uint256 seqOfShare,
         uint64 parValue,
         uint64 paidPar
     ) external onlyDirectKeeper {
-        IBOSKeeper(_keepers[6]).decreaseCapital(ssn, parValue, paidPar);
+        IBOSKeeper(_keepers[6]).decreaseCapital(seqOfShare, parValue, paidPar);
     }
 
-    function updatePaidInDeadline(uint32 ssn, uint32 line) external onlyDirectKeeper {
-        IBOSKeeper(_keepers[6]).updatePaidInDeadline(ssn, line);
+    function updatePaidInDeadline(uint256 seqOfShare, uint48 line) external onlyDirectKeeper {
+        IBOSKeeper(_keepers[6]).updatePaidInDeadline(seqOfShare, line);
     }
 
     // ##################
@@ -497,47 +499,39 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function execTagAlong(
         address ia,
-        bytes32 sn,
-        bytes32 shareNumber,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
         uint64 paid,
         uint64 par,
         bytes32 sigHash
     ) external {
         ISHAKeeper(_keepers[8]).execAlongRight(
                 ia,
-                sn,
+                seqOfDeal,
                 false,
-                shareNumber,
+                seqOfShare,
                 paid,
                 par,
                 _msgSender(),
                 sigHash
             );
-    }
-
-    function acceptTagAlong(
-        address ia,
-        bytes32 sn,
-        bytes32 sigHash
-    ) external {
-        ISHAKeeper(_keepers[8]).acceptAlongDeal(ia, sn, _msgSender(), sigHash);
     }
 
     // ======= DragAlong ========
 
     function execDragAlong(
         address ia,
-        bytes32 sn,
-        bytes32 shareNumber,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
         uint64 paid,
         uint64 par,
         bytes32 sigHash
     ) external {
         ISHAKeeper(_keepers[8]).execAlongRight(
                 ia,
-                sn,
+                seqOfDeal,
                 true,
-                shareNumber,
+                seqOfShare,
                 paid,
                 par,
                 _msgSender(),
@@ -545,49 +539,50 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
             );
     }
 
-    function acceptDragAlong(
+    function acceptAlongDeal(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[8]).acceptAlongDeal(ia, sn, _msgSender(), sigHash);
+        ISHAKeeper(_keepers[8]).acceptAlongDeal(ia, seqOfDeal, seqOfShare, _msgSender(), sigHash);
     }
 
     // ======== AntiDilution ========
 
     function execAntiDilution(
         address ia,
-        bytes32 sn,
-        bytes32 shareNumber,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[8]).execAntiDilution(ia, sn, shareNumber, _msgSender(), sigHash);
+        ISHAKeeper(_keepers[8]).execAntiDilution(ia, seqOfDeal, seqOfShare, _msgSender(), sigHash);
     }
 
-    function takeGiftShares(address ia, bytes32 sn) external {
-        ISHAKeeper(_keepers[8]).takeGiftShares(ia, sn, _msgSender());
+    function takeGiftShares(address ia, uint256 seqOfDeal) external {
+        ISHAKeeper(_keepers[8]).takeGiftShares(ia, seqOfDeal, _msgSender());
     }
 
     // ======== First Refusal ========
 
     function execFirstRefusal(
-        uint16 seqOfRule,
+        uint256 seqOfRule,
         uint256 seqOfRightholder,
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[8]).execFirstRefusal(seqOfRule, seqOfRightholder, ia, sn, _msgSender(), sigHash);
+        ISHAKeeper(_keepers[8]).execFirstRefusal(seqOfRule, seqOfRightholder, ia, seqOfDeal, _msgSender(), sigHash);
     }
 
     function acceptFirstRefusal(
         address ia,
-        bytes32 snOfDeal,
+        uint256 seqOfDeal,
         bytes32 sigHash
     ) external {
         ISHAKeeper(_keepers[8]).acceptFirstRefusal(
                 ia,
-                snOfDeal,
+                seqOfDeal,
                 _msgSender(),
                 sigHash
             );

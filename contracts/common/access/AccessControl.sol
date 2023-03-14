@@ -90,7 +90,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     // ##################
 
     function init(
-        uint40 owner,
+        uint256 owner,
         address directKeeper,
         address regCenter,
         address generalKeeper
@@ -109,7 +109,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         emit SetDirectKeeper(keeper);
     }
 
-    function setOwner(uint40 acct)
+    function setOwner(uint256 acct)
         external
         virtual
         ownerOrDirectBookeeper
@@ -118,7 +118,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         emit SetOwner(acct);
     }
 
-    function setGeneralCounsel(uint40 acct)
+    function setGeneralCounsel(uint256 acct)
         external
         virtual
         ownerOrDirectBookeeper
@@ -127,15 +127,15 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         emit SetGeneralCounsel(acct);
     }
 
-    function setRoleAdmin(bytes32 role, uint40 acct) external {
+    function setRoleAdmin(bytes32 role, uint256 acct) external {
         _roles.setRoleAdmin(role, _msgSender(), acct);
     }
 
-    function grantRole(bytes32 role, uint40 acct) external {
+    function grantRole(bytes32 role, uint256 acct) external {
         _roles.grantRole(role, _msgSender(), acct);
     }
 
-    function revokeRole(bytes32 role, uint40 acct) external {
+    function revokeRole(bytes32 role, uint256 acct) external {
         _roles.revokeRole(role, _msgSender(), acct);
     }
 
@@ -179,7 +179,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         return _roles.state == 2;
     }
 
-    function hasRole(bytes32 role, uint40 acct) public view returns (bool) {
+    function hasRole(bytes32 role, uint256 acct) public view returns (bool) {
         return _roles.hasRole(role, acct);
     }
 }

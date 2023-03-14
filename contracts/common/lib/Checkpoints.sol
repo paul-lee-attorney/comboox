@@ -7,20 +7,17 @@
 
 pragma solidity ^0.8.8;
 
-// import "./EnumerableSet.sol";
-
 library Checkpoints {
-    // using EnumerableSet for EnumerableSet.UintSet;
 
     struct Checkpoint {
         uint48 timestamp;
         uint64 paid;
         uint64 par;
-        uint64 cleanPar;
+        uint64 cleanPaid;
     }
 
     struct History {
-        // checkpoints[0].blocknumber : counter
+        // checkpoints[0].timestamp : counter
         mapping (uint256 => Checkpoint) checkpoints;
     }
 
@@ -32,40 +29,52 @@ library Checkpoints {
         History storage self,
         uint64 paid,
         uint64 par,
-        uint64 cleanPar
-    ) public returns (uint48) {
-        uint256 pos = self.checkpoints[0].timestamp;
-        pos++;
+        uint64 cleanPaid
+    ) public {
+
+        uint256 pos = counterOfPoints(self);
 
         uint48 timestamp= uint48 (block.timestamp);
 
-        if (pos > 1 && self.checkpoints[pos - 1].timestamp == timestamp) {
-            self.checkpoints[pos - 1].paid = paid;
-            self.checkpoints[pos - 1].par = par;
-            self.checkpoints[pos - 1].cleanPar = cleanPar;
+        Checkpoint memory point = Checkpoint({
+            timestamp: timestamp,
+            paid: paid,
+            par: par,
+            cleanPaid: cleanPaid
+        });
+
+        if (pos > 0 && self.checkpoints[pos].timestamp == timestamp) {
+            self.checkpoints[pos] = point;
         } else {
-            self.checkpoints[pos] =
-                Checkpoint({
-                    timestamp: timestamp,
-                    paid: paid,
-                    par: par,
-                    cleanPar: cleanPar
-                });
+            self.checkpoints[pos+1] = point;
+            _increaseCounter(self);
         }
-        return timestamp;
     }
 
     //##################
     //##    读接口    ##
     //##################
 
+    function _increaseCounter(History storage self)
+        public
+    {
+        self.checkpoints[0].timestamp++;
+    }
+
+    function counterOfPoints(History storage self)
+        public
+        view
+        returns (uint256)
+    {
+        return self.checkpoints[0].timestamp;
+    }
+
     function latest(History storage self)
         public
         view
         returns (Checkpoint memory point)
     {
-        uint256 pos = self.checkpoints[0].timestamp;
-        point = self.checkpoints[pos];
+        point = self.checkpoints[counterOfPoints(self)];
     }
 
     function _average(uint256 a, uint256 b) private pure returns (uint256) {
@@ -82,7 +91,7 @@ library Checkpoints {
             "Checkpoints: block not yet mined"
         );
 
-        uint256 high = self.checkpoints[0].timestamp + 1;
+        uint256 high = counterOfPoints(self);
         uint256 low = 1;
         while (low < high) {
             uint256 mid = _average(low, high);
@@ -92,7 +101,24 @@ library Checkpoints {
                 low = mid + 1;
             }
         }
-        if (high > 1) point = self.checkpoints[high - 1];
-
+        if (high > 0) point = self.checkpoints[high];
     }
+
+    function pointsOfHistory(History storage self)
+        public
+        view
+        returns (Checkpoint[] memory) 
+    {
+        uint256 len = counterOfPoints(self);
+
+        Checkpoint[] memory output = new Checkpoint[](len);
+
+        while (len > 0) {
+            output[len-1] = self.checkpoints[len];
+            len--;
+        }
+
+        return output;
+    }
+    
 }

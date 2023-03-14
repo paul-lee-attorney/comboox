@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
+
+import "../bos/IBookOfShares.sol";
+
+import "../bop/IBookOfPledges.sol";
+import "../../common/lib/OptionsRepo.sol";
+import "../../common/lib/Checkpoints.sol";
+import "../../common/lib/PledgesRepo.sol";
 
 pragma solidity ^0.8.8;
 
@@ -36,124 +43,143 @@ interface IBookOfOptions {
     // ################
 
     event CreateOpt(
-        bytes32 indexed sn,
-        uint40 rightholder,
+        uint256 indexed seqOfOpt,
+        uint256 rightholder,
+        uint256 obligor,
         uint64 paid,
         uint64 par
     );
 
-    event AddObligorIntoOpt(bytes32 indexed sn, uint40 obligor);
+    event RegisterOpt(
+        uint256 indexed seqOfOpt, 
+        uint256 rightholder, 
+        uint256 obligor, 
+        uint64 paid, 
+        uint64 par
+    );
 
-    event RemoveObligorFromOpt(bytes32 indexed sn, uint40 obligor);
+    event AddObligorIntoOpt(uint256 indexed seqOfOpt, uint256 obligor);
 
-    event RegisterOpt(bytes32 indexed sn, uint64 paid, uint64 par);
+    event RemoveObligorFromOpt(uint256 indexed seqOfOpt, uint256 obligor);
 
-    event CloseOpt(bytes32 indexed sn, string hashKey);
+    event UpdateOracle(uint256 indexed seqOfOpt, uint256 data_1, uint256 data_2);
 
-    event ExecOpt(bytes32 indexed sn);
-
-    event RevokeOpt(bytes32 indexed sn);
-
-    event UpdateOracle(bytes32 indexed sn, uint32 data_1, uint32 data_2);
+    event ExecOpt(uint256 indexed seqOfOpt);
 
     event AddFuture(
-        bytes32 indexed sn,
-        bytes32 shareNumber,
+        uint256 indexed seqOfOpt,
+        uint256 seqOfShare,
         uint64 paid,
         uint64 par
     );
 
-    event RemoveFuture(bytes32 indexed sn, bytes32 ft);
+    event RemoveFuture(uint256 indexed seqOfOpt, uint256 seqOfFt);
 
-    event DelFuture(bytes32 indexed sn);
+    event AddPledge(uint256 indexed seqOfOpt, uint256 seqOfShare, uint64 paid, uint64 par);
 
-    event AddPledge(bytes32 indexed sn, bytes32 shareNumber, uint64 paid);
+    event LockOpt(uint256 indexed seqOfOpt, bytes32 hashLock);
 
-    event LockOpt(bytes32 indexed sn, bytes32 hashLock);
+    event CloseOpt(uint256 indexed seqOfOpt, string hashKey);
+
+    event RevokeOpt(uint256 indexed seqOfOpt);
 
     // ################
     // ##   写接口   ##
     // ################
 
-    function createOption(
+    function issueOption(
         bytes32 sn,
-        uint40 rightholder,
-        uint40[] memory obligors,
+        uint256 rightholder,
+        uint256 obligor,
         uint64 paid,
         uint64 par
-    ) external returns (bytes32 _sn);
+    ) external returns (uint32 seqOfOpt);
+
+    function createOption(
+        OptionsRepo.Head memory head,
+        uint256 rightholder,
+        uint256 obligor,
+        uint64 paid,
+        uint64 par
+    ) external returns (uint32 seqOfOpt);
 
     function registerOption(address opts) external;
 
-    function addObligorIntoOption(bytes32 sn, uint40 obligor) external;
+    function addObligorIntoOption(uint256 seqOfOpt, uint256 obligor) external;
 
-    function removeObligorFromOption(bytes32 sn, uint40 obligor) external;
+    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external;
 
     function updateOracle(
-        bytes32 sn,
+        uint256 seqOfOpt,
         uint32 d1,
         uint32 d2
     ) external;
 
-    function execOption(bytes32 sn) external;
+    function execOption(uint256 seqOfOpt) external;
 
     function addFuture(
-        bytes32 sn,
-        bytes32 shareNumber,
+        uint256 seqOfOpt,
+        IBookOfShares.Share memory share,
+        OptionsRepo.Future memory future
+    ) external;
+
+    function removeFuture(uint256 seqOfOpt, uint256 seqOfFt) external;
+
+    function requestPledge(
+        uint256 seqOfOpt,
+        IBookOfShares.Share memory share,
         uint64 paid,
         uint64 par
     ) external;
 
-    function removeFuture(bytes32 sn, bytes32 ft) external;
+    function lockOption(uint256 seqOfOpt, bytes32 hashLock) external;
 
-    function requestPledge(
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint64 paid
-    ) external;
+    function closeOption(uint256 seqOfOpt, string memory hashKey) external;
 
-    function lockOption(bytes32 sn, bytes32 hashLock) external;
-
-    function closeOption(bytes32 sn, string memory hashKey) external;
-
-    function revokeOption(bytes32 sn) external;
+    function revokeOption(uint256 seqOfOpt) external;
 
     // ################
     // ##  查询接口  ##
     // ################
 
-    function counterOfOptions() external view returns (uint40);
+    function counterOfOptions() external view returns (uint32);
 
-    function isOption(bytes32 sn) external view returns (bool);
+    function isOption(uint256 seqOfOpt) external view returns (bool);
 
-    function getOption(bytes32 sn)
+    function getOption(uint256 seqOfOpt)
         external
         view
         returns (
-            uint40 rightholder,
-            uint48 closingDate,
-            uint64 paid,
-            uint64 par,
-            bytes32 hashLock
+            OptionsRepo.Option memory opt
         );
 
-    function isObligor(bytes32 sn, uint40 acct) external view returns (bool);
+    function optsList() external view returns (OptionsRepo.Option[] memory);
 
-    function obligorsOfOption(bytes32 sn)
+    function isObligor(uint256 seqOfOpt, uint256 acct) external view returns (bool);
+
+    function obligorsOfOption(uint256 seqOfOpt)
+        external view returns (uint256[] memory);
+
+    function stateOfOption(uint256 seqOfOpt) external view returns (uint8);
+
+    function getFutureOfOption(uint256 seqOfOpt, uint256 seqOfFt)
+        external view returns (OptionsRepo.Future memory);
+
+    function futuresOfOption(uint256 seqOfOpt) external view returns (OptionsRepo.Future[] memory);
+
+    function getPledgeOfOption(uint256 seqOfOpt, uint256 seqOfPld)
+        external view returns (PledgesRepo.Pledge memory);
+
+    function pledgesOfOption(uint256 seqOfOpt) external view returns (PledgesRepo.Pledge[] memory);
+
+    function oracleAtDate(uint256 seqOfOpt, uint48 timestamp)
         external
         view
-        returns (uint40[] memory);
+        returns (Checkpoints.Checkpoint memory);
 
-    function stateOfOption(bytes32 sn) external view returns (uint8);
-
-    function futures(bytes32 sn) external view returns (bytes32[] memory);
-
-    function pledges(bytes32 sn) external view returns (bytes32[] memory);
-
-    function oracle(bytes32 sn, uint48 timestamp)
+    function oraclesOfOption(uint256 seqOfOpt)
         external
         view
-        returns (uint32 d1, uint32 d2);
-
-    function optsList() external view returns (bytes32[] memory);
+        returns (Checkpoints.Checkpoint[] memory);
+    
 }

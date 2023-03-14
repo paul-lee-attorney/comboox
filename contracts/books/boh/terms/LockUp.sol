@@ -8,118 +8,117 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
-import "../../boa/IBookOfIA.sol";
-import "../../bog/IBookOfGM.sol";
+// import "../../boa/IBookOfIA.sol";
+// import "../../bog/IBookOfGM.sol";
 
 import "../../../common/access/AccessControl.sol";
 import "../../../common/lib/ArrayUtils.sol";
-import "../../../common/lib/SNParser.sol";
+// import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
 
 import "../../../common/ruting/BOASetting.sol";
-import "../../../common/ruting/BODSetting.sol";
+import "../../../common/ruting/BOGSetting.sol";
 
 import "./ILockUp.sol";
 
-contract LockUp is ILockUp, BOASetting, BODSetting, AccessControl {
+contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
+    using ArrayUtils for uint256[];
     using ArrayUtils for uint40[];
-    using SNParser for bytes32;
+    // using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    // 股票锁定柜
-    struct Locker {
-        uint48 dueDate;
-        EnumerableSet.UintSet keyHolders;
-    }
 
     // 基准日条件未成就时，按“2105-09-19”设定到期日
-    uint48 constant REMOTE_FUTURE = 4282732800;
+    uint48 constant _REMOTE_FUTURE = 4282732800;
 
     // lockers[0].keyHolders: ssnList;
 
-    // ssn => Locker
+    // seqOfShare => Locker
     mapping(uint256 => Locker) private _lockers;
 
     // ################
     // ##   写接口   ##
     // ################
 
-    function setLocker(uint32 ssn, uint48 dueDate) external onlyAttorney {
-        _lockers[ssn].dueDate = dueDate == 0 ? REMOTE_FUTURE : dueDate;
-        _lockers[0].keyHolders.add(ssn);
+    function setLocker(uint256 seqOfShare, uint48 dueDate) external onlyAttorney {
+        _lockers[seqOfShare].dueDate = dueDate == 0 ? _REMOTE_FUTURE : dueDate;
+        _lockers[0].keyHolders.add(seqOfShare);
     }
 
-    function delLocker(uint32 ssn) external onlyAttorney {
-        if (_lockers[0].keyHolders.remove(ssn)) {
-            delete _lockers[ssn];
+    function delLocker(uint256 seqOfShare) external onlyAttorney {
+        if (_lockers[0].keyHolders.remove(seqOfShare)) {
+            delete _lockers[seqOfShare];
         }
     }
 
-    function addKeyholder(uint32 ssn, uint40 keyholder) external onlyAttorney {
-        require(ssn != 0, "LU.addKeyholder: zero ssn");
-        _lockers[ssn].keyHolders.add(keyholder);
+    function addKeyholder(uint256 seqOfShare, uint256 keyholder) external onlyAttorney {
+        require(seqOfShare != 0, "LU.addKeyholder: zero seqOfShare");
+        _lockers[seqOfShare].keyHolders.add(keyholder);
     }
 
-    function removeKeyholder(uint32 ssn, uint40 keyholder)
+    function removeKeyholder(uint256 seqOfShare, uint256 keyholder)
         external
         onlyAttorney
     {
-        require(ssn != 0, "LU.removeKeyholder: zero ssn");
-        _lockers[ssn].keyHolders.remove(keyholder);
+        require(seqOfShare != 0, "LU.removeKeyholder: zero seqOfShare");
+        _lockers[seqOfShare].keyHolders.remove(keyholder);
     }
 
     // ################
     // ##  查询接口  ##
     // ################
 
-    function isLocked(uint32 ssn) public view returns (bool) {
-        return _lockers[0].keyHolders.contains(ssn);
+    function isLocked(uint256 seqOfShare) public view returns (bool) {
+        return _lockers[0].keyHolders.contains(seqOfShare);
     }
 
-    function getLocker(uint32 ssn)
+    function getLocker(uint256 seqOfShare)
         external
         view
-        returns (uint48 dueDate, uint40[] memory keyHolders)
+        returns (uint48 dueDate, uint256[] memory keyHolders)
     {
-        dueDate = _lockers[ssn].dueDate;
-        keyHolders = _lockers[ssn].keyHolders.valuesToUint40();
+        dueDate = _lockers[seqOfShare].dueDate;
+        keyHolders = _lockers[seqOfShare].keyHolders.values();
     }
 
-    function lockedShares() external view returns (uint32[] memory) {
-        return _lockers[0].keyHolders.valuesToUint32();
+    function lockedShares() external view returns (uint256[] memory) {
+        return _lockers[0].keyHolders.values();
     }
 
     // ################
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, bytes32 sn) external view returns (bool) {
-        uint48 closingDate = IInvestmentAgreement(ia).getDeal(
-            sn.seqOfDeal()
-        ).closingDate;
+    function isTriggered(address ia, uint256 seqOfDeal) external view returns (bool) {
+ 
+        IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
+ 
+        // uint48 closingDate = IInvestmentAgreement(ia).getDeal(
+        //     sn.seqOfDeal()
+        // ).closingDate;
 
-        uint8 typeOfDeal = sn.typeOfDeal();
-        uint32 ssn = sn.ssnOfDeal();
+        // uint8 typeOfDeal = sn.typeOfDeal();
+        // uint256 seqOfShare = sn.ssnOfDeal();
 
         if (
-            typeOfDeal > 1 &&
-            isLocked(ssn) &&
-            _lockers[ssn].dueDate >= closingDate
+            head.typeOfDeal > 1 &&
+            isLocked(head.seqOfShare) &&
+            _lockers[head.seqOfShare].dueDate >= head.closingDate
         ) return true;
 
         return false;
     }
 
-    function _isExempted(uint32 ssn, uint40[] memory agreedParties)
+    function _isExempted(uint256 seqOfShare, uint256[] memory agreedParties)
         private
         view
         returns (bool)
     {
-        if (!isLocked(ssn)) return true;
+        if (!isLocked(seqOfShare)) return true;
 
-        Locker storage locker = _lockers[ssn];
+        Locker storage locker = _lockers[seqOfShare];
 
-        uint40[] memory holders = locker.keyHolders.valuesToUint40();
+        uint256[] memory holders = locker.keyHolders.values();
         uint256 len = holders.length;
 
         if (len > agreedParties.length) {
@@ -129,20 +128,23 @@ contract LockUp is ILockUp, BOASetting, BODSetting, AccessControl {
         }
     }
 
-    function isExempted(address ia, bytes32 sn) external view returns (bool) {
+    function isExempted(address ia, uint256 seqOfDeal) external view returns (bool) {
         
-        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
+        uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
         uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
                
-        uint40[] memory consentParties = _getBOD().
+        uint40[] memory consentParties = _getBOG().
             getCaseOfAttitude(motionId,1).voters;
 
-        uint40[] memory signers = ISigPageSetting(ia).getSigPage().partiesOfDoc();
+        uint256[] memory signers = ISigPage(ia).partiesOfDoc();
 
-        uint40[] memory agreedParties = consentParties.combine(signers);
+        uint256[] memory agreedParties = consentParties.mixCombine(signers);
 
-        uint32 ssn = sn.ssnOfDeal();
+        // uint256 seqOfShare = sn.ssnOfDeal();
+        IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
 
-        return _isExempted(ssn, agreedParties);
+        return _isExempted(head.seqOfShare, agreedParties);
     }
+
+
 }

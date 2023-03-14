@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 pragma solidity ^0.8.8;
+
+import "../../../common/lib/OptionsRepo.sol";
 
 interface IOptions {
     // ################
@@ -14,13 +16,26 @@ interface IOptions {
 
     function createOption(
         bytes32 sn,
-        uint40 rightholder,
-        uint40[] memory obligors,
+        uint256 rightholder,
+        uint256 obligor,
         uint64 paid,
         uint64 par
-    ) external returns (bytes32 _sn);
+    ) external returns (uint32 seqOfOpt);
 
-    function delOption(bytes32 sn) external;
+    function delOption(uint256 seqOfOpt) external;
+
+    function addObligorIntoOpt(
+        uint256 seqOfOpt,
+        uint256 obligor
+    ) external returns (bool flag);
+
+    function removeObligorFromOpt(
+        uint256 seqOfOpt,
+        uint256 obligor
+    ) external returns (bool flag);
+
+    function optRegistered(uint256 seqOfOpt)
+        external;
 
     // ################
     // ##  查询接口  ##
@@ -28,25 +43,13 @@ interface IOptions {
 
     function counterOfOpts() external view returns (uint32);
 
-    function isOption(bytes32 sn) external view returns (bool);
+    function isOption(uint256 seqOfOpt) external view returns (bool);
 
-    function qtyOfOpts() external view returns (uint256);
+    function isObligor(uint256 seqOfOpt, uint256 acct) external view returns (bool);
 
-    function isObligor(bytes32 sn, uint40 acct) external view returns (bool);
+    function getOption(uint256 seqOfOpt) external view
+        returns (OptionsRepo.Head memory head, OptionsRepo.Body memory body);
 
-    function getOption(bytes32 sn)
-        external
-        view
-        returns (
-            uint40 rightholder,
-            uint64 paid,
-            uint64 par
-        );
-
-    function obligorsOfOption(bytes32 sn)
-        external
-        view
-        returns (uint40[] memory);
-
-    function optsList() external view returns (bytes32[] memory);
+    function obligorsOfOption(uint256 seqOfOpt) external view
+        returns (uint256[] memory);
 }

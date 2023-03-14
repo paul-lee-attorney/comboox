@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../lib/SigsRepo.sol";
+import "../lib/RulesParser.sol";
 import "./ISigPage.sol";
 
 interface IRepoOfDocs {
@@ -37,7 +38,7 @@ interface IRepoOfDocs {
     }
 
     struct Head {
-        uint8 docType;
+        uint8 typeOfDoc;
         uint40 creator;
         uint48 createDate;
         uint48 shaExecDeadline;
@@ -49,7 +50,7 @@ interface IRepoOfDocs {
         Head head;
         bytes32 docUrl;
         bytes32 docHash;
-        address sigPage;
+        // address sigPage;
     }
 
     //##############
@@ -66,15 +67,15 @@ interface IRepoOfDocs {
     //##    写接口    ##
     //##################
 
-    function setTemplate(address body, uint8 typeOfDoc) external;
+    function setTemplate(address body, uint256 typeOfDoc) external;
 
-    function createDoc(uint8 docType, uint40 creator) external returns (address body, address sigPage);
+    function createDoc(uint256 typeOfDoc, uint256 creator) external returns (address body);
 
     function removeDoc(address body) external;
 
     function circulateDoc(
         address body,
-        bytes32 rule,
+        RulesParser.VotingRule memory rule,
         bytes32 docUrl,
         bytes32 docHash
     ) external;
@@ -85,11 +86,11 @@ interface IRepoOfDocs {
     //##   read I/O   ##
     //##################
 
-    function template(uint8 typeOfDoc) external view returns (address);
+    function template(uint256 typeOfDoc) external view returns (address);
 
     function tempsList() external view returns (uint256[] memory);
 
-    function tempReadyFor(uint8 typeOfDoc) external view returns (bool flag);
+    function tempReadyFor(uint256 typeOfDoc) external view returns (bool flag);
 
     function isRegistered(address body) external view returns (bool);
 
@@ -105,9 +106,9 @@ interface IRepoOfDocs {
         view
         returns (bytes32 docUrl, bytes32 docHash); 
 
-    function sigPageOfDoc(address body)
-        external
-        view
-        returns (ISigPage sigPage); 
+    // function sigPageOfDoc(address body)
+    //     external
+    //     view
+    //     returns (ISigPage sigPage); 
 
 }

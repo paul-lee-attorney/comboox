@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -9,13 +9,13 @@ pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
 import "../../bos/IBookOfShares.sol";
-import "../../bog/IBookOfGM.sol";
+// import "../../bog/IBookOfGM.sol";
 import "../../rom/IRegisterOfMembers.sol";
 
 import "../../../common/access/AccessControl.sol";
 
 import "../../../common/lib/ArrayUtils.sol";
-import "../../../common/lib/SNParser.sol";
+// import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
 import "../../../common/lib/TopChain.sol";
 
@@ -26,9 +26,9 @@ import "../../../common/ruting/ROMSetting.sol";
 import "./IAntiDilution.sol";
 
 contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, AccessControl {
-    using ArrayUtils for uint40[];
+    using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
-    using SNParser for bytes32;
+    // using SNParser for bytes32;
     using TopChain for TopChain.Chain;
 
     mapping(uint256 => EnumerableSet.UintSet) private _obligors;
@@ -39,7 +39,7 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
     // ##   修饰器    ##
     // #################
 
-    modifier onlyMarked(uint16 class) {
+    modifier onlyMarked(uint256 class) {
         require(
             _marks.isMember(class),
             "AD.onlyMarked: no uint price maked for the class"
@@ -55,31 +55,32 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
         _marks.setMaxQtyOfMembers(max);
     }
 
-    function addBenchmark(uint16 class, uint32 price) external onlyAttorney {
+    function addBenchmark(uint256 class, uint32 price) external onlyAttorney {
         _marks.addNode(class);
         _marks.changeAmt(class, price, true);
     }
 
     function updateBenchmark(
-        uint16 class,
+        uint256 class,
         uint32 deltaPrice,
         bool increase
     ) external onlyAttorney {
         _marks.changeAmt(class, deltaPrice, increase);
     }
 
-    function delBenchmark(uint16 class) external onlyAttorney {
-        (, , , uint64 price, , ) = _marks.getNode(class);
+    function delBenchmark(uint256 class) external onlyAttorney {
+        // (, , , uint64 price, , ) = _marks.getNode(class);
+        TopChain.Node memory mark = _marks.getNode(class);
 
-        _marks.changeAmt(class, price, false);
+        _marks.changeAmt(class, mark.amt, false);
         _marks.delNode(class);
     }
 
-    function addObligor(uint16 class, uint40 obligor) external onlyAttorney {
+    function addObligor(uint256 class, uint256 obligor) external onlyAttorney {
         _obligors[class].add(obligor);
     }
 
-    function removeObligor(uint16 class, uint40 obligor) external onlyAttorney {
+    function removeObligor(uint256 class, uint256 obligor) external onlyAttorney {
         _obligors[class].remove(obligor);
     }
 
@@ -87,15 +88,15 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
     // ##  查询接口  ##
     // ################
 
-    function isMarked(uint16 class) external view returns (bool) {
-        return class > 0 && _marks.nodes[class].ptr == class;
+    function isMarked(uint256 class) external view returns (bool) {
+        return class > 0 && _marks.nodes[class].amt > 0;
     }
 
-    function markedClasses() external view returns (uint40[] memory) {
+    function markedClasses() external view returns (uint256[] memory) {
         return _marks.membersList();
     }
 
-    function getBenchmark(uint16 class)
+    function getBenchmark(uint256 class)
         external
         view
         onlyMarked(class)
@@ -104,60 +105,67 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
         price = _marks.nodes[class].amt;
     }
 
-    function obligors(uint16 class)
+    function obligors(uint256 class)
         external
         view
         onlyMarked(class)
-        returns (uint40[] memory)
+        returns (uint256[] memory)
     {
-        return _obligors[class].valuesToUint40();
+        return _obligors[class].values();
     }
 
-    function giftPar(bytes32 snOfDeal, bytes32 shareNumber)
+    function giftPar(address ia, uint256 seqOfDeal, uint256 seqOfShare)
         external
         view
-        onlyMarked(shareNumber.class())
         returns (uint64 gift)
     {
-        uint64 markPrice = _marks.nodes[shareNumber.class()].amt;
+        IInvestmentAgreement.Deal memory deal = 
+            IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        
+        IBookOfShares.Share memory share = _getBOS().getShare(seqOfShare);
 
-        uint32 dealPrice = snOfDeal.priceOfDeal();
+        uint64 markPrice = _marks.nodes[share.head.class].amt;
+
+        // uint32 dealPrice = snOfDeal.priceOfDeal();
 
         require(
-            markPrice > dealPrice,
+            markPrice > deal.head.price,
             "AD.giftPar: AntiDilution not triggered"
         );
 
-        IBookOfShares.Share memory share = _getBOS().
-            getShare(shareNumber.ssn());
+        // IBookOfShares.Share memory share = _getBOS().
+        //     getShare(shareNumber.ssn());
 
-        gift = (share.paid * markPrice) / dealPrice - share.paid;
+        gift = (share.body.paid * markPrice) / deal.head.price - share.body.paid;
     }
 
     // ################
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, bytes32 sn) public view returns (bool) {
-        uint32 unitPrice = sn.priceOfDeal();
+    function isTriggered(address ia, IInvestmentAgreement.Deal memory deal) public view returns (bool) {
+
+        // IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+
+        // uint32 unitPrice = sn.priceOfDeal();
 
         if (
-            sn.typeOfDeal() !=
+            deal.head.typeOfDeal !=
             uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease) &&
-            sn.typeOfDeal() != uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
+            deal.head.typeOfDeal != uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
         ) return false;
 
         uint40 mark = _marks.nodes[0].next;
 
         while (mark > 0) {
-            if (unitPrice < _marks.nodes[mark].amt) return true;
+            if (deal.head.price < _marks.nodes[mark].amt) return true;
             else mark = _marks.nodes[mark].next;
         }
 
         return false;
     }
 
-    function _isExempted(uint32 price, uint40[] memory consentParties)
+    function _isExempted(uint32 price, uint256[] memory consentParties)
         private
         view
         returns (bool)
@@ -172,7 +180,7 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
         while (cur > 0) {
             if (_marks.nodes[cur].amt <= price) break;
 
-            uint40[] memory classMember = _membersOfClass(uint16(cur));
+            uint256[] memory classMember = _membersOfClass(uint16(cur));
 
             if (classMember.length > consentParties.length) return false;
             else if (!classMember.fullyCoveredBy(consentParties)) return false;
@@ -186,23 +194,25 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
     function _membersOfClass(uint16 class)
         private
         view
-        returns (uint40[] memory)
+        returns (uint256[] memory)
     {
         IRegisterOfMembers _rom = _getROM();
 
-        uint40[] memory members = _rom.membersList();
+        uint256[] memory members = _rom.membersList();
 
         uint256 len = members.length;
 
-        uint40[] memory list = new uint40[](len);
+        uint256[] memory list = new uint256[](len);
         uint256 counter = 0;
 
         while (len > 0) {
-            bytes32[] memory sharesInHand = _rom.sharesInHand(members[len - 1]);
+            uint256[] memory sharesInHand = _rom.sharesInHand(members[len - 1]);
             uint256 i = sharesInHand.length;
 
             while (i > 0) {
-                if (sharesInHand[i - 1].class() == class) {
+                IBookOfShares.Share memory share = _getBOS().getShare(sharesInHand[i-1]);
+
+                if (share.head.class == class) {
                     list[counter] = members[len - 1];
                     counter++;
                     break;
@@ -212,7 +222,7 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
             len--;
         }
 
-        uint40[] memory output = new uint40[](counter);
+        uint256[] memory output = new uint256[](counter);
 
         assembly {
             output := list
@@ -221,17 +231,25 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
         return output;
     }
 
-    function isExempted(address ia, bytes32 sn) external view returns (bool) {
-        if (!isTriggered(ia, sn)) return true;
+    function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
+        if (!isTriggered(ia, deal)) return true;
 
-        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
-        uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
+        // uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
+        // uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
+        uint256 motionId = uint256(uint160(ia));
 
-        uint40[] memory consentParties = _getBOD().
+        // uint256[] memory consentParties;
+
+        uint256[] memory consentParties = _getBOD().
             getCaseOfAttitude(motionId,1).voters;
+        
+        // assembly {
+        //     consentParties := parties
+        // }
 
-        uint32 unitPrice = sn.priceOfDeal();
 
-        return _isExempted(unitPrice, consentParties);
+        // uint32 unitPrice = IInvestmentAgreement(ia).getDeal(seqOfDeal).head.price;
+
+        return _isExempted(deal.head.price, consentParties);
     }
 }

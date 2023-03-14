@@ -12,27 +12,27 @@ interface IBOHKeeper {
     // ##  SHA   ##
     // ############
 
-    function setTempOfBOH(address temp, uint8 typeOfDoc) external;
+    function setTempOfBOH(address temp, uint256 typeOfDoc) external;
 
-    function createSHA(uint8 docType, uint40 caller) external;
+    function createSHA(uint256 typeOfDoc, uint256 caller) external;
 
-    function removeSHA(address sha, uint40 caller) external;
+    function removeSHA(address sha, uint256 caller) external;
 
     function circulateSHA(
         address sha,
-        uint40 caller,
-        bytes32 rule,
+        uint256 caller,
+        uint256 seqOfVR,
         bytes32 docUrl,
         bytes32 docHash
     ) external;
 
     function signSHA(
         address sha,
-        uint40 caller,
+        uint256 caller,
         bytes32 sigHash
     ) external;
 
-    function effectiveSHA(address sha, uint40 caller) external;
+    function effectiveSHA(address sha, uint256 caller) external;
 
-    function acceptSHA(bytes32 sigHash, uint40 caller) external;
+    function acceptSHA(bytes32 sigHash, uint256 caller) external;
 }

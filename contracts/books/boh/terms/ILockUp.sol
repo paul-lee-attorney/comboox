@@ -8,30 +8,39 @@
 pragma solidity ^0.8.8;
 
 import "./ITerm.sol";
+import "../../../common/lib/EnumerableSet.sol";
+
 
 interface ILockUp is ITerm {
+
+    // 股票锁定柜
+    struct Locker {
+        uint48 dueDate;
+        EnumerableSet.UintSet keyHolders;
+    }
+
     // ################
     // ##   Write    ##
     // ################
 
-    function setLocker(uint32 ssn, uint48 dueDate) external;
+    function setLocker(uint256 seqOfShare, uint48 dueDate) external;
 
-    function delLocker(uint32 ssn) external;
+    function delLocker(uint256 seqOfShare) external;
 
-    function addKeyholder(uint32 ssn, uint40 keyholder) external;
+    function addKeyholder(uint256 seqOfShare, uint256 keyholder) external;
 
-    function removeKeyholder(uint32 ssn, uint40 keyholder) external;
+    function removeKeyholder(uint256 seqOfShare, uint256 keyholder) external;
 
     // ################
     // ##  查询接口  ##
     // ################
 
-    function isLocked(uint32 ssn) external view returns (bool);
+    function isLocked(uint256 seqOfShare) external view returns (bool);
 
-    function getLocker(uint32 ssn)
+    function getLocker(uint256 seqOfShare)
         external
         view
-        returns (uint48 dueDate, uint40[] memory keyHolders);
+        returns (uint48 dueDate, uint256[] memory keyHolders);
 
-    function lockedShares() external view returns (uint32[] memory);
+    function lockedShares() external view returns (uint256[] memory);
 }

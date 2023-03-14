@@ -8,16 +8,42 @@
 pragma solidity ^0.8.8;
 
 library ArrayUtils {
-    function combine(uint40[] memory arrA, uint40[] memory arrB)
+
+    function mixCombine(uint40[] memory arrA, uint256[] memory arrB) 
+        public pure 
+        returns(uint256[] memory)
+    {
+        uint256 lenA = arrA.length;
+        uint256 lenB = arrB.length;
+
+        uint256[] memory output = new uint256[](lenA + lenB);
+
+        uint256 i;
+
+        while (i < lenA) {
+            output[i] = arrA[i];
+            i++;
+        }
+
+        i=0;
+        while (i < lenB) {
+            output[lenA + i] = arrB[i];
+            i++;
+        }
+
+        return output;
+    }
+
+    function combine(uint256[] memory arrA, uint256[] memory arrB)
         public
         pure
-        returns (uint40[] memory)
+        returns (uint256[] memory)
     {
         uint256 lenA = arrA.length;
         uint256 lenB = arrB.length;
         uint256 i;
 
-        uint40[] memory arrC = new uint40[](lenA + lenB);
+        uint256[] memory arrC = new uint256[](lenA + lenB);
 
         for (i = 0; i < lenA; i++) arrC[i] = arrA[i];
         for (i = 0; i < lenB; i++) arrC[lenA + i] = arrB[i];
@@ -25,22 +51,22 @@ library ArrayUtils {
         return arrC;
     }
 
-    function minus(uint40[] memory arrA, uint40[] memory arrB)
+    function minus(uint256[] memory arrA, uint256[] memory arrB)
         public
         pure
-        returns (uint40[] memory)
+        returns (uint256[] memory)
     {
         uint256 lenA = arrA.length;
         uint256 lenB = arrB.length;
 
-        uint40[] memory arrC = new uint40[](lenA);
+        uint256[] memory arrC = new uint256[](lenA);
 
         uint256 pointer;
 
-        while (lenA != 0) {
+        while (lenA > 0) {
             bool flag = false;
             lenB = arrB.length;
-            while (lenB != 0) {
+            while (lenB > 0) {
                 if (arrB[lenB - 1] == arrA[lenA - 1]) {
                     flag = true;
                     break;
@@ -56,7 +82,7 @@ library ArrayUtils {
             lenA--;
         }
 
-        uint40[] memory output = new uint40[](pointer);
+        uint256[] memory output = new uint256[](pointer);
         lenA = 0;
 
         while (lenA < pointer) {
@@ -67,7 +93,7 @@ library ArrayUtils {
         return output;
     }
 
-    function fullyCoveredBy(uint40[] memory arrA, uint40[] memory arrB)
+    function fullyCoveredBy(uint256[] memory arrA, uint256[] memory arrB)
         public
         pure
         returns (bool)

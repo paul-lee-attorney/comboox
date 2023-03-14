@@ -10,37 +10,33 @@ pragma solidity ^0.8.8;
 import "./IBOAKeeper.sol";
 
 import "../books/boa/IInvestmentAgreement.sol";
-import "../books/bod/IBookOfDirectors.sol";
-import "../books/boh/IShareholdersAgreement.sol";
-import "../books/bog/IBookOfGM.sol";
-import "../books/rom/IRegisterOfMembers.sol";
 
 import "../common/access/AccessControl.sol";
 
 import "../common/components/IRepoOfDocs.sol";
 import "../common/components/ISigPage.sol";
 
-import "../common/lib/SNFactory.sol";
-import "../common/lib/SNParser.sol";
+import "../common/lib/RulesParser.sol";
 
 import "../common/ruting/BOASetting.sol";
 import "../common/ruting/BODSetting.sol";
+import "../common/ruting/BOGSetting.sol";
 import "../common/ruting/BOHSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
-import "../common/ruting/SigPageSetting.sol";
 
 contract BOAKeeper is 
     IBOAKeeper, 
     BOASetting, 
+    BOGSetting, 
     BODSetting, 
     BOHSetting, 
     BOSSetting, 
     ROMSetting, 
     AccessControl 
 {
-    using SNFactory for bytes;
-    using SNParser for bytes32;
+
+    using RulesParser for bytes32;
 
     IShareholdersAgreement.TermTitle[] private _termsForCapitalIncrease = [
         IShareholdersAgreement.TermTitle.AntiDilution
@@ -57,11 +53,11 @@ contract BOAKeeper is
     // ##################
 
     modifier notEstablished(address body) {
-        require(!_getBOA().sigPageOfDoc(body).established(), "Doc ALREADY Established");
+        require(!ISigPage(body).established(), "Doc ALREADY Established");
         _;
     }
 
-    modifier onlyOwnerOf(address body, uint40 caller) {
+    modifier onlyOwnerOf(address body, uint256 caller) {
         require(
             IAccessControl(body).getOwner() == caller,
             "NOT Owner of Doc"
@@ -69,8 +65,8 @@ contract BOAKeeper is
         _;
     }
 
-    modifier onlyPartyOf(address ia, uint40 caller) {
-        require(_getBOA().sigPageOfDoc(ia).isParty(caller), "NOT Party of Doc");
+    modifier onlyPartyOf(address ia, uint256 caller) {
+        require(ISigPage(ia).isParty(caller), "NOT Party of Doc");
         _;
     }
 
@@ -78,15 +74,14 @@ contract BOAKeeper is
     // ##   InvestmentAgreement   ##
     // #############################
 
-    function setTempOfIA(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
+    function setTempOfIA(address temp, uint256 typeOfDoc) external onlyDirectKeeper {
         _getBOA().setTemplate(temp, typeOfDoc);
     }
 
-    function createIA(uint8 typOfIA, uint40 caller) external onlyDirectKeeper {
-        require(_getROM().isMember(caller), 
-            "caller not MEMBER");
+    function createIA(uint256 typOfIA, uint256 caller) external onlyDirectKeeper {
+        require(_getROM().isMember(caller), "caller not MEMBER");
 
-        (address ia, address sigPage) = _getBOA().createDoc(typOfIA, caller);
+        address ia = _getBOA().createDoc(typOfIA, caller);
 
         IAccessControl(ia).init(
             caller,
@@ -94,18 +89,9 @@ contract BOAKeeper is
             address(_rc),
             address(_gk)
         );
-
-        IAccessControl(sigPage).init(
-            caller,
-            address(this),
-            address(_rc),
-            address(_gk)
-        );
-
-        ISigPageSetting(ia).setSigPage(sigPage);
     }
 
-    function removeIA(address ia, uint40 caller)
+    function removeIA(address ia, uint256 caller)
         external
         onlyDirectKeeper
         onlyOwnerOf(ia, caller)
@@ -117,17 +103,12 @@ contract BOAKeeper is
 
     function circulateIA(
         address ia,
-        uint40 caller,
+        uint256 caller,
         bytes32 docUrl,
         bytes32 docHash
     ) external onlyDirectKeeper onlyOwnerOf(ia, caller) {
         IAccessControl(ia).lockContents();
         IAccessControl(ia).setOwner(0);
-
-        address sigPage = address(ISigPageSetting(ia).getSigPage());
-
-        IAccessControl(sigPage).lockContents();
-        IAccessControl(sigPage).setOwner(0);
 
         _getBOA().circulateIA(ia, docUrl, docHash);
     }
@@ -136,7 +117,7 @@ contract BOAKeeper is
 
     function signIA(
         address ia,
-        uint40 caller,
+        uint256 caller,
         bytes32 sigHash
     ) external onlyDirectKeeper onlyPartyOf(ia, caller) {
         require(
@@ -146,28 +127,29 @@ contract BOAKeeper is
 
         _lockDealsOfParty(ia, caller);
 
-        _getBOA().sigPageOfDoc(ia).signDoc(caller, sigHash);
+        ISigPage(ia).signDoc(caller, sigHash);
 
-        if (_getBOA().sigPageOfDoc(ia).established())
+        if (ISigPage(ia).established())
             _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Established));
     }
 
-    function _lockDealsOfParty(address ia, uint40 caller) private {
-        bytes32[] memory snList = IInvestmentAgreement(ia).dealsList();
-        uint256 len = snList.length;
-        while (len != 0) {
-            bytes32 sn = snList[len - 1];
+    function _lockDealsOfParty(address ia, uint256 caller) private {
+        uint256[] memory seqList = IInvestmentAgreement(ia).seqList();
+        uint256 len = seqList.length;
+        while (len > 0) {
+            uint256 seq = seqList[len - 1];
             len--;
 
-            uint16 seq = sn.seqOfDeal();
+            IInvestmentAgreement.Deal memory deal = 
+                IInvestmentAgreement(ia).getDeal(seq);
 
-            if (sn.sellerOfDeal() == caller) {
+            if (deal.head.seller == caller) {
                 if (IInvestmentAgreement(ia).lockDealSubject(seq)) {
-                    _getBOS().decreaseCleanPar(sn.ssnOfDeal(), IInvestmentAgreement(ia).getDeal(seq).par);
+                    _getBOS().decreaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
                 }
             } else if (
-                sn.buyerOfDeal() == caller &&
-                sn.typeOfDeal() ==
+                deal.body.buyer == caller &&
+                deal.head.typeOfDeal ==
                 uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
             ) IInvestmentAgreement(ia).lockDealSubject(seq);
         }
@@ -177,10 +159,10 @@ contract BOAKeeper is
 
     function pushToCoffer(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         bytes32 hashLock,
         uint48 closingDate,
-        uint40 caller
+        uint256 caller
     ) external onlyDirectKeeper {
         require(
             _getBOA().getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
@@ -188,63 +170,60 @@ contract BOAKeeper is
         );
 
         require(
-            closingDate <= uint48(_getBOA().sigPageOfDoc(ia).parasOfPage().blocknumber),
+            closingDate <= uint48(ISigPage(ia).getParasOfPage().blocknumber),
             "closingDate LATER than deadline"
         );
 
-        uint16 seq = sn.seqOfDeal();
+        IInvestmentAgreement.Head memory head = 
+            IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
 
-        bool isST = (sn.ssnOfDeal() != 0);
+        // uint16 seq = sn.seqOfDeal();
 
-        if (isST) require(caller == sn.sellerOfDeal(), "BOAKeeper.pushToCoffer: NOT seller");
-        else require(_getBOD().
-            isDirector(caller), "BOAK.PTC: caller is not director");
+        bool isST = (head.seqOfShare != 0);
 
-        _vrAndSHACheck(ia, sn, isST);
+        if (isST) require(caller == head.seller, "BOAK.PTC: not seller");
+        else require(_getBOD().isDirector(caller), "BOAK.PTC: not director");
 
-        IInvestmentAgreement(ia).clearDealCP(seq, hashLock, closingDate);
+        _vrAndSHACheck(ia, seqOfDeal, isST);
+
+        IInvestmentAgreement(ia).clearDealCP(seqOfDeal, hashLock, closingDate);
     }
 
-    function _vrAndSHACheck(address ia, bytes32 sn, bool isST) private view {
-        uint256 typeOfIA = IInvestmentAgreement(ia).typeOfIA();
+    function _vrAndSHACheck(address ia, uint256 seqOfDeal, bool isST) private view {
+        uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
 
-        bytes32 vr = _getSHA().getRule(typeOfIA);
+        RulesParser.VotingRule memory vr = _getSHA().getRule(typeOfIA).votingRuleParser();
 
-        if (vr.ratioAmountOfVR() != 0 || vr.ratioHeadOfVR() != 0) {
-
-            if (vr.authorityOfVR() == 1)
-                require(_getBOD().
-                    isPassed(uint256(uint160(ia))), 
+        if (vr.amountRatio > 0 || vr.headRatio > 0) {
+            if (vr.authority == 1)
+                require(_getBOG().isPassed(uint256(uint160(ia))), 
                     "BOAK.ptc:  GM Motion NOT passed");
-            else if (vr.authorityOfVR() == 2)
-                require(_getBOD().
-                    isPassed(uint256(uint160(ia))), 
+            else if (vr.authority == 2)
+                require(_getBOD().isPassed(uint256(uint160(ia))), 
                     "BOAK.ptc:  Board Motion NOT passed");
-            else if (vr.authorityOfVR() == 3)
-                require(_getBOD().
-                    isPassed(uint256(uint160(ia))) && 
-                    _getBOD().
-                        isPassed(uint256(uint160(ia))), 
+            else if (vr.authority == 3)
+                require(_getBOG().isPassed(uint256(uint160(ia))) && 
+                    _getBOD().isPassed(uint256(uint160(ia))), 
                     "BOAK.ptc: Board and GM not BOTH passed");
             else revert("BOAK.ptc: wrong decision power setting");
         }
 
-        if (isST) _checkSHA(_termsForShareTransfer, ia, sn);
-        else _checkSHA(_termsForCapitalIncrease, ia, sn);
+        if (isST) _checkSHA(_termsForShareTransfer, ia, seqOfDeal);
+        else _checkSHA(_termsForCapitalIncrease, ia, seqOfDeal);
     }
 
     function _checkSHA(
         IShareholdersAgreement.TermTitle[] memory terms,
         address ia,
-        bytes32 sn
+        uint256 seqOfDeal
     ) private view {
         uint256 len = terms.length;
 
         while (len > 0) {
             if (_getSHA().hasTitle(uint8(terms[len - 1])))
                 require(
-                    _getSHA().termIsExempted(uint8(terms[len - 1]), ia, sn),
-                    "BOAKeeper.ptc: SHA obligation not exempted"
+                    _getSHA().termIsExempted(uint8(terms[len - 1]), ia, seqOfDeal),
+                    "BOAK.PTC: SHA obligation not exempted"
                 );
             len--;
         }
@@ -252,99 +231,104 @@ contract BOAKeeper is
 
     function closeDeal(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         string memory hashKey,
-        uint40 caller
+        uint256 caller
     ) external onlyDirectKeeper {
         require(
             _getBOA().getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
             "BOAKeeper.closeDeal: InvestmentAgreement NOT in voted state"
         );
 
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+
         //交易发起人为买方;
         require(
-            sn.buyerOfDeal() == caller,
+            deal.body.buyer == caller,
             "BOAKeeper.closeDeal: caller is NOT buyer"
         );
 
-        uint16 seq = sn.seqOfDeal();
-
         //验证hashKey, 执行Deal
-        if (IInvestmentAgreement(ia).closeDeal(seq, hashKey))
+        if (IInvestmentAgreement(ia).closeDeal(seqOfDeal, hashKey))
             _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
-        uint32 ssn = sn.ssnOfDeal();
+        // uint32 ssn = sn.ssnOfDeal();
 
-        if (ssn > 0) {
-            _shareTransfer(ia, sn);
-        } else issueNewShare(ia, sn);
+        if (deal.head.seqOfShare > 0) {
+            _shareTransfer(ia, seqOfDeal);
+        } else issueNewShare(ia, seqOfDeal);
     }
 
-    function _shareTransfer(address ia, bytes32 sn) private {
-        uint16 seq = sn.seqOfDeal();
-        uint32 ssn = sn.ssnOfDeal();
+    function _shareTransfer(address ia, uint256 seqOfDeal) private {
+        // uint16 seq = sn.seqOfDeal();
+        // uint32 ssn = sn.ssnOfDeal();
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seq);
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        uint32 unitPrice = sn.priceOfDeal();
-        uint40 buyer = sn.buyerOfDeal();
+        // uint32 unitPrice = sn.priceOfDeal();
+        // uint40 buyer = sn.buyerOfDeal();
 
-        _getBOS().increaseCleanPar(ssn, deal.paid);
-        _getBOS().transferShare(ssn, deal.paid, deal.par, buyer, unitPrice);
+        _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+        _getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.price);
     }
 
-    function issueNewShare(address ia, bytes32 sn) public onlyDirectKeeper {
-        uint16 seq = sn.seqOfDeal();
+    function issueNewShare(address ia, uint256 seqOfDeal) public onlyDirectKeeper {
+        // uint16 seq = sn.seqOfDeal();
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seq);
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        bytes32 shareNumber = _createShareNumber(
-            sn.classOfDeal(),
-            sn.buyerOfDeal(),
-            sn.priceOfDeal()
-        );
+        IBookOfShares.Head memory head = IBookOfShares.Head({
+            class: deal.head.classOfShare,
+            seq: 0,
+            issueDate: uint48(block.timestamp),
+            shareholder: deal.body.buyer,
+            price: deal.head.price,
+            preSeq: 0
+        });
 
-        uint48 paidInDeadline;
 
+        uint48 paidInDeadline = uint48(block.timestamp) + 43200;
 
-        paidInDeadline = uint48(block.timestamp) + 43200;
-
-        _getBOS().issueShare(shareNumber, deal.paid, deal.par, paidInDeadline);
+        _getBOS().createShare(head, deal.body.paid, deal.body.par, paidInDeadline);
     }
 
-    function _createShareNumber(
-        uint16 class,
-        uint40 shareholder,
-        uint32 unitPrice
-    ) private pure returns (bytes32) {
-        bytes memory _sn = new bytes(32);
+    // function _createShareNumber(
+    //     uint16 class,
+    //     uint40 shareholder,
+    //     uint32 unitPrice
+    // ) private pure returns (bytes32) {
+    //     bytes memory _sn = new bytes(32);
 
-        _sn = _sn.seqToSN(0, class);
-        _sn = _sn.acctToSN(12, shareholder);
-        _sn = _sn.ssnToSN(17, unitPrice);
+    //     _sn = _sn.seqToSN(0, class);
+    //     _sn = _sn.acctToSN(12, shareholder);
+    //     _sn = _sn.ssnToSN(17, unitPrice);
 
-        return _sn.bytesToBytes32();
-    }
+    //     return _sn.bytesToBytes32();
+    // }
 
     function transferTargetShare(
         address ia,
-        bytes32 sn,
-        uint40 caller
+        uint256 seqOfDeal,
+        uint256 caller
     ) public onlyDirectKeeper {
+
+        IInvestmentAgreement.Head memory headOfDeal = 
+            IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
+
         require(
-            caller == sn.sellerOfDeal(),
-            "BOAKeeper.transferTargetShare: caller not seller of Deal"
+            caller == headOfDeal.seller,
+                "BOAK.TTS: not sellerOfDeal"
         );
 
-        _vrAndSHACheck(ia, sn, true);
+        _vrAndSHACheck(ia, seqOfDeal, true);
 
-        _shareTransfer(ia, sn);
+        _shareTransfer(ia, seqOfDeal);
     }
 
     function revokeDeal(
         address ia,
-        bytes32 sn,
-        uint40 caller,
+        uint256 seqOfDeal,
+        uint256 caller,
         string memory hashKey
     ) external onlyDirectKeeper {
         require(
@@ -352,17 +336,19 @@ contract BOAKeeper is
             "BOAKeeper.revokeDeal: wrong State"
         );
 
-        uint16 seq = sn.seqOfDeal();
+        // uint16 seq = sn.seqOfDeal();
+
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(
-            caller == sn.sellerOfDeal(),
-            "BOAKeeper.revokeDeal: NOT seller"
+            caller == deal.head.seller,
+            "BOAK.RD: NOT seller"
         );
 
-        if (IInvestmentAgreement(ia).revokeDeal(seq, hashKey))
+        if (IInvestmentAgreement(ia).revokeDeal(seqOfDeal, hashKey))
             _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
-        if (IInvestmentAgreement(ia).releaseDealSubject(seq))
-            _getBOS().increaseCleanPar(sn.ssnOfDeal(), IInvestmentAgreement(ia).getDeal(seq).par);
+        if (IInvestmentAgreement(ia).releaseDealSubject(seqOfDeal))
+            _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
     }
 }
