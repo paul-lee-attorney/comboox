@@ -53,59 +53,6 @@ library MembersRepo {
     //##    写接口    ##
     //##################
 
-    function mockDealsOfIA(
-        GeneralMeeting storage gm,
-        IInvestmentAgreement _ia
-    ) public {
-        uint256[] memory seqList = _ia.seqList();
-
-        uint256 len = seqList.length;
-
-        while (len > 0) {
-            IInvestmentAgreement.Deal memory deal = _ia.getDeal(seqList[len-1]);
-
-            uint64 amount = gm.chain.basedOnPar() ? deal.body.par : deal.body.paid;
-
-            if (deal.head.seller != 0) {
-                mockDealOfSell(gm, deal.head.seller, amount);
-            }
-
-            mockDealOfBuy(gm, deal.body.buyer, deal.body.groupOfBuyer, amount);
-
-            len--;
-        }
-    }
-
-    function mockDealOfSell(
-        GeneralMeeting storage gm, 
-        uint40 seller, 
-        uint64 amount
-    ) public returns (bool flag)
-    {
-        gm.chain.changeAmt(seller, amount, false);
-        
-        if (gm.chain.nodes[seller].amt == 0)
-            delMember(gm, seller);
-        flag = true;
-    }
-
-    function mockDealOfBuy(
-        GeneralMeeting storage gm, 
-        uint40 buyer, 
-        uint40 group,
-        uint64 amount
-    ) public returns (bool flag) {
-        if (!gm.chain.isMember(buyer))
-            gm.chain.addNode(buyer);
-
-        gm.chain.changeAmt(buyer, amount, true);
-
-        if (gm.chain.rootOf(buyer) != group)
-            gm.chain.top2Sub(buyer, group);
-
-        flag = true;
-    }
-
     // ==== Zero Node Setting ====
 
     function setAmtBase(GeneralMeeting storage gm, bool _basedOnPar)

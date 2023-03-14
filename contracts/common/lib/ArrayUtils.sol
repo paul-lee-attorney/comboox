@@ -9,30 +9,63 @@ pragma solidity ^0.8.8;
 
 library ArrayUtils {
 
-    function mixCombine(uint40[] memory arrA, uint256[] memory arrB) 
-        public pure 
-        returns(uint256[] memory)
+    function merge(uint256[] memory arrA, uint256[] memory arrB)
+        public pure returns(uint256[] memory)
+    {
+        uint256[] memory arrC = new uint256[](arrA.length + arrB.length);
+        uint256 lenC;
+
+        (arrC, lenC) = filter(arrA, arrC, 0);
+        (arrC, lenC) = filter(arrB, arrC, lenC);
+
+        return resize(arrC, lenC);
+    }
+
+    function filter(uint256[] memory arrA, uint256[] memory arrC, uint256 lenC) 
+        public pure returns(uint256[] memory, uint256)
     {
         uint256 lenA = arrA.length;
-        uint256 lenB = arrB.length;
-
-        uint256[] memory output = new uint256[](lenA + lenB);
-
         uint256 i;
-
+        
         while (i < lenA) {
-            output[i] = arrA[i];
+        
+            uint256 j;
+            while (j < lenC){
+                if (arrA[i] == arrC[j]) break;
+                j++;
+            }
+
+            if (j == lenC) {
+                arrC[lenC] = arrA[i];
+                lenC++;
+            }
+
             i++;
         }
 
-        i=0;
-        while (i < lenB) {
-            output[lenA + i] = arrB[i];
-            i++;
-        }
+        return (arrC, lenC);
+    }
 
+    function refine(uint256[] memory arrA) 
+        public pure returns(uint256[] memory)
+    {
+        uint256[] memory arrB = new uint256[](arrA.length);        
+        uint256 lenB;
+        (arrB, lenB) = filter(arrA, arrB, 0);
+
+        return resize(arrB, lenB);
+    }
+
+    function resize(uint256[] memory arrA, uint256 len)
+        public pure returns(uint256[] memory)
+    {
+        uint256[] memory output = new uint256[](len);
+        assembly {
+            output := arrA
+        }
         return output;
     }
+
 
     function combine(uint256[] memory arrA, uint256[] memory arrB)
         public
@@ -82,15 +115,7 @@ library ArrayUtils {
             lenA--;
         }
 
-        uint256[] memory output = new uint256[](pointer);
-        lenA = 0;
-
-        while (lenA < pointer) {
-            output[lenA] = arrC[lenA];
-            lenA++;
-        }
-
-        return output;
+        return resize(arrC, pointer);
     }
 
     function fullyCoveredBy(uint256[] memory arrA, uint256[] memory arrB)
@@ -98,18 +123,20 @@ library ArrayUtils {
         pure
         returns (bool)
     {
-        uint256 lenA = arrA.length;
-        uint256 lenB = arrB.length;
+        uint256[] memory arrAr = refine(arrA);
+        uint256[] memory arrBr = refine(arrB);
 
-        for (uint256 i = 0; i < lenA; i++) {
-            bool flag;
-            for (uint256 j = 0; j < lenB; j++) {
-                if (arrB[j] == arrA[i]) {
-                    flag = true;
-                    break;
-                }
+        uint256 lenA = arrAr.length;
+        uint256 lenB = arrBr.length;
+
+        while (lenA > 0) {
+            uint256 i;
+            while (i < lenB) {
+                if (arrBr[i] == arrAr[lenA-1]) break;
+                i++;
             }
-            if (!flag) return false;
+            if (i==lenB) return false;
+            lenA--;
         }
 
         return true;

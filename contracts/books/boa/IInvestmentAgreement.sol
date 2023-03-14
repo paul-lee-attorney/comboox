@@ -16,15 +16,22 @@ interface IInvestmentAgreement {
         CapitalIncrease,
         ShareTransferExt,
         ShareTransferInt,
-        CI_STint,
-        SText_STint,
-        CI_SText_STint,
-        CI_SText,
         PreEmptive,
         TagAlong,
         DragAlong,
         FirstRefusal,
         FreeGift
+    }
+
+    enum TypeOfIA {
+        ZeroPoint,
+        CapitalIncrease,
+        ShareTransferExt,
+        ShareTransferInt,
+        CI_STint,
+        SText_STint,
+        CI_SText_STint,
+        CI_SText
     }
 
     enum StateOfDeal {
@@ -37,12 +44,13 @@ interface IInvestmentAgreement {
 
     struct Head {
         uint8 typeOfDeal;
+        uint16 seq;
+        uint16 preSeq;
         uint16 classOfShare;
         uint32 seqOfShare;
         uint40 seller;
-        uint32 price;
-        uint32 seq;
-        uint32 preSeq;
+        uint32 priceOfPaid;
+        uint32 priceOfPar;
         uint48 closingDate;
         uint8 state;
     }

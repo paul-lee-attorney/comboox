@@ -133,12 +133,12 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
         uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
         uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
                
-        uint40[] memory consentParties = _getBOG().
+        uint256[] memory consentParties = _getBOG().
             getCaseOfAttitude(motionId,1).voters;
 
         uint256[] memory signers = ISigPage(ia).partiesOfDoc();
 
-        uint256[] memory agreedParties = consentParties.mixCombine(signers);
+        uint256[] memory agreedParties = consentParties.merge(signers);
 
         // uint256 seqOfShare = sn.ssnOfDeal();
         IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);

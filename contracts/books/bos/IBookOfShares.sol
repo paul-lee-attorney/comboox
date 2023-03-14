@@ -16,7 +16,7 @@ interface IBookOfShares {
         uint48 issueDate;
         uint48 paidInDeadline; //出资期限（时间戳）
         uint40 shareholder;
-        uint32 price; 
+        uint32 price;
         uint8 state; //股票状态 （0:正常，1:查封）        
     }
 

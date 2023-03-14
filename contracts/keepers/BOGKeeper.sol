@@ -120,7 +120,7 @@ contract BOGKeeper is
 
 
     function proposeAction(
-        uint8 typeOfAction,
+        uint256 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
@@ -171,7 +171,7 @@ contract BOGKeeper is
     // ==== execute ====
 
     function execAction(
-        uint8 typeOfAction,
+        uint256 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,

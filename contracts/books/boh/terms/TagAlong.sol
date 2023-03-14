@@ -35,7 +35,7 @@ contract TagAlong is BOASetting, BOGSetting, DragAlong {
 
         if (!isTriggered(ia, seqOfDeal)) return true;
 
-        uint40[] memory consentParties = _bog.getCaseOfAttitude(
+        uint256[] memory consentParties = _bog.getCaseOfAttitude(
             uint256(uint160(ia)),
             1
         ).voters;
@@ -44,7 +44,7 @@ contract TagAlong is BOASetting, BOGSetting, DragAlong {
 
         IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
 
-        uint256[] memory agreedParties = consentParties.mixCombine(signers);
+        uint256[] memory agreedParties = consentParties.merge(signers);
 
         uint256[] memory rightholders = _dragers[head.seller].followers.values();
 

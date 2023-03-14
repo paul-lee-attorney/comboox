@@ -8,41 +8,26 @@
 pragma solidity ^0.8.8;
 
 import "./ITerm.sol";
+import "../../../common/lib/EnumerableSet.sol";
+
 
 interface IAntiDilution is ITerm {
+
+    struct Benchmark{
+        uint16 classOfShare;
+        uint64 floorPrice;
+        EnumerableSet.UintSet obligors; 
+    }
+
     // ################
     // ##   Write    ##
     // ################
-    function setMaxQtyOfMarks(uint16 max) external;
 
-    function addBenchmark(uint256 class, uint32 price) external;
 
-    function updateBenchmark(
-        uint256 class,
-        uint32 deltaPrice,
-        bool increase
-    ) external;
-
-    function delBenchmark(uint256 class) external;
-
-    function addObligor(uint256 class, uint256 obligor) external;
-
-    function removeObligor(uint256 class, uint256 obligor) external;
 
     // ############
     // ##  read  ##
     // ############
 
-    function isMarked(uint256 class) external view returns (bool);
 
-    function markedClasses() external view returns (uint256[] memory);
-
-    function getBenchmark(uint256 class) external view returns (uint64);
-
-    function obligors(uint256 class) external view returns (uint256[] memory);
-
-    function giftPar(address ia, uint256 snOfDeal, uint256 seqOfShare)
-        external
-        view
-        returns (uint64);
 }

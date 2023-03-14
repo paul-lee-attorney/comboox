@@ -144,7 +144,7 @@ contract ShareholdersAgreement is
         address ia,
         uint256 snOfDeal
     ) public view titleExist(title) returns (bool) {
-        return ITerm(_terms[title]).isTriggered(ia, snOfDeal);
+        return ITerm(_terms[title]).isTriggered(ia, IInvestmentAgreement(ia).getDeal(snOfDeal));
     }
 
     function termIsExempted(
@@ -154,7 +154,7 @@ contract ShareholdersAgreement is
     ) external view titleExist(title) returns (bool) {
         if (!termIsTriggered(title, ia, snOfDeal)) return true;
 
-        return ITerm(_terms[title]).isExempted(ia, snOfDeal);
+        return ITerm(_terms[title]).isExempted(ia, IInvestmentAgreement(ia).getDeal(snOfDeal));
     }
 
     // ==== Rules ====

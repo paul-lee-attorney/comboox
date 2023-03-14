@@ -17,33 +17,27 @@ import "../../../common/access/AccessControl.sol";
 import "../../../common/lib/ArrayUtils.sol";
 // import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
-import "../../../common/lib/TopChain.sol";
 
-import "../../../common/ruting/BODSetting.sol";
+import "../../../common/ruting/BOGSetting.sol";
 import "../../../common/ruting/BOSSetting.sol";
 import "../../../common/ruting/ROMSetting.sol";
 
 import "./IAntiDilution.sol";
 
-contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, AccessControl {
+contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, AccessControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
-    // using SNParser for bytes32;
-    using TopChain for TopChain.Chain;
 
-    mapping(uint256 => EnumerableSet.UintSet) private _obligors;
-
-    TopChain.Chain private _marks;
+    // classOfShare => Benchmark
+    mapping(uint256 => Benchmark) private _marks;
+    EnumerableSet.UintSet private _classes;
 
     // #################
     // ##   修饰器    ##
     // #################
 
     modifier onlyMarked(uint256 class) {
-        require(
-            _marks.isMember(class),
-            "AD.onlyMarked: no uint price maked for the class"
-        );
+        require(isMarked(class), "AD.mf.OM: class not marked");
         _;
     }
 
@@ -51,70 +45,61 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
     // ##   写接口   ##
     // ################
 
-    function setMaxQtyOfMarks(uint16 max) external onlyAttorney {
-        _marks.setMaxQtyOfMembers(max);
+    function addBenchmark(uint256 class, uint32 price) external onlyAttorney {        
+
+        require (class > 0, "AD.AB: zero class");
+        require (price > 0, "AD.AB: zero price");
+
+        _marks[class].classOfShare = class;
+        _marks[class].floorPrice = price;
+
+        _classes.add(class);
     }
 
-    function addBenchmark(uint256 class, uint32 price) external onlyAttorney {
-        _marks.addNode(class);
-        _marks.changeAmt(class, price, true);
+    function removeBenchmark(uint256 class) external onlyAttorney {
+        if (_classes.remove(class)) 
+            delete _marks[class];
     }
 
-    function updateBenchmark(
-        uint256 class,
-        uint32 deltaPrice,
-        bool increase
-    ) external onlyAttorney {
-        _marks.changeAmt(class, deltaPrice, increase);
+    function addObligor(uint256 class, uint256 obligor) external onlyMarked(class) onlyAttorney {
+        _marks[class].obligors.add(obligor);
     }
 
-    function delBenchmark(uint256 class) external onlyAttorney {
-        // (, , , uint64 price, , ) = _marks.getNode(class);
-        TopChain.Node memory mark = _marks.getNode(class);
-
-        _marks.changeAmt(class, mark.amt, false);
-        _marks.delNode(class);
-    }
-
-    function addObligor(uint256 class, uint256 obligor) external onlyAttorney {
-        _obligors[class].add(obligor);
-    }
-
-    function removeObligor(uint256 class, uint256 obligor) external onlyAttorney {
-        _obligors[class].remove(obligor);
+    function removeObligor(uint256 class, uint256 obligor) external onlyMarked(class) onlyAttorney {
+        _marks[class].obligors.remove(obligor);
     }
 
     // ################
     // ##  查询接口  ##
     // ################
 
-    function isMarked(uint256 class) external view returns (bool) {
-        return class > 0 && _marks.nodes[class].amt > 0;
+    function isMarked(uint256 class) public view returns (bool flag) {
+        flag = _classes.contains(class);
     }
 
-    function markedClasses() external view returns (uint256[] memory) {
-        return _marks.membersList();
+    function getClasses() external view returns (uint256[] memory) {
+        return _classes.values();
     }
 
-    function getBenchmark(uint256 class)
-        external
+    function getFloorPriceOfClass(uint256 class)
+        public
         view
         onlyMarked(class)
         returns (uint64 price)
     {
-        price = _marks.nodes[class].amt;
+        price = _marks[class].floorPrice;
     }
 
-    function obligors(uint256 class)
+    function getObligorsOfAD(uint256 class)
         external
         view
         onlyMarked(class)
         returns (uint256[] memory)
     {
-        return _obligors[class].values();
+        return _marks[class].obligors.values();
     }
 
-    function giftPar(address ia, uint256 seqOfDeal, uint256 seqOfShare)
+    function getGiftPaid(address ia, uint256 seqOfDeal, uint256 seqOfShare)
         external
         view
         returns (uint64 gift)
@@ -124,19 +109,11 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
         
         IBookOfShares.Share memory share = _getBOS().getShare(seqOfShare);
 
-        uint64 markPrice = _marks.nodes[share.head.class].amt;
+        uint64 floorPrice = getFloorPriceOfClass(share.head.class);
 
-        // uint32 dealPrice = snOfDeal.priceOfDeal();
+        require(floorPrice > deal.head.price, "AD.GP: adRule not triggered");
 
-        require(
-            markPrice > deal.head.price,
-            "AD.giftPar: AntiDilution not triggered"
-        );
-
-        // IBookOfShares.Share memory share = _getBOS().
-        //     getShare(shareNumber.ssn());
-
-        gift = (share.body.paid * markPrice) / deal.head.price - share.body.paid;
+        gift = (share.body.paid * floorPrice) / deal.head.price - share.body.paid;
     }
 
     // ################
@@ -145,22 +122,12 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
 
     function isTriggered(address ia, IInvestmentAgreement.Deal memory deal) public view returns (bool) {
 
-        // IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        if (deal.head.typeOfDeal != uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)) 
+            return false;
 
-        // uint32 unitPrice = sn.priceOfDeal();
+        uint64 floorPrice = getFloorPriceOfClass(deal.head.classOfShare);
 
-        if (
-            deal.head.typeOfDeal !=
-            uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease) &&
-            deal.head.typeOfDeal != uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
-        ) return false;
-
-        uint40 mark = _marks.nodes[0].next;
-
-        while (mark > 0) {
-            if (deal.head.price < _marks.nodes[mark].amt) return true;
-            else mark = _marks.nodes[mark].next;
-        }
+        if (deal.head.priceOfPaid < floorPrice) return true;
 
         return false;
     }
@@ -234,22 +201,20 @@ contract AntiDilution is IAntiDilution, BODSetting, BOSSetting, ROMSetting, Acce
     function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
         if (!isTriggered(ia, deal)) return true;
 
-        // uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
-        // uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
         uint256 motionId = uint256(uint160(ia));
 
-        // uint256[] memory consentParties;
+        uint256[] memory initBuyers = ISigPage(ia).getBuyers(true);
+        uint256[] memory initSellers = ISigPage(ia).getSellers(true);
+        uint256[] memory addtBuyers = ISigPage(ia).getBuyers(false);
+        uint256[] memory addtSellers = ISigPage(ia).getSellers(false);
+        
+        uint256[] memory parties = initBuyers.merge(addtBuyers).merge(initSellers).merge(addtSellers);
 
-        uint256[] memory consentParties = _getBOD().
+        uint256[] memory supporters = _getBOG().
             getCaseOfAttitude(motionId,1).voters;
         
-        // assembly {
-        //     consentParties := parties
-        // }
+        uint256[] memory consentParties = parties.merge(supporters);        
 
-
-        // uint32 unitPrice = IInvestmentAgreement(ia).getDeal(seqOfDeal).head.price;
-
-        return _isExempted(deal.head.price, consentParties);
+        return _isExempted(deal.head.priceOfPaid, consentParties);
     }
 }
