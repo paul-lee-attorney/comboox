@@ -7,31 +7,9 @@
 
 pragma solidity ^0.8.8;
 
+import "../../common/lib/SharesRepo.sol";
+
 interface IBookOfShares {
-
-    struct Head {
-        uint16 class; // Class of shares as per the evaluation of company for corresponding investment;
-        uint32 seq; // sequence number of shares;
-        uint32 preSeq;
-        uint48 issueDate;
-        uint48 paidInDeadline; //出资期限（时间戳）
-        uint40 shareholder;
-        uint32 price;
-        uint8 state; //股票状态 （0:正常，1:查封）        
-    }
-
-    struct Body {
-        uint64 paid; //实缴出资
-        uint64 par; //票面金额（注册资本面值）
-        uint64 cleanPaid; //清洁金额（扣除出质、远期票面金额）
-        uint64 cleanPar;
-    }
-
-    //Share 股票
-    struct Share {
-        Head head; //出资证明书编号（股票编号）
-        Body body;
-    }
 
     //##################
     //##    Event     ##
@@ -45,8 +23,7 @@ interface IBookOfShares {
 
     event PayInCapital(
         uint256 indexed seq,
-        uint64 amount,
-        uint48 paidInDate
+        uint64 amount
     );
 
     event SubAmountFromShare(
@@ -77,29 +54,29 @@ interface IBookOfShares {
     //##################
 
     function issueShare(
-        bytes32 shareNumber,
+        uint256 shareNumber,
         uint64 paid,
         uint64 par
     ) external;
 
     function regShare(
-        Head memory head,
+        SharesRepo.Head memory head,
         uint64 paid,
         uint64 par
     ) external;
 
-    function setPayInAmt(bytes32 sn, uint64 amount) external;
+    function setPayInAmt(bytes32 hashLock, uint64 amount) external;
 
-    function requestPaidInCapital(bytes32 sn, string memory hashKey) external;
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
 
-    function withdrawPayInAmt(bytes32 sn) external;
+    function withdrawPayInAmt(bytes32 hashLock) external;
 
     function transferShare(
         uint256 seq,
         uint64 paid,
         uint64 par,
         uint40 to,
-        uint32 unitPrice
+        uint32 price
     ) external;
 
     function decreaseCapital(
@@ -135,18 +112,21 @@ interface IBookOfShares {
     function getHeadOfShare(uint256 seq)
         external
         view
-        returns (Head memory head);
+        returns (SharesRepo.Head memory head);
 
     function getBodyOfShare(uint256 seq)
         external
         view
-        returns (Body memory body);
+        returns (SharesRepo.Body memory body);
 
     function getShare(uint256 seq)
         external
         view
-        returns (Share memory share);
+        returns (SharesRepo.Share memory share);
 
 
     function getLocker(bytes32 sn) external view returns (uint64 amount);
+
+    function getAttrOfClass(uint16 class) external view
+        returns (uint256[] memory seqList, uint256[] memory members);
 }
