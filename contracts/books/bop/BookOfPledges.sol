@@ -10,9 +10,9 @@ pragma solidity ^0.8.8;
 import "./IBookOfPledges.sol";
 
 import "../../common/access/AccessControl.sol";
-import "../../common/lib/PledgesRepo.sol";
+import "../../common/ruting/BOSSetting.sol";
 
-contract BookOfPledges is IBookOfPledges, AccessControl {
+contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
     using PledgesRepo for PledgesRepo.Repo;
     using PledgesRepo for PledgesRepo.Pledge;
 
@@ -23,53 +23,87 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     //##################
 
     function createPledge(
-        PledgesRepo.Head memory head,
-        uint256 creditor,
+        uint256 sn,
+        uint40 creditor,
         uint16 monOfGuarantee,
         uint64 pledgedPaid,
         uint64 pledgedPar,
         uint64 guaranteedAmt
-    ) external onlyDirectKeeper {
-
+    ) external onlyDirectKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
-                head, 
-                creditor, 
-                monOfGuarantee,
-                pledgedPaid,
-                pledgedPar, 
-                guaranteedAmt
-            );
+            sn, 
+            creditor, 
+            monOfGuarantee, 
+            pledgedPaid, 
+            pledgedPar, 
+            guaranteedAmt
+        );
 
         emit CreatePledge(
             head.seqOfShare,
-            head.seqOfPledge,
+            head.seqOfPld,
             creditor,
             pledgedPaid,
             pledgedPar,
             guaranteedAmt
         );
+
+        _getBOS().decreaseCleanAmt(head.seqOfShare, pledgedPaid, pledgedPar);
+
+    }
+
+    function issuePledge(
+        PledgesRepo.Head memory head,
+        uint40 creditor,
+        uint16 monOfGuarantee,
+        uint64 pledgedPaid,
+        uint64 pledgedPar,
+        uint64 guaranteedAmt
+    ) external onlyDirectKeeper returns(PledgesRepo.Head memory regHead)
+    {
+        regHead = _repo.issuePledge(
+            head, 
+            creditor, 
+            monOfGuarantee,
+            pledgedPaid,
+            pledgedPar, 
+            guaranteedAmt
+        );
+
+        emit CreatePledge(
+            head.seqOfShare,
+            head.seqOfPld,
+            creditor,
+            pledgedPaid,
+            pledgedPar,
+            guaranteedAmt
+        );
+    
+        _getBOS().decreaseCleanAmt(regHead.seqOfShare, pledgedPaid, pledgedPar);
+
     }
 
     function regPledge(
         PledgesRepo.Pledge memory pld
-    ) external onlyKeeper {
-        PledgesRepo.Head memory head = _repo.regPledge(pld);
+    ) external onlyKeeper returns(PledgesRepo.Head memory head){
+        head = _repo.regPledge(pld);
 
         emit CreatePledge(
             head.seqOfShare, 
-            head.seqOfPledge, 
+            head.seqOfPld, 
             pld.body.creditor,
-            pld.body.pledgedPaid, 
-            pld.body.pledgedPar, 
+            pld.body.paid, 
+            pld.body.par, 
             pld.body.guaranteedAmt
         );
-
+    
+        _getBOS().decreaseCleanAmt(head.seqOfShare, pld.body.paid, pld.body.par);
     }
 
     function updatePledge(
         uint256 seqOfShare,
         uint256 seqOfPledge,
-        uint256 creditor,
+        uint40 creditor,
         uint48 expireDate,
         uint64 pledgedPaid,
         uint64 pledgedPar,
@@ -81,8 +115,25 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
             "PR.UP: expireDate is passed"
         );
 
-        _repo.pledges[seqOfShare][seqOfPledge].
-            updatePledge(creditor, expireDate, pledgedPaid, pledgedPar, guaranteedAmt);
+        PledgesRepo.Pledge storage pld = _repo.pledges[seqOfShare][seqOfPledge];
+
+        if (pledgedPaid < pld.body.paid ||
+            pledgedPar < pld.body.par)
+        {
+            _getBOS().increaseCleanAmt(
+                seqOfShare,
+                pld.body.paid - pledgedPaid,
+                pld.body.par - pledgedPar
+            );
+        } else if (pledgedPaid > pld.body.paid ||
+                   pledgedPar > pld.body.par)
+        {
+            _getBOS().decreaseCleanAmt(
+                seqOfShare,
+                pledgedPaid - pld.body.paid,
+                pledgedPar - pld.body.par 
+            );
+        }
 
         emit UpdatePledge(
             seqOfShare, 
@@ -94,6 +145,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
             guaranteedAmt
         );
 
+        pld.updatePledge(creditor, expireDate, pledgedPaid, pledgedPar, guaranteedAmt);
     }
 
     //##################
@@ -104,7 +156,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         public view 
         returns (uint32) 
     {
-        return _repo.pledges[seqOfShare][0].head.seqOfPledge;
+        return _repo.pledges[seqOfShare][0].head.seqOfPld;
     }
 
     function isPledge(uint256 seqOfShare, uint256 seqOfPledge) 
@@ -120,10 +172,16 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         pld = _repo.pledges[seqOfShare][seqOfPledge];
     }
 
-    function pledgesOfShare(uint256 seqOfShare) 
+    function getPledgesOfShare(uint256 seqOfShare) 
         external view 
         returns (PledgesRepo.Pledge[] memory) 
     {
-        return _repo.pledgesOfShare(seqOfShare);
+        return _repo.getPledgesOfShare(seqOfShare);
+    }
+
+    function getSnList() external view
+        returns(uint256[] memory records)
+    {
+        records = _repo.getSnList();
     }
 }

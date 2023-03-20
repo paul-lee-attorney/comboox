@@ -7,11 +7,14 @@
 
 pragma solidity ^0.8.8;
 
+import "./EnumerableSet.sol";
+
 library PledgesRepo {
+    using EnumerableSet for EnumerableSet.UintSet;
 
     struct Head {
         uint32 seqOfShare;
-        uint32 seqOfPledge;
+        uint32 seqOfPld;
         uint48 createDate;
         uint48 expireDate;
         uint40 pledgor;
@@ -20,8 +23,8 @@ library PledgesRepo {
 
     struct Body {
         uint40 creditor; //质权人、债权人
-        uint64 pledgedPaid;
-        uint64 pledgedPar; 
+        uint64 paid;
+        uint64 par; 
         uint64 guaranteedAmt;         
     }
 
@@ -32,34 +35,58 @@ library PledgesRepo {
     }
 
     struct Repo{
-        // seqOfShare => seqOfPledge => Pledge
+        // seqOfShare => seqOfPld => Pledge
         mapping(uint256 => mapping(uint256 => Pledge)) pledges;
+        EnumerableSet.UintSet snList;
     }
 
     //##################
     //##    写接口    ##
     //##################
 
-    function snParser(bytes32 sn) public pure returns (Head memory head) {
+    function snParser(uint256 sn) public pure returns (Head memory head) {
         head = Head({
-            seqOfShare: uint32(bytes4(sn)),
-            seqOfPledge: uint16(bytes2(sn<<32)),
-            createDate: uint48(bytes6(sn<<48)),
-            expireDate: uint48(bytes6(sn<<96)),
-            pledgor: uint40(bytes5(sn<<144)),
-            debtor: uint40(bytes5(sn<<184))
+            seqOfShare: uint32(sn >> 224),
+            seqOfPld: uint32(sn >> 192),
+            createDate: uint48(sn >> 144),
+            expireDate: uint48(sn >> 96),
+            pledgor: uint40(sn >> 56),
+            debtor: uint40(sn >> 16)
         });
     } 
 
+    function codifyHead(Head memory head) public pure returns (uint256 sn) {
+        sn = uint256(head.seqOfShare) << 224 +
+            uint256(head.seqOfPld) << 192 + 
+            uint256(head.createDate) << 144 +
+            uint256(head.pledgor) << 56 +
+            uint256(head.debtor) << 16;
+    } 
+
     function createPledge(
+            Repo storage repo, 
+            uint256 sn, 
+            uint40 creditor, 
+            uint16 monOfGuarantee, 
+            uint64 paid, 
+            uint64 par, 
+            uint64 guaranteedAmt
+    ) public returns (Head memory head) 
+    {
+        head = snParser(sn);
+        head = issuePledge(repo, head, creditor, monOfGuarantee, paid, par, guaranteedAmt);
+    }
+
+
+    function issuePledge(
         Repo storage repo,
         Head memory head,
-        uint256 creditor,
+        uint40 creditor,
         uint16 monOfGuarantee,
-        uint64 pledgedPaid,
-        uint64 pledgedPar,
+        uint64 paid,
+        uint64 par,
         uint64 guaranteedAmt
-    ) public returns(Head memory) {
+    ) public returns(Head memory regHead) {
         Pledge memory pld;
 
         head.createDate = uint48(block.timestamp);
@@ -69,63 +96,64 @@ library PledgesRepo {
         pld.head = head;
 
         pld.body = Body({
-            creditor: uint40(creditor),
-            pledgedPaid: pledgedPaid,
-            pledgedPar: pledgedPar,
+            creditor: creditor,
+            paid: paid,
+            par: par,
             guaranteedAmt: guaranteedAmt
         });
 
-        regPledge(repo, pld);
-
-        return pld.head;
+        regHead = regPledge(repo, pld);
     }
 
     function regPledge(
         Repo storage repo,
         Pledge memory pld
-    ) public returns(Head memory){
-        _increaseCounterOfPledges(repo, pld.head.seqOfShare);
-        pld.head.seqOfPledge = counterOfPledges(repo, pld.head.seqOfShare);
+    ) public returns(Head memory regHead){
+        pld.head.seqOfPld = _increaseCounterOfPledges(repo, pld.head.seqOfShare);
 
-        repo.pledges[pld.head.seqOfShare][pld.head.seqOfPledge] = pld;
+        repo.pledges[pld.head.seqOfShare][pld.head.seqOfPld] = pld;
+        repo.snList.add(codifyHead(pld.head));
 
-        return pld.head;
+        regHead = pld.head;
     }
 
     function updatePledge(
         Pledge storage pld,
-        uint256 creditor,
+        uint40 creditor,
         uint48 expireDate,
-        uint64 pledgedPaid,
-        uint64 pledgedPar,
+        uint64 paid,
+        uint64 par,
         uint64 guaranteedAmt
     ) public {
         pld.head.expireDate = expireDate;
 
         pld.body = Body({
-            creditor : uint40(creditor),
-            pledgedPaid: pledgedPaid,
-            pledgedPar : pledgedPar,
+            creditor : creditor,
+            paid: paid,
+            par : par,
             guaranteedAmt : guaranteedAmt
         });
     }
 
-    //##################
-    //##    读接口    ##
-    //##################
-
-    function _increaseCounterOfPledges(Repo storage repo, uint256 seqOfShare) private {
-        repo.pledges[seqOfShare][0].head.seqOfPledge++;
+    function _increaseCounterOfPledges(Repo storage repo, uint256 seqOfShare) 
+        private returns (uint32 seqOfPld)
+    {
+        repo.pledges[seqOfShare][0].head.seqOfPld++;
+        seqOfPld = repo.pledges[seqOfShare][0].head.seqOfPld;
     }
+
+    //#################
+    //##    读接口    ##
+    //#################
 
     function counterOfPledges(Repo storage repo, uint256 seqOfShare) 
         public view 
         returns (uint32) 
     {
-        return repo.pledges[seqOfShare][0].head.seqOfPledge;
+        return repo.pledges[seqOfShare][0].head.seqOfPld;
     }
 
-    function pledgesOfShare(Repo storage repo, uint256 seqOfShare) 
+    function getPledgesOfShare(Repo storage repo, uint256 seqOfShare) 
         public view 
         returns (Pledge[] memory) 
     {
@@ -142,4 +170,10 @@ library PledgesRepo {
 
         return output;
     }
+
+    function getSnList(Repo storage repo) public view returns (uint256[] memory list)
+    {
+        list = repo.snList.values();
+    }
+
 }

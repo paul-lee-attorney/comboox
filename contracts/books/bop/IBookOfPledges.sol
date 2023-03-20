@@ -39,22 +39,31 @@ interface IBookOfPledges {
     //##################
 
     function createPledge(
-        PledgesRepo.Head memory head,
-        uint256 creditor,
+        uint256 sn,
+        uint40 creditor,
         uint16 monOfGuarantee,
         uint64 pledgedPaid,
         uint64 pledgedPar,
         uint64 guaranteedAmt
-    ) external;
+    ) external returns(PledgesRepo.Head memory head);
+
+    function issuePledge(
+        PledgesRepo.Head memory head,
+        uint40 creditor,
+        uint16 monOfGuarantee,
+        uint64 pledgedPaid,
+        uint64 pledgedPar,
+        uint64 guaranteedAmt
+    ) external returns(PledgesRepo.Head memory issuedHead);
 
     function regPledge(
         PledgesRepo.Pledge memory pld
-    ) external;
+    ) external returns(PledgesRepo.Head memory head);
 
     function updatePledge(
         uint256 seqOfShare,
         uint256 seqOfPledge,
-        uint256 creditor,
+        uint40 creditor,
         uint48 expireDate,
         uint64 pledgedPaid,
         uint64 pledgedPar,
@@ -76,6 +85,9 @@ interface IBookOfPledges {
             PledgesRepo.Pledge memory pld
         );
 
-    function pledgesOfShare(uint256 seqOfShare) external view returns (PledgesRepo.Pledge[] memory);
+    function getPledgesOfShare(uint256 seqOfShare) external view returns (PledgesRepo.Pledge[] memory);
+
+    function getSnList() external view
+        returns(uint256[] memory records);
 
 }

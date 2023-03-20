@@ -12,19 +12,20 @@ import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/BOPSetting.sol";
 
 import "../common/lib/PledgesRepo.sol";
+import "../common/lib/SharesRepo.sol";
 
 import "./IBOPKeeper.sol";
 
 contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
-    using PledgesRepo for bytes32;
+    using PledgesRepo for uint256;
 
     // ################
     // ##   Pledge   ##
     // ################
 
     function createPledge(
-        bytes32 sn,
-        uint256 creditor,
+        uint256 sn,
+        uint40 creditor,
         uint16 monOfGuarantee,
         uint64 pledgedPaid,
         uint64 pledgedPar,
@@ -36,15 +37,15 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
 
         IBookOfShares _bos = _getBOS();
 
-        IBookOfShares.Share memory share = _bos.getShare(head.seqOfShare);
+        SharesRepo.Share memory share = _bos.getShare(head.seqOfShare);
 
         require(share.head.shareholder == caller, "BOPK.CP: NOT shareholder");
         require(head.pledgor == caller, "BOPK.CP: NOT pledgor");
 
-        _bos.decreaseCleanAmt(head.seqOfShare, pledgedPaid, pledgedPar);
+        // _bos.decreaseCleanAmt(head.seqOfShare, pledgedPaid, pledgedPar);
 
         _getBOP().createPledge(
-            head,
+            sn,
             creditor,
             monOfGuarantee,
             pledgedPaid,
@@ -56,7 +57,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
     function updatePledge(
         uint256 seqOfShare,
         uint256 seqOfPledge,
-        uint256 creditor,
+        uint40 creditor,
         uint48 expireDate,
         uint64 pledgedPaid,
         uint64 pledgedPar,
@@ -68,29 +69,29 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
 
         PledgesRepo.Pledge memory pld = _getBOP().getPledge(seqOfShare, seqOfPledge);
 
-        if (pledgedPaid < pld.body.pledgedPaid ||
-            pledgedPar < pld.body.pledgedPar || 
+        if (pledgedPaid < pld.body.paid ||
+            pledgedPar < pld.body.par || 
             expireDate < pld.head.expireDate ||
             creditor != pld.body.creditor) 
         {   require(caller == pld.body.creditor, "BOPK.UP: NOT creditor");
 
-            _getBOS().increaseCleanAmt(
-                seqOfShare,
-                pld.body.pledgedPaid - pledgedPaid > 0 ? pld.body.pledgedPaid - pledgedPaid : 0,
-                pld.body.pledgedPar - pledgedPar > 0 ? pld.body.pledgedPar - pledgedPar : 0
-            );
+            // _getBOS().increaseCleanAmt(
+            //     seqOfShare,
+            //     pld.body.pledgedPaid - pledgedPaid > 0 ? pld.body.pledgedPaid - pledgedPaid : 0,
+            //     pld.body.pledgedPar - pledgedPar > 0 ? pld.body.pledgedPar - pledgedPar : 0
+            // );
 
-        } else if (pledgedPaid > pld.body.pledgedPaid || 
-            pledgedPar > pld.body.pledgedPar ||
+        } else if (pledgedPaid > pld.body.paid || 
+            pledgedPar > pld.body.par ||
             expireDate > pld.head.expireDate) 
         {
             require(caller == pld.head.pledgor,"BOPK.UP: NOT pledgor");
 
-            _getBOS().decreaseCleanAmt(
-                seqOfShare, 
-                pledgedPaid - pld.body.pledgedPaid > 0 ? pledgedPaid - pld.body.pledgedPaid : 0,
-                pledgedPar - pld.body.pledgedPar > 0 ? pledgedPar - pld.body.pledgedPar : 0
-            );
+            // _getBOS().decreaseCleanAmt(
+            //     seqOfShare, 
+            //     pledgedPaid - pld.body.pledgedPaid > 0 ? pledgedPaid - pld.body.pledgedPaid : 0,
+            //     pledgedPar - pld.body.pledgedPar > 0 ? pledgedPar - pld.body.pledgedPar : 0
+            // );
         }
 
         _getBOP().updatePledge(seqOfShare, seqOfPledge, creditor, expireDate, pledgedPaid, pledgedPar, guaranteedAmt);
@@ -104,7 +105,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
             require(caller == pld.body.creditor, "NOT creditor");
         else require(caller == pld.head.pledgor, "NOT Pledgor");
 
-        _getBOS().increaseCleanAmt(seqOfShare, pld.body.pledgedPaid, pld.body.pledgedPar);
+        _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);
 
         _getBOP().updatePledge(seqOfShare, seqOfPledge, pld.body.creditor, 0, 0, 0, 0);
     }
