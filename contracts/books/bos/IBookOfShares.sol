@@ -15,31 +15,17 @@ interface IBookOfShares {
     //##    Event     ##
     //##################
 
-    event IssueShare(
-        uint256 indexed seq,
-        uint64 paid,
-        uint64 par
-    );
+    event IssueShare(uint256 indexed seq, uint64 paid, uint64 par);
 
-    event PayInCapital(
-        uint256 indexed seq,
-        uint64 amount
-    );
+    event PayInCapital(uint256 indexed seq, uint64 amount);
 
-    event SubAmountFromShare(
-        uint256 indexed seq,
-        uint64 paid,
-        uint64 par
-    );
+    event SubAmountFromShare(uint256 indexed seq, uint64 paid, uint64 par);
 
     event DeregisterShare(uint256 indexed seq);
 
     event UpdateStateOfShare(uint256 indexed seq, uint8 state);
 
-    event UpdatePaidInDeadline(
-        uint256 indexed seq,
-        uint48 paidInDeadline
-    );
+    event UpdatePaidInDeadline(uint256 indexed seq, uint48 paidInDeadline);
 
     event DecreaseCleanAmt(uint256 indexed seq, uint64 paid, uint64 par);
 
@@ -53,17 +39,9 @@ interface IBookOfShares {
     //##    写接口    ##
     //##################
 
-    function issueShare(
-        uint256 shareNumber,
-        uint64 paid,
-        uint64 par
-    ) external;
+    function issueShare(uint256 shareNumber, uint64 paid,uint64 par) external;
 
-    function regShare(
-        SharesRepo.Head memory head,
-        uint64 paid,
-        uint64 par
-    ) external;
+    function regShare(SharesRepo.Head memory head, uint64 paid,uint64 par) external;
 
     function setPayInAmt(bytes32 hashLock, uint64 amount) external;
 
@@ -79,11 +57,7 @@ interface IBookOfShares {
         uint32 price
     ) external;
 
-    function decreaseCapital(
-        uint256 seq,
-        uint64 paid,
-        uint64 par
-    ) external;
+    function decreaseCapital(uint256 seq, uint64 paid, uint64 par) external;
 
     // ==== CleanPaid ====
 
@@ -109,21 +83,14 @@ interface IBookOfShares {
 
     function isShare(uint256 seq) external view returns (bool);
 
-    function getHeadOfShare(uint256 seq)
-        external
-        view
+    function getHeadOfShare(uint256 seq) external view 
         returns (SharesRepo.Head memory head);
 
-    function getBodyOfShare(uint256 seq)
-        external
-        view
+    function getBodyOfShare(uint256 seq) external view 
         returns (SharesRepo.Body memory body);
 
-    function getShare(uint256 seq)
-        external
-        view
+    function getShare(uint256 seq) external view
         returns (SharesRepo.Share memory share);
-
 
     function getLocker(bytes32 sn) external view returns (uint64 amount);
 

@@ -13,14 +13,9 @@ import "../books/boh/terms/IAlongs.sol";
 
 import "../books/boh/IShareholdersAgreement.sol";
 
-import "../books/bos/IBookOfShares.sol";
 import "../books/boa/IInvestmentAgreement.sol";
-// import "../books/boa/IFirstRefusalDeals.sol";
-
-// import "../books/boa/IMockResults.sol";
 
 import "../common/components/IRepoOfDocs.sol";
-
 import "../common/components/ISigPage.sol";
 
 import "../common/access/AccessControl.sol";
@@ -28,15 +23,11 @@ import "../common/access/AccessControl.sol";
 import "../common/ruting/BOASetting.sol";
 import "../common/ruting/BOHSetting.sol";
 import "../common/ruting/BOSSetting.sol";
-// import "../common/ruting/IIASetting.sol";
 import "../common/ruting/ROMSetting.sol";
-
-// import "../common/ruting/ISigPageSetting.sol";
 
 import "../common/lib/RulesParser.sol";
 import "../common/lib/SigsRepo.sol";
-// import "../common/lib/SNParser.sol";
-// import "../common/lib/SNFactory.sol";
+import "../common/lib/SharesRepo.sol";
 import "../common/lib/FRClaims.sol";
 
 import "./ISHAKeeper.sol";
@@ -50,7 +41,6 @@ contract SHAKeeper is
     AccessControl
 {
     using RulesParser for bytes32;
-    // using SNFactory for bytes;
 
     // ##################
     // ##   Modifier   ##
@@ -107,7 +97,7 @@ contract SHAKeeper is
     ) external onlyDirectKeeper withinExecPeriod(ia) {
 
         IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
-        IBookOfShares.Share memory share = _getBOS().getShare(seqOfShare);
+        SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
         require(deal.head.state != uint8(IInvestmentAgreement.StateOfDeal.Terminated), 
             "SHAK.EAR: deal terminated");
@@ -122,7 +112,7 @@ contract SHAKeeper is
         bool dragAlong,
         address ia,
         IInvestmentAgreement.Deal memory deal,
-        IBookOfShares.Share memory share,
+        SharesRepo.Share memory share,
         uint256 caller
     ) private {
 
@@ -174,10 +164,10 @@ contract SHAKeeper is
 
         if (deal.head.state != uint8(IInvestmentAgreement.StateOfDeal.Terminated))
         {
-            DTClaims.Claim memory claim = _getBOA().getClaimOfDT(ia, seqOfDeal, seqOfShare);
-            IBookOfShares.Share memory share = _getBOS().getShare(seqOfShare);
+            DTClaims.Claim memory claim = _getBOA().getDTClaimForShare(ia, seqOfDeal, seqOfShare);
+            SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
-            uint256 seqOfAlongDeal = _createAlongDeal(ia, claim, deal, share, caller);
+            uint256 seqOfAlongDeal = _createAlongDeal(ia, claim, deal, share);
 
             ISigPage(ia).regSig(seqOfAlongDeal, claim.claimer, claim.sigDate, claim.sigHash);
             ISigPage(ia).regSig(seqOfAlongDeal, caller, uint48(block.timestamp), sigHash);
@@ -189,18 +179,19 @@ contract SHAKeeper is
         address ia,
         DTClaims.Claim memory claim,
         IInvestmentAgreement.Deal memory deal,
-        IBookOfShares.Share memory share
+        SharesRepo.Share memory share
     ) private returns (uint256 seqOfAlongDeal) {
         deal.head = IInvestmentAgreement.Head({
             typeOfDeal: claim.typeOfClaim == 0 ? 
                 uint8(IInvestmentAgreement.TypeOfDeal.DragAlong) : 
                 uint8(IInvestmentAgreement.TypeOfDeal.TagAlong),
+            seq: 0,
+            preSeq: deal.head.seq,
             classOfShare: share.head.class,
             seqOfShare: share.head.seq,
             seller: share.head.shareholder,
-            price: deal.head.price,
-            seq: 0,
-            preSeq: deal.head.seq,
+            priceOfPaid: deal.head.priceOfPaid,
+            priceOfPar: deal.head.priceOfPar,
             closingDate: deal.head.closingDate,
             state: uint8(IInvestmentAgreement.StateOfDeal.Locked)
         });
@@ -228,7 +219,7 @@ contract SHAKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper onlyEstablished(ia) withinExecPeriod(ia) {
 
-        IBookOfShares.Share memory share = _getBOS().getShare(seqOfShare);
+        SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
         require(caller == share.head.shareholder,
                 "SHAK.EAD: caller is not shareholder");
@@ -240,16 +231,16 @@ contract SHAKeeper is
             uint8(IShareholdersAgreement.TermTitle.AntiDilution)
         );
 
-        uint64 giftPar = IAntiDilution(ad).giftPar(seqOfDeal, seqOfShare);
-        uint256[] memory obligors = IAntiDilution(ad).obligors(share.head.class);
+        uint64 giftPaid = IAntiDilution(ad).getGiftPaid(ia, seqOfDeal, seqOfShare);
+        uint256[] memory obligors = IAntiDilution(ad).getObligorsOfAD(share.head.class);
 
-        _createGiftDeals(ia, seqOfDeal, giftPar, obligors, caller, sigHash);
+        _createGiftDeals(ia, seqOfDeal, giftPaid, obligors, caller, sigHash);
     }
 
     function _createGiftDeals(
         address ia,
         uint256 seqOfDeal,
-        uint64 giftPar,
+        uint64 giftPaid,
         uint256[] memory obligors,
         uint256 caller,
         bytes32 sigHash
@@ -258,104 +249,87 @@ contract SHAKeeper is
             uint256[] memory sharesInHand = _getROM().sharesInHand(obligors[i]);
 
             for (uint256 j = 0; j < sharesInHand.length; j++) {
-                (bytes32 snOfGiftDeal, uint64 result) = _createGift(
+                (uint256 seqOfGiftDeal, uint64 result) = _createGift(
                     ia,
                     seqOfDeal,
                     sharesInHand[j],
-                    giftPar,
-                    caller
+                    giftPaid
                 );
 
-                ISigPage(ia).signDeal(
-                    snOfGiftDeal.seqOfDeal(),
+                ISigPage(ia).regSig(
+                    seqOfGiftDeal,
                     caller,
+                    uint48(block.timestamp),
                     sigHash
                 );
 
-                giftPar = result;
-                if (giftPar == 0) break;
+                if (result == 0) break;
+                giftPaid = result;
             }
-            if (giftPar == 0) break;
+            if (giftPaid == 0) break;
         }
-        require(giftPar == 0, "obligors have not enough parValue");
+        require(giftPaid == 0, "obligors have not enough parValue");
     }
 
     function _createGift(
         address ia,
         uint256 seqOfDeal,
         uint256 seqOfShare,
-        uint64 giftPar,
-        uint256 caller
+        uint64 giftPaid
     ) private returns (uint256 seqOfGiftDeal, uint64 result) {
-        uint64 targetCleanPaid = _getBOS().getShare(seqOfShare).body.cleanPaid;
+        
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
         uint64 lockAmount;
 
-        if (targetCleanPaid != 0) {
-            snOfGiftDeal = _createGiftDealSN(ia, seqOfDeal, shareNumber, caller);
+        if (share.body.cleanPaid > 0) {
 
-            uint48 closingDate = IInvestmentAgreement(ia).getDeal(
-                sn.seqOfDeal()
-            ).closingDate;
+            lockAmount = (share.body.cleanPaid < giftPaid) ? share.body.cleanPaid : giftPaid;
 
-            lockAmount = (targetCleanPaid < giftPar) ? targetCleanPaid : giftPar;
+            IInvestmentAgreement.Deal memory giftDeal = IInvestmentAgreement.Deal({
+                head: IInvestmentAgreement.Head({
+                    typeOfDeal: uint8(IInvestmentAgreement.TypeOfDeal.FreeGift),
+                    seq: 0,
+                    preSeq: uint16(seqOfDeal),
+                    classOfShare: share.head.class,
+                    seqOfShare: share.head.seq,
+                    seller: share.head.shareholder,
+                    priceOfPaid: 0,
+                    priceOfPar: 0,
+                    closingDate: deal.head.closingDate,
+                    state: uint8(IInvestmentAgreement.StateOfDeal.Locked)
+                }),
+                body: IInvestmentAgreement.Body({
+                    buyer: deal.body.buyer,
+                    groupOfBuyer: deal.body.groupOfBuyer,
+                    paid: lockAmount,
+                    par: lockAmount
+                }),
+                hashLock: bytes32(0)
+            });
+            
+            seqOfGiftDeal = IInvestmentAgreement(ia).regDeal(giftDeal);
 
-            IInvestmentAgreement(ia).createDeal(
-                snOfGiftDeal,
-                lockAmount,
-                lockAmount,
-                closingDate
-            );
-
-            if (
-                IInvestmentAgreement(ia).lockDealSubject(
-                    snOfGiftDeal.seqOfDeal()
-                )
-            ) {
-                _getBOS().decreaseCleanAmt(shareNumber.ssn(), lockAmount, lockAmount);
-            }
+            _getBOS().decreaseCleanAmt(share.head.seq, lockAmount, lockAmount);
         }
-        result = giftPar - lockAmount;
-    }
-
-    function _createGiftDealSN(
-        address ia,
-        bytes32 sn,
-        bytes32 shareNumber,
-        uint40 caller
-    ) private view returns (bytes32) {
-        return
-            createDealSN(
-                shareNumber.class(),
-                IInvestmentAgreement(ia).counterOfDeals() + 1,
-                uint8(IInvestmentAgreement.TypeOfDeal.FreeGift),
-                shareNumber.shareholder(),
-                caller,
-                _getROM().groupRep(caller),
-                shareNumber.ssn(),
-                0,
-                sn.seqOfDeal()
-            );
+        result = giftPaid - lockAmount;
     }
 
     function takeGiftShares(
         address ia,
-        bytes32 sn,
+        uint256 seqOfDeal,
         uint40 caller
     ) external onlyDirectKeeper {
-        require(caller == sn.buyerOfDeal(), "caller is not buyer");
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        uint16 seq = sn.seqOfDeal();
+        require(caller == deal.body.buyer, "caller is not buyer");
 
-        IInvestmentAgreement(ia).takeGift(seq);
+        if (IInvestmentAgreement(ia).takeGift(seqOfDeal))
+            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seq);
-
-        uint32 ssn = sn.ssnOfDeal();
-
-        _getBOS().increaseCleanAmt(ssn, deal.paid, deal.par);
-
-        _getBOS().transferShare(ssn, deal.paid, deal.par, sn.buyerOfDeal(), 0);
+        _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+        _getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0);
     }
 
     // ======== FirstRefusal ========
@@ -385,9 +359,8 @@ contract SHAKeeper is
             "SHAK.EFR: caller NOT rightholder"
         );
 
-        if (_getBOA().execFirstRefusalRight(ia, seqOfDeal, caller, sigHash)) {
-            IInvestmentAgreement(ia).terminateDeal(seqOfDeal);
-        }
+        if (_getBOA().execFirstRefusalRight(ia, seqOfDeal, caller, sigHash))
+            IInvestmentAgreement(ia).terminateDeal(seqOfDeal); 
     }
 
     function acceptFirstRefusal(
@@ -397,7 +370,7 @@ contract SHAKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper afterExecPeriod(ia) {
 
-        IInvestmentAgreement.Head memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         if (deal.head.typeOfDeal == uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
         ) require( _getROM().groupRep(caller) == _getROM().controllor(), 
@@ -424,15 +397,17 @@ contract SHAKeeper is
 
         if (deal.head.seqOfShare != 0) {
             deal.head.typeOfDeal = uint8(IInvestmentAgreement.TypeOfDeal.FirstRefusal);
-        }   deal.head.typeOfDeal = uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive);
+        } else  deal.head.typeOfDeal = uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive);
         
         deal.head.preSeq = deal.head.seq;
-        deal.head.state = uint8(IInvestmentAgreement.StateOfDeal.Drafting);
+        deal.head.state = uint8(IInvestmentAgreement.StateOfDeal.Locked);
 
-        deal.body.buyer = cl.rightholder;
-        deal.body.groupOfBuyer = _getROM().groupRep(cl.rightholder);
-        deal.paid = (deal.paid * cl.ratio) / 10000;
-        deal.par = (deal.par * cl.ratio) / 10000;
+        deal.body = IInvestmentAgreement.Body({
+            buyer: cl.rightholder,
+            groupOfBuyer: _getROM().groupRep(cl.rightholder),
+            paid: (deal.body.paid * cl.ratio) / 10000,
+            par: (deal.body.par * cl.ratio) / 10000
+        });
 
         IInvestmentAgreement(ia).lockDealSubject(IInvestmentAgreement(ia).regDeal(deal));
 

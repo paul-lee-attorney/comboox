@@ -8,12 +8,8 @@
 pragma solidity ^0.8.8;
 
 import "./IBookOfShares.sol";
-
-import "../../common/lib/SharesRepo.sol";
-import "../../common/lib/EnumerableSet.sol";
-
 import "../../common/access/AccessControl.sol";
-
+import "../../common/lib/EnumerableSet.sol";
 import "../../common/ruting/ROMSetting.sol";
 
 contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
@@ -49,11 +45,9 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
     // ==== IssueShare ====
 
-    function issueShare(
-        uint256 shareNumber,
-        uint64 paid,
-        uint64 par
-    ) external onlyKeeper {
+    function issueShare(uint256 shareNumber, uint64 paid, uint64 par) 
+        external onlyKeeper 
+    {
         SharesRepo.Head memory head = shareNumber.snParser();
         IRegisterOfMembers _rom = _getROM();        
 
@@ -67,11 +61,9 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         _rom.capIncrease(paid, par);
     }
 
-    function regShare(
-        SharesRepo.Head memory head,
-        uint64 paid,
-        uint64 par
-    ) public onlyKeeper {
+    function regShare(SharesRepo.Head memory head, uint64 paid, uint64 par) 
+        public onlyKeeper 
+    {
         head.seq = uint32(_repo.regShare(head, paid, par));
         emit IssueShare(head.seq, paid, par);
         _getROM().addShareToMember(head.seq, head.shareholder);
@@ -80,15 +72,16 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
     // ==== PayInCapital ====
 
-    function setPayInAmt(bytes32 hashLock, uint64 amount) external onlyDirectKeeper {
+    function setPayInAmt(bytes32 hashLock, uint64 amount) 
+        external onlyDirectKeeper 
+    {
         require(_lockers[hashLock] == 0, "BOS.SPIA: locker occupied");
         emit SetPayInAmt(hashLock, amount);
         _lockers[hashLock] = amount;
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
-        external
-        onlyDirectKeeper
+        external onlyDirectKeeper
     {
         require(
             bytes28(hashLock << 32) == bytes28(keccak256(bytes(hashKey)) << 32),
@@ -165,20 +158,14 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     // ==== cleanAmt ====
 
     function decreaseCleanAmt(uint256 seq, uint64 paid, uint64 par)
-        external
-        onlyKeeper
-        shareExist(seq)
-        notFreezed(seq)
+        external onlyKeeper shareExist(seq) notFreezed(seq)
     {
         emit DecreaseCleanAmt(seq, paid, par);
         _repo.shares[seq].decreaseCleanAmt(paid, par);
     }
 
     function increaseCleanAmt(uint256 seq, uint64 paid, uint64 par)
-        external
-        onlyKeeper
-        shareExist(seq)
-        notFreezed(seq)
+        external onlyKeeper shareExist(seq) notFreezed(seq)
     {
         emit IncreaseCleanAmt(seq, paid, par);
         _repo.shares[seq].increaseCleanAmt(paid, par);
@@ -187,20 +174,14 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     // ==== State & PaidInDeadline ====
 
     function updateStateOfShare(uint256 seq, uint8 state)
-        external
-        onlyDirectKeeper
-        shareExist(seq)
+        external onlyDirectKeeper shareExist(seq)
     {
         emit UpdateStateOfShare(seq, state);
         _repo.shares[seq].head.state = state;
     }
 
-    /// @param seq - 股票短号
-    /// @param deadline - 实缴出资期限
     function updatePaidInDeadline(uint256 seq, uint48 deadline)
-        external
-        onlyDirectKeeper
-        shareExist(seq)
+        external onlyDirectKeeper shareExist(seq)
     {
         emit UpdatePaidInDeadline(seq, deadline);
         _repo.shares[seq].updatePayInDeadline(deadline);
@@ -213,17 +194,15 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
             emit DeregisterShare(seq);
     }
 
-    function _payInCapital(SharesRepo.Share storage share, uint64 amount) private {
+    function _payInCapital(SharesRepo.Share storage share, uint64 amount) private 
+    {
         emit PayInCapital(share.head.seq, amount);
         share.payInCapital(amount);
     }
 
-    function _decreaseShareAmt(
-        SharesRepo.Share storage share,
-        uint64 paid,
-        uint64 par
-    ) private {
-
+    function _decreaseShareAmt(SharesRepo.Share storage share, uint64 paid, uint64 par) 
+        private 
+    {
         IRegisterOfMembers _rom = _getROM();
 
         if (par == share.body.par) {
@@ -268,28 +247,19 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         return _repo.shares[seq].head.issueDate > 0;
     }
 
-    function getHeadOfShare(uint256 seq)
-        external
-        view
-        shareExist(seq)
-        returns (SharesRepo.Head memory head)
+    function getHeadOfShare(uint256 seq) external view 
+        shareExist(seq) returns (SharesRepo.Head memory head)
     {
         head = _repo.shares[seq].head;
     }
 
-    function getBodyOfShare(uint256 seq)
-        external
-        view
-        shareExist(seq)
-        returns (SharesRepo.Body memory body)
+    function getBodyOfShare(uint256 seq) external view
+        shareExist(seq) returns (SharesRepo.Body memory body)
     {
         body = _repo.shares[seq].body;
     }
 
-    function getShare(uint256 seq)
-        external
-        view
-        shareExist(seq)
+    function getShare(uint256 seq) external view shareExist(seq)
         returns (SharesRepo.Share memory share)
     {
         share = _repo.shares[seq];

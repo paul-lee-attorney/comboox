@@ -23,11 +23,33 @@ interface IAntiDilution is ITerm {
     // ##   Write    ##
     // ################
 
+    function addBenchmark(uint256 class, uint32 price) external;
 
+    function removeBenchmark(uint256 class) external;
+
+    function addObligor(uint256 class, uint256 obligor) external;
+
+    function removeObligor(uint256 class, uint256 obligor) external;
 
     // ############
     // ##  read  ##
     // ############
+
+    function isMarked(uint256 class) external view returns (bool flag);
+
+    function getClasses() external view returns (uint256[] memory);
+
+    function getFloorPriceOfClass(uint256 class) external view
+        returns (uint64 price);
+
+    function getObligorsOfAD(uint256 class)
+        external view returns (uint256[] memory);
+
+    function isObligor(uint256 class, uint256 acct) 
+        external view returns (bool flag);
+
+    function getGiftPaid(address ia, uint256 seqOfDeal, uint256 seqOfShare)
+        external view returns (uint64 gift);
 
 
 }

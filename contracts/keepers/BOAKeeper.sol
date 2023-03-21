@@ -17,6 +17,7 @@ import "../common/components/IRepoOfDocs.sol";
 import "../common/components/ISigPage.sol";
 
 import "../common/lib/RulesParser.sol";
+import "../common/lib/SharesRepo.sol";
 
 import "../common/ruting/BOASetting.sol";
 import "../common/ruting/BODSetting.sol";
@@ -127,7 +128,7 @@ contract BOAKeeper is
 
         _lockDealsOfParty(ia, caller);
 
-        ISigPage(ia).signDoc(caller, sigHash);
+        ISigPage(ia).signDoc(true, caller, sigHash);
 
         if (ISigPage(ia).established())
             _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Established));
@@ -170,7 +171,7 @@ contract BOAKeeper is
         );
 
         require(
-            closingDate <= uint48(ISigPage(ia).getParasOfPage().blocknumber),
+            closingDate <= uint48(ISigPage(ia).getParasOfPage(true).blocknumber),
             "closingDate LATER than deadline"
         );
 
@@ -269,7 +270,7 @@ contract BOAKeeper is
         // uint40 buyer = sn.buyerOfDeal();
 
         _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
-        _getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.price);
+        _getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.priceOfPaid);
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal) public onlyDirectKeeper {
@@ -277,34 +278,19 @@ contract BOAKeeper is
 
         IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        IBookOfShares.Head memory head = IBookOfShares.Head({
-            class: deal.head.classOfShare,
+        SharesRepo.Head memory head = SharesRepo.Head({
             seq: 0,
+            preSeq: 0,
+            class: deal.head.classOfShare,
             issueDate: uint48(block.timestamp),
+            payInDeadline: uint48(block.timestamp) + 43200,
             shareholder: deal.body.buyer,
-            price: deal.head.price,
-            preSeq: 0
+            price: deal.head.priceOfPaid,
+            state: 0
         });
 
-
-        uint48 paidInDeadline = uint48(block.timestamp) + 43200;
-
-        _getBOS().createShare(head, deal.body.paid, deal.body.par, paidInDeadline);
+        _getBOS().regShare(head, deal.body.paid, deal.body.par);
     }
-
-    // function _createShareNumber(
-    //     uint16 class,
-    //     uint40 shareholder,
-    //     uint32 unitPrice
-    // ) private pure returns (bytes32) {
-    //     bytes memory _sn = new bytes(32);
-
-    //     _sn = _sn.seqToSN(0, class);
-    //     _sn = _sn.acctToSN(12, shareholder);
-    //     _sn = _sn.ssnToSN(17, unitPrice);
-
-    //     return _sn.bytesToBytes32();
-    // }
 
     function transferTargetShare(
         address ia,
@@ -351,4 +337,35 @@ contract BOAKeeper is
         if (IInvestmentAgreement(ia).releaseDealSubject(seqOfDeal))
             _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
     }
+
+    function terminateDeal(
+        address ia,
+        uint256 seqOfDeal,
+        uint256 caller
+    ) external onlyDirectKeeper {
+        require(
+            _getBOA().getHeadOfDoc(ia).state >= uint8(IRepoOfDocs.RODStates.Circulated),
+            "BOAK.TD: wrong State"
+        );
+
+        require(
+            _getBOA().getHeadOfDoc(ia).state < uint8(IRepoOfDocs.RODStates.Executed),
+            "BOAK.TD: wrong State"
+        );
+
+        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+
+        require(
+            caller == deal.head.seller,
+            "BOAK.TD: NOT seller"
+        );
+
+        if (IInvestmentAgreement(ia).terminateDeal(seqOfDeal))
+        {
+            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
+            _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+        }
+
+    }
+
 }

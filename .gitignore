@@ -1,6 +1,7 @@
 node_modules
 .env
 bin
+bin/contracts
 coverage
 coverage.json
 typechain

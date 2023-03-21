@@ -105,10 +105,6 @@ library SigsRepo {
         if ((p.buyers.contains(acct) || p.sellers.contains(acct)) &&
             p.blanks[acct].sig.sigDate == 0) {
 
-            // uint40 numOfBlanks = uint40(p.blanks[acct].seqOfDeals.length() - 
-            //     p.blanks[acct].signedDeals.length());
-
-            // if (numOfBlanks > 0) {
             p.blanks[acct].sig = Signature({
                 signer: uint40(acct),
                 sigDate: uint48(block.timestamp),
@@ -122,7 +118,6 @@ library SigsRepo {
                 p.blanks[0].sig.sigHash = bytes32("true");
 
             flag = true;   
-            // }
         }
     }
 
@@ -156,75 +151,15 @@ library SigsRepo {
 
     }
 
-    // function signDeal(
-    //     Page storage p,
-    //     uint256 seqOfDeal,
-    //     uint256 acct,
-    //     bytes32 sigHash
-    // ) public returns (bool flag)
-    // {
-
-    //     require(p.blanks[0].sig.sigDate >= block.timestamp,
-    //         "SR.SD: missed sigDeadline");
-
-    //     require(!established(p),
-    //         "SR.SD: Doc already established");
-
-    //     if (p.parties.contains(acct) && 
-    //         p.blanks[acct].seqOfDeals.contains(seqOfDeal) &&
-    //         p.blanks[acct].signedDeals.add(seqOfDeal))
-    //     {
-    //         p.blanks[acct].sig = Signature({
-    //             signer: uint40(acct),
-    //             sigDate: uint48(block.timestamp),
-    //             blocknumber: uint64(block.number),
-    //             sigHash: sigHash
-    //         });
-
-    //         p.blanks[0].sig.signer++;
-
-    //         if (p.blanks[0].sig.blocknumber == p.blanks[0].sig.signer)
-    //             p.blanks[0].sig.sigHash = bytes32("true");
-
-    //         flag = true;
-    //     }
-
-    // }
-
     //####################
     //##    查询接口     ##
     //####################
-
-    // function isSeller(Page storage p, uint256 acct)
-    //     public view returns(bool flag) 
-    // {
-    //     flag = p.sellers.contains(acct);
-    // }
-
-    // function isBuyer(Page storage p, uint256 acct)
-    //     public view returns(bool flag) 
-    // {
-    //     flag = p.buyers.contains(acct);
-    // }
-
-    // function isParty(Page storage p, uint256 acct) 
-    //     public view returns (bool flag) 
-    // {
-    //     flag = isBuyer(p, acct) || isSeller(p, acct);
-    // }
 
     function isSigner(Page storage p, uint256 acct) 
         public view returns (bool flag) 
     {
         flag = acct & p.blanks[acct].sig.sigDate > 0;
     }
-
-    // function counterOfSigs(Page storage page) 
-    //     public view 
-    //     returns(uint40) 
-    // {
-    //     return page.blanks[0].sig.signer;
-    // }
 
     function established(Page storage p)
         public view

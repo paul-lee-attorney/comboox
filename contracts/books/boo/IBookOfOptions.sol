@@ -5,9 +5,6 @@
  * All Rights Reserved.
  * */
 
-import "../bos/IBookOfShares.sol";
-
-import "../bop/IBookOfPledges.sol";
 import "../../common/lib/OptionsRepo.sol";
 import "../../common/lib/Checkpoints.sol";
 import "../../common/lib/PledgesRepo.sol";
@@ -16,44 +13,22 @@ pragma solidity ^0.8.8;
 
 interface IBookOfOptions {
 
-    enum TypeOfOption {
-        Call_Price,
-        Put_Price,
-        Call_ROE,
-        Put_ROE,
-        Call_PriceAndConditions,
-        Put_PriceAndConditions,
-        Call_ROEAndConditions,
-        Put_ROEAndConditions
-    }
-
-    enum StateOfOption {
-        Pending,
-        Issued,
-        Executed,
-        Futured,
-        Pledged,
-        Closed,
-        Revoked,
-        Expired
-    }
-
     // ################
     // ##   Event    ##
     // ################
 
     event CreateOpt(
         uint256 indexed seqOfOpt,
-        uint256 rightholder,
-        uint256 obligor,
+        uint40 rightholder,
+        uint40 obligor,
         uint64 paid,
         uint64 par
     );
 
     event RegisterOpt(
         uint256 indexed seqOfOpt, 
-        uint256 rightholder, 
-        uint256 obligor, 
+        uint40 rightholder, 
+        uint40 obligor, 
         uint64 paid, 
         uint64 par
     );
@@ -62,18 +37,16 @@ interface IBookOfOptions {
 
     event RemoveObligorFromOpt(uint256 indexed seqOfOpt, uint256 obligor);
 
-    event UpdateOracle(uint256 indexed seqOfOpt, uint256 data_1, uint256 data_2);
+    event UpdateOracle(uint256 indexed seqOfOpt, uint64 data1, uint64 data2, uint64 data3);
 
     event ExecOpt(uint256 indexed seqOfOpt);
 
-    event AddFuture(
+    event AddOrder(
         uint256 indexed seqOfOpt,
         uint256 seqOfShare,
         uint64 paid,
         uint64 par
     );
-
-    event RemoveFuture(uint256 indexed seqOfOpt, uint256 seqOfFt);
 
     event AddPledge(uint256 indexed seqOfOpt, uint256 seqOfShare, uint64 paid, uint64 par);
 
@@ -87,21 +60,17 @@ interface IBookOfOptions {
     // ##   写接口   ##
     // ################
 
-    function issueOption(
-        bytes32 sn,
-        uint256 rightholder,
-        uint256 obligor,
+    function createOption(
+        uint256 sn,
+        uint256 snOfCond,
+        uint40 rightholder,
+        uint40 obligor,
         uint64 paid,
         uint64 par
     ) external returns (uint32 seqOfOpt);
 
-    function createOption(
-        OptionsRepo.Head memory head,
-        uint256 rightholder,
-        uint256 obligor,
-        uint64 paid,
-        uint64 par
-    ) external returns (uint32 seqOfOpt);
+    function issueOption(OptionsRepo.Option memory opt) 
+        external returns (uint32 seqOfOpt);
 
     function registerOption(address opts) external;
 
@@ -111,47 +80,46 @@ interface IBookOfOptions {
 
     function updateOracle(
         uint256 seqOfOpt,
-        uint32 d1,
-        uint32 d2
+        uint64 d1,
+        uint64 d2,
+        uint64 d3
     ) external;
 
     function execOption(uint256 seqOfOpt) external;
 
-    function addFuture(
+    function addOrder(
         uint256 seqOfOpt,
-        IBookOfShares.Share memory share,
-        OptionsRepo.Future memory future
+        OptionsRepo.Order memory order
     ) external;
-
-    function removeFuture(uint256 seqOfOpt, uint256 seqOfFt) external;
 
     function requestPledge(
         uint256 seqOfOpt,
-        IBookOfShares.Share memory share,
-        uint64 paid,
-        uint64 par
+        uint256 seqOfOdr,
+        PledgesRepo.Pledge memory pledge
+    ) external;
+
+    function releasePledge(
+        uint256 seqOfOpt,
+        uint256 seqOfOdr,
+        PledgesRepo.Head memory head
     ) external;
 
     function lockOption(uint256 seqOfOpt, bytes32 hashLock) external;
 
     function closeOption(uint256 seqOfOpt, string memory hashKey) external;
 
-    function revokeOption(uint256 seqOfOpt) external;
+    function revokeOption(uint256 seqOfOpt, string memory hashKey) external;
 
     // ################
-    // ##  查询接口  ##
+    // ##  查询接口   ##
     // ################
 
     function counterOfOptions() external view returns (uint32);
 
     function isOption(uint256 seqOfOpt) external view returns (bool);
 
-    function getOption(uint256 seqOfOpt)
-        external
-        view
-        returns (
-            OptionsRepo.Option memory opt
-        );
+    function getOption(uint256 seqOfOpt) external view
+        returns (OptionsRepo.Option memory opt);
 
     function optsList() external view returns (OptionsRepo.Option[] memory);
 
@@ -162,15 +130,21 @@ interface IBookOfOptions {
 
     function stateOfOption(uint256 seqOfOpt) external view returns (uint8);
 
-    function getFutureOfOption(uint256 seqOfOpt, uint256 seqOfFt)
-        external view returns (OptionsRepo.Future memory);
+    function getOrder(uint256 seqOfOpt, uint256 seqOfFt)
+        external view returns (OptionsRepo.Order memory);
 
-    function futuresOfOption(uint256 seqOfOpt) external view returns (OptionsRepo.Future[] memory);
+    function ordersOfOption(uint256 seqOfOpt) external view returns (OptionsRepo.Order[] memory);
+
+    function balanceOfOrder(uint256 seqOfOpt) external view 
+        returns (uint64 paid, uint64 par);
 
     function getPledgeOfOption(uint256 seqOfOpt, uint256 seqOfPld)
         external view returns (PledgesRepo.Pledge memory);
 
     function pledgesOfOption(uint256 seqOfOpt) external view returns (PledgesRepo.Pledge[] memory);
+
+    function balanceOfPledge(uint256 seqOfOpt) external view 
+        returns (uint64 paid, uint64 par);
 
     function oracleAtDate(uint256 seqOfOpt, uint48 timestamp)
         external
@@ -180,6 +154,5 @@ interface IBookOfOptions {
     function oraclesOfOption(uint256 seqOfOpt)
         external
         view
-        returns (Checkpoints.Checkpoint[] memory);
-    
+        returns (Checkpoints.Checkpoint[] memory);    
 }

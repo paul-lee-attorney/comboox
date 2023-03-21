@@ -7,11 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-// import "../books/bod/IBookOfDirectors.sol";
-// import "../books/boh/ShareholdersAgreement.sol";
 import "../books/boh/IShareholdersAgreement.sol";
-// import "../books/boo/IBookOfOptions.sol";
-// import "../books/rom/IRegisterOfMembers.sol";
 
 import "../common/components/ISigPage.sol";
 
@@ -21,10 +17,8 @@ import "../common/ruting/BODSetting.sol";
 import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/ROMSetting.sol";
 import "../common/ruting/BOHSetting.sol";
-// import "../common/ruting/IRODSetting.sol";
 
 import "../common/access/AccessControl.sol";
-// import "../common/lib/SNParser.sol";
 
 import "./IBOHKeeper.sol";
 
@@ -128,7 +122,7 @@ contract BOHKeeper is
             "SHA not in Circulated State"
         );
 
-        ISigPage(sha).signDoc(caller, sigHash);
+        ISigPage(sha).signDoc(true, caller, sigHash);
 
         if (ISigPage(sha).established()) 
             _getBOH().setStateOfDoc(sha, uint8(IRepoOfDocs.RODStates.Established));
@@ -216,7 +210,7 @@ contract BOHKeeper is
     }
 
     function _reachedEffectiveThreshold(address sha) private view returns (bool) {
-        uint256[] memory parties = ISigPage(sha).partiesOfDoc();
+        uint256[] memory parties = ISigPage(sha).getParties();
         uint256 len = parties.length;
         
         RulesParser.GovernanceRule memory gr = _getSHA().getRule(0).governanceRuleParser();
@@ -233,6 +227,7 @@ contract BOHKeeper is
     }
 
     function acceptSHA(bytes32 sigHash, uint256 caller) external onlyDirectKeeper {
-        ISigPage(address(_getSHA())).signDoc(caller, sigHash);
+        ISigPage(address(_getSHA())).addBlank(false, 0, caller);
+        ISigPage(address(_getSHA())).signDoc(false, caller, sigHash);
     }
 }

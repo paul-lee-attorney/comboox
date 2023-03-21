@@ -26,6 +26,7 @@ import "../common/ruting/ROMSetting.sol";
 // import "../common/lib/SNParser.sol";
 import "../common/lib/MotionsRepo.sol";
 import "../common/lib/RulesParser.sol";
+import "../common/lib/SharesRepo.sol";
 
 import "../common/components/IRepoOfDocs.sol";
 import "../common/components/ISigPage.sol";
@@ -220,7 +221,7 @@ contract BOGKeeper is
             OptionsRepo.Head({
                 seqOfOpt: 0,
                 typeOfOpt: uint8(OptionsRepo.OptTypes.PutPrice),
-                rate: deal.head.price,
+                rate: deal.head.priceOfPaid,
                 triggerDate: uint48(block.timestamp),
                 execDays: 1,
                 closingDays: closingDays,
@@ -237,7 +238,7 @@ contract BOGKeeper is
 
         uint256 seqOfOpt = _boo.createOption(headOfOpt, caller, againstVoter, deal.body.paid, deal.body.par);
 
-        IBookOfShares.Share memory share  = _getBOS().getShare(deal.head.seqOfShare);
+        SharesRepo.Share memory share  = _getBOS().getShare(deal.head.seqOfShare);
 
         _boo.execOption(seqOfOpt);
 

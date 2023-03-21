@@ -11,7 +11,6 @@ import "./ISigPage.sol";
 
 import "../access/AccessControl.sol";
 
-import "../lib/SigsRepo.sol";
 import "../lib/EnumerableSet.sol";
 import "../lib/ArrayUtils.sol";
 
@@ -26,13 +25,11 @@ contract SigPage is ISigPage, AccessControl {
     //##    设置接口     ##
     //####################
 
-    function setSigDeadline(
-        bool initPage,
-        uint48 sigDeadline
-        ) external onlyAttorney
+    function setSigDeadline(bool initPage, uint48 sigDeadline) external onlyAttorney
     {
         if (initPage) _sigPages[0].setSigDeadline(sigDeadline);
         else _sigPages[1].setSigDeadline(sigDeadline);
+
         emit SetSigDeadline(initPage, sigDeadline);
     }
 
@@ -42,9 +39,14 @@ contract SigPage is ISigPage, AccessControl {
         flag = _sigPages[1].regSig(seqOfDeal, signer, sigDate, sigHash);
     }
 
+    function addBlank(bool beBuyer, uint256 seqOfDeal, uint256 acct)
+        external onlyKeeper
+    {
+        _sigPages[1].addBlank(beBuyer, seqOfDeal, acct);
+    }
+
     function signDoc(bool initPage, uint256 caller, bytes32 sigHash)
-        external
-        onlyKeeper
+        external onlyKeeper
     {
         if (initPage) {
             _sigPages[0].signDoc(caller, sigHash);
@@ -57,9 +59,7 @@ contract SigPage is ISigPage, AccessControl {
     //##   read I/O   ##
     //##################
 
-    function getParasOfPage(bool initPage) 
-        external 
-        view
+    function getParasOfPage(bool initPage) external view
         returns (SigsRepo.Signature memory) 
     {
         return initPage ? _sigPages[0].blanks[0].sig :
@@ -89,43 +89,53 @@ contract SigPage is ISigPage, AccessControl {
     }
 
     function isParty(bool initPage, uint256 acct)
-        public
-        view
-        returns(bool flag)
+        public view returns(bool flag)
     {
         flag = isBuyer(initPage, acct) || isSeller(initPage, acct);
     }
 
     function isSigner(bool initPage, uint256 acct)
-        external 
-        view 
-        returns (bool flag) 
+        external view returns (bool flag) 
     {
         flag = initPage ? _sigPages[0].isSigner(acct) :
             _sigPages[1].isSigner(acct);
     }
 
     function getBuyers(bool initPage)
-        external
-        view
-        returns (uint256[] memory buyers)
+        public view returns (uint256[] memory buyers)
     {
         buyers = initPage ? _sigPages[0].buyers.values() :
             _sigPages[0].buyers.values();
     }
 
     function getSellers(bool initPage)
-        external
-        view
-        returns (uint256[] memory sellers)
+        public view returns (uint256[] memory sellers)
     {
         sellers = initPage ? _sigPages[0].sellers.values():
             _sigPages[1].sellers.values();
     }
 
+    function getParties() external view
+        returns (uint256[] memory parties)
+    {
+        uint256[] memory buyers = getBuyers(true);
+        buyers.merge(getBuyers(false));
+
+        uint256[] memory sellers = getSellers(true);
+        sellers.merge(getSellers(false));
+        
+        parties = buyers.merge(sellers);
+    }
+
+    function isParty(uint256 acct) external view returns (bool flag) {
+        flag = _sigPages[0].buyers.contains(acct) ||
+            _sigPages[0].sellers.contains(acct) ||
+            _sigPages[1].buyers.contains(acct) ||
+            _sigPages[1].sellers.contains(acct);
+    }
+
     function getSigOfParty(bool initPage, uint256 acct) 
-        external
-        view
+        external view
         returns (uint256[] memory seqOfDeals, SigsRepo.Signature memory sig)
     {
         if (initPage) {
@@ -137,7 +147,10 @@ contract SigPage is ISigPage, AccessControl {
     
     function getSigsOfPage(bool initPage) 
         external view
-        returns (SigsRepo.Signature[] memory sigsOfBuyer, SigsRepo.Signature[] memory sigsOfSeller) 
+        returns (
+            SigsRepo.Signature[] memory sigsOfBuyer, 
+            SigsRepo.Signature[] memory sigsOfSeller
+        ) 
     {
         if (initPage) {
             return _sigPages[0].sigsOfPage();

@@ -9,6 +9,8 @@ pragma solidity ^0.8.8;
 
 import "../../books/boa/IInvestmentAgreement.sol";
 
+import "./DealsRepo.sol";
+
 
 library TopChain {
     struct Node {
@@ -34,14 +36,18 @@ library TopChain {
         cat: basedOnPar;
     } */
 
+    //#################
+    //##    修饰器    ##
+    //#################
+
     modifier memberExist(Chain storage chain, uint256 acct) {
         require(isMember(chain, acct), "TC.memberExist: acct not member");
         _;
     }
 
-    //##################
+    //#################
     //##    写接口    ##
-    //##################
+    //#################
 
     // ==== Setting ====
 
@@ -99,12 +105,9 @@ library TopChain {
 
     // ==== ChangeAmt ====
 
-    function changeAmt(
-        Chain storage chain,
-        uint256 acct,
-        uint64 deltaAmt,
-        bool increase
-    ) public memberExist(chain, acct) returns (bool flag) {
+    function changeAmt(Chain storage chain, uint256 acct, uint64 deltaAmt, bool increase) 
+        public memberExist(chain, acct) returns (bool flag) 
+    {
         Node storage n = chain.nodes[acct];
 
         if (increase) {
@@ -589,12 +592,12 @@ library TopChain {
         Chain storage chain,
         IInvestmentAgreement _ia
     ) public {
-        uint256[] memory seqList = _ia.seqList();
+        uint256[] memory snList = _ia.getSnList();
 
-        uint256 len = seqList.length;
+        uint256 len = snList.length;
 
         while (len > 0) {
-            IInvestmentAgreement.Deal memory deal = _ia.getDeal(seqList[len-1]);
+            DealsRepo.Deal memory deal = _ia.getDeal(snList[len-1]);
 
             uint64 amount = basedOnPar(chain) ? deal.body.par : deal.body.paid;
 

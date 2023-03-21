@@ -34,7 +34,6 @@ library SharesRepo {
 
     //Share 股票
     struct Share {
-        uint256 sn;
         Head head; //出资证明书编号（股票编号）
         Body body;
     }
@@ -55,10 +54,8 @@ library SharesRepo {
             uint256(head.preSeq) << 192 +
             uint256(head.class) << 176 + 
             uint256(head.issueDate) << 128 +
-            uint256(head.payInDeadline) << 80 +
             uint256(head.shareholder) << 40 +
-            uint256(head.price) << 8 +
-            uint256(head.state);
+            uint256(head.price) << 8;
     }
 
     function snParser(uint256 sn) public pure returns(Head memory head)
@@ -107,7 +104,6 @@ library SharesRepo {
         uint256 sn = codifyHead(head);
 
         if (repo.snList.add(sn)) {
-            repo.shares[head.seq].sn = sn;
             repo.shares[head.seq].head = head;
             repo.shares[head.seq].body = Body({
                 paid: paid,
@@ -124,7 +120,7 @@ library SharesRepo {
 
     function deregShare(Repo storage repo, uint256 seq) public returns(bool flag)
     {
-        if (repo.snList.remove(repo.shares[seq].sn)) {
+        if (repo.snList.remove(codifyHead(repo.shares[seq].head))) {
             delete repo.shares[seq];
             flag = true;
         }

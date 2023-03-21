@@ -209,7 +209,7 @@ library MotionsRepo {
     {
         if (!m.votingRule.onlyAttendance) {
 
-            uint256[] memory parties =  ISigPage((address(uint160(motionId)))).partiesOfDoc();
+            uint256[] memory parties =  ISigPage((address(uint160(motionId)))).getParties();
             uint256 len = parties.length;
 
             if (m.votingRule.seq < 9) {

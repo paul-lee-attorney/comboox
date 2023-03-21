@@ -62,4 +62,11 @@ interface IBOAKeeper {
         uint256 caller,
         string memory hashKey
     ) external;
+
+    function terminateDeal(
+        address ia,
+        uint256 seqOfDeal,
+        uint256 caller
+    ) external;
+
 }

@@ -17,6 +17,7 @@ import "../../../common/access/AccessControl.sol";
 import "../../../common/lib/ArrayUtils.sol";
 // import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
+import "../../../common/lib/SharesRepo.sol";
 
 import "../../../common/ruting/BOGSetting.sol";
 import "../../../common/ruting/BOSSetting.sol";
@@ -50,7 +51,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         require (class > 0, "AD.AB: zero class");
         require (price > 0, "AD.AB: zero price");
 
-        _marks[class].classOfShare = class;
+        _marks[class].classOfShare = uint16(class);
         _marks[class].floorPrice = price;
 
         _classes.add(class);
@@ -90,6 +91,11 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         price = _marks[class].floorPrice;
     }
 
+    function isObligor(uint256 class, uint256 acct) external view returns (bool flag)
+    {
+        flag = _marks[class].obligors.contains(acct);
+    }
+
     function getObligorsOfAD(uint256 class)
         external
         view
@@ -107,13 +113,13 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         IInvestmentAgreement.Deal memory deal = 
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
         
-        IBookOfShares.Share memory share = _getBOS().getShare(seqOfShare);
+        SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
         uint64 floorPrice = getFloorPriceOfClass(share.head.class);
 
-        require(floorPrice > deal.head.price, "AD.GP: adRule not triggered");
+        require(floorPrice > deal.head.priceOfPaid, "AD.GP: adRule not triggered");
 
-        gift = (share.body.paid * floorPrice) / deal.head.price - share.body.paid;
+        gift = (share.body.paid * floorPrice) / deal.head.priceOfPaid - share.body.paid;
     }
 
     // ################
@@ -142,73 +148,29 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
             "AD.isExempted: zero consentParties"
         );
 
-        uint40 cur = _marks.nodes[0].next;
+        uint256 len = _classes.length();
 
-        while (cur > 0) {
-            if (_marks.nodes[cur].amt <= price) break;
+        while (len > 0) {
+            uint16 class = uint16 (_classes.at(len-1));
+            if (_marks[class].floorPrice > price) {
+                (, uint256[] memory members) = _getBOS().getAttrOfClass(class);
 
-            uint256[] memory classMember = _membersOfClass(uint16(cur));
-
-            if (classMember.length > consentParties.length) return false;
-            else if (!classMember.fullyCoveredBy(consentParties)) return false;
-
-            cur = _marks.nodes[cur].next;
+                if (members.length > consentParties.length) return false;
+                else if (!members.fullyCoveredBy(consentParties)) return false;
+            }
+                        len--;
         }
 
         return true;
     }
 
-    function _membersOfClass(uint16 class)
-        private
-        view
-        returns (uint256[] memory)
-    {
-        IRegisterOfMembers _rom = _getROM();
-
-        uint256[] memory members = _rom.membersList();
-
-        uint256 len = members.length;
-
-        uint256[] memory list = new uint256[](len);
-        uint256 counter = 0;
-
-        while (len > 0) {
-            uint256[] memory sharesInHand = _rom.sharesInHand(members[len - 1]);
-            uint256 i = sharesInHand.length;
-
-            while (i > 0) {
-                IBookOfShares.Share memory share = _getBOS().getShare(sharesInHand[i-1]);
-
-                if (share.head.class == class) {
-                    list[counter] = members[len - 1];
-                    counter++;
-                    break;
-                } else i--;
-            }
-
-            len--;
-        }
-
-        uint256[] memory output = new uint256[](counter);
-
-        assembly {
-            output := list
-        }
-
-        return output;
-    }
 
     function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
         if (!isTriggered(ia, deal)) return true;
 
         uint256 motionId = uint256(uint160(ia));
-
-        uint256[] memory initBuyers = ISigPage(ia).getBuyers(true);
-        uint256[] memory initSellers = ISigPage(ia).getSellers(true);
-        uint256[] memory addtBuyers = ISigPage(ia).getBuyers(false);
-        uint256[] memory addtSellers = ISigPage(ia).getSellers(false);
         
-        uint256[] memory parties = initBuyers.merge(addtBuyers).merge(initSellers).merge(addtSellers);
+        uint256[] memory parties = ISigPage(ia).getParties();
 
         uint256[] memory supporters = _getBOG().
             getCaseOfAttitude(motionId,1).voters;

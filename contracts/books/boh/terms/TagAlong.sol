@@ -28,25 +28,23 @@ contract TagAlong is BOASetting, BOGSetting, DragAlong {
     // ##  写接口  ##
     // #############
 
-    function isExempted(address ia, uint256 seqOfDeal) external view returns (bool) {
+    function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
         IBookOfGM _bog = _getBOG();
         
         require(_bog.isPassed(uint256(uint160(ia))), "motion NOT passed");
 
-        if (!isTriggered(ia, seqOfDeal)) return true;
+        if (!isTriggered(ia, deal)) return true;
 
         uint256[] memory consentParties = _bog.getCaseOfAttitude(
             uint256(uint160(ia)),
             1
         ).voters;
 
-        uint256[] memory signers = ISigPage(ia).partiesOfDoc();
-
-        IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
+        uint256[] memory signers = ISigPage(ia).getParties();
 
         uint256[] memory agreedParties = consentParties.merge(signers);
 
-        uint256[] memory rightholders = _dragers[head.seller].followers.values();
+        uint256[] memory rightholders = _dragers[deal.head.seller].followers.values();
 
         return rightholders.fullyCoveredBy(agreedParties);
 

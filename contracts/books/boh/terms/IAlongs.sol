@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../../../common/lib/EnumerableSet.sol";
+import "../../../common/lib/SharesRepo.sol";
 import "../../../common/lib/RulesParser.sol";
 import "../../boa/IInvestmentAgreement.sol";
 import "../../bos/IBookOfShares.sol";
@@ -58,7 +59,7 @@ interface IAlongs {
     function priceCheck(
         address ia,
         IInvestmentAgreement.Deal memory deal,
-        IBookOfShares.Share memory share,
+        SharesRepo.Share memory share,
         uint256 caller
     ) external view returns (bool);
 

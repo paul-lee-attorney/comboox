@@ -7,16 +7,11 @@
 
 pragma solidity ^0.8.8;
 
-// pragma experimental ABIEncoderV2;
-
 import "../../books/boa/IInvestmentAgreement.sol";
-// import "../../books/bos/IBookOfShares.sol";
-// import "../../books/rom/IRegisterOfMembers.sol";
 
 import "./TopChain.sol";
 import "./Checkpoints.sol";
 import "./EnumerableSet.sol";
-// import "./RulesParser.sol";
 
 library MembersRepo {
     using Checkpoints for Checkpoints.History;
@@ -44,7 +39,7 @@ library MembersRepo {
         cat: basedOnPar;
     } */
 
-    struct GeneralMeeting {
+    struct Repo {
         TopChain.Chain chain;
         mapping(uint256 => Member) members;
     }
@@ -55,7 +50,7 @@ library MembersRepo {
 
     // ==== Zero Node Setting ====
 
-    function setAmtBase(GeneralMeeting storage gm, bool _basedOnPar)
+    function setAmtBase(Repo storage gm, bool _basedOnPar)
         public
         returns (bool flag)
     {
@@ -85,7 +80,7 @@ library MembersRepo {
 
     // ==== Member ====
 
-    function delMember(GeneralMeeting storage gm, uint40 acct)
+    function delMember(Repo storage gm, uint40 acct)
         public
         returns (bool flag)
     {
@@ -96,7 +91,7 @@ library MembersRepo {
     }
 
     function addShareToMember(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         uint32 seqOfShare,
         uint40 acct
     ) public returns (bool flag) {
@@ -106,7 +101,7 @@ library MembersRepo {
     }
 
     function removeShareFromMember(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         uint32 seqOfShare,
         uint40 acct
     ) public returns (bool flag) {
@@ -116,7 +111,7 @@ library MembersRepo {
     }
 
     function changeAmtOfMember(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         uint40 acct,
         uint64 deltaPaid,
         uint64 deltaPar,
@@ -139,7 +134,7 @@ library MembersRepo {
     }
 
     function changeAmtOfCap(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         uint64 deltaPaid,
         uint64 deltaPar,
         bool increase
@@ -160,21 +155,21 @@ library MembersRepo {
     // ==== Zero Node Setting ====
 
     function addSeqOfShareToList(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         uint32 seqOfShare
     ) public returns (bool flag) {
         flag = gm.members[0].sharesInHand.add(seqOfShare);
     }
 
     function removeSeqOfShareFromList(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         uint32 seqOfShare
     ) public returns (bool flag) {
         flag = gm.members[0].sharesInHand.remove(seqOfShare);
     }
 
     function updateOwnersEquity(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         Checkpoints.Checkpoint memory cp
     ) public {
         gm.members[0].votesInHand.push(cp.paid, cp.par, cp.cleanPaid);
@@ -187,7 +182,7 @@ library MembersRepo {
     // ==== member ====
 
     function votesAtDate(
-        GeneralMeeting storage gm,
+        Repo storage gm,
         uint256 acct,
         uint48 date
     ) public view returns (uint64 vote) {

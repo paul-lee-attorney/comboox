@@ -15,6 +15,7 @@ import "../../common/ruting/BOSSetting.sol";
 contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
     using PledgesRepo for PledgesRepo.Repo;
     using PledgesRepo for PledgesRepo.Pledge;
+    using PledgesRepo for uint256;
 
     PledgesRepo.Repo private _repo;
 
@@ -27,25 +28,22 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
         uint40 creditor,
         uint16 monOfGuarantee,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     ) external onlyDirectKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
             sn, 
             creditor, 
             monOfGuarantee, 
             pledgedPaid, 
-            pledgedPar, 
-            guaranteedAmt
+            pledgedPar
         );
 
         emit CreatePledge(
             head.seqOfShare,
-            head.seqOfPld,
+            head.seqOfPldOnShare,
             creditor,
             pledgedPaid,
-            pledgedPar,
-            guaranteedAmt
+            pledgedPar
         );
 
         _getBOS().decreaseCleanAmt(head.seqOfShare, pledgedPaid, pledgedPar);
@@ -57,8 +55,7 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
         uint40 creditor,
         uint16 monOfGuarantee,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     ) external onlyDirectKeeper returns(PledgesRepo.Head memory regHead)
     {
         regHead = _repo.issuePledge(
@@ -66,17 +63,15 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
             creditor, 
             monOfGuarantee,
             pledgedPaid,
-            pledgedPar, 
-            guaranteedAmt
+            pledgedPar
         );
 
         emit CreatePledge(
             head.seqOfShare,
-            head.seqOfPld,
+            head.seqOfPldOnShare,
             creditor,
             pledgedPaid,
-            pledgedPar,
-            guaranteedAmt
+            pledgedPar
         );
     
         _getBOS().decreaseCleanAmt(regHead.seqOfShare, pledgedPaid, pledgedPar);
@@ -90,11 +85,10 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
 
         emit CreatePledge(
             head.seqOfShare, 
-            head.seqOfPld, 
+            head.seqOfPldOnShare, 
             pld.body.creditor,
             pld.body.paid, 
-            pld.body.par, 
-            pld.body.guaranteedAmt
+            pld.body.par 
         );
     
         _getBOS().decreaseCleanAmt(head.seqOfShare, pld.body.paid, pld.body.par);
@@ -102,12 +96,11 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
 
     function updatePledge(
         uint256 seqOfShare,
-        uint256 seqOfPledge,
+        uint256 seqOfPldOnShare,
         uint40 creditor,
         uint48 expireDate,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     ) external onlyDirectKeeper {
 
         require(
@@ -115,7 +108,7 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
             "PR.UP: expireDate is passed"
         );
 
-        PledgesRepo.Pledge storage pld = _repo.pledges[seqOfShare][seqOfPledge];
+        PledgesRepo.Pledge storage pld = _repo.pledges[seqOfShare][seqOfPldOnShare];
 
         if (pledgedPaid < pld.body.paid ||
             pledgedPar < pld.body.par)
@@ -137,16 +130,30 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
 
         emit UpdatePledge(
             seqOfShare, 
-            seqOfPledge, 
+            seqOfPldOnShare, 
             creditor, 
             expireDate,
             pledgedPaid, 
-            pledgedPar,
-            guaranteedAmt
+            pledgedPar
         );
 
-        pld.updatePledge(creditor, expireDate, pledgedPaid, pledgedPar, guaranteedAmt);
+        pld.updatePledge(creditor, expireDate, pledgedPaid, pledgedPar);
     }
+
+    function releasePledge(uint256 snOfPld, string memory hashKey)
+        external onlyKeeper returns (bool flag)
+    {
+        PledgesRepo.Head memory head = snOfPld.snParser();
+        PledgesRepo.Pledge storage pld = _repo.pledges[head.seqOfShare][head.seqOfPldOnShare];
+        
+        if (pld.releasePledge(hashKey))
+        {   
+            emit ReleasePledge(head.seqOfShare, head.seqOfPldOnShare);
+            _getBOS().increaseCleanAmt(pld.head.seqOfShare, pld.body.paid, pld.body.par);
+            flag = true;
+        }
+    }
+
 
     //##################
     //##    读接口    ##
@@ -154,9 +161,9 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
 
     function counterOfPledges(uint256 seqOfShare) 
         public view 
-        returns (uint32) 
+        returns (uint16) 
     {
-        return _repo.pledges[seqOfShare][0].head.seqOfPld;
+        return _repo.pledges[seqOfShare][0].head.seqOfPldOnShare;
     }
 
     function isPledge(uint256 seqOfShare, uint256 seqOfPledge) 
@@ -164,12 +171,13 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
         return _repo.pledges[seqOfShare][seqOfPledge].head.createDate > 0;
     }
 
-    function getPledge(uint256 seqOfShare, uint256 seqOfPledge)
+    function getPledge(uint256 snOfPld)
         public
         view
         returns (PledgesRepo.Pledge memory pld)
     {
-        pld = _repo.pledges[seqOfShare][seqOfPledge];
+        PledgesRepo.Head memory head = snOfPld.snParser();
+        pld = _repo.pledges[head.seqOfShare][head.seqOfPldOnShare];
     }
 
     function getPledgesOfShare(uint256 seqOfShare) 

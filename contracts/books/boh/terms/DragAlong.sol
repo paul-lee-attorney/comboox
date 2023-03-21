@@ -14,6 +14,7 @@ import "../../../common/ruting/ROMSetting.sol";
 
 import "../../../common/lib/RulesParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
+import "../../../common/lib/SharesRepo.sol";
 
 import "../../../common/components/IRepoOfDocs.sol";
 import "../../../common/access/AccessControl.sol";
@@ -95,7 +96,7 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     function priceCheck(
         address ia,
         IInvestmentAgreement.Deal memory deal,
-        IBookOfShares.Share memory share,
+        SharesRepo.Share memory share,
         uint256 caller
     ) external view returns (bool) {
                 
@@ -117,12 +118,12 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
             lr.triggerType ==
             uint8(TriggerTypeOfAlongs.ControlChangedWithHigherPrice)
         ) {
-            if (deal.head.price >= lr.unitPrice) return true;
+            if (deal.head.priceOfPaid >= lr.unitPrice) return true;
             else return false;
         }
 
         if (
-            _roeOfDeal(deal.head.price, share.head.price, deal.head.closingDate, share.head.issueDate) >=
+            _roeOfDeal(deal.head.priceOfPaid, share.head.price, deal.head.closingDate, share.head.issueDate) >=
             lr.roe
         ) return true;
 

@@ -25,13 +25,14 @@ contract Options is IOptions, AccessControl {
     // ################
 
     function createOption(
-        bytes32 sn,
-        uint256 rightholder,
-        uint256 obligor,
+        uint256 sn,
+        uint256 snOfCond,
+        uint40 rightholder,
+        uint40 obligor,
         uint64 paid,
         uint64 par
     ) external onlyAttorney returns (uint32 seqOfOpt) {
-        seqOfOpt = _repo.createOption(sn, rightholder, obligor, paid, par);
+        seqOfOpt = _repo.createOption(sn, snOfCond, rightholder, obligor, paid, par);
     }
 
     function delOption(uint256 seqOfOpt) external onlyAttorney {
@@ -54,16 +55,16 @@ contract Options is IOptions, AccessControl {
             flag = _repo.records[seqOfOpt].obligors.remove(obligor);
     }
 
-    function optRegistered(uint256 seqOfOpt)
-        external 
-    {
-        require (msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfOptions)), 
-            "OP.USOO: msgSender is not BOO");
+    // function optRegistered(uint256 seqOfOpt)
+    //     external 
+    // {
+    //     require (msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfOptions)), 
+    //         "OP.USOO: msgSender is not BOO");
 
-        require (isOption(seqOfOpt), "OP.USOO: opt not exist");
+    //     require (isOption(seqOfOpt), "OP.USOO: opt not exist");
 
-        _repo.options[seqOfOpt].head.state = uint8(OptionsRepo.OptStates.Issued);
-    }
+    //     _repo.options[seqOfOpt].head.state = uint8(OptionsRepo.StateOfOpt.Issued);
+    // }
 
     // ################
     // ##  查询接口   ##
@@ -74,33 +75,24 @@ contract Options is IOptions, AccessControl {
     }
 
     function isOption(uint256 seqOfOpt) public view returns (bool) {
-        return _repo.options[seqOfOpt].head.state > 0;
+        return _repo.options[seqOfOpt].head.issueDate > 0;
     }
 
     function isObligor(uint256 seqOfOpt, uint256 acct) external view returns (bool) {
         return _repo.records[seqOfOpt].obligors.contains(acct);
     }
 
-    function getOption(uint256 seqOfOpt)
-        external
-        view
-        returns (
-        OptionsRepo.Head memory head, 
-        OptionsRepo.Body memory body)   
+    function getOption(uint256 seqOfOpt) external view
+        returns (OptionsRepo.Option memory option)   
     {
         require (isOption(seqOfOpt), "OP.GO: opt not exist");
-
-        head = _repo.options[seqOfOpt].head;
-        body = _repo.options[seqOfOpt].body;
+        option = _repo.options[seqOfOpt];
     }
 
-    function obligorsOfOption(uint256 seqOfOpt)
-        external
-        view
+    function obligorsOfOption(uint256 seqOfOpt) external view
         returns (uint256[] memory)
     {
-        require (isOption(seqOfOpt), "OP.GO: opt not exist");
-    
+        require (isOption(seqOfOpt), "OP.GO: opt not exist");    
         return _repo.records[seqOfOpt].obligors.values();
     }
 }

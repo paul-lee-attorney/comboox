@@ -123,12 +123,12 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOAKeeper(_keepers[0]).closeDeal(ia, seqOfDeal, hashKey, _msgSender());
     }
 
-    function transferTargetShare(address ia, uint256 seqOfDeal) external {
-        IBOAKeeper(_keepers[0]).transferTargetShare(ia, seqOfDeal, _msgSender());
-    }
-
     function issueNewShare(address ia, uint256 seqOfDeal) external onlyDirectKeeper {
         IBOAKeeper(_keepers[0]).issueNewShare(ia, seqOfDeal);
+    }
+
+    function transferTargetShare(address ia, uint256 seqOfDeal) external {
+        IBOAKeeper(_keepers[0]).transferTargetShare(ia, seqOfDeal, _msgSender());
     }
 
     function revokeDeal(
@@ -137,6 +137,13 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         string memory hashKey
     ) external {
         IBOAKeeper(_keepers[0]).revokeDeal(ia, seqOfDeal, _msgSender(), hashKey);
+    }
+
+    function terminateDeal(
+        address ia,
+        uint256 seqOfDeal
+    ) external {
+        IBOAKeeper(_keepers[0]).terminateDeal(ia, seqOfDeal, _msgSender());
     }
 
     // ###################

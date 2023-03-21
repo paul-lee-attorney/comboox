@@ -42,6 +42,16 @@ interface IBookOfIA is IRepoOfDocs {
         uint256 seqOfDeal
     ) external returns (FRClaims.Claim[] memory output);
 
+    function execAlongRight(
+        address ia,
+        bool dragAlong,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
+        uint64 paid,
+        uint64 par,
+        uint256 caller,
+        bytes32 sigHash
+    ) external;
 
     function createMockOfIA(address ia)
         external

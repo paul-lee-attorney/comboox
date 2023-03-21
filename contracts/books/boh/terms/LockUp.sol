@@ -23,7 +23,7 @@ import "./ILockUp.sol";
 
 contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
     using ArrayUtils for uint256[];
-    using ArrayUtils for uint40[];
+    // using ArrayUtils for uint40[];
     // using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -89,21 +89,12 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, uint256 seqOfDeal) external view returns (bool) {
+    function isTriggered(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
  
-        IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
- 
-        // uint48 closingDate = IInvestmentAgreement(ia).getDeal(
-        //     sn.seqOfDeal()
-        // ).closingDate;
-
-        // uint8 typeOfDeal = sn.typeOfDeal();
-        // uint256 seqOfShare = sn.ssnOfDeal();
-
         if (
-            head.typeOfDeal > 1 &&
-            isLocked(head.seqOfShare) &&
-            _lockers[head.seqOfShare].dueDate >= head.closingDate
+            deal.head.typeOfDeal > 1 &&
+            isLocked(deal.head.seqOfShare) &&
+            _lockers[deal.head.seqOfShare].dueDate >= deal.head.closingDate
         ) return true;
 
         return false;
@@ -128,22 +119,18 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
         }
     }
 
-    function isExempted(address ia, uint256 seqOfDeal) external view returns (bool) {
+    function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
         
-        uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
-        uint256 motionId = (typeOfIA << 160) + uint256(uint160(ia));
+        uint256 motionId = uint256(uint160(ia));
                
         uint256[] memory consentParties = _getBOG().
             getCaseOfAttitude(motionId,1).voters;
 
-        uint256[] memory signers = ISigPage(ia).partiesOfDoc();
+        uint256[] memory parties = ISigPage(ia).getParties();
 
-        uint256[] memory agreedParties = consentParties.merge(signers);
+        uint256[] memory agreedParties = consentParties.merge(parties);
 
-        // uint256 seqOfShare = sn.ssnOfDeal();
-        IInvestmentAgreement.Head memory head = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
-
-        return _isExempted(head.seqOfShare, agreedParties);
+        return _isExempted(deal.head.seqOfShare, agreedParties);
     }
 
 

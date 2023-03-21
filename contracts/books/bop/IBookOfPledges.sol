@@ -17,22 +17,22 @@ interface IBookOfPledges {
 
     event CreatePledge(
         uint256 indexed seqOfShare,
-        uint256 seqOfPledge,
+        uint256 seqOfPldOnShare,
         uint256 creditor,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     );
 
     event UpdatePledge(
         uint256 indexed seqOfShare,
-        uint256 seqOfPledge,
+        uint256 seqOfPldOnShare,
         uint256 creditor,
         uint48 expireDate,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     );
+
+    event ReleasePledge(uint256 indexed seqOfShare, uint256 seqOfPldOnShare);
 
     //##################
     //##    写接口    ##
@@ -43,8 +43,7 @@ interface IBookOfPledges {
         uint40 creditor,
         uint16 monOfGuarantee,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     ) external returns(PledgesRepo.Head memory head);
 
     function issuePledge(
@@ -52,8 +51,7 @@ interface IBookOfPledges {
         uint40 creditor,
         uint16 monOfGuarantee,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     ) external returns(PledgesRepo.Head memory issuedHead);
 
     function regPledge(
@@ -62,28 +60,26 @@ interface IBookOfPledges {
 
     function updatePledge(
         uint256 seqOfShare,
-        uint256 seqOfPledge,
+        uint256 seqOfPldOnShare,
         uint40 creditor,
         uint48 expireDate,
         uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt
+        uint64 pledgedPar
     ) external;
+
+    function releasePledge(uint256 snOfPld, string memory hashKey)
+        external returns (bool flag);
 
     //##################
     //##    读接口    ##
     //##################
 
-    function counterOfPledges(uint256 seqOfShare) external view returns (uint32);
+    function counterOfPledges(uint256 seqOfShare) external view returns (uint16);
 
-    function isPledge(uint256 seqOfShare, uint256 seqOfPledge) external view returns (bool);
+    function isPledge(uint256 seqOfShare, uint256 seqOfPldOnShare) external view returns (bool);
 
-    function getPledge(uint256 seqOfShare, uint256 seqOfPledge)
-        external
-        view
-        returns (
-            PledgesRepo.Pledge memory pld
-        );
+    function getPledge(uint256 snOfPld) external view
+        returns (PledgesRepo.Pledge memory pld);
 
     function getPledgesOfShare(uint256 seqOfShare) external view returns (PledgesRepo.Pledge[] memory);
 

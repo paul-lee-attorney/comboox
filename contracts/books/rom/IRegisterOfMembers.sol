@@ -27,8 +27,6 @@ interface IRegisterOfMembers {
 
     event AddMember(uint256 indexed acct, uint32 qtyOfMembers);
 
-    // event RemoveMember(uint40 indexed acct, uint32 qtyOfMembers);
-
     event AddShareToMember(uint32 indexed seqOfShare, uint40 indexed acct);
 
     event RemoveShareFromMember(uint32 indexed seqOfShare, uint40 indexed acct);
@@ -94,13 +92,7 @@ interface IRegisterOfMembers {
 
     function ownersEquity() external view returns(Checkpoints.Checkpoint memory cap);
 
-    // function paidCap() external view returns (uint64);
-
-    // function parCap() external view returns (uint64);
-
-    function capAtDate(uint48 date)
-        external
-        view
+    function capAtDate(uint48 date) external view
         returns (Checkpoints.Checkpoint memory cap);
 
     function totalVotes() external view returns (uint64);
@@ -111,35 +103,30 @@ interface IRegisterOfMembers {
 
     function isMember(uint256 acct) external view returns (bool);
 
-    function sharesClipOfMember(uint256 acct) external view returns (Checkpoints.Checkpoint memory clip);
-
-    // function parOfMember(uint40 acct) external view returns (uint64 par);
+    function sharesClipOfMember(uint256 acct) external view 
+        returns (Checkpoints.Checkpoint memory clip);
 
     function votesInHand(uint256 acct) external view returns (uint64);
 
-    function votesAtDate(uint256 acct, uint48 date)
-        external
-        view
+    function votesAtDate(uint256 acct, uint48 date) external view
         returns (uint64);
 
     function sharesInHand(uint256 acct) external view returns (uint256[] memory);
 
-    function groupRep(uint256 acct) external view returns (uint256);
+    function groupRep(uint256 acct) external view returns (uint40);
 
     function qtyOfMembers() external view returns (uint32);
 
     function membersList() external view returns (uint256[] memory);
 
-    function affiliated(uint256 acct1, uint256 acct2)
-        external
-        view
+    function affiliated(uint256 acct1, uint256 acct2) external view
         returns (bool);
 
     // ==== group ====
 
     function isGroupRep(uint256 acct) external view returns (bool);
 
-    function qtyOfGroups() external view returns (uint32);
+    function qtyOfGroups() external view returns (uint256);
 
     function controllor() external view returns (uint40);
 
@@ -147,12 +134,10 @@ interface IRegisterOfMembers {
 
     function votesOfGroup(uint256 acct) external view returns (uint64);
 
-    function membersOfGroup(uint256 acct)
-        external
-        view
+    function membersOfGroup(uint256 acct) external view
         returns (uint256[] memory);
 
-    function deepOfGroup(uint256 acct) external view returns (uint32);
+    function deepOfGroup(uint256 acct) external view returns (uint256);
 
     // ==== snapshot ====
 

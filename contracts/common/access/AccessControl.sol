@@ -11,8 +11,8 @@ import "./IAccessControl.sol";
 import "./RegCenterSetting.sol";
 import "../lib/RolesRepo.sol";
 
-import "../../books/boh/IShareholdersAgreement.sol";
-import "../../books/boh/IBookOfSHA.sol";
+// import "../../books/boh/IShareholdersAgreement.sol";
+// import "../../books/boh/IBookOfSHA.sol";
 
 contract AccessControl is IAccessControl, RegCenterSetting {
     using RolesRepo for RolesRepo.Roles;
