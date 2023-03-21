@@ -7,6 +7,7 @@
 
 pragma solidity ^0.8.8;
 
+import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/bos/IBookOfShares.sol";
 import "./SharesRepo.sol";
 import "./EnumerableSet.sol";
@@ -89,18 +90,20 @@ library SwapsRepo {
             Repo storage repo, 
             uint256 sn,
             uint40 rightholder, 
-            uint64 paidOfConsider
+            uint64 paidOfConsider,
+            IRegisterOfMembers _rom
     ) public returns (Head memory head) 
     {
         head = snParser(sn);
-        head = issueSwap(repo, head, rightholder, paidOfConsider);
+        head = issueSwap(repo, head, rightholder, paidOfConsider, _rom);
     }
 
     function issueSwap(
         Repo storage repo,
         Head memory head,
         uint40 rightholder, 
-        uint64 paidOfConsider
+        uint64 paidOfConsider,
+        IRegisterOfMembers _rom
     ) public returns(Head memory regHead) {
         Swap memory swap;
 
@@ -112,13 +115,26 @@ library SwapsRepo {
         swap.body.rightholder = rightholder;
         swap.body.paidOfConsider = paidOfConsider;
 
-        regHead = regSwap(repo, swap);
+        regHead = regSwap(repo, swap, _rom);
     }
 
     function regSwap(
         Repo storage repo,
-        Swap memory swap
+        Swap memory swap,
+        IRegisterOfMembers _rom
     ) public returns(Head memory regHead){
+        require(_rom.isClassMember(swap.head.obligor, swap.head.classOfTarget), 
+            "SR.RS: obligor not memberOfTargetClass");
+        require(_rom.isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
+            "SR.RS: rightholder not memberOfConsiderClass");
+
+        require(block.timestamp < swap.head.triggerDate, "SR.RS: triggerDate not future");
+        require(block.timestamp >= swap.head.createDate, "SR.RS: future createDate");
+
+        require(swap.head.rateOfSwap > 0, "SR.RS: zero rateOfSwap");
+
+        require(swap.body.paidOfConsider > 0, "SR.RS: zero paidOfConsider");
+
         swap.head.seqOfSwap = _increaseCounterOfSwap(repo);
 
         repo.swaps[swap.head.seqOfSwap] = swap;
@@ -129,13 +145,11 @@ library SwapsRepo {
 
     function decreaseAmtOfSwap(
         Swap storage swap,
-        uint40 caller,
         uint64 amt
     ) public returns(bool flag) {
 
         require(block.timestamp < swap.head.triggerDate + uint48(swap.head.closingDays) * 86400,
             "SR.DAOS: swap expired");
-        require(caller == swap.body.rightholder, "SR.DAOS: caller not rightholder");
         require(swap.body.paidOfConsider >= amt, "SR.DAOS: amt overflow");
 
         if (swap.head.state < uint8(StateOfSwap.Locked)) {
@@ -153,10 +167,10 @@ library SwapsRepo {
 
     function transferSwap(
         Repo storage repo,
-        uint32 seqOfSwap,
-        uint40 caller,
+        uint256 seqOfSwap,
         uint40 buyer,
-        uint64 amt 
+        uint64 amt,
+        IRegisterOfMembers _rom
     ) public returns(Head memory head) {
 
         Swap storage swap = repo.swaps[seqOfSwap];
@@ -165,7 +179,7 @@ library SwapsRepo {
 
         Swap memory newSwap = swap;
 
-        decreaseAmtOfSwap(swap, caller, amt);
+        decreaseAmtOfSwap(swap, amt);
 
         newSwap.body.rightholder = buyer;
         newSwap.body.paidOfConsider = amt;
@@ -173,17 +187,15 @@ library SwapsRepo {
         if (newSwap.head.state == uint8(StateOfSwap.Crystalized))
             newSwap.body.paidOfTarget = amt * uint64(newSwap.head.rateOfSwap) / 10000;
         
-        head = regSwap(repo, newSwap);
+        head = regSwap(repo, newSwap, _rom);
     }
 
     function crystalizeSwap(
         Swap storage swap,
-        uint40 caller,
         uint32 seqOfConsider,
         uint32 seqOfTarget,
         IBookOfShares _bos
     ) public returns (Body memory){
-        require(caller == swap.body.rightholder, "SR.CS: caller not rightholder");
         require(block.timestamp < swap.head.triggerDate + uint48(swap.head.closingDays) * 86400,
             "SR.CS: swap expired");
 
@@ -201,7 +213,13 @@ library SwapsRepo {
         require(target.head.class == swap.head.classOfTarget, 
             "SR.CS: wrong classOfTarget");
 
+        require(consider.body.cleanPaid >= swap.body.paidOfConsider,
+            "SR.CS: considerShare insufficient of cleanPaid");
+        
         uint64 paidOfTarget = swap.body.paidOfConsider * uint64(swap.head.rateOfSwap) / 10000;
+
+        require(target.body.cleanPaid >= paidOfTarget,
+            "SR.CS: targetShare insufficient of cleanPaid");
 
         swap.body = Body({
             rightholder: swap.body.rightholder,
@@ -218,13 +236,12 @@ library SwapsRepo {
 
     function lockSwap(
         Swap storage swap,
-        uint40 caller,
         bytes32 hashLock
     ) public returns (bool flag){
         require (block.timestamp < swap.head.triggerDate + uint48(swap.head.closingDays) * 86400, 
             "SR.LS: swap expired");
 
-        require (caller == swap.body.rightholder, "SR.LS: caller not rightholder");
+        require (hashLock != bytes32(0), "SR.LS: zero hashLock");
 
         if (swap.head.state == uint8(StateOfSwap.Issued) || 
             swap.head.state == uint8(StateOfSwap.Crystalized)){
@@ -236,26 +253,20 @@ library SwapsRepo {
 
     function releaseSwap(
         Swap storage swap,
-        uint40 caller,
         string memory hashKey
     ) public returns (bool flag){
-        require (caller == swap.head.obligor, "SR.RS: caller not obligor");
-
         require (swap.head.state == uint8(StateOfSwap.Locked), "PR.RS: wrong state");
         if (swap.hashLock == keccak256(bytes(hashKey))) {
             swap.head.state = uint8(StateOfSwap.Released);
-
             flag = true;
         }
     }
 
-    function execSwap(Swap storage swap, uint40 caller) public returns(bool flag)
+    function execSwap(Swap storage swap) public returns(bool flag)
     {
         require(block.timestamp >= swap.head.triggerDate && 
             block.timestamp < swap.head.triggerDate + uint48(swap.head.closingDays) * 86400,
             "SR.ES: swap not in exec period");
-
-        require(caller == swap.body.rightholder, "SR.ES: caller not rightholder");
 
         if (swap.head.state == uint8(StateOfSwap.Crystalized) ||
             swap.head.state == uint8(StateOfSwap.Locked))
@@ -265,12 +276,12 @@ library SwapsRepo {
         }        
     }
 
-    function reovkeSwap(Swap storage swap, uint40 caller) public returns(bool flag)
+    function revokeSwap(Swap storage swap) public returns(bool flag)
     {
         require(block.timestamp > swap.head.triggerDate + uint48(swap.head.closingDays) * 86400,
             "SR.ES: swap not expired");
 
-        if (caller == swap.head.obligor || caller == swap.body.rightholder) {
+        if (swap.head.state < uint8(StateOfSwap.Released)) {
             swap.head.state = uint8(StateOfSwap.Revoked);
             flag = true;
         }

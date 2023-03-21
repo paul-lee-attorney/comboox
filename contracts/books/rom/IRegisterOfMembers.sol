@@ -9,6 +9,7 @@ pragma solidity ^0.8.8;
 
 import "../../common/lib/TopChain.sol";
 import "../../common/lib/Checkpoints.sol";
+import "../../common/lib/SharesRepo.sol";
 
 interface IRegisterOfMembers {
     //##################
@@ -67,9 +68,9 @@ interface IRegisterOfMembers {
 
     function addMember(uint256 acct) external;
 
-    function addShareToMember(uint32 ssn, uint40 acct) external;
+    function addShareToMember(SharesRepo.Share memory share) external;
 
-    function removeShareFromMember(uint32 ssn, uint40 acct) external;
+    function removeShareFromMember(SharesRepo.Share memory share) external;
 
     function changeAmtOfMember(
         uint40 acct,
@@ -101,6 +102,8 @@ interface IRegisterOfMembers {
 
     function isSeqOfShare(uint256 seqOfShare) external view returns (bool);
 
+    // ==== Member ====
+
     function isMember(uint256 acct) external view returns (bool);
 
     function sharesClipOfMember(uint256 acct) external view 
@@ -121,6 +124,12 @@ interface IRegisterOfMembers {
 
     function affiliated(uint256 acct1, uint256 acct2) external view
         returns (bool);
+    
+    function isClassMember(uint256 acct, uint16 class)
+        external view returns(bool flag);
+
+    function getMembersOfClass(uint16 class)
+        external view returns(uint256[] memory members);
 
     // ==== group ====
 

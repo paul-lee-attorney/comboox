@@ -13,7 +13,7 @@ import "../../common/access/AccessControl.sol";
 
 import "../../common/lib/EnumerableSet.sol"; 
 import "../../common/lib/MembersRepo.sol";
-import "../../common/lib/SharesRepo.sol"; 
+// import "../../common/lib/SharesRepo.sol"; 
 
 import "../../common/ruting/BOSSetting.sol";
 
@@ -79,24 +79,20 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
             emit AddMember(acct, _repo.chain.qtyOfMembers());
     }
 
-    function addShareToMember(uint32 seqOfShare, uint40 acct) external onlyBOS {
-        SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
-
-        if (_repo.addShareToMember(seqOfShare, acct)) {
-            _repo.changeAmtOfMember(acct, share.body.paid, share.body.par, true);
-            emit AddShareToMember(seqOfShare, acct);
+    function addShareToMember(SharesRepo.Share memory share) external onlyBOS {
+        if (_repo.addShareToMember(share.head)) {
+            _repo.changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, true);
+            emit AddShareToMember(share.head.seq, share.head.shareholder);
         }
     }
 
-    function removeShareFromMember(uint32 seqOfShare, uint40 acct) external onlyBOS {
-        SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
+    function removeShareFromMember(SharesRepo.Share memory share) external onlyBOS {
+        changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, false);
 
-        changeAmtOfMember(acct, share.body.paid, share.body.par, false);
+        if (_repo.removeShareFromMember(share.head)) {
+            if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) _repo.delMember(share.head.shareholder);
 
-        if (_repo.removeShareFromMember(seqOfShare, acct)) {
-            if (_repo.members[acct].sharesInHand.length() == 0) _repo.delMember(acct);
-
-            emit RemoveShareFromMember(seqOfShare, acct);
+            emit RemoveShareFromMember(share.head.seq, share.head.shareholder);
         }
     }
 
@@ -194,6 +190,8 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
         return _repo.chain.isMember(acct);
     }
 
+    // ==== Member ====
+
     function sharesClipOfMember(uint256 acct)
         external
         view
@@ -245,6 +243,18 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
         returns (bool)
     {
         return _repo.chain.affiliated(acct1, acct2);
+    }
+
+    function isClassMember(uint256 acct, uint16 class)
+        external view returns(bool flag)
+    {
+        flag = _repo.isClassMember(acct, class);
+    }
+
+    function getMembersOfClass(uint16 class)
+        external view returns(uint256[] memory members)
+    {
+        members = _repo.getMembersOfClass(class);
     }
 
     // ==== group ====

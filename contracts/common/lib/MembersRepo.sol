@@ -9,14 +9,18 @@ pragma solidity ^0.8.8;
 
 import "../../books/boa/IInvestmentAgreement.sol";
 
+import "./ArrayUtils.sol";
 import "./TopChain.sol";
 import "./Checkpoints.sol";
 import "./EnumerableSet.sol";
+import "./SharesRepo.sol";
 
 library MembersRepo {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
     using TopChain for TopChain.Chain;
+    using SharesRepo for SharesRepo.Head;
+    using ArrayUtils for uint256[];
 
     struct Member {
         Checkpoints.History votesInHand;
@@ -92,21 +96,21 @@ library MembersRepo {
 
     function addShareToMember(
         Repo storage gm,
-        uint32 seqOfShare,
-        uint40 acct
+        SharesRepo.Head memory head
     ) public returns (bool flag) {
-        if (addSeqOfShareToList(gm, seqOfShare)) {
-            flag = gm.members[acct].sharesInHand.add(seqOfShare);
+        uint256 shareNumber = head.codifyHead();
+        if (addShareNumberToList(gm, shareNumber)) {
+            flag = gm.members[head.shareholder].sharesInHand.add(shareNumber);
         }
     }
 
     function removeShareFromMember(
         Repo storage gm,
-        uint32 seqOfShare,
-        uint40 acct
+        SharesRepo.Head memory head
     ) public returns (bool flag) {
-        if (removeSeqOfShareFromList(gm, seqOfShare)) {
-            flag = gm.members[acct].sharesInHand.remove(seqOfShare);
+        uint256 shareNumber = head.codifyHead();
+        if (removeShareNumberFromList(gm, shareNumber)) {
+            flag = gm.members[head.shareholder].sharesInHand.remove(shareNumber);
         }
     }
 
@@ -154,18 +158,18 @@ library MembersRepo {
 
     // ==== Zero Node Setting ====
 
-    function addSeqOfShareToList(
+    function addShareNumberToList(
         Repo storage gm,
-        uint32 seqOfShare
+        uint256 shareNumber
     ) public returns (bool flag) {
-        flag = gm.members[0].sharesInHand.add(seqOfShare);
+        flag = gm.members[0].sharesInHand.add(shareNumber);
     }
 
-    function removeSeqOfShareFromList(
+    function removeShareNumberFromList(
         Repo storage gm,
-        uint32 seqOfShare
+        uint256 shareNumber
     ) public returns (bool flag) {
-        flag = gm.members[0].sharesInHand.remove(seqOfShare);
+        flag = gm.members[0].sharesInHand.remove(shareNumber);
     }
 
     function updateOwnersEquity(
@@ -189,4 +193,48 @@ library MembersRepo {
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.getAtDate(date);
         vote = gm.chain.basedOnPar() ? cp.par : cp.paid;
     }
+
+    function isClassMember(Repo storage gm, uint256 acct, uint16 class)
+        public view returns (bool flag)
+    {
+        uint256[] memory shares = gm.members[acct].sharesInHand.values();
+        uint256 len = shares.length;
+        while (len > 0) {
+            if (uint16(shares[len-1] >> 176) == class) {
+                flag = true;
+                return flag;
+            }
+            len--;
+        }
+    }
+
+    function getMembersOfClass(Repo storage gm, uint16 class)
+        public view returns(uint256[] memory output)
+    {
+        uint256[] memory shares = gm.members[0].sharesInHand.values();
+        uint256 len = shares.length;
+
+        uint256[] memory members = new uint256[](gm.chain.nodes[0].ptr);
+
+        uint256 i;
+        while (len > 0) {
+            if (uint16(shares[len-1] >> 176) == class) {
+                uint40 shareholder = uint40(shares[len-1] >> 40);
+
+                uint256 j;
+                while (j<i) {
+                    if (members[j] == shareholder) break;
+                    j++; 
+                }
+                if (j==i){
+                    members[i] = shareholder;
+                    i++;
+                }
+            }
+            len--;
+        }
+
+        output = members.resize(i);
+    }
+
 }

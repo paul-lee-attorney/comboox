@@ -20,7 +20,8 @@ contract RegCenterSetting {
         BookOfOptions, // 4
         BookOfPledges, // 5
         BookOfShares, // 6
-        RegisterOfMembers // 7
+        RegisterOfMembers, // 7
+        RegisterOfSwaps
     }
 
     IRegCenter internal _rc;

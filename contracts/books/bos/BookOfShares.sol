@@ -48,25 +48,29 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     function issueShare(uint256 shareNumber, uint64 paid, uint64 par) 
         external onlyKeeper 
     {
-        SharesRepo.Head memory head = shareNumber.snParser();
-        IRegisterOfMembers _rom = _getROM();        
+        // SharesRepo.Head memory head = shareNumber.snParser();
 
+        SharesRepo.Head memory head = _repo.createShare(shareNumber, paid, par);
+
+        IRegisterOfMembers _rom = _getROM();        
         _rom.addMember(head.shareholder);
 
-        uint32 seq = _repo.issueShare(shareNumber, paid, par);
+        emit IssueShare(head.seq, paid, par);
 
-        emit IssueShare(seq, paid, par);
+        SharesRepo.Share memory share = _repo.shares[head.seq];
 
-        _rom.addShareToMember(seq, head.shareholder);
+        _rom.addShareToMember(share);
         _rom.capIncrease(paid, par);
     }
 
     function regShare(SharesRepo.Head memory head, uint64 paid, uint64 par) 
         public onlyKeeper 
     {
-        head.seq = uint32(_repo.regShare(head, paid, par));
+        head = _repo.regShare(head, paid, par);
         emit IssueShare(head.seq, paid, par);
-        _getROM().addShareToMember(head.seq, head.shareholder);
+
+        SharesRepo.Share memory share = _repo.shares[head.seq];
+        _getROM().addShareToMember(share);
     }
 
 
@@ -206,7 +210,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         IRegisterOfMembers _rom = _getROM();
 
         if (par == share.body.par) {
-            _rom.removeShareFromMember(share.head.seq, share.head.shareholder);
+            _rom.removeShareFromMember(share);
             _repo.deregShare(share.head.seq);
         } else {
             _subAmtFromShare(share, paid, par);

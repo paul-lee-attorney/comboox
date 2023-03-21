@@ -21,6 +21,7 @@ import "./IBOOKeeper.sol";
 import "./IBOPKeeper.sol";
 import "./IBOSKeeper.sol";
 import "./IROMKeeper.sol";
+import "./IROSKeeper.sol";
 import "./ISHAKeeper.sol";
 
 contract GeneralKeeper is IGeneralKeeper, AccessControl {
@@ -62,7 +63,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         view
         returns (bool)
     {   
-        uint256 len = 9;
+        uint256 len = 10;
 
         while (len > 0) {
             if (caller == _keepers[len - 1]) return true;
@@ -306,7 +307,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  BOHKeeper   ##
     // ##################
 
-    function setTempOfBOH(address temp, uint256 typeOfDoc) external onlyDirectKeeper {
+    function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
         IBOHKeeper(_keepers[3]).setTempOfBOH(temp, typeOfDoc);
     }
 
@@ -314,7 +315,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     //     IBOHKeeper(_keepers[3]).setTermTemplate(title, addr);
     // }
 
-    function createSHA(uint256 typeOfDoc) external {
+    function createSHA(uint8 typeOfDoc) external {
         IBOHKeeper(_keepers[3]).createSHA(typeOfDoc, _msgSender());
     }
 
@@ -362,22 +363,23 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function updateOracle(
         uint256 seqOfOpt,
-        uint32 d1,
-        uint32 d2
+        uint64 d1,
+        uint64 d2,
+        uint64 d3
     ) external onlyDirectKeeper {
-        IBOOKeeper(_keepers[4]).updateOracle(seqOfOpt, d1, d2);
+        IBOOKeeper(_keepers[4]).updateOracle(seqOfOpt, d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt) external {
         IBOOKeeper(_keepers[4]).execOption(seqOfOpt, _msgSender());
     }
 
-    function addFuture(
+    function addSwap(
         uint256 seqOfOpt,
         uint256 seqOfShare,
         uint64 paid
     ) external {
-        IBOOKeeper(_keepers[4]).addFuture(seqOfOpt, seqOfShare, paid, _msgSender());
+        IBOOKeeper(_keepers[4]).addSwap(seqOfOpt, seqOfShare, paid, _msgSender());
     }
 
     function removeFuture(uint256 seqOfOpt, uint256 seqOfFt) external {

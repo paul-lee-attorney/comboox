@@ -74,19 +74,25 @@ library SharesRepo {
 
     // ==== issue/regist share ====
 
-    function issueShare(Repo storage repo, uint256 sharenumber, uint64 paid, uint64 par)
-        public returns (uint32 seq)
+    function createShare(Repo storage repo, uint256 sharenumber, uint64 paid, uint64 par)
+        public returns (Head memory head)
     {
-        Head memory head = snParser(sharenumber);
+        head = snParser(sharenumber);
+        head = issueShare(repo, head, paid, par);
+    }
 
+
+    function issueShare(Repo storage repo, Head memory head, uint64 paid, uint64 par)
+        public returns (Head memory regHead)
+    {
         if (head.issueDate == 0) head.issueDate = uint48(block.timestamp);
         if (head.class > counterOfClass(repo)) head.class = increaseCounterOfClass(repo);
 
-        seq = regShare(repo, head, paid, par);
+        regHead = regShare(repo, head, paid, par);
     }
 
     function regShare(Repo storage repo, Head memory head, uint64 paid, uint64 par)
-        public returns(uint32 seq)
+        public returns(Head memory regHead)
     {
         require(paid > 0, "SR.RS: zero paid");
         require(par > 0, "SR.RS: zero par");
@@ -112,7 +118,7 @@ library SharesRepo {
                 cleanPar: par
             });
 
-            seq = head.seq;
+            regHead = head;
         }
     }
 
