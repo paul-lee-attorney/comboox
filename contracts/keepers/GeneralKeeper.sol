@@ -344,23 +344,6 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  BOOKeeper  ##
     // #################
 
-    function issueOption(
-        bytes32 sn,
-        uint256 rightholder,
-        uint64 paid,
-        uint64 par
-    ) external {
-        IBOOKeeper(_keepers[4]).issueOption(sn, rightholder, paid, par, _msgSender());
-    }
-
-    function joinOptionAsObligor(uint256 seqOfOpt) external {
-        IBOOKeeper(_keepers[4]).joinOptionAsObligor(seqOfOpt, _msgSender());
-    }
-
-    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external {
-        IBOOKeeper(_keepers[4]).removeObligorFromOption(seqOfOpt, obligor, _msgSender());
-    }
-
     function updateOracle(
         uint256 seqOfOpt,
         uint64 d1,
@@ -374,40 +357,43 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOOKeeper(_keepers[4]).execOption(seqOfOpt, _msgSender());
     }
 
-    function addSwap(
+    function placeSwapOrder(
         uint256 seqOfOpt,
-        uint256 seqOfShare,
-        uint64 paid
+        uint32 seqOfConsider,
+        uint32 paidOfConsider,
+        uint32 seqOfTarget
     ) external {
-        IBOOKeeper(_keepers[4]).addSwap(seqOfOpt, seqOfShare, paid, _msgSender());
+        IBOOKeeper(_keepers[4]).placeSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _msgSender());
     }
 
-    function removeFuture(uint256 seqOfOpt, uint256 seqOfFt) external {
-        IBOOKeeper(_keepers[4]).removeFuture(seqOfOpt, seqOfFt, _msgSender());
-    }
-
-    function requestPledge(
-        uint256 seqOfOpt,
-        uint256 seqOfShare,
-        uint64 paid
+    function lockSwapOrder(
+        uint256 seqOfOpt, 
+        uint256 seqOfBrf, 
+        bytes32 hashLock
     ) external {
-        IBOOKeeper(_keepers[4]).requestPledge(seqOfOpt, seqOfShare, paid, _msgSender());
+        IBOOKeeper(_keepers[4]).lockSwapOrder(seqOfOpt, seqOfBrf, hashLock, _msgSender());
     }
 
-    function lockOption(uint256 seqOfOpt, bytes32 hashLock) external {
-        IBOOKeeper(_keepers[4]).lockOption(seqOfOpt, hashLock, _msgSender());
+    function releaseSwapOrder(
+        uint256 seqOfOpt, 
+        uint256 seqOfBrf, 
+        string memory hashKey
+    ) external {
+        IBOOKeeper(_keepers[4]).releaseSwapOrder(seqOfOpt, seqOfBrf, hashKey, _msgSender());
     }
 
-    function closeOption(uint256 seqOfOpt, string memory hashKey) external {
-        IBOOKeeper(_keepers[4]).closeOption(seqOfOpt, hashKey, _msgSender());
+    function execSwapOrder(
+        uint256 seqOfOpt, 
+        uint256 seqOfBrf
+    ) external {
+        IBOOKeeper(_keepers[4]).execSwapOrder(seqOfOpt, seqOfBrf, _msgSender());
     }
 
-    function revokeOption(uint256 seqOfOpt) external {
-        IBOOKeeper(_keepers[4]).revokeOption(seqOfOpt, _msgSender());
-    }
-
-    function releasePledges(uint256 seqOfOpt) external {
-        IBOOKeeper(_keepers[4]).releasePledges(seqOfOpt, _msgSender());
+    function revokeSwapOrder(
+        uint256 seqOfOpt, 
+        uint256 seqOfBrf
+    ) external {
+        IBOOKeeper(_keepers[4]).revokeSwapOrder(seqOfOpt, seqOfBrf, _msgSender());
     }
 
     // ###################

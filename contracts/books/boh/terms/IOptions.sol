@@ -15,15 +15,14 @@ interface IOptions {
     // ################
 
     function createOption(
-        uint256 sn,
+        uint256 snOfOpt,
         uint256 snOfCond,
         uint40 rightholder,
-        uint40 obligor,
         uint64 paid,
         uint64 par
-    ) external returns (uint32 seqOfOpt);
+    ) external returns (OptionsRepo.Head memory head); 
 
-    function delOption(uint256 seqOfOpt) external;
+    function delOption(uint256 seqOfOpt) external returns(bool flag);
 
     function addObligorIntoOpt(
         uint256 seqOfOpt,
@@ -35,22 +34,31 @@ interface IOptions {
         uint256 obligor
     ) external returns (bool flag);
 
-    // function optRegistered(uint256 seqOfOpt)
-    //     external;
 
-    // ###############
-    // ##  查询接口  ##
-    // ###############
+    // ################
+    // ##  查询接口   ##
+    // ################
 
-    function counterOfOpts() external view returns (uint32);
+    // ==== Option ====
+
+    function counterOfOptions() external view returns (uint32);
 
     function isOption(uint256 seqOfOpt) external view returns (bool);
 
-    function isObligor(uint256 seqOfOpt, uint256 acct) external view returns (bool);
-
     function getOption(uint256 seqOfOpt) external view
-        returns (OptionsRepo.Option memory option);
+        returns (OptionsRepo.Option memory option); 
 
-    function obligorsOfOption(uint256 seqOfOpt) external view
+    function getAllOptions() external view returns (OptionsRepo.Option[] memory);
+
+    // ==== Obligor ====
+
+    function isObligor(uint256 seqOfOpt, uint256 acct) external 
+        view returns (bool); 
+
+    function getObligorsOfOption(uint256 seqOfOpt) external view
         returns (uint256[] memory);
+
+    // ==== snOfOpt ====
+    function getSNList() external view returns(uint256[] memory);
+
 }

@@ -43,20 +43,20 @@ interface IRegisterOfSwaps {
         uint64 paidOfConsider
     ) external;
     
-    function regSwap(SwapsRepo.Swap memory swap) external;
+    function regSwap(SwapsRepo.Swap memory swap) external returns(SwapsRepo.Swap memory newSwap);
 
     function transferSwap(uint256 seqOfSwap, uint40 to, uint64 amt) external;
 
     function crystalizeSwap(uint256 seqOfSwap, uint32 seqOfConsider, uint32 seqOfTarget) 
         external returns(SwapsRepo.Body memory body);
 
-    function lockSwap(uint256 seqOfSwap, bytes32 hashLock) external;
+    function lockSwap(uint256 seqOfSwap, bytes32 hashLock) external returns (bool flag);
 
-    function releaseSwap(uint256 seqOfSwap, string memory hashKey) external;
+    function releaseSwap(uint256 seqOfSwap, string memory hashKey) external returns (bool flag);
 
-    function execSwap(uint256 seqOfSwap) external;
+    function execSwap(uint256 seqOfSwap) external returns(bool flag);
 
-    function revokeSwap(uint256 seqOfSwap) external;
+    function revokeSwap(uint256 seqOfSwap) external returns(bool flag);
 
     //###################
     //##    查询接口    ##
@@ -70,7 +70,7 @@ interface IRegisterOfSwaps {
 
     function getSwap(uint256 seqOfSwap) external view returns(SwapsRepo.Swap memory);
 
-    function getSwaps() external view returns(SwapsRepo.Swap[] memory);
+    function getAllSwaps() external view returns(SwapsRepo.Swap[] memory);
 
     // ==== SNList ====
 

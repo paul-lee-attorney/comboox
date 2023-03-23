@@ -11,48 +11,33 @@ import "./EnumerableSet.sol";
 import "./SharesRepo.sol";
 import "./Checkpoints.sol";
 import "./CondsRepo.sol";
-import "./PledgesRepo.sol";
+import "./SwapsRepo.sol";
+
+import "../../books/bos/IBookOfShares.sol";
+import "../../books/ros/IRegisterOfSwaps.sol";
 
 library OptionsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
     using Checkpoints for Checkpoints.History;
     using CondsRepo for CondsRepo.Cond;
     using CondsRepo for uint256;
-    using PledgesRepo for PledgesRepo.Pledge;
 
     enum TypeOfOpt {
         CallPrice,          
         PutPrice,           
         CallRoe,            
         PutRoe,             
-        CallIrr,            
-        PutIrr,             
         CallPriceWithCnds,  
         PutPriceWithCnds,   
         CallRoeWithCnds,    
-        PutRoeWithCnds,     
-        CallIrrWithCnds,    
-        PutIrrWithCnds      
+        PutRoeWithCnds     
     }
 
     enum StateOfOpt {
         Pending,    
         Issued,         
-        Executed,   
-        Ordered,    
-        Pledged,    
-        Locked,
-        Closed,     
-        Revoked,    
-        Expired     
-    }
-
-    enum StateOfOdr {
-        Pending,    
-        Issued,         
-        Pledged,    
-        Closed,     
-        Revoked
+        Executed,
+        Closed
     }
 
     struct Head {
@@ -64,40 +49,37 @@ library OptionsRepo {
         uint48 triggerDate;     
         uint16 execDays;         
         uint16 closingDays;
-        uint8 state;
+        uint40 obligor;      
     }
 
     struct Body {
         uint48 closingDate;
         uint40 rightholder;
-        uint40 obligor;      
         uint64 paid;
         uint64 par;
+        uint8 state;
     }
 
     struct Option {
         Head head;
         CondsRepo.Cond cond;
         Body body;
-        // bytes32 hashLock;
     }
 
-    struct Order {
-        uint32 seqOfOpt;
-        uint16 seqOfOdr;
-        uint32 seqOfShare;
-        uint40 buyer;
-        uint64 paid;
-        uint64 par;
+    struct Brief {
+        uint16 seqOfBrf;
+        uint32 seqOfSwap;
+        uint32 rateOfSwap;
+        uint64 paidOfConsider;
+        uint64 paidOfTarget;
+        uint40 obligor;
         uint8 state;
     }
 
     struct Record {
         EnumerableSet.UintSet obligors;
-        // seqOfOdr => Order
-        mapping(uint256 => Order) orders;
-        // seqOfOdr => seqOfPld => Pld
-        mapping(uint256 => mapping(uint256 => PledgesRepo.Pledge)) pledges;
+        // seqOfSwap => Brief
+        mapping(uint256 => Brief) briefs;
         Checkpoints.History oracles;
     }
 
@@ -123,7 +105,7 @@ library OptionsRepo {
             triggerDate: uint48(sn >> 72),
             execDays: uint16(sn >> 56),
             closingDays: uint16(sn >> 40),
-            state: uint8(sn >> 32)
+            obligor: uint40(sn)
         });
     }
 
@@ -135,92 +117,94 @@ library OptionsRepo {
             (uint256(head.issueDate) << 120) +
             (uint256(head.triggerDate) << 72) +
             (uint256(head.execDays) << 56) +
-            (uint256(head.closingDays) << 40);
+            (uint256(head.closingDays) << 40) + 
+            uint256(head.obligor);
     }
 
-    function orderSNParser(uint256 sn) public pure returns (Order memory order) {
-        order = Order({
-            seqOfOpt: uint32(sn >> 224),
-            seqOfOdr: uint16(sn >> 208),
-            seqOfShare: uint32(sn >> 176),
-            buyer: uint40(sn >> 136),
-            paid: uint64(sn >> 72),
-            par: uint64(sn >> 8),
-            state: uint8(sn)
-        });
-    }
-
-    function codifyOrder(Order memory order) public pure returns(uint256 sn) {
-        sn = (uint256(order.seqOfOpt) << 224) +
-            (uint256(order.seqOfOdr) << 208) +
-            (uint256(order.seqOfShare) << 176) +
-            (uint256(order.buyer) << 136) +
-            (uint256(order.paid) << 72) +
-            (uint256(order.par) << 8); 
+    function codifyBrief(Brief memory brf) public pure returns (uint256 sn) {
+        sn = (uint256(brf.seqOfBrf) << 240) +
+            (uint256(brf.seqOfSwap) << 208) +
+            (uint256(brf.rateOfSwap) << 176) +
+            (uint256(brf.paidOfConsider) << 112) +
+            (uint256(brf.paidOfTarget) << 48) +
+            (uint256(brf.obligor) << 8);
     }
 
     // ==== Option ====
 
     function createOption(
         Repo storage repo,
-        uint256 sn,
+        uint256 snOfOpt,
         uint256 snOfCond,
         uint40 rightholder,
-        uint40 obligor,
         uint64 paid,
         uint64 par
-    ) public returns (uint32 seqOfOpt) 
+    ) public returns (Head memory head) 
     {
         Option memory opt;
 
-        opt.head = snParser(sn);
+        opt.head = snParser(snOfOpt);
         opt.cond = snOfCond.snParser();
         opt.body = Body({
             closingDate: opt.head.triggerDate + (uint48(opt.head.execDays) + uint48(opt.head.closingDays)) * 86400,
             rightholder: rightholder,
-            obligor: obligor,
             paid: paid,
-            par: par
+            par: par,
+            state: 0
         });
 
-        seqOfOpt = issueOption(repo, opt);
+        head = issueOption(repo, opt);
     }
 
     function issueOption(
         Repo storage repo,
         Option memory opt
-    ) public returns(uint32 seqOfOpt) {
+    ) public returns(Head memory head) {
         opt.head.issueDate = uint48(block.timestamp);
-        opt.head.state = uint8(StateOfOpt.Issued);
-        seqOfOpt = regOption(repo, opt);
+        opt.body.state = uint8(StateOfOpt.Issued);
+        head = regOption(repo, opt);
     }
 
     function regOption(
         Repo storage repo,
         Option memory opt
-    ) public returns(uint32 seqOfOpt) {
+    ) public returns(Head memory head) {
 
         require(opt.head.rate > 0, "OR.IO: ZERO rate");
 
         require(opt.head.triggerDate > block.timestamp, "OR.IO: triggerDate not order");
-        // require(opt.head.execDays > 0,"OR.IO: ZERO execDays");
+        require(opt.head.execDays > 0, "OR.IO: ZERO execDays");
         require(opt.head.closingDays > 0, "OR.IO: ZERO closingDays");
-        require(opt.body.obligor > 0, "OR.IO: ZERO obligor");
+        require(opt.head.obligor > 0, "OR.IO: ZERO obligor");
 
         require(opt.body.rightholder > 0, "OR.IO: ZERO rightholder");
         require(opt.body.paid > 0, "OR.IO: ZERO paid");
         require(opt.body.par >= opt.body.paid, "OR.IO: INSUFFICIENT par");
 
-        seqOfOpt = _increaseCounterOfOptions(repo);
-        opt.head.seqOfOpt = seqOfOpt;        
+        opt.head.seqOfOpt = _increaseCounterOfOptions(repo);
 
         if (repo.snList.add(codifyHead(opt.head))) {
-            repo.options[seqOfOpt] = opt;
-            repo.records[seqOfOpt].obligors.add(opt.body.obligor);
+            repo.options[opt.head.seqOfOpt] = opt;
+            repo.records[opt.head.seqOfOpt].obligors.add(opt.head.obligor);
+            head = opt.head;
         }
     }
 
     // ==== Record ====
+
+    function addObligorIntoOption(Record storage record, uint256 obligor)
+        public returns(bool flag)
+    {
+        require (obligor > 0, "OR.AOIO: zero obligor");        
+        flag = record.obligors.add(obligor);
+    }
+
+    function removeObligorFromOption(Record storage record, uint256 obligor)
+        public returns(bool flag)
+    {
+        require (obligor > 0, "OR.ROFO: zero obligor");        
+        flag = record.obligors.remove(obligor);
+    }
 
     function addObligorsIntoOption(Record storage record, uint256[] memory obligors)
         public
@@ -242,7 +226,7 @@ library OptionsRepo {
         Record storage rcd = repo.records[seqOfOpt];
 
         require(
-            opt.head.state == uint8(StateOfOpt.Issued),
+            opt.body.state == uint8(StateOfOpt.Issued),
             "OR.EO: wrong state of Opt"
         );
         require(
@@ -250,15 +234,14 @@ library OptionsRepo {
             "OR.EO: NOT reached TriggerDate"
         );
 
-        if (opt.head.execDays > 0)
-            require(
-                block.timestamp <= opt.head.triggerDate + opt.head.execDays * 86400,
-                "OR.EO: NOT in exercise period"
-            );
+        require(
+            block.timestamp < opt.head.triggerDate + uint48(opt.head.execDays) * 86400,
+            "OR.EO: NOT in exercise period"
+        );
 
-        Checkpoints.Checkpoint memory cp = rcd.oracles.latest();
+        if (opt.head.typeOfOpt > uint8(TypeOfOpt.PutRoe)) {
+            Checkpoints.Checkpoint memory cp = rcd.oracles.latest();
 
-        if (opt.head.typeOfOpt > uint8(TypeOfOpt.PutIrr)) {
             if (opt.cond.logicOpr == uint8(CondsRepo.LogOps.ZeroPoint)) { 
                 require(opt.cond.checkSoleCond(cp.paid), 
                     "OR.EO: conds not satisfied");
@@ -271,222 +254,112 @@ library OptionsRepo {
             } else revert("OR.EO: logical operator overflow");
         }
 
-        opt.body.closingDate = uint48(block.timestamp) + opt.head.closingDays * 86400;
-        opt.head.state = uint8(StateOfOpt.Executed);
+        opt.body.closingDate = uint48(block.timestamp) + uint48(opt.head.closingDays) * 86400;
+        opt.body.state = uint8(StateOfOpt.Executed);
     }
 
-    // ==== Orders ====
+    // ==== Brief ====
 
-    function addOrder(
-        Repo storage repo,
-        uint256 snOfOdr
-    ) public returns (bool flag) {
-        Order memory order = orderSNParser(snOfOdr);
-
-        Option storage opt = repo.options[order.seqOfOpt];
-        Record storage rcd = repo.records[order.seqOfOpt];
-
-        require(
-            block.timestamp < opt.body.closingDate,
-            "OR.AF: MISSED closingDate"
-        );
-        require(opt.head.state == uint8(StateOfOpt.Executed), 
-            "OR.AF: option NOT executed");
-
-        // if (opt.head.typeOfOpt % 2 == 1) {
-        //     require(
-        //         opt.body.rightholder == order.seller,
-        //         "OR.AF: WRONG shareholder"
-        //     );
-        //     require (
-        //         rcd.obligors.contains(order.buyer),
-        //         "OR.AF: wrong order buyer"
-        //     );
-        // } else {
-        //     require(
-        //         rcd.obligors.contains(order.seller),
-        //         "OR.AF: WRONG sharehoder"
-        //     );
-        //     require(
-        //         opt.body.rightholder == order.buyer,
-        //         "OR.AF: Wrong order buyer"
-        //     );
-        // }
-
-        require(opt.body.paid >= rcd.orders[0].paid + order.paid, 
-            "paidOfOrder overflow");
-        require(opt.body.par >= rcd.orders[0].par + order.par, 
-            "parOfOrder overflow");
-        
-        rcd.orders[0].paid += order.paid;
-        rcd.orders[0].par += order.par;
-        
-        order.seqOfOdr = _increaseCounterOfOrders(rcd);
-
-        rcd.orders[order.seqOfOdr] = order;
-
-        if (opt.body.par == rcd.orders[0].par && 
-            opt.body.paid == rcd.orders[0].paid) 
-        {
-            opt.head.state = uint8(StateOfOpt.Ordered);
-        }
-        
-        flag = true;
-    }
-
-    function releaseOrder(
+    function createSwapOrder(
         Repo storage repo,
         uint256 seqOfOpt,
-        uint256 seqOfOdr
-    ) public returns (bool flag)
-    {
-        Option memory opt = repo.options[seqOfOpt];
-        Order storage order = repo.records[seqOfOpt].orders[seqOfOdr];
+        uint32 seqOfConsider,
+        uint32 paidOfConsider,
+        uint32 seqOfTarget,
+        IBookOfShares _bos    
+    ) public view returns(SwapsRepo.Swap memory swap) {
 
-        if (block.timestamp > opt.body.closingDate &&
-            opt.head.state < uint8(StateOfOpt.Closed) &&
-            order.state < uint8(StateOfOdr.Closed)) {
-
-            order.state = uint8(StateOfOdr.Revoked);
-
-            flag = true;
-        }
-    }
-
-    // ==== Pledge ====
-
-    function requestPledge(
-        Repo storage repo,
-        uint256 seqOfOpt,
-        uint256 seqOfOdr,
-        PledgesRepo.Pledge memory pledge
-    ) public returns (bool flag) {
         Option storage opt = repo.options[seqOfOpt];
         Record storage rcd = repo.records[seqOfOpt];
-        Order storage odr = repo.records[seqOfOpt].orders[seqOfOdr];
 
-        require(opt.head.state == uint8(StateOfOpt.Executed), "OR.RP: WRONG stateOfOpt");
-        // require(opt.head.state > uint8(StateOfOpt.Issued), "OR.RP: WRONG stateOfOpt");
+        require(opt.body.state == uint8(StateOfOpt.Executed), "OR.IS: wrong state");
+        require(block.timestamp < opt.body.closingDate, "OR.IS: option expired");
 
-        require(odr.state == uint8(StateOfOdr.Issued), "OR.RP: wrong stateOfOdr");
+        SharesRepo.Share memory consider = _bos.getShare(seqOfConsider);
+        SharesRepo.Share memory target = _bos.getShare(seqOfTarget);
+        
+        require(rcd.obligors.contains(target.head.shareholder), "OR.IS: obligor not target shareholder");
+        require(opt.body.rightholder == consider.head.shareholder, "OR.IS: rightholder not consider shareholder");
 
-        if (opt.head.typeOfOpt % 2 == 1)
-            require(
-                rcd.obligors.contains(pledge.head.pledgor),
-                "OR.RP: WRONG shareholder"
-            );
-        else
-            require(
-                opt.body.rightholder == pledge.head.pledgor,
-                "OR.RP: WRONG sharehoder"
-            );
+        // SwapsRepo.Swap memory swap;
 
-        require(
-            odr.paid * opt.head.rate / 100 >= rcd.pledges[seqOfOdr][0].body.paid + pledge.body.paid,
-            "OR.RP: pledge paid OVERFLOW"
-        );
+        swap.head = SwapsRepo.Head({
+            seqOfSwap: 0,
+            classOfTarget: target.head.class,
+            classOfConsider: consider.head.class,
+            createDate: uint48(block.timestamp),
+            triggerDate: uint48(block.timestamp) + 120,
+            closingDays: uint16((opt.body.closingDate + 43200 - block.timestamp) / 86400),
+            obligor: opt.head.obligor,
+            rateOfSwap: 0
+        });
 
-        require(
-            odr.par * opt.head.rate / 100 >= rcd.pledges[seqOfOdr][0].body.par + pledge.body.par,
-            "OR.RP: pledge par OVERFLOW"
-        );
-
-        rcd.pledges[seqOfOdr][0].body.paid += pledge.body.paid;
-        rcd.pledges[seqOfOdr][0].body.par += pledge.body.par;
-
-        pledge.head.seqOfPldOnOdr = _increaseCounterOfPldsOnOrder(rcd, seqOfOdr);
-
-        rcd.pledges[seqOfOdr][pledge.head.seqOfPldOnOdr] = pledge;
-
-        if (rcd.orders[seqOfOdr].paid * opt.head.rate / 100 == rcd.pledges[seqOfOdr][0].body.paid &&
-            rcd.orders[seqOfOdr].par * opt.head.rate / 100 == rcd.pledges[seqOfOdr][0].body.par)
-        {
-            rcd.orders[seqOfOdr].state = uint8(StateOfOdr.Pledged);
+        if (opt.head.typeOfOpt % 4 < 2) 
+            swap.head.rateOfSwap = consider.head.price * 10000 / opt.head.rate;
+        else {
+            swap.head.rateOfSwap = consider.head.price * (365 + opt.head.rate) * 
+                uint32(block.timestamp - consider.head.issueDate) * 100/ (864 * 365 * target.head.price);
         }
 
-        flag = true;
+        if (opt.head.typeOfOpt % 2 == 1) {
+            require(opt.head.classOfShare == consider.head.class, "OR.IS: wrong consider class");
+            require (opt.body.paid >= rcd.briefs[0].paidOfConsider + paidOfConsider, 
+                "OR.PS: paidOfConsider overflow");
+        } else {
+            require(opt.head.classOfShare == target.head.class, "OR.IS: wrong target class");
+            require (opt.body.paid >= rcd.briefs[0].paidOfTarget + (paidOfConsider * swap.head.rateOfSwap / 10000), 
+                "OR.PS: paidOfTarget overflow");            
+        }
+
+        swap.body.rightholder = opt.body.rightholder;
+        swap.body.paidOfConsider = paidOfConsider;
+
+        // swap = _ros.regSwap(swap);
+
+        // swap.body = _ros.crystalizeSwap(swap.head.seqOfSwap, seqOfConsider, seqOfTarget);
     }
 
-    // ==== Option ====
+    function regSwapOrder(
+        Repo storage repo,
+        uint256 seqOfOpt,
+        SwapsRepo.Swap memory swap
+    ) public returns (Brief memory brf)
+    {
+        Record storage rcd = repo.records[seqOfOpt];
 
-    // function lockOption(
-    //     Option storage opt,
-    //     bytes32 hashLock
-    // ) public {
-    //     require(opt.head.state > uint8(StateOfOpt.Issued), 
-    //         "OR.LO: WRONG state");
-    //     require(opt.head.state != uint8(StateOfOpt.Locked), 
-    //         "OR.LO: WRONG state");
-    //     require(block.timestamp < opt.body.closingDate, 
-    //         "OR.LO: Missed ClosingDate");
-    //     if (opt.hashLock == bytes32(0))
-    //     {
-    //         opt.hashLock = hashLock;
-    //         opt.head.state = uint8(StateOfOpt.Locked);
-    //     }
-    // }
+        brf = Brief({
+            seqOfBrf: _increaseCounterOfBriefs(repo, seqOfOpt),
+            seqOfSwap: swap.head.seqOfSwap,
+            rateOfSwap: swap.head.rateOfSwap,
+            paidOfConsider: swap.body.paidOfConsider,
+            paidOfTarget: swap.body.paidOfTarget,
+            obligor: swap.head.obligor,
+            state: swap.body.state
+        }); 
 
-    // function closeOption(
-    //     Option storage opt,
-    //     string memory hashKey
-    // ) public {
-    //     require(opt.head.state > uint8(StateOfOpt.Issued), 
-    //         "OR.CO: WRONG state");
-    //     require(opt.head.state < uint8(StateOfOpt.Closed), 
-    //         "OR.CO: WRONG state");
+        rcd.briefs[brf.seqOfBrf] = brf;
 
-    //     require(
-    //         block.timestamp <= opt.body.closingDate,
-    //         "OR.CO: MISSED closingDate"
-    //     );
+        rcd.briefs[0].paidOfConsider += swap.body.paidOfConsider;
+        rcd.briefs[0].paidOfTarget += swap.body.paidOfTarget;        
+    }
 
-    //     if (opt.head.state == uint8(StateOfOpt.Locked))
-    //     {
-    //         require(
-    //             opt.hashLock == keccak256(bytes(hashKey)),
-    //             "OR.CO: WRONG key"
-    //         );
-    //     }
-
-    //     opt.head.state = uint8(StateOfOpt.Closed);
-    // }
-
-    // function revokeOption(Option storage opt, string memory hashKey) public {
-    //     require(opt.head.state < uint8(StateOfOpt.Closed), "OR.RO: WRONG state");
-    //     require(block.timestamp > opt.body.closingDate, "OR.RO: closingDate NOT expired");
-
-    //     if (opt.head.state == uint8(StateOfOpt.Locked))
-    //     {
-    //         require(
-    //             opt.hashLock == keccak256(bytes(hashKey)),
-    //             "OR.CO: WRONG key"
-    //         );
-    //     }
-
-    //     opt.head.state = uint8(StateOfOpt.Revoked);
-    // }
+    // ==== Counter ====
 
     function _increaseCounterOfOptions(Repo storage repo) private returns(uint32 seqOfOpt) {
         repo.options[0].head.seqOfOpt++;
         seqOfOpt = repo.options[0].head.seqOfOpt;
     } 
 
-    function _increaseCounterOfOrders(Record storage rcd) private returns (uint16 seqOfOdr){
-        rcd.orders[0].seqOfShare++;
-        seqOfOdr = uint16(rcd.orders[0].seqOfShare);
-    }
-
-    function _increaseCounterOfPldsOnOrder(Record storage rcd, uint256 seqOfOdr) private returns (uint16 seqOfPldOnOdr) {
-        rcd.pledges[seqOfOdr][0].head.seqOfPldOnOdr++;
-        seqOfPldOnOdr = rcd.pledges[seqOfOdr][0].head.seqOfPldOnOdr;
-    }
+    function _increaseCounterOfBriefs(Repo storage repo, uint256 seqOfOpt) private returns(uint16 seqOfBrf) {
+        repo.records[seqOfOpt].briefs[0].seqOfBrf++;
+        seqOfBrf = repo.records[seqOfOpt].briefs[0].seqOfBrf;
+    } 
 
     // ################
-    // ##  查询接口  ##
+    // ##  查询接口   ##
     // ################
 
     // ==== Repo ====
-
 
     function counterOfOptions(Repo storage repo)
         public view returns (uint32)
@@ -494,7 +367,7 @@ library OptionsRepo {
         return repo.options[0].head.seqOfOpt;
     }
     
-    function optionsOfRepo(Repo storage repo) 
+    function getAllOptions(Repo storage repo) 
         public view returns (Option[] memory) 
     {
         uint256 len = counterOfOptions(repo);
@@ -507,65 +380,40 @@ library OptionsRepo {
         return output;
     }
 
-    // ==== Record ====
-    
-    function counterOfOrders(Record storage rcd)
-        public view returns (uint16 seqOfOdr)
+    // ==== Brief ====
+
+    function counterOfBriefs(Repo storage repo, uint256 seqOfOpt)
+        public view returns (uint32)
     {
-        seqOfOdr = uint16(rcd.orders[0].seqOfShare);
+        return repo.records[seqOfOpt].briefs[0].seqOfBrf;
     }
 
-    function ordersOfOption(Record storage rcd)
-        public view returns (Order[] memory)
+    function getAllBriefsOfOption(Repo storage repo, uint256 seqOfOpt)
+        public view returns (Brief[] memory )
     {
-        uint256 len = counterOfOrders(rcd);
-        Order[] memory output = new Order[](len);
+        uint256 len = counterOfBriefs(repo, seqOfOpt);
+        Brief[] memory briefs = new Brief[](len-1);
 
         while (len > 0) {
-            output[len - 1] = rcd.orders[len];
+            briefs[len-1] = repo.records[seqOfOpt].briefs[len];
+            len--;
+        }
+        return briefs;
+    }
+
+    function allBriefsClosed(Repo storage repo, uint256 seqOfOpt)
+        public view returns (bool)
+    {
+        Record storage rcd = repo.records[seqOfOpt];
+
+        uint256 len = counterOfBriefs(repo, seqOfOpt);
+        while (len > 1) {
+            if (rcd.briefs[len].state < uint8(SwapsRepo.StateOfSwap.Released))
+                return false;
             len--;
         }
 
-        return output;
+        return true;        
     }
 
-    function counterOfPledges(Record storage rcd, uint256 seqOfOdr) 
-        public view
-        returns (uint16)
-    {
-        return rcd.pledges[seqOfOdr][0].head.seqOfPldOnOdr;
-    }
-
-    function pledgesOfOrder(Record storage rcd, uint256 seqOfOdr)
-        public view returns (PledgesRepo.Pledge[] memory)
-    {
-        uint256 len = counterOfPledges(rcd, seqOfOdr);
-        PledgesRepo.Pledge[] memory output = new PledgesRepo.Pledge[](len);
-
-        while (len > 0) {
-            output[len - 1] = rcd.pledges[seqOfOdr][len];
-            len--;
-        }
-
-        return output;
-    }
-
-    // ==== Order ====
-    function balanceOfOrder(Repo storage repo, uint256 seqOfOpt)
-        public view returns(uint64 paid, uint64 par)
-    {
-        paid = repo.options[seqOfOpt].body.paid -
-            repo.records[seqOfOpt].orders[0].paid;
-        par = repo.options[seqOfOpt].body.par -
-            repo.records[seqOfOpt].orders[0].par;
-    }
-
-    function balanceOfPledge(Repo storage repo, uint256 seqOfOpt)
-        public view returns(uint64 paid, uint64 par)
-    {
-        paid = repo.options[seqOfOpt].body.paid -
-            repo.records[seqOfOpt].orders[0].paid;
-        par = repo.options[seqOfOpt].body.par -
-            repo.records[seqOfOpt].orders[0].par;
-    }
 }

@@ -46,10 +46,12 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
         emit CrateSwap(regHead.seqOfSwap, rightholder, regHead.obligor, paidOfConsider, regHead.rateOfSwap);
     }
     
-    function regSwap(SwapsRepo.Swap memory swap) external onlyKeeper {
-        SwapsRepo.Head memory regHead = _repo.regSwap(swap, _getROM());
-        SwapsRepo.Body memory body = _repo.swaps[regHead.seqOfSwap].body;
-        emit CrateSwap(regHead.seqOfSwap, body.rightholder, regHead.obligor, body.paidOfConsider, regHead.rateOfSwap);
+    function regSwap(SwapsRepo.Swap memory swap) external onlyKeeper 
+        returns (SwapsRepo.Swap memory newSwap)
+    {
+        newSwap = _repo.regSwap(swap, _getROM());
+        // SwapsRepo.Body memory body = _repo.swaps[regHead.seqOfSwap].body;
+        emit CrateSwap(newSwap.head.seqOfSwap, newSwap.body.rightholder, newSwap.head.obligor, newSwap.body.paidOfConsider, newSwap.head.rateOfSwap);
     }
 
     function transferSwap(uint256 seqOfSwap, uint40 to, uint64 amt)
@@ -57,7 +59,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
     {
         SwapsRepo.Swap memory swap;
 
-        swap.head = _repo.transferSwap(seqOfSwap, to, amt, _getROM());
+        swap.head = _repo.splitSwap(seqOfSwap, to, amt, _getROM());
         swap = _repo.swaps[swap.head.seqOfSwap];
 
         emit CrateSwap(swap.head.seqOfSwap, swap.body.rightholder, swap.head.obligor, swap.body.paidOfConsider, swap.head.rateOfSwap);
@@ -71,28 +73,35 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
     }
 
     function lockSwap(uint256 seqOfSwap, bytes32 hashLock)
-        external onlyKeeper 
+        external onlyKeeper returns(bool flag)
     {
         if (_repo.swaps[seqOfSwap].lockSwap(hashLock)) {
             emit LockSwap(seqOfSwap, hashLock);
+            flag = true;
         }
     }
 
     function releaseSwap(uint256 seqOfSwap, string memory hashKey)
-        external onlyKeeper
+        external onlyKeeper returns(bool flag)
     {
         SwapsRepo.Swap storage swap = _repo.swaps[seqOfSwap];
-        if (swap.releaseSwap(hashKey)) emit ReleaseSwap(seqOfSwap, hashKey);
+        if (swap.releaseSwap(hashKey)) {
+            emit ReleaseSwap(seqOfSwap, hashKey);
+            flag = true;
+        }
     }
 
-    function execSwap(uint256 seqOfSwap) external onlyKeeper {
-        if (_repo.swaps[seqOfSwap].execSwap())
+    function execSwap(uint256 seqOfSwap) external onlyKeeper returns(bool flag) {
+        if (_repo.swaps[seqOfSwap].execSwap()) {
             emit ExecSwap(seqOfSwap);
+            flag = true;
+        }
     }
 
-    function revokeSwap(uint256 seqOfSwap) external onlyKeeper {
+    function revokeSwap(uint256 seqOfSwap) external onlyKeeper returns(bool flag){
         if (_repo.swaps[seqOfSwap].revokeSwap()) {
             emit RevokeSwap(seqOfSwap);
+            flag = true;
         }
     }
 
@@ -114,7 +123,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
         return _repo.swaps[seqOfSwap];
     }
 
-    function getSwaps() external view returns(SwapsRepo.Swap[] memory) {
+    function getAllSwaps() external view returns(SwapsRepo.Swap[] memory) {
         return _repo.getSwaps();
     }
 

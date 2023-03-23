@@ -8,11 +8,16 @@
 pragma solidity ^0.8.8;
 
 import "./IBookOfOptions.sol";
+
 import "../boh/terms/IOptions.sol";
+
 import "../../common/access/AccessControl.sol";
 import "../../common/lib/EnumerableSet.sol";
 
-contract BookOfOptions is IBookOfOptions, AccessControl {
+import "../../common/ruting/BOSSetting.sol";
+import "../../common/ruting/ROSSetting.sol";
+
+contract BookOfOptions is IBookOfOptions, BOSSetting, ROSSetting, AccessControl {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
     using OptionsRepo for OptionsRepo.Repo;
@@ -26,8 +31,7 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     // ##################
 
     modifier optionExist(uint256 seqOfOpt) {
-        require(isOption(seqOfOpt), 
-            "BOO.mf.OE: Opt not exist");
+        require(isOption(seqOfOpt), "BOO.mf.OE: Opt not exist");
         _;
     }
 
@@ -39,42 +43,32 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         uint256 sn,
         uint256 snOfCond,
         uint40 rightholder,
-        uint40 obligor,
         uint64 paid,
         uint64 par
-    ) external onlyKeeper returns (uint32 seqOfOpt) {
-        seqOfOpt = _repo.createOption(sn, snOfCond, rightholder, obligor, paid, par);
-        emit CreateOpt(seqOfOpt, rightholder, obligor, paid, par);
+    ) external onlyKeeper {
+        OptionsRepo.Head memory head = _repo.createOption(sn, snOfCond, rightholder, paid, par);
+        emit CreateOpt(head.seqOfOpt, OptionsRepo.codifyHead(head));
     }
 
-    function issueOption(OptionsRepo.Option memory opt) 
-        external onlyKeeper returns (uint32 seqOfOpt) 
-    {
-        seqOfOpt = _repo.issueOption(opt);
-        emit CreateOpt(seqOfOpt, opt.body.rightholder, opt.body.obligor, opt.body.paid, opt.body.par);
+    function issueOption(OptionsRepo.Option memory opt) external onlyKeeper {
+        opt.head = _repo.issueOption(opt);
+        emit CreateOpt(opt.head.seqOfOpt, OptionsRepo.codifyHead(opt.head));
     }
 
-    function registerOption(address opts)
-        external
-        onlyKeeper
-    {
-        uint32 len = IOptions(opts).counterOfOpts();
+    function regOptionTerms(address opts) external onlyKeeper {
+        uint32 len = IOptions(opts).counterOfOptions();
 
         while (len > 0) {
+            OptionsRepo.Option memory opt = IOptions(opts).getOption(len); 
 
-            OptionsRepo.Option memory opt = IOptions(opts).getOption(len-1); 
+            opt.head = _repo.issueOption(opt);
+
+            emit CreateOpt(opt.head.seqOfOpt, OptionsRepo.codifyHead(opt.head));
+
+            uint256[] memory obligors = IOptions(opts).getObligorsOfOption(len);
+            _repo.records[opt.head.seqOfOpt].addObligorsIntoOption(obligors);
 
             len--;
-
-            if (opt.head.state > 0) continue;
-            else {
-                uint32 seqOfOpt = _repo.issueOption(opt);
-
-                emit RegisterOpt(seqOfOpt, opt.body.rightholder, opt.body.obligor, opt.body.paid, opt.body.par);
-
-                uint256[] memory obligors = IOptions(opts).obligorsOfOption(len);
-                _repo.records[seqOfOpt].addObligorsIntoOption(obligors);
-            }
         }
     }
 
@@ -83,13 +77,12 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
             emit AddObligorIntoOpt(seqOfOpt, obligor);
     }
 
-    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor)
-        external
-        onlyDirectKeeper
-    {
+    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external onlyDirectKeeper {
         if (_repo.records[seqOfOpt].obligors.remove(obligor))
             emit RemoveObligorFromOpt(seqOfOpt, obligor);
     }
+
+    // ==== Exec Option ====
 
     function updateOracle(
         uint256 seqOfOpt,
@@ -97,8 +90,8 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         uint64 d2,
         uint64 d3
     ) external onlyDirectKeeper {
-        _repo.records[seqOfOpt].oracles.push(d1, d2, d3);
         emit UpdateOracle(seqOfOpt, d1, d2, d3);
+        _repo.records[seqOfOpt].oracles.push(d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt) external onlyKeeper {
@@ -106,60 +99,38 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         _repo.execOption(seqOfOpt);
     }
 
-    function addOrder(
+    function createSwapOrder(
         uint256 seqOfOpt,
-        OptionsRepo.Order memory order 
+        uint32 seqOfConsider,
+        uint32 paidOfConsider,
+        uint32 seqOfTarget
+    ) external onlyKeeper view returns (SwapsRepo.Swap memory swap) {
+        swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _getBOS());
+    }
+
+    function regSwapOrder(
+        uint256 seqOfOpt,
+        SwapsRepo.Swap memory swap
     ) external onlyKeeper {
-        if (_repo.addOrder(seqOfOpt, order)) {
-            emit AddOrder(seqOfOpt, order.seqOfShare, order.paid, order.par);
-        }
+        OptionsRepo.Brief memory brf = _repo.regSwapOrder(seqOfOpt, swap);
+        emit RegSwapOrder(seqOfOpt, OptionsRepo.codifyBrief(brf));
     }
 
-    function requestPledge(
+    function updateStateOfBrief(
         uint256 seqOfOpt,
-        uint256 seqOfOdr,
-        PledgesRepo.Pledge memory pledge
-    ) external onlyDirectKeeper {
-        if (_repo.requestPledge(seqOfOpt, seqOfOdr, pledge))
-            emit AddPledge(seqOfOpt, pledge.head.seqOfShare, pledge.body.paid, pledge.body.par);
-    }
+        uint256 seqOfBrf,
+        uint8 state
+    ) external onlyKeeper {
+        _repo.records[seqOfOpt].briefs[seqOfBrf].state = state;
 
-    function releasePledge(
-        OptionsRepo.Order memory order,
-        PledgesRepo.Head memory head
-    ) external onlyDirectKeeper {
-
-        PledgesRepo.Pledge storage pld = _repo.records[order.seqOfOpt].pledges[order.seqOfOdr][head.seqOfPldOnOdr];
-
-        pld.head.state = uint8(PledgesRepo.StateOfPld.Released);
-
-        OptionsRepo.Order storage order = _repo.records[order.seqOfOpt].orders[order.seqOfOdr];
-
-        OptionsRepo.Option storage opt = _repo.options[order.seqOfOpt];
-
-        uint64 paid = pld.body.paid * 100 / opt.head.rate;
-        uint64 par = pld.body.par * 100 / opt.head.rate;
-
-    }
-
-    function lockOption(uint256 seqOfOpt, bytes32 hashLock) external onlyDirectKeeper {
-        _repo.options[seqOfOpt].lockOption(hashLock);
-        emit LockOpt(seqOfOpt, hashLock);
-    }
-
-    function closeOption(uint256 seqOfOpt, string memory hashKey) external onlyDirectKeeper {
-        _repo.options[seqOfOpt].closeOption(hashKey);
-        emit CloseOpt(seqOfOpt, hashKey);
-    }
-
-    function revokeOption(uint256 seqOfOpt, string memory hashKey) external onlyDirectKeeper {
-        _repo.options[seqOfOpt].revokeOption(hashKey);
-        emit RevokeOpt(seqOfOpt);
+        emit UpdateStateOfBrief(seqOfOpt, seqOfBrf, state);
     }
 
     // ################
     // ##  查询接口   ##
     // ################
+
+    // ==== Option ====
 
     function counterOfOptions() external view returns (uint32) {
         return _repo.counterOfOptions();
@@ -169,103 +140,56 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         return _repo.options[seqOfOpt].head.issueDate > 0;
     }
 
-    function getOption(uint256 seqOfOpt)
-        external
-        view
-        optionExist(seqOfOpt)
+    function getOption(uint256 seqOfOpt) external view
         returns (OptionsRepo.Option memory opt)
     {
         opt = _repo.options[seqOfOpt];
     }
 
-    function optsList() external view returns (OptionsRepo.Option[] memory) {
-        return _repo.optionsOfRepo();
+    function getAllOptions() external view returns (OptionsRepo.Option[] memory) {
+        return _repo.getAllOptions();
     }
 
-    function isObligor(uint256 seqOfOpt, uint256 acct)
-        external
-        view
-        optionExist(seqOfOpt)
-        returns (bool)
-    {
+    function isRightholder(uint256 seqOfOpt, uint256 acct) external view returns (bool){
+        return _repo.options[seqOfOpt].body.rightholder == acct;
+    }
+
+    function isObligor(uint256 seqOfOpt, uint256 acct) external view
+        optionExist(seqOfOpt) returns (bool) 
+    { 
         return _repo.records[seqOfOpt].obligors.contains(acct);
     }
 
-    function obligorsOfOption(uint256 seqOfOpt)
-        external
-        view
-        optionExist(seqOfOpt)
-        returns (uint256[] memory)
+    function getObligorsOfOption(uint256 seqOfOpt)
+        external view returns (uint256[] memory)
     {
         return _repo.records[seqOfOpt].obligors.values();
     }
 
-    function stateOfOption(uint256 seqOfOpt)
+    // ==== Brief ====
+    function counterOfBriefs(uint256 seqOfOpt)
+        external view returns (uint256) 
+    {
+        return _repo.records[seqOfOpt].briefs[0].seqOfBrf;
+    }
+
+    function getBrief(uint256 seqOfOpt, uint256 seqOfBrf)
+        external view returns (OptionsRepo.Brief memory brf)
+    {
+        brf = _repo.records[seqOfOpt].briefs[seqOfBrf];
+    }
+
+    function getAllBriefsOfOption(uint256 seqOfOpt)
         external
         view
-        optionExist(seqOfOpt)
-        returns (uint8)
+        returns (OptionsRepo.Brief[] memory)
     {
-        return _repo.options[seqOfOpt].head.state;
+        return _repo.getAllBriefsOfOption(seqOfOpt);
     }
 
-    // ==== Order ====
+    // ==== Oracles ====
 
-    function getOrder(uint256 seqOfOpt, uint256 seqOfOdr)
-        external view
-        optionExist(seqOfOpt)
-        returns (OptionsRepo.Order memory)
-    {
-        return _repo.records[seqOfOpt].orders[seqOfOdr];
-    }
-
-    function ordersOfOption(uint256 seqOfOpt)
-        external
-        view
-        optionExist(seqOfOpt)
-        returns (OptionsRepo.Order[] memory)
-    {
-        return _repo.records[seqOfOpt].ordersOfOption();
-    }
-
-    function balanceOfOrder(uint256 seqOfOpt) public view 
-        optionExist(seqOfOpt) returns (uint64 paid, uint64 par)
-    {
-        paid = _repo.options[seqOfOpt].body.paid - 
-            _repo.records[seqOfOpt].orders[0].paid;
-        par = _repo.options[seqOfOpt].body.par - 
-            _repo.records[seqOfOpt].orders[0].par;
-    }
-
-    // ==== Pledge ====
-
-    function getPledge(uint256 seqOfOpt, uint256 seqOfOdr, uint256 seqOfPldOnOdr)
-        external view 
-        optionExist(seqOfOpt)
-        returns (PledgesRepo.Pledge memory)
-    {
-        return _repo.records[seqOfOpt].pledges[seqOfOdr][seqOfPldOnOdr];
-    } 
-
-    function pledgesOfOption(uint256 seqOfOpt)
-        external
-        view
-        optionExist(seqOfOpt)
-        returns (PledgesRepo.Pledge[] memory)
-    {
-        return _repo.records[seqOfOpt].pledgesOfOption();
-    }
-
-    function balanceOfPledge(uint256 seqOfOpt) public view 
-        optionExist(seqOfOpt) returns (uint64 paid, uint64 par)
-    {
-        paid = _repo.records[seqOfOpt].orders[0].paid -
-            _repo.records[seqOfOpt].pledges[0].body.paid;
-        par = _repo.records[seqOfOpt].orders[0].par -
-            _repo.records[seqOfOpt].pledges[0].body.par;
-    }
-
-    function oracleAtDate(uint256 seqOfOpt, uint48 date)
+    function getOracleAtDate(uint256 seqOfOpt, uint48 date)
         external
         view
         optionExist(seqOfOpt)
@@ -274,7 +198,7 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         return _repo.records[seqOfOpt].oracles.getAtDate(date);
     }
 
-    function oraclesOfOption(uint256 seqOfOpt)
+    function getALLOraclesOfOption(uint256 seqOfOpt)
         external
         view
         optionExist(seqOfOpt)
@@ -282,4 +206,7 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     {
         return _repo.records[seqOfOpt].oracles.pointsOfHistory();
     }
+
+    // ==== 
+
 }
