@@ -592,7 +592,7 @@ library TopChain {
         Chain storage chain,
         IInvestmentAgreement _ia
     ) public {
-        uint256[] memory snList = _ia.getSnList();
+        uint256[] memory snList = _ia.getSNList();
 
         uint256 len = snList.length;
 

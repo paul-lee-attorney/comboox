@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./IShareholdersAgreement.sol";
 import "./terms/ITerm.sol";
 
-// import "../../books/boh/IBookOfSHA.sol";
+import "../../books/boa/IInvestmentAgreement.sol";
 
 import "../../common/access/IAccessControl.sol";
 import "../../common/components/SigPage.sol";

@@ -50,7 +50,7 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
 
     function execOption(uint256 seqOfOpt, uint256 caller)
         external
-        onlyDirectKeeper
+        onlyKeeper
         onlyRightholder(seqOfOpt, caller)
     {
         _getBOO().execOption(seqOfOpt);

@@ -7,17 +7,13 @@
 
 pragma solidity ^0.8.8;
 
-import "./InvestmentAgreement.sol";
 import "./IInvestmentAgreement.sol";
 import "./IBookOfIA.sol";
 
 import "../../common/components/RepoOfDocs.sol";
-import "../../common/components/IRepoOfDocs.sol";
 
 import "../../common/lib/EnumerableSet.sol";
 import "../../common/lib/RulesParser.sol";
-import "../../common/lib/FRClaims.sol";
-import "../../common/lib/DTClaims.sol";
 import "../../common/lib/TopChain.sol";
 
 import "../../common/ruting/BOSSetting.sol";
@@ -88,10 +84,6 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
         address ia,
         uint256 seqOfDeal
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {        
-        // IRepoOfDocs.Head memory headOfDoc = getHeadOfDoc(ia);
-        // require(headOfDoc.shaExecDeadline <= block.timestamp, 
-        //     "BOA.EFRR: shaExecDeadline not expired");
-
         emit AcceptFirstRefusalClaims(ia, seqOfDeal);
         output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _getROM());
     }

@@ -8,12 +8,9 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
-// import "../../boa/IBookOfIA.sol";
-// import "../../bog/IBookOfGM.sol";
 
 import "../../../common/access/AccessControl.sol";
 import "../../../common/lib/ArrayUtils.sol";
-// import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
 
 import "../../../common/ruting/BOASetting.sol";
@@ -23,8 +20,6 @@ import "./ILockUp.sol";
 
 contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
     using ArrayUtils for uint256[];
-    // using ArrayUtils for uint40[];
-    // using SNParser for bytes32;
     using EnumerableSet for EnumerableSet.UintSet;
 
 
@@ -37,7 +32,7 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
     mapping(uint256 => Locker) private _lockers;
 
     // ################
-    // ##   写接口   ##
+    // ##   写接口    ##
     // ################
 
     function setLocker(uint256 seqOfShare, uint48 dueDate) external onlyAttorney {
@@ -89,7 +84,7 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
+    function isTriggered(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
  
         if (
             deal.head.typeOfDeal > 1 &&
@@ -119,7 +114,7 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
         }
     }
 
-    function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
+    function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
         
         uint256 motionId = uint256(uint160(ia));
                

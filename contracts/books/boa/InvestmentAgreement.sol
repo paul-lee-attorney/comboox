@@ -157,7 +157,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         return _repo.deals[seq];
     }
 
-    function getSnList() external view returns (uint256[] memory) {
+    function getSNList() external view returns (uint256[] memory) {
         return _repo.snList.values();
     }
 }

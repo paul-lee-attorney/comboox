@@ -22,11 +22,11 @@ interface IBOGKeeper {
 
     function entrustDelegate(
         uint256 motionId,
-        uint256 caller,
-        uint256 delegate
+        uint256 delegate,
+        uint256 caller
     ) external;
 
-    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint256 nominator, uint256 candidate) external;
+    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint256 candidate, uint256 nominator) external;
 
     function proposeDoc(address doc, uint256 seqOfVR, uint256 caller) external;
 
@@ -36,15 +36,15 @@ interface IBOGKeeper {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 submitter,
-        uint256 executor
+        uint256 executor,
+        uint256 submitter
     ) external;
 
     function castVote(
         uint256 motionId,
-        uint256 caller,
         uint8 attitude,
-        bytes32 sigHash
+        bytes32 sigHash,
+        uint256 caller
     ) external;
 
     function voteCounting(uint256 motionId, uint256 caller) external;
@@ -62,6 +62,7 @@ interface IBOGKeeper {
         uint256 motionId,
         uint256 seqOfDeal,
         uint256 againstVoter,
+        uint32 seqOfTarget,
         uint256 caller
     ) external;
 }

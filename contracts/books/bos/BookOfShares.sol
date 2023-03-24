@@ -84,7 +84,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         _lockers[hashLock] = amount;
     }
 
-    function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey, uint256 caller)
         external onlyDirectKeeper
     {
         require(
@@ -95,6 +95,8 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         uint64 amount = uint64(_lockers[hashLock]);
 
         SharesRepo.Share storage share = _repo.shares[uint32(bytes4(hashLock))];
+        require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
+
         IRegisterOfMembers _rom = _getROM();
 
         share.payInCapital(amount);
@@ -162,15 +164,21 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     // ==== cleanAmt ====
 
     function decreaseCleanAmt(uint256 seq, uint64 paid, uint64 par)
-        external onlyKeeper shareExist(seq) notFreezed(seq)
+        external shareExist(seq) notFreezed(seq)
     {
+        require(msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfPledges)) ||
+        _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
+
         emit DecreaseCleanAmt(seq, paid, par);
         _repo.shares[seq].decreaseCleanAmt(paid, par);
     }
 
     function increaseCleanAmt(uint256 seq, uint64 paid, uint64 par)
-        external onlyKeeper shareExist(seq) notFreezed(seq)
+        external shareExist(seq) notFreezed(seq)
     {
+        require(msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfPledges)) ||
+        _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
+
         emit IncreaseCleanAmt(seq, paid, par);
         _repo.shares[seq].increaseCleanAmt(paid, par);
     }

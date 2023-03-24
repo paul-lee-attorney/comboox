@@ -15,7 +15,7 @@ interface IRegisterOfSwaps {
     //##    Event     ##
     //##################
 
-    event CrateSwap(uint256 indexed seqOfSwap, uint40 rightholder, uint40 obligor, uint64 paidOfConsider, uint32 rateOfSwap);
+    event CreateSwap(uint256 indexed seqOfSwap, uint40 rightholder, uint40 obligor, uint64 paidOfConsider, uint32 rateOfSwap);
 
     event CrystalizeSwap(uint256 indexed seqOfSwap, uint32 seqOfConsider, uint64 paidOfConsider, uint32 seqOfTarget, uint64 paidOfTarget);
 

@@ -34,7 +34,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
         uint64 paidOfConsider
     ) external onlyKeeper {
         SwapsRepo.Head memory head = _repo.createSwap(sn, rightholder, paidOfConsider, _getROM());
-        emit CrateSwap(head.seqOfSwap, rightholder, head.obligor, paidOfConsider, head.rateOfSwap);
+        emit CreateSwap(head.seqOfSwap, rightholder, head.obligor, paidOfConsider, head.rateOfSwap);
     }
 
     function issueSwap(
@@ -43,15 +43,14 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
         uint64 paidOfConsider
     ) external onlyKeeper {
         SwapsRepo.Head memory regHead = _repo.issueSwap(head, rightholder, paidOfConsider, _getROM());
-        emit CrateSwap(regHead.seqOfSwap, rightholder, regHead.obligor, paidOfConsider, regHead.rateOfSwap);
+        emit CreateSwap(regHead.seqOfSwap, rightholder, regHead.obligor, paidOfConsider, regHead.rateOfSwap);
     }
     
     function regSwap(SwapsRepo.Swap memory swap) external onlyKeeper 
         returns (SwapsRepo.Swap memory newSwap)
     {
         newSwap = _repo.regSwap(swap, _getROM());
-        // SwapsRepo.Body memory body = _repo.swaps[regHead.seqOfSwap].body;
-        emit CrateSwap(newSwap.head.seqOfSwap, newSwap.body.rightholder, newSwap.head.obligor, newSwap.body.paidOfConsider, newSwap.head.rateOfSwap);
+        emit CreateSwap(newSwap.head.seqOfSwap, newSwap.body.rightholder, newSwap.head.obligor, newSwap.body.paidOfConsider, newSwap.head.rateOfSwap);
     }
 
     function transferSwap(uint256 seqOfSwap, uint40 to, uint64 amt)
@@ -62,7 +61,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
         swap.head = _repo.splitSwap(seqOfSwap, to, amt, _getROM());
         swap = _repo.swaps[swap.head.seqOfSwap];
 
-        emit CrateSwap(swap.head.seqOfSwap, swap.body.rightholder, swap.head.obligor, swap.body.paidOfConsider, swap.head.rateOfSwap);
+        emit CreateSwap(swap.head.seqOfSwap, swap.body.rightholder, swap.head.obligor, swap.body.paidOfConsider, swap.head.rateOfSwap);
     }
 
     function crystalizeSwap(uint256 seqOfSwap, uint32 seqOfConsider, uint32 seqOfTarget)

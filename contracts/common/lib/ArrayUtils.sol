@@ -68,9 +68,7 @@ library ArrayUtils {
 
 
     function combine(uint256[] memory arrA, uint256[] memory arrB)
-        public
-        pure
-        returns (uint256[] memory)
+        public pure returns (uint256[] memory)
     {
         uint256 lenA = arrA.length;
         uint256 lenB = arrB.length;
@@ -85,9 +83,7 @@ library ArrayUtils {
     }
 
     function minus(uint256[] memory arrA, uint256[] memory arrB)
-        public
-        pure
-        returns (uint256[] memory)
+        public pure returns (uint256[] memory)
     {
         uint256 lenA = arrA.length;
         uint256 lenB = arrB.length;
@@ -119,9 +115,7 @@ library ArrayUtils {
     }
 
     function fullyCoveredBy(uint256[] memory arrA, uint256[] memory arrB)
-        public
-        pure
-        returns (bool)
+        public pure returns (bool)
     {
         uint256[] memory arrAr = refine(arrA);
         uint256[] memory arrBr = refine(arrB);

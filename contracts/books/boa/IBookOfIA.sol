@@ -10,21 +10,25 @@ pragma solidity ^0.8.8;
 import "../../common/components/IRepoOfDocs.sol";
 import "../../common/lib/FRClaims.sol";
 import "../../common/lib/DTClaims.sol";
-import "../../common/lib/MembersRepo.sol";
 
 interface IBookOfIA is IRepoOfDocs {
 
+    //#################
+    //##    Event    ##
+    //#################
+
     event ExecFirstRefusalRight(address ia, uint256 seqOfDeal, uint256 caller);
 
-    event ExecAlongRight(address ia, bool dragAlong, uint256 seqOfDeal, uint256 seqOfShare, uint64 paid, uint64 par, uint256 claimer, bytes32 sigHash);
+    event ExecAlongRight(address ia, bool dragAlong, uint256 seqOfDeal, 
+    uint256 seqOfShare, uint64 paid, uint64 par, uint256 claimer, bytes32 sigHash);
 
     event AcceptFirstRefusalClaims(address ia, uint256 seqOfDeal);
 
     event AddAlongDeal(address ia, uint256 follower, uint256 seqOfShare, uint64 amount);
 
-    //##################
+    //#################
     //##    写接口    ##
-    //##################
+    //#################
 
     // ======== BookOfIA ========
 

@@ -62,17 +62,13 @@ library Checkpoints {
     }
 
     function counterOfPoints(History storage self)
-        public
-        view
-        returns (uint256)
+        public view returns (uint256)
     {
         return self.checkpoints[0].timestamp;
     }
 
     function latest(History storage self)
-        public
-        view
-        returns (Checkpoint memory point)
+        public view returns (Checkpoint memory point)
     {
         point = self.checkpoints[counterOfPoints(self)];
     }
@@ -82,9 +78,7 @@ library Checkpoints {
     }
 
     function getAtDate(History storage self, uint256 timestamp)
-        public
-        view
-        returns (Checkpoint memory point)
+        public view returns (Checkpoint memory point)
     {
         require(
             timestamp <= block.timestamp,
@@ -105,9 +99,7 @@ library Checkpoints {
     }
 
     function pointsOfHistory(History storage self)
-        public
-        view
-        returns (Checkpoint[] memory) 
+        public view returns (Checkpoint[] memory) 
     {
         uint256 len = counterOfPoints(self);
 

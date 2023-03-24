@@ -26,7 +26,6 @@ import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
 
 import "../common/lib/RulesParser.sol";
-import "../common/lib/SigsRepo.sol";
 import "../common/lib/SharesRepo.sol";
 import "../common/lib/FRClaims.sol";
 
@@ -96,10 +95,10 @@ contract SHAKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper withinExecPeriod(ia) {
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
-        require(deal.head.state != uint8(IInvestmentAgreement.StateOfDeal.Terminated), 
+        require(deal.head.state != uint8(DealsRepo.StateOfDeal.Terminated), 
             "SHAK.EAR: deal terminated");
 
         _getBOA().createMockOfIA(ia);
@@ -111,7 +110,7 @@ contract SHAKeeper is
     function _checkAlongDeal(
         bool dragAlong,
         address ia,
-        IInvestmentAgreement.Deal memory deal,
+        DealsRepo.Deal memory deal,
         SharesRepo.Share memory share,
         uint256 caller
     ) private {
@@ -157,12 +156,12 @@ contract SHAKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper afterExecPeriod(ia) beforeProposeDeadline(ia) {
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(caller == deal.body.buyer, "SHAK.AAD: not buyer");
 
 
-        if (deal.head.state != uint8(IInvestmentAgreement.StateOfDeal.Terminated))
+        if (deal.head.state != uint8(DealsRepo.StateOfDeal.Terminated))
         {
             DTClaims.Claim memory claim = _getBOA().getDTClaimForShare(ia, seqOfDeal, seqOfShare);
             SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
@@ -178,13 +177,13 @@ contract SHAKeeper is
     function _createAlongDeal(
         address ia,
         DTClaims.Claim memory claim,
-        IInvestmentAgreement.Deal memory deal,
+        DealsRepo.Deal memory deal,
         SharesRepo.Share memory share
     ) private returns (uint256 seqOfAlongDeal) {
-        deal.head = IInvestmentAgreement.Head({
+        deal.head = DealsRepo.Head({
             typeOfDeal: claim.typeOfClaim == 0 ? 
-                uint8(IInvestmentAgreement.TypeOfDeal.DragAlong) : 
-                uint8(IInvestmentAgreement.TypeOfDeal.TagAlong),
+                uint8(DealsRepo.TypeOfDeal.DragAlong) : 
+                uint8(DealsRepo.TypeOfDeal.TagAlong),
             seq: 0,
             preSeq: deal.head.seq,
             classOfShare: share.head.class,
@@ -193,10 +192,10 @@ contract SHAKeeper is
             priceOfPaid: deal.head.priceOfPaid,
             priceOfPar: deal.head.priceOfPar,
             closingDate: deal.head.closingDate,
-            state: uint8(IInvestmentAgreement.StateOfDeal.Locked)
+            state: uint8(DealsRepo.StateOfDeal.Locked)
         });
 
-        deal.body = IInvestmentAgreement.Body({
+        deal.body = DealsRepo.Body({
             buyer: deal.body.buyer,
             groupOfBuyer: deal.body.groupOfBuyer,
             paid: claim.paid,
@@ -278,7 +277,7 @@ contract SHAKeeper is
         uint64 giftPaid
     ) private returns (uint256 seqOfGiftDeal, uint64 result) {
         
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
         uint64 lockAmount;
@@ -287,9 +286,9 @@ contract SHAKeeper is
 
             lockAmount = (share.body.cleanPaid < giftPaid) ? share.body.cleanPaid : giftPaid;
 
-            IInvestmentAgreement.Deal memory giftDeal = IInvestmentAgreement.Deal({
-                head: IInvestmentAgreement.Head({
-                    typeOfDeal: uint8(IInvestmentAgreement.TypeOfDeal.FreeGift),
+            DealsRepo.Deal memory giftDeal = DealsRepo.Deal({
+                head: DealsRepo.Head({
+                    typeOfDeal: uint8(DealsRepo.TypeOfDeal.FreeGift),
                     seq: 0,
                     preSeq: uint16(seqOfDeal),
                     classOfShare: share.head.class,
@@ -298,9 +297,9 @@ contract SHAKeeper is
                     priceOfPaid: 0,
                     priceOfPar: 0,
                     closingDate: deal.head.closingDate,
-                    state: uint8(IInvestmentAgreement.StateOfDeal.Locked)
+                    state: uint8(DealsRepo.StateOfDeal.Locked)
                 }),
-                body: IInvestmentAgreement.Body({
+                body: DealsRepo.Body({
                     buyer: deal.body.buyer,
                     groupOfBuyer: deal.body.groupOfBuyer,
                     paid: lockAmount,
@@ -321,7 +320,7 @@ contract SHAKeeper is
         uint256 seqOfDeal,
         uint40 caller
     ) external onlyDirectKeeper {
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(caller == deal.body.buyer, "caller is not buyer");
 
@@ -346,7 +345,7 @@ contract SHAKeeper is
         require(!ISigPage(ia).isSeller(true, caller), 
             "SHAK.EFR: frClaimer is seller");
 
-        IInvestmentAgreement.Head memory headOfDeal = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
+        DealsRepo.Head memory headOfDeal = IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
         
         RulesParser.FirstRefusalRule memory rule = _getSHA().getRule(seqOfFRRule).firstRefusalRuleParser();
 
@@ -370,9 +369,9 @@ contract SHAKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper afterExecPeriod(ia) {
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        if (deal.head.typeOfDeal == uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
+        if (deal.head.typeOfDeal == uint8(DealsRepo.TypeOfDeal.CapitalIncrease)
         ) require( _getROM().groupRep(caller) == _getROM().controllor(), 
             "SHAK.AFR: not controller");
         else require(caller == deal.head.seller, "SHAK.AFR: not sellerOfDeal");
@@ -391,18 +390,18 @@ contract SHAKeeper is
 
     function _createFRDeal(
         address ia,
-        IInvestmentAgreement.Deal memory deal,
+        DealsRepo.Deal memory deal,
         FRClaims.Claim memory cl
     ) private {
 
         if (deal.head.seqOfShare != 0) {
-            deal.head.typeOfDeal = uint8(IInvestmentAgreement.TypeOfDeal.FirstRefusal);
-        } else  deal.head.typeOfDeal = uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive);
+            deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FirstRefusal);
+        } else  deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.PreEmptive);
         
         deal.head.preSeq = deal.head.seq;
-        deal.head.state = uint8(IInvestmentAgreement.StateOfDeal.Locked);
+        deal.head.state = uint8(DealsRepo.StateOfDeal.Locked);
 
-        deal.body = IInvestmentAgreement.Body({
+        deal.body = DealsRepo.Body({
             buyer: cl.rightholder,
             groupOfBuyer: _getROM().groupRep(cl.rightholder),
             paid: (deal.body.paid * cl.ratio) / 10000,

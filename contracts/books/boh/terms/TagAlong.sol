@@ -28,7 +28,7 @@ contract TagAlong is BOASetting, BOGSetting, DragAlong {
     // ##  写接口  ##
     // #############
 
-    function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
+    function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
         IBookOfGM _bog = _getBOG();
         
         require(_bog.isPassed(uint256(uint160(ia))), "motion NOT passed");

@@ -135,13 +135,13 @@ contract BOAKeeper is
     }
 
     function _lockDealsOfParty(address ia, uint256 caller) private {
-        uint256[] memory seqList = IInvestmentAgreement(ia).seqList();
-        uint256 len = seqList.length;
+        uint256[] memory list = IInvestmentAgreement(ia).getSNList();
+        uint256 len = list.length;
         while (len > 0) {
-            uint256 seq = seqList[len - 1];
+            uint256 seq = list[len - 1];
             len--;
 
-            IInvestmentAgreement.Deal memory deal = 
+            DealsRepo.Deal memory deal = 
                 IInvestmentAgreement(ia).getDeal(seq);
 
             if (deal.head.seller == caller) {
@@ -151,7 +151,7 @@ contract BOAKeeper is
             } else if (
                 deal.body.buyer == caller &&
                 deal.head.typeOfDeal ==
-                uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)
+                uint8(DealsRepo.TypeOfDeal.CapitalIncrease)
             ) IInvestmentAgreement(ia).lockDealSubject(seq);
         }
     }
@@ -175,7 +175,7 @@ contract BOAKeeper is
             "closingDate LATER than deadline"
         );
 
-        IInvestmentAgreement.Head memory head = 
+        DealsRepo.Head memory head = 
             IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
 
         // uint16 seq = sn.seqOfDeal();
@@ -241,7 +241,7 @@ contract BOAKeeper is
             "BOAKeeper.closeDeal: InvestmentAgreement NOT in voted state"
         );
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         //交易发起人为买方;
         require(
@@ -264,7 +264,7 @@ contract BOAKeeper is
         // uint16 seq = sn.seqOfDeal();
         // uint32 ssn = sn.ssnOfDeal();
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         // uint32 unitPrice = sn.priceOfDeal();
         // uint40 buyer = sn.buyerOfDeal();
@@ -276,7 +276,7 @@ contract BOAKeeper is
     function issueNewShare(address ia, uint256 seqOfDeal) public onlyDirectKeeper {
         // uint16 seq = sn.seqOfDeal();
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         SharesRepo.Head memory head = SharesRepo.Head({
             seq: 0,
@@ -298,7 +298,7 @@ contract BOAKeeper is
         uint256 caller
     ) public onlyDirectKeeper {
 
-        IInvestmentAgreement.Head memory headOfDeal = 
+        DealsRepo.Head memory headOfDeal = 
             IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal);
 
         require(
@@ -324,7 +324,7 @@ contract BOAKeeper is
 
         // uint16 seq = sn.seqOfDeal();
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(
             caller == deal.head.seller,
@@ -353,7 +353,7 @@ contract BOAKeeper is
             "BOAK.TD: wrong State"
         );
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(
             caller == deal.head.seller,

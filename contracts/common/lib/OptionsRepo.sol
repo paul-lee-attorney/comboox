@@ -172,7 +172,7 @@ library OptionsRepo {
 
         require(opt.head.rate > 0, "OR.IO: ZERO rate");
 
-        require(opt.head.triggerDate > block.timestamp, "OR.IO: triggerDate not order");
+        require(opt.head.triggerDate >= block.timestamp, "OR.IO: triggerDate not order");
         require(opt.head.execDays > 0, "OR.IO: ZERO execDays");
         require(opt.head.closingDays > 0, "OR.IO: ZERO closingDays");
         require(opt.head.obligor > 0, "OR.IO: ZERO obligor");
@@ -264,7 +264,7 @@ library OptionsRepo {
         Repo storage repo,
         uint256 seqOfOpt,
         uint32 seqOfConsider,
-        uint32 paidOfConsider,
+        uint64 paidOfConsider,
         uint32 seqOfTarget,
         IBookOfShares _bos    
     ) public view returns(SwapsRepo.Swap memory swap) {

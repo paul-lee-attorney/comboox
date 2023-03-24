@@ -19,16 +19,16 @@ import "./IBOPKeeper.sol";
 contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
     using PledgesRepo for uint256;
 
-    // ################
-    // ##   Pledge   ##
-    // ################
+    // ###################
+    // ##   BOPKeeper   ##
+    // ###################
 
     function createPledge(
         uint256 sn,
         uint40 creditor,
-        uint16 monOfGuarantee,
-        uint64 pledgedPaid,
-        uint64 pledgedPar,
+        uint16 guaranteeDays,
+        uint64 paid,
+        uint64 par,
         uint64 guaranteedAmt,
         uint256 caller
     ) external onlyDirectKeeper {
@@ -37,76 +37,121 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
 
         IBookOfShares _bos = _getBOS();
 
-        SharesRepo.Share memory share = _bos.getShare(head.seqOfShare);
-
-        require(share.head.shareholder == caller, "BOPK.CP: NOT shareholder");
+        require(_bos.getShare(head.seqOfShare).head.shareholder == caller, 
+            "BOPK.CP: NOT shareholder");
         require(head.pledgor == caller, "BOPK.CP: NOT pledgor");
 
-        // _bos.decreaseCleanAmt(head.seqOfShare, pledgedPaid, pledgedPar);
-
-        _getBOP().createPledge(
+        head = _getBOP().createPledge(
             sn,
             creditor,
-            monOfGuarantee,
-            pledgedPaid,
-            pledgedPar,
+            guaranteeDays,
+            paid,
+            par,
             guaranteedAmt
         );
+
+        _bos.decreaseCleanAmt(head.seqOfShare, paid, par);
     }
 
-    function updatePledge(
+    function transferPledge(
         uint256 seqOfShare,
-        uint256 seqOfPledge,
-        uint40 creditor,
-        uint48 expireDate,
-        uint64 pledgedPaid,
-        uint64 pledgedPar,
-        uint64 guaranteedAmt,
+        uint256 seqOfPld,
+        uint40 buyer,
+        uint64 amt,
+        uint256 caller        
+    ) external onlyDirectKeeper {
+        IBookOfPledges _bop = _getBOP();
+        require(_bop.getPledge(seqOfShare, seqOfPld).body.creditor == caller,
+            "BOPK.TP: not creditor");
+        _bop.transferPledge(seqOfShare, seqOfPld, buyer, amt);
+    }
+
+    function refundDebt(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        uint64 amt,
         uint256 caller
     ) external onlyDirectKeeper {
+        IBookOfPledges _bop = _getBOP();
+        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
 
-        require(pledgedPaid != 0, "BOPK.UP: ZERO pledgedPaid");
+        require(pld.body.creditor == caller, "BOPK.RD: not creditor");
 
-        PledgesRepo.Pledge memory pld = _getBOP().getPledge(seqOfShare, seqOfPledge);
-
-        if (pledgedPaid < pld.body.paid ||
-            pledgedPar < pld.body.par || 
-            expireDate < pld.head.expireDate ||
-            creditor != pld.body.creditor) 
-        {   require(caller == pld.body.creditor, "BOPK.UP: NOT creditor");
-
-            // _getBOS().increaseCleanAmt(
-            //     seqOfShare,
-            //     pld.body.pledgedPaid - pledgedPaid > 0 ? pld.body.pledgedPaid - pledgedPaid : 0,
-            //     pld.body.pledgedPar - pledgedPar > 0 ? pld.body.pledgedPar - pledgedPar : 0
-            // );
-
-        } else if (pledgedPaid > pld.body.paid || 
-            pledgedPar > pld.body.par ||
-            expireDate > pld.head.expireDate) 
-        {
-            require(caller == pld.head.pledgor,"BOPK.UP: NOT pledgor");
-
-            // _getBOS().decreaseCleanAmt(
-            //     seqOfShare, 
-            //     pledgedPaid - pld.body.pledgedPaid > 0 ? pledgedPaid - pld.body.pledgedPaid : 0,
-            //     pledgedPar - pld.body.pledgedPar > 0 ? pledgedPar - pld.body.pledgedPar : 0
-            // );
-        }
-
-        _getBOP().updatePledge(seqOfShare, seqOfPledge, creditor, expireDate, pledgedPaid, pledgedPar, guaranteedAmt);
+        pld = _bop.refundDebt(seqOfShare, seqOfPld, amt);
+        _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);
     }
 
-    function delPledge(uint256 seqOfShare, uint256 seqOfPledge, uint256 caller) external onlyDirectKeeper {
+    function extendPledge(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        uint16 extDays,
+        uint256 caller
+    ) external onlyDirectKeeper {
+        IBookOfPledges _bop = _getBOP();
+        require(_bop.getPledge(seqOfShare, seqOfPld).head.pledgor == caller,
+            "BOPK.EP: not pledgor");
+        _bop.extendPledge(seqOfShare, seqOfPld, extDays);    
+    }
+
+    function lockPledge(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        bytes32 hashLock,
+        uint256 caller
+    ) external onlyDirectKeeper {
+        IBookOfPledges _bop = _getBOP();
+        require(_bop.getPledge(seqOfShare, seqOfPld).body.creditor == caller,
+            "BOPK.LP: not creditor");
         
-        PledgesRepo.Pledge memory pld = _getBOP().getPledge(seqOfShare, seqOfPledge);
+        _bop.lockPledge(seqOfShare, seqOfPld, hashLock);    
+    }
 
-        if (block.timestamp < pld.head.expireDate)
-            require(caller == pld.body.creditor, "NOT creditor");
-        else require(caller == pld.head.pledgor, "NOT Pledgor");
+    function releasePledge(
+        uint256 seqOfShare, 
+        uint256 seqOfPld, 
+        string memory hashKey,
+        uint256 caller
+    ) external onlyDirectKeeper {
+        IBookOfPledges _bop = _getBOP();
+        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
 
-        _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);
+        require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
+        
+        _bop.releasePledge(seqOfShare, seqOfPld, hashKey);
+        _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);       
+    }
 
-        _getBOP().updatePledge(seqOfShare, seqOfPledge, pld.body.creditor, 0, 0, 0, 0);
+    function execPledge(
+        uint256 seqOfShare, 
+        uint256 seqOfPld,
+        uint256 caller
+    ) external onlyDirectKeeper {
+        IBookOfPledges _bop = _getBOP();
+        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
+
+        require(pld.body.creditor == caller,
+            "BOPK.EP: not creditor");
+
+        if (_bop.execPledge(seqOfShare, seqOfPld)) {
+            
+            IBookOfShares _bos = _getBOS();
+
+            _bos.increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);
+            _bos.transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid));
+        }
+    }
+
+    function revokePledge(
+        uint256 seqOfShare, 
+        uint256 seqOfPld,
+        uint256 caller
+    ) external onlyDirectKeeper {
+        IBookOfPledges _bop = _getBOP();
+        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
+
+        require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
+        if (_bop.revokePledge(seqOfShare, seqOfPld)) {
+            _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);   
+        }
     }
 }

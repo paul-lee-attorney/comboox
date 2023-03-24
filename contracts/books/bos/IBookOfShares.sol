@@ -45,7 +45,7 @@ interface IBookOfShares {
 
     function setPayInAmt(bytes32 hashLock, uint64 amount) external;
 
-    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey, uint256 caller) external;
 
     function withdrawPayInAmt(bytes32 hashLock) external;
 

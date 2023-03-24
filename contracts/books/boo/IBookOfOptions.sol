@@ -37,9 +37,10 @@ interface IBookOfOptions {
         uint40 rightholder,
         uint64 paid,
         uint64 par
-    ) external;
+    ) external returns(OptionsRepo.Head memory head);
 
-    function issueOption(OptionsRepo.Option memory opt) external;
+    function issueOption(OptionsRepo.Option memory opt) external 
+        returns(OptionsRepo.Head memory head);
 
     function regOptionTerms(address opts) external;
 
@@ -59,7 +60,7 @@ interface IBookOfOptions {
     function createSwapOrder(
         uint256 seqOfOpt,
         uint32 seqOfConsider,
-        uint32 paidOfConsider,
+        uint64 paidOfConsider,
         uint32 seqOfTarget
     ) external view returns (SwapsRepo.Swap memory swap);
 

@@ -14,6 +14,7 @@ import "../../rom/IRegisterOfMembers.sol";
 
 import "../../../common/access/AccessControl.sol";
 
+import "../../../common/lib/DealsRepo.sol";
 import "../../../common/lib/ArrayUtils.sol";
 // import "../../../common/lib/SNParser.sol";
 import "../../../common/lib/EnumerableSet.sol";
@@ -110,7 +111,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         view
         returns (uint64 gift)
     {
-        IInvestmentAgreement.Deal memory deal = 
+        DealsRepo.Deal memory deal = 
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
         
         SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
@@ -126,9 +127,9 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, IInvestmentAgreement.Deal memory deal) public view returns (bool) {
+    function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
 
-        if (deal.head.typeOfDeal != uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease)) 
+        if (deal.head.typeOfDeal != uint8(DealsRepo.TypeOfDeal.CapitalIncrease)) 
             return false;
 
         uint64 floorPrice = getFloorPriceOfClass(deal.head.classOfShare);
@@ -165,7 +166,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
     }
 
 
-    function isExempted(address ia, IInvestmentAgreement.Deal memory deal) external view returns (bool) {
+    function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
         if (!isTriggered(ia, deal)) return true;
 
         uint256 motionId = uint256(uint160(ia));

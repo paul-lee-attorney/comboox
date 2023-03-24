@@ -84,5 +84,5 @@ interface IInvestmentAgreement {
 
     function getDeal(uint256 seq) external view returns (DealsRepo.Deal memory);
 
-    function getSnList() external view returns (uint256[] memory);
+    function getSNList() external view returns (uint256[] memory);
 }

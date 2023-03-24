@@ -11,7 +11,6 @@ pragma experimental ABIEncoderV2;
 import "./IBookOfGM.sol";
 import "../../common/components/MeetingMinutes.sol";
 
-// BookOfGeneralMeeting
 contract BookOfGM is IBookOfGM, MeetingMinutes {
 
     //#################

@@ -7,9 +7,6 @@
 
 pragma solidity ^0.8.8;
 
-// import "../books/bod/BookOfDirectors.sol";
-// import "../books/bog/IBookOfGM.sol";
-
 import "../common/access/AccessControl.sol";
 
 import "../common/ruting/BODSetting.sol";
@@ -18,7 +15,6 @@ import "../common/ruting/BOHSetting.sol";
 
 import "../common/lib/MotionsRepo.sol";
 import "../common/lib/RulesParser.sol";
-// import "../common/lib/SNParser.sol";
 
 import "./IBODKeeper.sol";
 
@@ -158,8 +154,8 @@ contract BODKeeper is
     function castVote(
         uint256 actionId,
         uint8 attitude,
-        uint256 caller,
-        bytes32 sigHash
+        bytes32 sigHash,
+        uint256 caller
     ) external onlyDirectKeeper directorExist(caller) {
         _getBOD().castVote(actionId, caller, attitude, sigHash);
     }

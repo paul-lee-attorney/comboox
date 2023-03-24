@@ -17,22 +17,40 @@ interface IBookOfPledges {
 
     event CreatePledge(
         uint256 indexed seqOfShare,
-        uint256 seqOfPldOnShare,
+        uint256 seqOfPld,
         uint256 creditor,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
+        uint256 paid,
+        uint256 par
     );
 
-    event UpdatePledge(
+    event TransferPledge(
         uint256 indexed seqOfShare,
-        uint256 seqOfPldOnShare,
-        uint256 creditor,
-        uint48 expireDate,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
+        uint256 seqOfPld,
+        uint256 newSeqOfPld,
+        uint256 buyer,
+        uint256 paid,
+        uint256 par
     );
 
-    event ReleasePledge(uint256 indexed seqOfShare, uint256 seqOfPldOnShare);
+    event RefundDebt(
+        uint256 indexed seqOfShare,
+        uint256 seqOfPld,
+        uint256 refundAmt
+    );
+
+    event ExtendPledge(
+        uint256 indexed seqOfShare,
+        uint256 seqOfPld,
+        uint256 extDays
+    );
+
+    event LockPledge(uint256 indexed seqOfShare, uint256 seqOfPld, bytes32 hashLock);
+
+    event ReleasePledge(uint256 indexed seqOfShare, uint256 seqOfPld, string hashKey);
+
+    event ExecPledge(uint256 indexed seqOfShare, uint256 seqOfPld);
+
+    event RevokePledge(uint256 indexed seqOfShare, uint256 seqOfPld);
 
     //##################
     //##    写接口    ##
@@ -41,49 +59,78 @@ interface IBookOfPledges {
     function createPledge(
         uint256 sn,
         uint40 creditor,
-        uint16 monOfGuarantee,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
+        uint16 guaranteeDays,
+        uint64 paid,
+        uint64 par,
+        uint64 guaranteedAmt
     ) external returns(PledgesRepo.Head memory head);
 
     function issuePledge(
         PledgesRepo.Head memory head,
         uint40 creditor,
-        uint16 monOfGuarantee,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
-    ) external returns(PledgesRepo.Head memory issuedHead);
+        uint16 guaranteeDays,
+        uint64 paid,
+        uint64 par,
+        uint64 guaranteedAmt
+    ) external returns(PledgesRepo.Head memory regHead);
 
     function regPledge(
         PledgesRepo.Pledge memory pld
     ) external returns(PledgesRepo.Head memory head);
 
-    function updatePledge(
+    function transferPledge(
         uint256 seqOfShare,
-        uint256 seqOfPldOnShare,
-        uint40 creditor,
-        uint48 expireDate,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
+        uint256 seqOfPld,
+        uint40 buyer,
+        uint64 amt
+    ) external returns (PledgesRepo.Pledge memory newPld);
+
+    function refundDebt(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        uint64 amt
+    ) external returns (PledgesRepo.Pledge memory newPld);
+
+    function extendPledge(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        uint16 extDays
     ) external;
 
-    function releasePledge(uint256 snOfPld, string memory hashKey)
+    // ==== Lock/Release/Exec/Revoke ====
+
+    function lockPledge(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        bytes32 hashLock
+    ) external returns (bool flag);
+
+    function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey)
         external returns (bool flag);
+
+    function execPledge(uint256 seqOfShare, uint256 seqOfPld)
+        external returns (bool flag);
+
+    function revokePledge(uint256 seqOfShare, uint256 seqOfPld)
+        external returns (bool flag); 
 
     //##################
     //##    读接口    ##
     //##################
 
-    function counterOfPledges(uint256 seqOfShare) external view returns (uint16);
+    function counterOfPledges(uint256 seqOfShare) 
+        external view returns (uint16);
 
-    function isPledge(uint256 seqOfShare, uint256 seqOfPldOnShare) external view returns (bool);
+    function isPledge(uint256 seqOfShare, uint256 seqOfPld) 
+        external view returns (bool);
 
-    function getPledge(uint256 snOfPld) external view
-        returns (PledgesRepo.Pledge memory pld);
+    function getPledge(uint256 seqOfShare, uint256 seqOfPld)
+        external view returns (PledgesRepo.Pledge memory pld);
 
-    function getPledgesOfShare(uint256 seqOfShare) external view returns (PledgesRepo.Pledge[] memory);
+    function getPledgesOfShare(uint256 seqOfShare) 
+        external view returns (PledgesRepo.Pledge[] memory);
 
-    function getSnList() external view
-        returns(uint256[] memory records);
+    function getSNList() external view
+        returns(uint256[] memory list);
 
 }

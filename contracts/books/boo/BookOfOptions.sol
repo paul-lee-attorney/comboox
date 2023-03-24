@@ -45,14 +45,16 @@ contract BookOfOptions is IBookOfOptions, BOSSetting, ROSSetting, AccessControl 
         uint40 rightholder,
         uint64 paid,
         uint64 par
-    ) external onlyKeeper {
-        OptionsRepo.Head memory head = _repo.createOption(sn, snOfCond, rightholder, paid, par);
+    ) external onlyKeeper returns(OptionsRepo.Head memory head) {
+        head = _repo.createOption(sn, snOfCond, rightholder, paid, par);
         emit CreateOpt(head.seqOfOpt, OptionsRepo.codifyHead(head));
     }
 
-    function issueOption(OptionsRepo.Option memory opt) external onlyKeeper {
-        opt.head = _repo.issueOption(opt);
-        emit CreateOpt(opt.head.seqOfOpt, OptionsRepo.codifyHead(opt.head));
+    function issueOption(OptionsRepo.Option memory opt) external onlyKeeper
+        returns(OptionsRepo.Head memory head) 
+    {
+        head = _repo.issueOption(opt);
+        emit CreateOpt(head.seqOfOpt, OptionsRepo.codifyHead(head));
     }
 
     function regOptionTerms(address opts) external onlyKeeper {
@@ -102,7 +104,7 @@ contract BookOfOptions is IBookOfOptions, BOSSetting, ROSSetting, AccessControl 
     function createSwapOrder(
         uint256 seqOfOpt,
         uint32 seqOfConsider,
-        uint32 paidOfConsider,
+        uint64 paidOfConsider,
         uint32 seqOfTarget
     ) external onlyKeeper view returns (SwapsRepo.Swap memory swap) {
         swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _getBOS());

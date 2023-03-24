@@ -21,6 +21,7 @@ import "../common/ruting/BOHSetting.sol";
 import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
+import "../common/ruting/ROSSetting.sol";
 
 // import "../common/lib/SNFactory.sol";
 // import "../common/lib/SNParser.sol";
@@ -40,6 +41,7 @@ contract BOGKeeper is
     BOOSetting,
     BOSSetting,
     ROMSetting,
+    ROSSetting,
     AccessControl
 {
     using RulesParser for bytes32;
@@ -126,8 +128,8 @@ contract BOGKeeper is
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 submitter,
-        uint256 executor
+        uint256 executor,
+        uint256 submitter
     ) external onlyDirectKeeper memberExist(submitter) {
         _getBOG().proposeAction(
             typeOfAction,
@@ -144,8 +146,8 @@ contract BOGKeeper is
 
     function entrustDelegate(
         uint256 actionId,
-        uint256 caller,
-        uint256 delegate
+        uint256 delegate,
+        uint256 caller
     ) external onlyDirectKeeper memberExist(caller) memberExist(delegate) {
         _getBOG().entrustDelegate(actionId, caller, delegate);
     }
@@ -154,9 +156,9 @@ contract BOGKeeper is
 
     function castVote(
         uint256 motionId,
-        uint256 caller,
         uint8 attitude,
-        bytes32 sigHash
+        bytes32 sigHash,
+        uint256 caller
     ) external onlyDirectKeeper memberExist(caller) {
         _getBOG().castVote(motionId, caller, attitude, sigHash);
     }
@@ -196,10 +198,11 @@ contract BOGKeeper is
         uint256 motionId,
         uint256 seqOfDeal,
         uint256 againstVoter,
+        uint32 seqOfTarget,
         uint256 caller
     ) external onlyDirectKeeper {
 
-        IInvestmentAgreement.Deal memory deal = IInvestmentAgreement(address(uint160(motionId))).getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(address(uint160(motionId))).getDeal(seqOfDeal);
 
         require(caller == deal.head.seller, "BOGKeeper.RTB: caller NOT Seller");
 
@@ -217,40 +220,44 @@ contract BOGKeeper is
 
         uint8 closingDays = uint8((deal.head.closingDate - uint48(block.timestamp) + 12 hours) / (24 hours));
 
-        OptionsRepo.Head memory headOfOpt =
-            OptionsRepo.Head({
-                seqOfOpt: 0,
-                typeOfOpt: uint8(OptionsRepo.OptTypes.PutPrice),
-                rate: deal.head.priceOfPaid,
-                triggerDate: uint48(block.timestamp),
-                execDays: 1,
-                closingDays: closingDays,
-                classOfShare: deal.head.classOfShare,
-                logicOperator: 0,
-                compOperator1: 0,
-                para1: 0,
-                compOperator2: 0,
-                para2: 0,
-                state: 0
-            });
+        OptionsRepo.Option memory opt; 
+        
+        opt.head = OptionsRepo.Head({
+            seqOfOpt: 0,
+            typeOfOpt: uint8(OptionsRepo.TypeOfOpt.PutPrice),
+            classOfShare: deal.head.classOfShare,
+            rate: deal.head.priceOfPaid,
+            issueDate: 0,
+            triggerDate: uint48(block.timestamp),
+            execDays: 1,
+            closingDays: closingDays,
+            obligor: uint40(againstVoter)
+        });
 
-        IBookOfOptions _boo = _getBOO();
-
-        uint256 seqOfOpt = _boo.createOption(headOfOpt, caller, againstVoter, deal.body.paid, deal.body.par);
-
-        SharesRepo.Share memory share  = _getBOS().getShare(deal.head.seqOfShare);
-
-        _boo.execOption(seqOfOpt);
-
-        OptionsRepo.Future memory future = OptionsRepo.Future({
-            seqOfFuture: 0,
-            seqOfShare: deal.head.seqOfShare,
-            buyer: uint40(againstVoter),
+        opt.body = OptionsRepo.Body({
+            closingDate: deal.head.closingDate,
+            rightholder: uint40(caller),
             paid: deal.body.paid,
             par: deal.body.par,
             state: 0
         });
 
-        _boo.addFuture(seqOfOpt, share, future);
+        IBookOfOptions _boo = _getBOO();
+
+        opt.head = _boo.issueOption(opt);
+
+        // SharesRepo.Share memory share  = _getBOS().getShare(deal.head.seqOfShare);
+
+        _boo.execOption(opt.head.seqOfOpt);
+
+        SwapsRepo.Swap memory swap = 
+            _boo.createSwapOrder(opt.head.seqOfOpt, deal.head.seqOfShare, deal.body.paid, seqOfTarget);
+        
+        IRegisterOfSwaps _ros = _getROS();
+
+        swap = _ros.regSwap(swap);
+        swap.body = _ros.crystalizeSwap(swap.head.seqOfSwap, deal.head.seqOfShare, seqOfTarget);
+
+        _boo.regSwapOrder(opt.head.seqOfOpt, swap);
     }
 }

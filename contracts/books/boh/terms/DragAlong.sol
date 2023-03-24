@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../boa/IInvestmentAgreement.sol";
+// import "../../boa/IInvestmentAgreement.sol";
 
 import "../../../common/ruting/BOASetting.sol";
 import "../../../common/ruting/ROMSetting.sol";
@@ -95,7 +95,7 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
 
     function priceCheck(
         address ia,
-        IInvestmentAgreement.Deal memory deal,
+        DealsRepo.Deal memory deal,
         SharesRepo.Share memory share,
         uint256 caller
     ) external view returns (bool) {
@@ -134,15 +134,15 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, IInvestmentAgreement.Deal memory deal) public view returns (bool) {
+    function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
         
         if (_getBOA().getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
             return false;
 
         if (
             deal.head.typeOfDeal ==
-            uint8(IInvestmentAgreement.TypeOfDeal.CapitalIncrease) ||
-            deal.head.typeOfDeal == uint8(IInvestmentAgreement.TypeOfDeal.PreEmptive)
+            uint8(DealsRepo.TypeOfDeal.CapitalIncrease) ||
+            deal.head.typeOfDeal == uint8(DealsRepo.TypeOfDeal.PreEmptive)
         ) return false;
 
         if (!_dragersList.contains(deal.head.seller)) return false;

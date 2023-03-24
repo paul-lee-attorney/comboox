@@ -318,7 +318,7 @@ library SwapsRepo {
         return output;
     }
 
-    function getSnList(Repo storage repo) public view returns (uint256[] memory list)
+    function getSNList(Repo storage repo) public view returns (uint256[] memory list)
     {
         list = repo.snList.values();
     }

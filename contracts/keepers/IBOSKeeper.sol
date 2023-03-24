@@ -16,7 +16,7 @@ interface IBOSKeeper {
 
     function setPayInAmount(bytes32 sn, uint64 amount) external;
 
-    function requestPaidInCapital(bytes32 sn, string memory hashKey) external;
+    function requestPaidInCapital(bytes32 sn, string memory hashKey, uint256 caller) external;
 
     function withdrawPayInAmount(bytes32 sn) external;
 

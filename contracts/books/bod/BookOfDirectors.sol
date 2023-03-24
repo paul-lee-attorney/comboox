@@ -101,7 +101,8 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         uint256 candidate, 
         uint256 nominator
     ) external onlyDirectKeeper {
-        RulesParser.BoardSeatsRule memory bsr = RulesParser.boardSeatsRuleParser(_getSHA().getRule(seqOfBSR));
+        RulesParser.BoardSeatsRule memory bsr = 
+            RulesParser.boardSeatsRuleParser(_getSHA().getRule(seqOfBSR));
         _addDirector(bsr, candidate, title, nominator);
     }
 
@@ -109,9 +110,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
         if (isDirector(acct)) {
             if (_officers[acct].title == uint8(TitleOfDirectors.Chairman)) {
                 _officers[0].appointer = 0;
-            } else if (
-                _officers[acct].title == uint8(TitleOfDirectors.ViceChairman)
-            ) {
+            } else if (_officers[acct].title == uint8(TitleOfDirectors.ViceChairman)) {
                 _officers[0].acct = 0;
             }
 

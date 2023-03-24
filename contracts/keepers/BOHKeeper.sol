@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../books/boh/IShareholdersAgreement.sol";
+import "../books/boh/terms/ILockUp.sol";
 
 import "../common/components/ISigPage.sol";
 
@@ -15,6 +16,7 @@ import "../common/lib/RulesParser.sol";
 
 import "../common/ruting/BODSetting.sol";
 import "../common/ruting/BOOSetting.sol";
+import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
 import "../common/ruting/BOHSetting.sol";
 
@@ -27,6 +29,7 @@ contract BOHKeeper is
     BODSetting,
     BOHSetting,
     BOOSetting,
+    BOSSetting,
     ROMSetting,
     AccessControl
 {
@@ -74,15 +77,6 @@ contract BOHKeeper is
             address(_rc),
             address(_gk)
         );
-
-        // IAccessControl(sigPage).init(
-        //     caller,
-        //     address(this),
-        //     address(_rc),
-        //     address(_gk)
-        // );
-
-        // ISigPageSetting(sha).setSigPage(sigPage);
     }
 
     function removeSHA(address sha, uint256 caller)
@@ -96,10 +90,10 @@ contract BOHKeeper is
 
     function circulateSHA(
         address sha,
-        uint256 caller,
         uint256 seqOfRule,
         bytes32 docUrl,
-        bytes32 docHash
+        bytes32 docHash,
+        uint256 caller
     ) external onlyDirectKeeper onlyOwnerOf(sha, caller) {
         IShareholdersAgreement(sha).finalizeTerms();
         IAccessControl(sha).setOwner(0);
@@ -114,8 +108,8 @@ contract BOHKeeper is
 
     function signSHA(
         address sha,
-        uint256 caller,
-        bytes32 sigHash
+        bytes32 sigHash,
+        uint256 caller
     ) external onlyDirectKeeper onlyPartyOf(sha, caller) {
         require(
             _getBOH().getHeadOfDoc(sha).state == uint8(IRepoOfDocs.RODStates.Circulated),
@@ -147,29 +141,40 @@ contract BOHKeeper is
 
         _boh.changePointer(sha);
 
-        RulesParser.GovernanceRule memory gr = IShareholdersAgreement(sha).getRule(0).governanceRuleParser();
+        RulesParser.GovernanceRule memory gr = 
+            IShareholdersAgreement(sha).getRule(0).governanceRuleParser();
 
         _rom.setAmtBase(gr.basedOnPar);
 
         _rom.setVoteBase(gr.basedOnPar);
 
-        _getBOD().setMaxQtyOfDirectors(
-            gr.maxNumOfDirectors
-        );
+        _getBOD().setMaxQtyOfDirectors(gr.maxNumOfDirectors);
 
-        if (
-            IShareholdersAgreement(sha).hasTitle(
-                uint8(IShareholdersAgreement.TermTitle.Options)
-            )
-        ) {
-            _getBOO().registerOption(
-                IShareholdersAgreement(sha).getTerm(
-                    uint8(IShareholdersAgreement.TermTitle.Options)
-                )
-            );
-        }
+        if (IShareholdersAgreement(sha).hasTitle(uint8(IShareholdersAgreement.TermTitle.LockUp)))
+            _lockUpShares(sha);
+        
+        if (IShareholdersAgreement(sha).hasTitle(uint8(IShareholdersAgreement.TermTitle.Options))) 
+            _regOptionTerms(sha);
 
         _updateGrouping(sha, _rom);
+    }
+
+    function _lockUpShares(address sha) private {
+        uint256[] memory lockedShares = ILockUp(IShareholdersAgreement(sha).getTerm(
+            uint8(IShareholdersAgreement.TermTitle.Options))).lockedShares();
+        uint256 len = lockedShares.length;
+        while (len > 0) {
+            IBookOfShares _bos = _getBOS();
+            SharesRepo.Share memory share = _bos.getShare(lockedShares[len-1]);
+            _bos.decreaseCleanAmt(share.head.seq, share.body.paid, share.body.par);
+            len--;
+        }
+    }
+
+    function _regOptionTerms(address sha) private {
+        address opts = IShareholdersAgreement(sha).
+            getTerm(uint8(IShareholdersAgreement.TermTitle.Options));
+        _getBOO().regOptionTerms(opts);
     }
 
     function _updateGrouping(address sha, IRegisterOfMembers _rom) private {

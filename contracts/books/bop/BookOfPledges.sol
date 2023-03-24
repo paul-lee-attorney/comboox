@@ -15,7 +15,6 @@ import "../../common/ruting/BOSSetting.sol";
 contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
     using PledgesRepo for PledgesRepo.Repo;
     using PledgesRepo for PledgesRepo.Pledge;
-    using PledgesRepo for uint256;
 
     PledgesRepo.Repo private _repo;
 
@@ -26,56 +25,54 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
     function createPledge(
         uint256 sn,
         uint40 creditor,
-        uint16 monOfGuarantee,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
+        uint16 guaranteeDays,
+        uint64 paid,
+        uint64 par,
+        uint64 guaranteedAmt
     ) external onlyDirectKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
-            sn, 
-            creditor, 
-            monOfGuarantee, 
-            pledgedPaid, 
-            pledgedPar
+            sn,
+            creditor,
+            guaranteeDays,  
+            paid,
+            par,
+            guaranteedAmt
         );
 
         emit CreatePledge(
             head.seqOfShare,
-            head.seqOfPldOnShare,
+            head.seqOfPld,
             creditor,
-            pledgedPaid,
-            pledgedPar
+            paid,
+            par
         );
-
-        _getBOS().decreaseCleanAmt(head.seqOfShare, pledgedPaid, pledgedPar);
-
     }
 
     function issuePledge(
         PledgesRepo.Head memory head,
         uint40 creditor,
-        uint16 monOfGuarantee,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
-    ) external onlyDirectKeeper returns(PledgesRepo.Head memory regHead)
+        uint16 guaranteeDays,
+        uint64 paid,
+        uint64 par,
+        uint64 guaranteedAmt
+    ) external onlyKeeper returns(PledgesRepo.Head memory regHead)
     {
         regHead = _repo.issuePledge(
             head, 
-            creditor, 
-            monOfGuarantee,
-            pledgedPaid,
-            pledgedPar
+            creditor,
+            guaranteeDays,
+            paid,
+            par,
+            guaranteedAmt
         );
 
         emit CreatePledge(
             head.seqOfShare,
-            head.seqOfPldOnShare,
+            head.seqOfPld,
             creditor,
-            pledgedPaid,
-            pledgedPar
+            paid,
+            par
         );
-    
-        _getBOS().decreaseCleanAmt(regHead.seqOfShare, pledgedPaid, pledgedPar);
-
     }
 
     function regPledge(
@@ -85,111 +82,129 @@ contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
 
         emit CreatePledge(
             head.seqOfShare, 
-            head.seqOfPldOnShare, 
+            head.seqOfPld, 
             pld.body.creditor,
             pld.body.paid, 
             pld.body.par 
         );
-    
-        _getBOS().decreaseCleanAmt(head.seqOfShare, pld.body.paid, pld.body.par);
     }
 
-    function updatePledge(
+    // ==== Transfer Pledge ====
+
+    function transferPledge(
         uint256 seqOfShare,
-        uint256 seqOfPldOnShare,
-        uint40 creditor,
-        uint48 expireDate,
-        uint64 pledgedPaid,
-        uint64 pledgedPar
-    ) external onlyDirectKeeper {
+        uint256 seqOfPld,
+        uint40 buyer,
+        uint64 amt
+    ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
+    {
+        require(buyer > 0, "BOP.TP: zero buyer");
 
-        require(
-            expireDate > block.timestamp || expireDate == 0,
-            "PR.UP: expireDate is passed"
+        newPld = _repo.splitPledge(seqOfShare, seqOfPld, buyer, amt);
+
+        emit TransferPledge(
+            newPld.head.seqOfShare, 
+            seqOfPld,
+            newPld.head.seqOfPld, 
+            newPld.body.creditor,
+            newPld.body.paid, 
+            newPld.body.par 
         );
-
-        PledgesRepo.Pledge storage pld = _repo.pledges[seqOfShare][seqOfPldOnShare];
-
-        if (pledgedPaid < pld.body.paid ||
-            pledgedPar < pld.body.par)
-        {
-            _getBOS().increaseCleanAmt(
-                seqOfShare,
-                pld.body.paid - pledgedPaid,
-                pld.body.par - pledgedPar
-            );
-        } else if (pledgedPaid > pld.body.paid ||
-                   pledgedPar > pld.body.par)
-        {
-            _getBOS().decreaseCleanAmt(
-                seqOfShare,
-                pledgedPaid - pld.body.paid,
-                pledgedPar - pld.body.par 
-            );
-        }
-
-        emit UpdatePledge(
-            seqOfShare, 
-            seqOfPldOnShare, 
-            creditor, 
-            expireDate,
-            pledgedPaid, 
-            pledgedPar
-        );
-
-        pld.updatePledge(creditor, expireDate, pledgedPaid, pledgedPar);
     }
 
-    function releasePledge(uint256 snOfPld, string memory hashKey)
-        external onlyKeeper returns (bool flag)
+    // ==== Update Pledge ====
+
+    function refundDebt(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        uint64 amt
+    ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
     {
-        PledgesRepo.Head memory head = snOfPld.snParser();
-        PledgesRepo.Pledge storage pld = _repo.pledges[head.seqOfShare][head.seqOfPldOnShare];
-        
-        if (pld.releasePledge(hashKey))
-        {   
-            emit ReleasePledge(head.seqOfShare, head.seqOfPldOnShare);
-            _getBOS().increaseCleanAmt(pld.head.seqOfShare, pld.body.paid, pld.body.par);
+        newPld = _repo.splitPledge(seqOfShare, seqOfPld, 0, amt);
+
+        emit RefundDebt(seqOfShare, seqOfPld, amt);
+    }
+
+    function extendPledge(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        uint16 extDays
+    ) external onlyKeeper {
+        _repo.pledges[seqOfShare][seqOfPld].extendPledge(extDays);
+        emit ExtendPledge(seqOfShare, seqOfPld, extDays);
+    }
+
+    // ==== Lock/Release/Exec/Revoke ====
+
+    function lockPledge(
+        uint256 seqOfShare,
+        uint256 seqOfPld,
+        bytes32 hashLock
+    ) external onlyKeeper returns (bool flag) {
+        if (_repo.pledges[seqOfShare][seqOfPld].lockPledge(hashLock))
+        {
+            emit LockPledge(seqOfShare, seqOfPld, hashLock);
             flag = true;
         }
     }
 
+    function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey)
+        external onlyKeeper returns (bool flag)
+    {
+        if (_repo.pledges[seqOfShare][seqOfPld].releasePledge(hashKey)){   
+            emit ReleasePledge(seqOfShare, seqOfPld, hashKey);
+            flag = true;
+        }
+    }
+
+    function execPledge(uint256 seqOfShare, uint256 seqOfPld)
+        external onlyKeeper returns (bool flag) 
+    {
+        if (_repo.pledges[seqOfShare][seqOfPld].execPledge()) {
+            emit ExecPledge(seqOfShare, seqOfPld);
+            flag = true;
+        }
+    }
+
+    function revokePledge(uint256 seqOfShare, uint256 seqOfPld)
+        external onlyKeeper returns (bool flag) 
+    {
+        if (_repo.pledges[seqOfShare][seqOfPld].revokePledge()) {
+            emit RevokePledge(seqOfShare, seqOfPld);
+            flag = true;
+        }
+    }
 
     //##################
     //##    读接口    ##
     //##################
 
     function counterOfPledges(uint256 seqOfShare) 
-        public view 
-        returns (uint16) 
+        external view returns (uint16) 
     {
-        return _repo.pledges[seqOfShare][0].head.seqOfPldOnShare;
+        return _repo.pledges[seqOfShare][0].head.seqOfPld;
     }
 
     function isPledge(uint256 seqOfShare, uint256 seqOfPledge) 
-        external view returns (bool) {
+        external view returns (bool) 
+    {
         return _repo.pledges[seqOfShare][seqOfPledge].head.createDate > 0;
     }
 
-    function getPledge(uint256 snOfPld)
-        public
-        view
-        returns (PledgesRepo.Pledge memory pld)
+    function getPledge(uint256 seqOfShare, uint256 seqOfPld)
+        external view returns (PledgesRepo.Pledge memory pld)
     {
-        PledgesRepo.Head memory head = snOfPld.snParser();
-        pld = _repo.pledges[head.seqOfShare][head.seqOfPldOnShare];
+        pld = _repo.pledges[seqOfShare][seqOfPld];
     }
 
     function getPledgesOfShare(uint256 seqOfShare) 
-        external view 
-        returns (PledgesRepo.Pledge[] memory) 
+        external view returns (PledgesRepo.Pledge[] memory) 
     {
         return _repo.getPledgesOfShare(seqOfShare);
     }
 
-    function getSnList() external view
-        returns(uint256[] memory records)
+    function getSNList() external view returns(uint256[] memory list)
     {
-        records = _repo.getSnList();
+        list = _repo.getSNList();
     }
 }

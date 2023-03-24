@@ -30,7 +30,7 @@ interface IBODKeeper {
     ) external;
 
     function proposeAction(
-        uint256 typeOfAction,
+        uint8 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
@@ -42,14 +42,14 @@ interface IBODKeeper {
     function castVote(
         uint256 actionId,
         uint8 attitude,
-        uint256 caller,
-        bytes32 sigHash
+        bytes32 sigHash,
+        uint256 caller
     ) external;
 
     function voteCounting(uint256 actionId, uint256 caller) external;
 
     function execAction(
-        uint256 typeOfAction,
+        uint8 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,

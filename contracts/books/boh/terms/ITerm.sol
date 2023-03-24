@@ -7,15 +7,15 @@
 
 pragma solidity ^0.8.8;
 
-import "../../boa/IInvestmentAgreement.sol";
+import "../../../common/lib/DealsRepo.sol";
 
 interface ITerm {
-    function isTriggered(address ia, IInvestmentAgreement.Deal memory deal)
+    function isTriggered(address ia, DealsRepo.Deal memory deal)
         external
         view
         returns (bool);
 
-    function isExempted(address ia, IInvestmentAgreement.Deal memory deal)
+    function isExempted(address ia, DealsRepo.Deal memory deal)
         external
         view
         returns (bool);
