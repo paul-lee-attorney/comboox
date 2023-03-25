@@ -50,7 +50,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
             guaranteedAmt
         );
 
-        _bos.decreaseCleanAmt(head.seqOfShare, paid, par);
+        _bos.decreaseCleanPaid(head.seqOfShare, paid);
     }
 
     function transferPledge(
@@ -78,7 +78,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         require(pld.body.creditor == caller, "BOPK.RD: not creditor");
 
         pld = _bop.refundDebt(seqOfShare, seqOfPld, amt);
-        _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);
+        _getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
     }
 
     function extendPledge(
@@ -118,7 +118,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
         
         _bop.releasePledge(seqOfShare, seqOfPld, hashKey);
-        _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);       
+        _getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);       
     }
 
     function execPledge(
@@ -136,7 +136,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
             
             IBookOfShares _bos = _getBOS();
 
-            _bos.increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);
+            _bos.increaseCleanPaid(seqOfShare, pld.body.paid);
             _bos.transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid));
         }
     }
@@ -151,7 +151,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
 
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
         if (_bop.revokePledge(seqOfShare, seqOfPld)) {
-            _getBOS().increaseCleanAmt(seqOfShare, pld.body.paid, pld.body.par);   
+            _getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);   
         }
     }
 }

@@ -34,7 +34,7 @@ contract ShareholdersAgreement is
     EnumerableSet.UintSet private _titlesList;
 
     // seq => rule
-    mapping(uint256 => bytes32) private _rules;
+    mapping(uint256 => uint256) private _rules;
     EnumerableSet.UintSet private _rulesList;
 
     //####################
@@ -49,7 +49,7 @@ contract ShareholdersAgreement is
         _;
     }
 
-    modifier tempReady(uint8 title) {
+    modifier tempReady(uint256 title) {
         require(
             _getBOH().tempReadyFor(title),
             "SHA.tempReadyFor: Template NOT ready"
@@ -61,7 +61,7 @@ contract ShareholdersAgreement is
     //##  Write I/O   ##
     //##################
 
-    function createTerm(uint8 title)
+    function createTerm(uint256 title)
         external
         onlyGeneralCounsel
         tempReady(title)
@@ -85,7 +85,7 @@ contract ShareholdersAgreement is
         _titlesList.add(title);
     }
 
-    function removeTerm(uint8 title) external onlyAttorney {
+    function removeTerm(uint256 title) external onlyAttorney {
         if (_titlesList.remove(title)) {
             delete _terms[title];
         }
@@ -103,9 +103,9 @@ contract ShareholdersAgreement is
 
     // ==== Rules ====
     
-    function addRule(bytes32 rule) external onlyAttorney {
+    function addRule(uint256 rule) external onlyAttorney {
 
-        uint256 seq = uint16(bytes2(rule));
+        uint16 seq = uint16(rule >> 240);
 
         _rules[seq] = rule;
         _rulesList.add(seq);
@@ -142,19 +142,19 @@ contract ShareholdersAgreement is
     function termIsTriggered(
         uint256 title,
         address ia,
-        uint256 snOfDeal
+        uint256 seqOfDeal
     ) public view titleExist(title) returns (bool) {
-        return ITerm(_terms[title]).isTriggered(ia, IInvestmentAgreement(ia).getDeal(snOfDeal));
+        return ITerm(_terms[title]).isTriggered(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
     }
 
     function termIsExempted(
         uint256 title,
         address ia,
-        uint256 snOfDeal
+        uint256 seqOfDeal
     ) external view titleExist(title) returns (bool) {
-        if (!termIsTriggered(title, ia, snOfDeal)) return true;
+        if (!termIsTriggered(title, ia, seqOfDeal)) return true;
 
-        return ITerm(_terms[title]).isExempted(ia, IInvestmentAgreement(ia).getDeal(snOfDeal));
+        return ITerm(_terms[title]).isExempted(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
     }
 
     // ==== Rules ====
@@ -171,7 +171,7 @@ contract ShareholdersAgreement is
         return _rulesList.values();
     }
 
-    function getRule(uint256 seq) external view returns (bytes32) {
+    function getRule(uint256 seq) external view returns (uint256) {
         return _rules[seq];
     }
 }

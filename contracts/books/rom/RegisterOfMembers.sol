@@ -82,7 +82,7 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
     function addShareToMember(SharesRepo.Share memory share) external onlyBOS {
         if (_repo.addShareToMember(share.head)) {
             _repo.changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, true);
-            emit AddShareToMember(share.head.seq, share.head.shareholder);
+            emit AddShareToMember(share.head.seqOfShare, share.head.shareholder);
         }
     }
 
@@ -92,7 +92,7 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
         if (_repo.removeShareFromMember(share.head)) {
             if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) _repo.delMember(share.head.shareholder);
 
-            emit RemoveShareFromMember(share.head.seq, share.head.shareholder);
+            emit RemoveShareFromMember(share.head.seqOfShare, share.head.shareholder);
         }
     }
 

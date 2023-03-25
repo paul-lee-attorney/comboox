@@ -37,7 +37,7 @@ contract BOAKeeper is
     AccessControl 
 {
 
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
 
     IShareholdersAgreement.TermTitle[] private _termsForCapitalIncrease = [
         IShareholdersAgreement.TermTitle.AntiDilution
@@ -146,7 +146,7 @@ contract BOAKeeper is
 
             if (deal.head.seller == caller) {
                 if (IInvestmentAgreement(ia).lockDealSubject(seq)) {
-                    _getBOS().decreaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+                    _getBOS().decreaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
                 }
             } else if (
                 deal.body.buyer == caller &&
@@ -269,7 +269,7 @@ contract BOAKeeper is
         // uint32 unitPrice = sn.priceOfDeal();
         // uint40 buyer = sn.buyerOfDeal();
 
-        _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+        _getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.priceOfPaid);
     }
 
@@ -278,18 +278,26 @@ contract BOAKeeper is
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        SharesRepo.Head memory head = SharesRepo.Head({
-            seq: 0,
+        SharesRepo.Share memory share;
+
+        share.head = SharesRepo.Head({
+            seqOfShare: 0,
             preSeq: 0,
             class: deal.head.classOfShare,
             issueDate: uint48(block.timestamp),
-            payInDeadline: uint48(block.timestamp) + 43200,
             shareholder: deal.body.buyer,
-            price: deal.head.priceOfPaid,
+            price: deal.head.priceOfPaid
+        });
+
+        share.body = SharesRepo.Body({
+            payInDeadline: uint48(block.timestamp) + 43200,
+            paid: deal.body.paid,
+            par: deal.body.par,
+            cleanPaid: deal.body.paid,
             state: 0
         });
 
-        _getBOS().regShare(head, deal.body.paid, deal.body.par);
+        _getBOS().regShare(share);
     }
 
     function transferTargetShare(
@@ -335,7 +343,7 @@ contract BOAKeeper is
             _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
         if (IInvestmentAgreement(ia).releaseDealSubject(seqOfDeal))
-            _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+            _getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
     }
 
     function terminateDeal(
@@ -363,7 +371,7 @@ contract BOAKeeper is
         if (IInvestmentAgreement(ia).terminateDeal(seqOfDeal))
         {
             _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
-            _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+            _getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         }
 
     }

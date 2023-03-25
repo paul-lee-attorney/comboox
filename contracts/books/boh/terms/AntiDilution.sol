@@ -154,7 +154,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         while (len > 0) {
             uint16 class = uint16 (_classes.at(len-1));
             if (_marks[class].floorPrice > price) {
-                (, uint256[] memory members) = _getBOS().getAttrOfClass(class);
+                uint256[] memory members = _getROM().getMembersOfClass(class);
 
                 if (members.length > consentParties.length) return false;
                 else if (!members.fullyCoveredBy(consentParties)) return false;

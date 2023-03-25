@@ -21,7 +21,7 @@ import "../../common/ruting/BOHSetting.sol";
 import "../../common/ruting/ROMSetting.sol";
 
 contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
     using FRClaims for FRClaims.Claims;
     using DTClaims for DTClaims.Claims;
     using TopChain for TopChain.Chain;

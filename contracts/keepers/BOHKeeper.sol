@@ -33,7 +33,7 @@ contract BOHKeeper is
     ROMSetting,
     AccessControl
 {
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
 
     // ##################
     // ##   Modifier   ##
@@ -166,7 +166,7 @@ contract BOHKeeper is
         while (len > 0) {
             IBookOfShares _bos = _getBOS();
             SharesRepo.Share memory share = _bos.getShare(lockedShares[len-1]);
-            _bos.decreaseCleanAmt(share.head.seq, share.body.paid, share.body.par);
+            _bos.decreaseCleanPaid(share.head.seqOfShare, share.body.paid);
             len--;
         }
     }

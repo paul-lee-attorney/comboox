@@ -11,7 +11,6 @@ import "../../books/boa/IInvestmentAgreement.sol";
 
 import "./DealsRepo.sol";
 
-
 library TopChain {
     struct Node {
         uint40 prev;

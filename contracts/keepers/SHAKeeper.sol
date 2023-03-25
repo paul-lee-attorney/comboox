@@ -39,7 +39,7 @@ contract SHAKeeper is
     ROMSetting,
     AccessControl
 {
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
 
     // ##################
     // ##   Modifier   ##
@@ -98,7 +98,7 @@ contract SHAKeeper is
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
 
-        require(deal.head.state != uint8(DealsRepo.StateOfDeal.Terminated), 
+        require(deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated), 
             "SHAK.EAR: deal terminated");
 
         _getBOA().createMockOfIA(ia);
@@ -161,7 +161,7 @@ contract SHAKeeper is
         require(caller == deal.body.buyer, "SHAK.AAD: not buyer");
 
 
-        if (deal.head.state != uint8(DealsRepo.StateOfDeal.Terminated))
+        if (deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated))
         {
             DTClaims.Claim memory claim = _getBOA().getDTClaimForShare(ia, seqOfDeal, seqOfShare);
             SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
@@ -184,28 +184,30 @@ contract SHAKeeper is
             typeOfDeal: claim.typeOfClaim == 0 ? 
                 uint8(DealsRepo.TypeOfDeal.DragAlong) : 
                 uint8(DealsRepo.TypeOfDeal.TagAlong),
-            seq: 0,
-            preSeq: deal.head.seq,
+            seqOfDeal: 0,
+            preSeq: deal.head.seqOfDeal,
             classOfShare: share.head.class,
-            seqOfShare: share.head.seq,
+            seqOfShare: share.head.seqOfShare,
             seller: share.head.shareholder,
             priceOfPaid: deal.head.priceOfPaid,
             priceOfPar: deal.head.priceOfPar,
-            closingDate: deal.head.closingDate,
-            state: uint8(DealsRepo.StateOfDeal.Locked)
+            closingDate: deal.head.closingDate
+            // state: uint8(DealsRepo.StateOfDeal.Locked)
         });
 
         deal.body = DealsRepo.Body({
             buyer: deal.body.buyer,
             groupOfBuyer: deal.body.groupOfBuyer,
             paid: claim.paid,
-            par: claim.par
+            par: claim.par,
+            // closingDate: deal.body.closingDate,
+            state: uint8(DealsRepo.StateOfDeal.Locked)
         });
 
         seqOfAlongDeal = IInvestmentAgreement(ia).regDeal(deal);
 
         IInvestmentAgreement(ia).lockDealSubject(seqOfAlongDeal);
-        _getBOS().decreaseCleanAmt(share.head.seq, claim.paid, claim.par);
+        _getBOS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
     }
 
     // ======== AntiDilution ========
@@ -289,28 +291,28 @@ contract SHAKeeper is
             DealsRepo.Deal memory giftDeal = DealsRepo.Deal({
                 head: DealsRepo.Head({
                     typeOfDeal: uint8(DealsRepo.TypeOfDeal.FreeGift),
-                    seq: 0,
+                    seqOfDeal: 0,
                     preSeq: uint16(seqOfDeal),
                     classOfShare: share.head.class,
-                    seqOfShare: share.head.seq,
+                    seqOfShare: share.head.seqOfShare,
                     seller: share.head.shareholder,
                     priceOfPaid: 0,
                     priceOfPar: 0,
-                    closingDate: deal.head.closingDate,
-                    state: uint8(DealsRepo.StateOfDeal.Locked)
+                    closingDate: deal.head.closingDate
                 }),
                 body: DealsRepo.Body({
                     buyer: deal.body.buyer,
                     groupOfBuyer: deal.body.groupOfBuyer,
                     paid: lockAmount,
-                    par: lockAmount
+                    par: lockAmount,
+                    state: uint8(DealsRepo.StateOfDeal.Locked)
                 }),
                 hashLock: bytes32(0)
             });
             
             seqOfGiftDeal = IInvestmentAgreement(ia).regDeal(giftDeal);
 
-            _getBOS().decreaseCleanAmt(share.head.seq, lockAmount, lockAmount);
+            _getBOS().decreaseCleanPaid(share.head.seqOfShare, lockAmount);
         }
         result = giftPaid - lockAmount;
     }
@@ -327,7 +329,7 @@ contract SHAKeeper is
         if (IInvestmentAgreement(ia).takeGift(seqOfDeal))
             _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
-        _getBOS().increaseCleanAmt(deal.head.seqOfShare, deal.body.paid, deal.body.par);
+        _getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0);
     }
 
@@ -398,14 +400,14 @@ contract SHAKeeper is
             deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FirstRefusal);
         } else  deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.PreEmptive);
         
-        deal.head.preSeq = deal.head.seq;
-        deal.head.state = uint8(DealsRepo.StateOfDeal.Locked);
+        deal.head.preSeq = deal.head.seqOfDeal;
 
         deal.body = DealsRepo.Body({
             buyer: cl.rightholder,
             groupOfBuyer: _getROM().groupRep(cl.rightholder),
             paid: (deal.body.paid * cl.ratio) / 10000,
-            par: (deal.body.par * cl.ratio) / 10000
+            par: (deal.body.par * cl.ratio) / 10000,
+            state: uint8(DealsRepo.StateOfDeal.Locked)
         });
 
         IInvestmentAgreement(ia).lockDealSubject(IInvestmentAgreement(ia).regDeal(deal));

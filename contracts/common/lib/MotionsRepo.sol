@@ -23,7 +23,7 @@ import "../../books/bod/IBookOfDirectors.sol";
 
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
-    // using RulesParser for bytes32;
+    // using RulesParser for uint256;
 
     enum StateOfMotion {
         ZeroPoint,

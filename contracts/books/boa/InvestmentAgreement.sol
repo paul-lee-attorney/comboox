@@ -54,9 +54,9 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
 
         if (_repo.delDeal(seq)) {
             if (deal.head.seller != 0) {
-                _sigPages[0].removeBlank(deal.head.seq, deal.head.seller);
+                _sigPages[0].removeBlank(deal.head.seqOfDeal, deal.head.seller);
             }
-            _sigPages[0].removeBlank(deal.head.seq, deal.body.buyer);
+            _sigPages[0].removeBlank(deal.head.seqOfDeal, deal.body.buyer);
         }
     }
 
@@ -130,11 +130,11 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     function counterOfClosedDeal() public view returns (uint16) {
-        return _repo.deals[0].head.seq;
+        return _repo.deals[0].head.seqOfDeal;
     }
 
     function isDeal(uint256 seq) public view returns (bool) {
-        return _repo.deals[seq].head.seq == seq;
+        return _repo.deals[seq].head.seqOfDeal == seq;
     }
 
     function getHeadOfDeal(uint256 seq) external view returns (DealsRepo.Head memory)

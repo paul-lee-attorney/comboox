@@ -16,7 +16,7 @@ import "../../common/lib/RulesParser.sol";
 
 contract BookOfDirectors is IBookOfDirectors, MeetingMinutes {
     using EnumerableSet for EnumerableSet.UintSet;
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
 
 /*  _dirctors[0] {
         title: maxQtyOfDirectors;

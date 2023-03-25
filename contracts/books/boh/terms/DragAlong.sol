@@ -22,7 +22,7 @@ import "../../../common/access/AccessControl.sol";
 import "./IAlongs.sol";
 
 contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
 
     // drager => Drager
@@ -42,7 +42,7 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     // ##   写接口   ##
     // ################
 
-    function createLink(bytes32 rule, uint256 drager) external onlyAttorney {
+    function createLink(uint256 rule, uint256 drager) external onlyAttorney {
         if (_dragersList.add(drager)) {
             _dragers[drager].linkRule = rule.linkRuleParser();
         }

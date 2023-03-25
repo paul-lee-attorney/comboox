@@ -59,8 +59,8 @@ contract ROSKeeper is IROSKeeper, ROSSetting, BOSSetting, AccessControl {
         body = _ros.crystalizeSwap(seqOfSwap, seqOfConsider, seqOfTarget);
 
         IBookOfShares _bos;
-        _bos.decreaseCleanAmt(body.seqOfConsider, body.paidOfConsider, body.paidOfConsider);
-        _bos.decreaseCleanAmt(body.seqOfTarget, body.paidOfTarget, body.paidOfTarget);        
+        _bos.decreaseCleanPaid(body.seqOfConsider, body.paidOfConsider);
+        _bos.decreaseCleanPaid(body.seqOfTarget, body.paidOfTarget);        
     }
 
     function lockSwap(uint256 seqOfSwap, bytes32 hashLock, uint40 caller)
@@ -85,8 +85,8 @@ contract ROSKeeper is IROSKeeper, ROSSetting, BOSSetting, AccessControl {
         _ros.releaseSwap(seqOfSwap, hashKey);        
 
         IBookOfShares _bos;
-        _bos.increaseCleanAmt(swap.body.seqOfConsider, swap.body.paidOfConsider, swap.body.paidOfConsider);
-        _bos.increaseCleanAmt(swap.body.seqOfTarget, swap.body.paidOfTarget, swap.body.paidOfTarget);        
+        _bos.increaseCleanPaid(swap.body.seqOfConsider, swap.body.paidOfConsider);
+        _bos.increaseCleanPaid(swap.body.seqOfTarget, swap.body.paidOfTarget);        
     }
 
     function execSwap(uint256 seqOfSwap, uint40 caller) external onlyDirectKeeper {

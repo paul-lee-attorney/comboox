@@ -44,7 +44,7 @@ contract BOGKeeper is
     ROSSetting,
     AccessControl
 {
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
     // using SNFactory for bytes;
     // using SNParser for bytes32;
 

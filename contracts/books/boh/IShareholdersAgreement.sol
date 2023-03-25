@@ -68,14 +68,14 @@ interface IShareholdersAgreement {
     //##    写接口     ##
     //##################
 
-    function createTerm(uint8 title) external returns (address body);
+    function createTerm(uint256 title) external returns (address body);
 
-    function removeTerm(uint8 title) external;
+    function removeTerm(uint256 title) external;
 
     function finalizeTerms() external;
 
     // ==== Rules ====
-    function addRule(bytes32 rule) external;
+    function addRule(uint256 rule) external;
 
     function removeRule(uint256 seq) external;
 
@@ -96,13 +96,13 @@ interface IShareholdersAgreement {
     function termIsTriggered(
         uint256 title,
         address ia,
-        uint256 snOfDeal
+        uint256 seqOfDeal
     ) external view returns (bool);
 
     function termIsExempted(
         uint256 title,
         address ia,
-        uint256 snOfDeal
+        uint256 seqOfDeal
     ) external view returns (bool);
 
     // ==== Rules ====
@@ -113,5 +113,5 @@ interface IShareholdersAgreement {
 
     function rules() external view returns (uint256[] memory);
 
-    function getRule(uint256 seq) external view returns (bytes32);
+    function getRule(uint256 seq) external view returns (uint256);
 }

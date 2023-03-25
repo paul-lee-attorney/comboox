@@ -19,7 +19,7 @@ library DealsRepo {
     using SigsRepo for SigsRepo.Page;
 
     // _deals[0].head {
-    //     seq: counterOfClosedDeal;
+    //     seqOfDeal: counterOfClosedDeal;
     //     preSeq: counterOfDeal;
     //     typeOfDeal: typeOfIA;
     // }    
@@ -58,7 +58,7 @@ library DealsRepo {
 
     struct Head {
         uint8 typeOfDeal;
-        uint16 seq;
+        uint16 seqOfDeal;
         uint16 preSeq;
         uint16 classOfShare;
         uint32 seqOfShare;
@@ -66,7 +66,6 @@ library DealsRepo {
         uint32 priceOfPaid;
         uint32 priceOfPar;
         uint48 closingDate;
-        uint8 state;
     }
 
     struct Body {
@@ -74,6 +73,7 @@ library DealsRepo {
         uint40 groupOfBuyer;
         uint64 paid;
         uint64 par;
+        uint8 state;
     }
 
     struct Deal {
@@ -91,9 +91,9 @@ library DealsRepo {
     //##   Modifier   ##
     //##################
 
-    modifier onlyCleared(Repo storage repo, uint256 seq) {
+    modifier onlyCleared(Repo storage repo, uint256 seqOfDeal) {
         require(
-            repo.deals[seq].head.state == uint8(StateOfDeal.Cleared),
+            repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Cleared),
             "DR.mf.OC: wrong stateOfDeal"
         );
         _;
@@ -106,27 +106,26 @@ library DealsRepo {
     function snParser(uint256 sn) public pure returns(Head memory head) {
         return Head({
             typeOfDeal: uint8(sn >> 248),
-            seq: uint16(sn >> 240),
-            preSeq: uint16(sn >> 224),
-            classOfShare: uint16(sn >> 208),
-            seqOfShare: uint32(sn >> 192),
-            seller: uint40(sn >> 160),
-            priceOfPaid: uint32(sn >> 120),
-            priceOfPar: uint32(sn >> 88),
-            closingDate: uint48(sn >> 56),
-            state: uint8(sn >> 8)
+            seqOfDeal: uint16(sn >> 232),
+            preSeq: uint16(sn >> 216),
+            classOfShare: uint16(sn >> 200),
+            seqOfShare: uint32(sn >> 168),
+            seller: uint40(sn >> 128),
+            priceOfPaid: uint32(sn >> 96),
+            priceOfPar: uint32(sn >> 64),
+            closingDate: uint48(sn >> 16)
         });
     } 
 
     function codifyHead(Head memory head) public pure returns(uint256 sn) {
         sn = uint256(head.typeOfDeal) << 248 +
-            uint256(head.seq) << 240 +
-            uint256(head.preSeq) << 224 +
-            uint256(head.classOfShare) << 208 +
-            uint256(head.seqOfShare) << 192 +
-            uint256(head.seller) << 160 +
-            uint256(head.priceOfPaid) << 120 +
-            uint256(head.priceOfPar) << 88;
+            uint256(head.seqOfDeal) << 232 +
+            uint256(head.preSeq) << 216 +
+            uint256(head.classOfShare) << 200 +
+            uint256(head.seqOfShare) << 168 +
+            uint256(head.seller) << 128 +
+            uint256(head.priceOfPaid) << 96 +
+            uint256(head.priceOfPar) << 64;
     }
 
     function createDeal(
@@ -146,7 +145,8 @@ library DealsRepo {
             buyer: buyer,
             groupOfBuyer: groupOfBuyer,
             paid: paid,
-            par: par
+            par: par,
+            state: 0
         });
 
         seqOfDeal = regDeal(repo, deal);
@@ -158,71 +158,71 @@ library DealsRepo {
         require(deal.body.par != 0, "DR.RD: zero par");
         require(deal.body.par >= deal.body.paid, "DR.RD: paid overflow");
 
-        deal.head.seq = _increaseCounterOfDeal(repo);
+        deal.head.seqOfDeal = _increaseCounterOfDeal(repo);
 
         if (repo.snList.add(codifyHead(deal.head))) {
-            repo.deals[deal.head.seq] = Deal({
+            repo.deals[deal.head.seqOfDeal] = Deal({
                 head: deal.head,
                 body: deal.body,
                 hashLock: bytes32(0)
             });
-            seqOfDeal = deal.head.seq;
+            seqOfDeal = deal.head.seqOfDeal;
         }
     }
 
-    function _increaseCounterOfDeal(Repo storage repo) private returns(uint16 seq){
+    function _increaseCounterOfDeal(Repo storage repo) private returns(uint16 seqOfDeal){
         repo.deals[0].head.preSeq++;
-        seq = repo.deals[0].head.preSeq;
+        seqOfDeal = repo.deals[0].head.preSeq;
     }
 
-    function delDeal(Repo storage repo, uint256 seq) public returns (bool flag) {
-        if (repo.snList.remove(codifyHead(repo.deals[seq].head))) {
-            delete repo.deals[seq];
+    function delDeal(Repo storage repo, uint256 seqOfDeal) public returns (bool flag) {
+        if (repo.snList.remove(codifyHead(repo.deals[seqOfDeal].head))) {
+            delete repo.deals[seqOfDeal];
             repo.deals[0].head.preSeq--;
             flag = true;
         }
     }
 
-    function lockDealSubject(Repo storage repo, uint256 seq) public returns (bool flag) {
-        if (repo.deals[seq].head.state == uint8(StateOfDeal.Drafting)) {
-            repo.deals[seq].head.state = uint8(StateOfDeal.Locked);
+    function lockDealSubject(Repo storage repo, uint256 seqOfDeal) public returns (bool flag) {
+        if (repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Drafting)) {
+            repo.deals[seqOfDeal].body.state = uint8(StateOfDeal.Locked);
             flag = true;
         }
     }
 
-    function releaseDealSubject(Repo storage repo, uint256 seq) public returns (bool flag)
+    function releaseDealSubject(Repo storage repo, uint256 seqOfDeal) public returns (bool flag)
     {
-        if (repo.deals[seq].head.state >= uint8(StateOfDeal.Locked)) {
-            repo.deals[seq].head.state = uint8(StateOfDeal.Drafting);
+        if (repo.deals[seqOfDeal].body.state >= uint8(StateOfDeal.Locked)) {
+            repo.deals[seqOfDeal].body.state = uint8(StateOfDeal.Drafting);
             flag = true;
         }
     }
 
     function clearDealCP(
         Repo storage repo,
-        uint256 seq,
+        uint256 seqOfDeal,
         bytes32 hashLock,
         uint48 closingDate
     ) public {
-        Deal storage deal = repo.deals[seq];
+        Deal storage deal = repo.deals[seqOfDeal];
 
         require(
             block.timestamp < closingDate,
             "IA.CDCP: not FUTURE time"
         );
 
-        require(deal.head.state == uint8(StateOfDeal.Locked), 
+        require(deal.body.state == uint8(StateOfDeal.Locked), 
             "IA.CDCP: wrong Deal state");
 
-        deal.head.state = uint8(StateOfDeal.Cleared);
+        deal.body.state = uint8(StateOfDeal.Cleared);
         deal.hashLock = hashLock;
         if (closingDate != 0) deal.head.closingDate = closingDate;
     }
 
-    function closeDeal(Repo storage repo, uint256 seq, string memory hashKey)
-        public onlyCleared(repo, seq) returns (bool flag)
+    function closeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
+        public onlyCleared(repo, seqOfDeal) returns (bool flag)
     {
-        Deal storage deal = repo.deals[seq];
+        Deal storage deal = repo.deals[seqOfDeal];
 
         require(
             deal.hashLock == keccak256(bytes(hashKey)),
@@ -234,17 +234,17 @@ library DealsRepo {
             "IA.closeDeal: MISSED closing date"
         );
 
-        deal.head.state = uint8(StateOfDeal.Closed);
+        deal.body.state = uint8(StateOfDeal.Closed);
 
         _increaseCounterOfClosedDeal(repo);
 
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
-    function revokeDeal(Repo storage repo, uint256 seq, string memory hashKey)
-        external onlyCleared(repo, seq) returns (bool flag)
+    function revokeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
+        external onlyCleared(repo, seqOfDeal) returns (bool flag)
     {
-        Deal storage deal = repo.deals[seq];
+        Deal storage deal = repo.deals[seqOfDeal];
 
         require(
             deal.head.closingDate < block.timestamp,
@@ -257,7 +257,7 @@ library DealsRepo {
         );
 
         require(
-            deal.head.state == uint8(StateOfDeal.Cleared),
+            deal.body.state == uint8(StateOfDeal.Cleared),
             "wrong state of Deal"
         );
 
@@ -266,27 +266,27 @@ library DealsRepo {
             "hashKey NOT correct"
         );
 
-        deal.head.state = uint8(StateOfDeal.Terminated);
+        deal.body.state = uint8(StateOfDeal.Terminated);
 
         _increaseCounterOfClosedDeal(repo);
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
     function terminateDeal(Repo storage repo, uint256 seqOfDeal) public returns(bool flag){
-        Head storage head = repo.deals[seqOfDeal].head;
+        Body storage body = repo.deals[seqOfDeal].body;
 
-        require(head.state == uint8(StateOfDeal.Locked), "IA.TD: wrong stateOfDeal");
+        require(body.state == uint8(StateOfDeal.Locked), "IA.TD: wrong stateOfDeal");
 
-        head.state = uint8(StateOfDeal.Terminated);
+        body.state = uint8(StateOfDeal.Terminated);
 
         _increaseCounterOfClosedDeal(repo);
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
-    function takeGift(Repo storage repo, uint256 seq)
+    function takeGift(Repo storage repo, uint256 seqOfDeal)
         public returns (bool flag)
     {
-        Deal storage deal = repo.deals[seq];
+        Deal storage deal = repo.deals[seqOfDeal];
 
         require(
             deal.head.typeOfDeal == uint8(TypeOfDeal.FreeGift),
@@ -294,20 +294,20 @@ library DealsRepo {
         );
 
         require(
-            repo.deals[deal.head.preSeq].head.state == uint8(StateOfDeal.Closed),
+            repo.deals[deal.head.preSeq].body.state == uint8(StateOfDeal.Closed),
             "Capital Increase not closed"
         );
 
-        require(deal.head.state == uint8(StateOfDeal.Locked), "wrong state");
+        require(deal.body.state == uint8(StateOfDeal.Locked), "wrong state");
 
-        deal.head.state = uint8(StateOfDeal.Closed);
+        deal.body.state = uint8(StateOfDeal.Closed);
 
         _increaseCounterOfClosedDeal(repo);
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
     function _increaseCounterOfClosedDeal(Repo storage repo) private {
-        repo.deals[0].head.seq++;
+        repo.deals[0].head.seqOfDeal++;
     }
 
     //  #################################
@@ -319,6 +319,6 @@ library DealsRepo {
     }
 
     function counterOfClosedDeal(Repo storage repo) public view returns (uint16) {
-        return repo.deals[0].head.seq;
+        return repo.deals[0].head.seqOfDeal;
     }
 }

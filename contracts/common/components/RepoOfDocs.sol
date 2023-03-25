@@ -20,7 +20,7 @@ import "../utils/CloneFactory.sol";
 contract RepoOfDocs is IRepoOfDocs, CloneFactory, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
 
     // typeOfDoc => address // 0-SigPage ;
     mapping(uint256 => address) private _templates;

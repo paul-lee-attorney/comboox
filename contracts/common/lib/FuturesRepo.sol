@@ -362,7 +362,7 @@ library FuturesRepo {
 
     //     PledgesRepo.Pledge memory pld = PledgesRepo.Pledge({
     //         head: PledgesRepo.Head({
-    //             seqOfShare: share.head.seq,
+    //             seqOfShare: share.head.seqOfShare,
     //             seqOfPledge: counterOfPledges(rcd),
     //             createDate: uint48(block.timestamp),
     //             expireDate: opt.body.closingDate,

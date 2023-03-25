@@ -25,7 +25,7 @@ contract BODKeeper is
     BOHSetting,
     AccessControl
 {
-    using RulesParser for bytes32;
+    using RulesParser for uint256;
 
     function appointOfficer(
         uint256 seqOfBSR,
