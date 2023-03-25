@@ -21,18 +21,18 @@ contract BOSKeeper is IBOSKeeper, BOSSetting, AccessControl {
     // ##   BOS   ##
     // #############
 
-    function setPayInAmount(bytes32 sn, uint64 amount) 
+    function setPayInAmt(uint256 sn, uint64 amount) 
     external onlyDirectKeeper {
         _bos.setPayInAmt(sn, amount);
     }
 
-    function requestPaidInCapital(bytes32 sn, string memory hashKey, uint256 caller)
+    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint8 salt, uint256 caller)
     external onlyDirectKeeper {
-        _bos.requestPaidInCapital(sn, hashKey, caller);
+        _bos.requestPaidInCapital(snOfLocker, hashKey, salt, caller);
     }
 
-    function withdrawPayInAmount(bytes32 sn) external onlyDirectKeeper {
-        _bos.withdrawPayInAmt(sn);
+    function withdrawPayInAmt(uint256 snOfLocker) external onlyDirectKeeper {
+        _bos.withdrawPayInAmt(snOfLocker);
     }
 
     function decreaseCapital(uint256 seqOfShare, uint64 paid, uint64 par) 

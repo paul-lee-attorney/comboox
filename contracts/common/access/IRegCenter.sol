@@ -29,20 +29,13 @@ interface IRegCenter {
         uint64 floor;
     }
 
-    struct Locker {
-        uint40 from;
-        uint40 to;
-        uint48 expireDate;
-        bytes16 hashLock;
-    }
-
     // ##################
     // ##    Event     ##
     // ##################
 
     // ==== Options ====
 
-    event SetRewards(bytes32 sn);
+    event SetRewards(uint256 sn);
 
     event TransferOwnership(address newOwner);
 
@@ -52,13 +45,19 @@ interface IRegCenter {
 
     event MintPointsTo(uint256 indexed userNo, uint256 amt);
 
+    event LockPoints(uint256 indexed sn, uint216 value);
+
+    event ReleasePoints(uint256 indexed sn, string hashKey, uint8 salt, uint216 value);
+
+    event WithdrawPoints(uint256 indexed sn, string hashKey, uint8 salt, uint216 value);
+
     // ##################
     // ##    写端口    ##
     // ##################
 
     // ==== Opts Setting ====
 
-    function setRewards(bytes32 sn) external;
+    function setRewards(uint256 sn) external;
 
     // ==== Power transfer ====
 
@@ -68,19 +67,19 @@ interface IRegCenter {
 
     // ==== Mint/Sell Points ====
 
-    function mintPointsTo(uint256 to, uint256 amt) external;
+    function mintPointsTo(uint256 to, uint216 amt) external;
 
-    function lockPoints(bytes32 sn, uint256 amt) external;
+    function mintAndLockPoints(uint256 sn, uint216 amt) external;
 
-    function rechargePointsTo(uint256 to, uint256 amt) external;
+    function transferPointsTo(uint256 to, uint216 amt) external;
 
-    function sellPoints(bytes32 sn, uint256 amt) external;
+    function lockPoints(uint256 sn, uint216 amt) external;
 
-    function fetchPoints(bytes32 sn, string memory hashKey) external;
+    function releasePoints(uint256 sn, string memory hashKey, uint8 salt) external;
 
-    function withdrawPoints(bytes32 sn, string memory hashKey) external;
+    function withdrawPoints(uint256 sn, string memory hashKey, uint8 salt) external;
 
-    function checkLocker(bytes32 sn) external view returns (uint216 amount);
+    function checkLocker(uint256 sn) external view returns (uint216 amt);
 
     // ==== User ====
 

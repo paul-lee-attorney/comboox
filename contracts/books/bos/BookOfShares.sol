@@ -10,19 +10,20 @@ pragma solidity ^0.8.8;
 import "./IBookOfShares.sol";
 import "../../common/access/AccessControl.sol";
 import "../../common/lib/EnumerableSet.sol";
+import "../../common/lib/LockersRepo.sol";
 import "../../common/ruting/ROMSetting.sol";
 
 contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     using SharesRepo for SharesRepo.Repo;
     using SharesRepo for SharesRepo.Share;
     using SharesRepo for SharesRepo.Head;
+    using LockersRepo for LockersRepo.Repo;
     using SharesRepo for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
 
     SharesRepo.Repo private _repo;
 
-    // zero(16b) & ssn & expireDate & shareholder & hashLock (128b) => amount
-    mapping(bytes32 => uint256) private _lockers;
+    LockersRepo.Repo private _lockers;
 
     //##################
     //##   Modifier   ##
@@ -71,42 +72,30 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
     // ==== PayInCapital ====
 
-    function setPayInAmt(bytes32 hashLock, uint64 amount) 
-        external onlyDirectKeeper 
-    {
-        require(_lockers[hashLock] == 0, "BOS.SPIA: locker occupied");
-        emit SetPayInAmt(hashLock, amount);
-        _lockers[hashLock] = amount;
-    }
-
-    function requestPaidInCapital(bytes32 hashLock, string memory hashKey, uint256 caller)
+    function setPayInAmt(uint256 snOfLocker, uint64 amount) 
         external onlyDirectKeeper
     {
-        require(
-            bytes28(hashLock << 32) == bytes28(keccak256(bytes(hashKey)) << 32),
-            "BOS.RPIC: wrong key"
-        );
-
-        uint64 amount = uint64(_lockers[hashLock]);
-
-        SharesRepo.Share storage share = _repo.shares[uint32(bytes4(hashLock))];
-        require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
-
-        share.payInCapital(amount);
-        _rom.changeAmtOfMember(share.head.shareholder, amount, 0, true);
-        _rom.capIncrease(amount, 0);
-
-        delete _lockers[hashLock];
+        if (_lockers.lockValue(snOfLocker, amount, uint32(snOfLocker >> 216)))
+            emit SetPayInAmt(snOfLocker, amount);
     }
 
-    function withdrawPayInAmt(bytes32 hashLock) external onlyDirectKeeper {
-        require(
-            _repo.shares[uint32(bytes4(hashLock))].body.payInDeadline < block.timestamp,
-            "BOS.WPIA: still within effective period"
-        );
+    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint8 salt, uint256 caller)
+        external onlyDirectKeeper
+    {
+        uint64 amount = uint64(_lockers.releaseValue(snOfLocker, hashKey, salt, caller));
+        if (amount > 0) {
+            SharesRepo.Share storage share = _repo.shares[uint32(snOfLocker >> 216)];
+            require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
-        emit WithdrawPayInAmt(hashLock);
-        delete _lockers[hashLock];
+            share.payInCapital(amount);
+            _rom.changeAmtOfMember(share.head.shareholder, amount, 0, true);
+            _rom.capIncrease(amount, 0);
+        }
+    }
+
+    function withdrawPayInAmt(uint256 snOfLocker) external onlyDirectKeeper {
+        if (_lockers.burnLocker(snOfLocker, uint32(snOfLocker >> 216)))
+            emit WithdrawPayInAmt(snOfLocker);
     }
 
     // ==== TransferShare ====
@@ -278,8 +267,8 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
     // ==== PayInCapital ====
 
-    function getLocker(bytes32 hashLock) external view returns (uint64 amount) {
-        amount = uint64(_lockers[hashLock]);
+    function getLocker(uint256 snOfLocker) external view returns (uint64 amount) {
+        amount = uint64(_lockers.lockers[snOfLocker]);
     }
 
     function getSharesOfClass(uint16 class) external view

@@ -31,9 +31,9 @@ interface IBookOfShares {
 
     event IncreaseCleanPaid(uint256 indexed seqOfShare, uint64 paid);
 
-    event SetPayInAmt(bytes32 indexed sn, uint64 amount);
+    event SetPayInAmt(uint256 indexed snOfLocker, uint64 amount);
 
-    event WithdrawPayInAmt(bytes32 indexed sn);
+    event WithdrawPayInAmt(uint256 indexed snOfLocker);
 
     //##################
     //##    写接口    ##
@@ -43,11 +43,11 @@ interface IBookOfShares {
 
     function regShare(SharesRepo.Share memory share) external returns(SharesRepo.Share memory newShare);
 
-    function setPayInAmt(bytes32 hashLock, uint64 amount) external;
+    function setPayInAmt(uint256 snOfLocker, uint64 amount) external;
 
-    function requestPaidInCapital(bytes32 hashLock, string memory hashKey, uint256 caller) external;
+    function requestPaidInCapital(uint256 hashLock, string memory hashKey, uint8 salt, uint256 caller) external;
 
-    function withdrawPayInAmt(bytes32 hashLock) external;
+    function withdrawPayInAmt(uint256 hashLock) external;
 
     function transferShare(
         uint256 seqOfShare,
@@ -92,7 +92,7 @@ interface IBookOfShares {
     function getShare(uint256 seqOfShare) external view
         returns (SharesRepo.Share memory share);
 
-    function getLocker(bytes32 sn) external view returns (uint64 amount);
+    function getLocker(uint256 snOfLocker) external view returns (uint64 amount);
 
     function getSharesOfClass(uint16 class) external view
         returns (uint256[] memory seqList);

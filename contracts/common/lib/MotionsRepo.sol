@@ -7,23 +7,18 @@
 
 pragma solidity ^0.8.8;
 
-// import "./SNParser.sol";
-// import "./EnumerableSet.sol";
 import "./BallotsBox.sol";
 import "./DelegateMap.sol";
 import "./RulesParser.sol";
 
-// import "../ruting/ISigPageSetting.sol";
 import "../components/ISigPage.sol";
 import "../components/IRepoOfDocs.sol";
 
 import "../../books/rom/IRegisterOfMembers.sol";
-// import "../../books/boh/IShareholdersAgreement.sol";
 import "../../books/bod/IBookOfDirectors.sol";
 
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
-    // using RulesParser for uint256;
 
     enum StateOfMotion {
         ZeroPoint,
