@@ -12,8 +12,18 @@ import "../../books/bos/IBookOfShares.sol";
 import "../access/RegCenterSetting.sol";
 
 contract BOSSetting is RegCenterSetting {
-    modifier shareExist(uint32 ssn) {
-        require(_getBOS().isShare(ssn), "shareNumber NOT exist");
+
+    IBookOfShares internal _bos;
+
+    function initBOS() external {
+        _bos = IBookOfShares(_gk.getBook(uint8(TitleOfBooks.BookOfShares)));
+        emit SetBookRuting(uint8(TitleOfBooks.BookOfShares), address(_bos));
+    }
+
+    // ==== Modifier ====
+
+    modifier shareExist(uint32 seqOfShare) {
+        require(_bos.isShare(seqOfShare), "shareNumber NOT exist");
         _;
     }
 
@@ -23,13 +33,5 @@ contract BOSSetting is RegCenterSetting {
             "ROM.onlyBOS: msgSender is not BOS"
         );
         _;
-    }
-
-    // ################
-    // ##    Read    ##
-    // ################
-
-    function _getBOS() internal view returns (IBookOfShares _bos)  {
-        _bos = IBookOfShares(_gk.getBook(uint8(TitleOfBooks.BookOfShares)));
     }
 }

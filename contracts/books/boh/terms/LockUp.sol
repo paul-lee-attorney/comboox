@@ -118,7 +118,7 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
         
         uint256 motionId = uint256(uint160(ia));
                
-        uint256[] memory consentParties = _getBOG().
+        uint256[] memory consentParties = _bog.
             getCaseOfAttitude(motionId,1).voters;
 
         uint256[] memory parties = ISigPage(ia).getParties();

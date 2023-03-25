@@ -76,13 +76,13 @@ contract BOAKeeper is
     // #############################
 
     function setTempOfIA(address temp, uint256 typeOfDoc) external onlyDirectKeeper {
-        _getBOA().setTemplate(temp, typeOfDoc);
+        _boa.setTemplate(temp, typeOfDoc);
     }
 
     function createIA(uint256 typOfIA, uint256 caller) external onlyDirectKeeper {
-        require(_getROM().isMember(caller), "caller not MEMBER");
+        require(_rom.isMember(caller), "caller not MEMBER");
 
-        address ia = _getBOA().createDoc(typOfIA, caller);
+        address ia = _boa.createDoc(typOfIA, caller);
 
         IAccessControl(ia).init(
             caller,
@@ -97,7 +97,7 @@ contract BOAKeeper is
         onlyDirectKeeper
         onlyOwnerOf(ia, caller)
     {
-        _getBOA().removeDoc(ia);
+        _boa.removeDoc(ia);
     }
 
     // ======== Circulate IA ========
@@ -111,7 +111,7 @@ contract BOAKeeper is
         IAccessControl(ia).lockContents();
         IAccessControl(ia).setOwner(0);
 
-        _getBOA().circulateIA(ia, docUrl, docHash);
+        _boa.circulateIA(ia, docUrl, docHash);
     }
 
     // ======== Sign IA ========
@@ -122,7 +122,7 @@ contract BOAKeeper is
         bytes32 sigHash
     ) external onlyDirectKeeper onlyPartyOf(ia, caller) {
         require(
-            _getBOA().getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Circulated),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Circulated),
             "IA not in Circulated State"
         );
 
@@ -131,7 +131,7 @@ contract BOAKeeper is
         ISigPage(ia).signDoc(true, caller, sigHash);
 
         if (ISigPage(ia).established())
-            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Established));
+            _boa.setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Established));
     }
 
     function _lockDealsOfParty(address ia, uint256 caller) private {
@@ -146,7 +146,7 @@ contract BOAKeeper is
 
             if (deal.head.seller == caller) {
                 if (IInvestmentAgreement(ia).lockDealSubject(seq)) {
-                    _getBOS().decreaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
+                    _bos.decreaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
                 }
             } else if (
                 deal.body.buyer == caller &&
@@ -166,7 +166,7 @@ contract BOAKeeper is
         uint256 caller
     ) external onlyDirectKeeper {
         require(
-            _getBOA().getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
             "wrong state of BOD"
         );
 
@@ -183,7 +183,7 @@ contract BOAKeeper is
         bool isST = (head.seqOfShare != 0);
 
         if (isST) require(caller == head.seller, "BOAK.PTC: not seller");
-        else require(_getBOD().isDirector(caller), "BOAK.PTC: not director");
+        else require(_bod.isDirector(caller), "BOAK.PTC: not director");
 
         _vrAndSHACheck(ia, seqOfDeal, isST);
 
@@ -197,14 +197,14 @@ contract BOAKeeper is
 
         if (vr.amountRatio > 0 || vr.headRatio > 0) {
             if (vr.authority == 1)
-                require(_getBOG().isPassed(uint256(uint160(ia))), 
+                require(_bog.isPassed(uint256(uint160(ia))), 
                     "BOAK.ptc:  GM Motion NOT passed");
             else if (vr.authority == 2)
-                require(_getBOD().isPassed(uint256(uint160(ia))), 
+                require(_bod.isPassed(uint256(uint160(ia))), 
                     "BOAK.ptc:  Board Motion NOT passed");
             else if (vr.authority == 3)
-                require(_getBOG().isPassed(uint256(uint160(ia))) && 
-                    _getBOD().isPassed(uint256(uint160(ia))), 
+                require(_bog.isPassed(uint256(uint160(ia))) && 
+                    _bod.isPassed(uint256(uint160(ia))), 
                     "BOAK.ptc: Board and GM not BOTH passed");
             else revert("BOAK.ptc: wrong decision power setting");
         }
@@ -237,7 +237,7 @@ contract BOAKeeper is
         uint256 caller
     ) external onlyDirectKeeper {
         require(
-            _getBOA().getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
             "BOAKeeper.closeDeal: InvestmentAgreement NOT in voted state"
         );
 
@@ -251,7 +251,7 @@ contract BOAKeeper is
 
         //验证hashKey, 执行Deal
         if (IInvestmentAgreement(ia).closeDeal(seqOfDeal, hashKey))
-            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
+            _boa.setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
         // uint32 ssn = sn.ssnOfDeal();
 
@@ -269,8 +269,8 @@ contract BOAKeeper is
         // uint32 unitPrice = sn.priceOfDeal();
         // uint40 buyer = sn.buyerOfDeal();
 
-        _getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
-        _getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.priceOfPaid);
+        _bos.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
+        _bos.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.priceOfPaid);
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal) public onlyDirectKeeper {
@@ -297,7 +297,7 @@ contract BOAKeeper is
             state: 0
         });
 
-        _getBOS().regShare(share);
+        _bos.regShare(share);
     }
 
     function transferTargetShare(
@@ -326,7 +326,7 @@ contract BOAKeeper is
         string memory hashKey
     ) external onlyDirectKeeper {
         require(
-            _getBOA().getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
+            _boa.getHeadOfDoc(ia).state == uint8(IRepoOfDocs.RODStates.Voted),
             "BOAKeeper.revokeDeal: wrong State"
         );
 
@@ -340,10 +340,10 @@ contract BOAKeeper is
         );
 
         if (IInvestmentAgreement(ia).revokeDeal(seqOfDeal, hashKey))
-            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
+            _boa.setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
 
         if (IInvestmentAgreement(ia).releaseDealSubject(seqOfDeal))
-            _getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
+            _bos.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
     }
 
     function terminateDeal(
@@ -352,12 +352,12 @@ contract BOAKeeper is
         uint256 caller
     ) external onlyDirectKeeper {
         require(
-            _getBOA().getHeadOfDoc(ia).state >= uint8(IRepoOfDocs.RODStates.Circulated),
+            _boa.getHeadOfDoc(ia).state >= uint8(IRepoOfDocs.RODStates.Circulated),
             "BOAK.TD: wrong State"
         );
 
         require(
-            _getBOA().getHeadOfDoc(ia).state < uint8(IRepoOfDocs.RODStates.Executed),
+            _boa.getHeadOfDoc(ia).state < uint8(IRepoOfDocs.RODStates.Executed),
             "BOAK.TD: wrong State"
         );
 
@@ -370,8 +370,8 @@ contract BOAKeeper is
 
         if (IInvestmentAgreement(ia).terminateDeal(seqOfDeal))
         {
-            _getBOA().setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
-            _getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
+            _boa.setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
+            _bos.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         }
 
     }

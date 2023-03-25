@@ -85,7 +85,7 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
         uint256 seqOfDeal
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {        
         emit AcceptFirstRefusalClaims(ia, seqOfDeal);
-        output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _getROM());
+        output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _rom);
     }
 
     // ==== DragAlong & TagAlong ====
@@ -123,7 +123,7 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
         returns (bool flag)
     {        
         if (_mockOfIA[ia].qtyOfMembers() == 0) {
-            _mockOfIA[ia].restoreChain(_getROM().getSnapshot());
+            _mockOfIA[ia].restoreChain(_rom.getSnapshot());
             _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia));
 
             flag = true;

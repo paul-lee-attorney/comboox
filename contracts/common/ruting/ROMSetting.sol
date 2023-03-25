@@ -13,17 +13,20 @@ import "../../books/rom/IRegisterOfMembers.sol";
 
 contract ROMSetting is RegCenterSetting {
 
+    IRegisterOfMembers internal _rom;
+
     modifier onlyMember() {
-        require(_getROM().isMember(_msgSender()), "ROMS.mf.OM: NOT Member");
+        require(_rom.isMember(_msgSender()), "ROMS.mf.OM: NOT Member");
         _;
     }
 
     modifier memberExist(uint256 acct) {
-        require(_getROM().isMember(acct), "ROMS.mf.ME: NOT member");
+        require(_rom.isMember(acct), "ROMS.mf.ME: NOT member");
         _;
     }
 
-    function _getROM() internal view returns(IRegisterOfMembers _rom) {
+    function initROM() external {
         _rom = IRegisterOfMembers(_gk.getBook(uint8(TitleOfBooks.RegisterOfMembers)));
+        emit SetBookRuting(uint8(TitleOfBooks.RegisterOfMembers), address(_rom));
     }
 }

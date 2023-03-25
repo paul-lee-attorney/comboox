@@ -24,13 +24,13 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
     // ##################
 
     modifier onlyRightholder(uint256 seqOfOpt, uint256 caller) {
-        require(_getBOO().isRightholder(seqOfOpt, caller), 
+        require(_boo.isRightholder(seqOfOpt, caller), 
             "BOOK.mf.OR: NOT rightholder");
         _;
     }
 
     modifier onlyObligor(uint256 seqOfOpt, uint256 caller) {
-        require(_getBOO().isObligor(seqOfOpt, caller), 
+        require(_boo.isObligor(seqOfOpt, caller), 
             "BOOK.mf.OO: NOT obligor");
         _;
     }
@@ -45,7 +45,7 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
         uint64 d2,
         uint64 d3
     ) external onlyDirectKeeper {
-        _getBOO().updateOracle(seqOfOpt, d1, d2, d3);
+        _boo.updateOracle(seqOfOpt, d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt, uint256 caller)
@@ -53,7 +53,7 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
         onlyKeeper
         onlyRightholder(seqOfOpt, caller)
     {
-        _getBOO().execOption(seqOfOpt);
+        _boo.execOption(seqOfOpt);
     }
 
     function placeSwapOrder(
@@ -64,10 +64,10 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
         uint256 caller
     ) external onlyKeeper onlyRightholder(seqOfOpt, caller) {
         SwapsRepo.Swap memory swap = 
-            _getBOO().createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget);
-        swap = _getROS().regSwap(swap);
-        swap.body = _getROS().crystalizeSwap(swap.head.seqOfSwap, seqOfConsider, seqOfTarget);
-        _getBOO().regSwapOrder(seqOfOpt, swap);
+            _boo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget);
+        swap = _ros.regSwap(swap);
+        swap.body = _ros.crystalizeSwap(swap.head.seqOfSwap, seqOfConsider, seqOfTarget);
+        _boo.regSwapOrder(seqOfOpt, swap);
     }
 
     function lockSwapOrder(
@@ -76,8 +76,8 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
         bytes32 hashLock, 
         uint256 caller
     ) external onlyKeeper onlyRightholder(seqOfOpt, caller) {
-        OptionsRepo.Brief memory brf = _getBOO().getBrief(seqOfOpt, seqOfBrf);
-        _getROS().lockSwap(brf.seqOfSwap, hashLock);
+        OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
+        _ros.lockSwap(brf.seqOfSwap, hashLock);
     }
 
     function releaseSwapOrder(
@@ -86,8 +86,8 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
         string memory hashKey, 
         uint256 caller
     ) external onlyKeeper onlyObligor(seqOfOpt, caller) {
-        OptionsRepo.Brief memory brf = _getBOO().getBrief(seqOfOpt, seqOfBrf);
-        _getROS().releaseSwap(brf.seqOfSwap, hashKey);
+        OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
+        _ros.releaseSwap(brf.seqOfSwap, hashKey);
     }
 
     function execSwapOrder(
@@ -95,8 +95,8 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
         uint256 seqOfBrf,
         uint256 caller
     ) external onlyKeeper onlyRightholder(seqOfOpt, caller) {
-        OptionsRepo.Brief memory brf = _getBOO().getBrief(seqOfOpt, seqOfBrf);
-        _getROS().execSwap(brf.seqOfSwap);
+        OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
+        _ros.execSwap(brf.seqOfSwap);
     }
 
     function revokeSwapOrder(
@@ -104,11 +104,10 @@ contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
         uint256 seqOfBrf,
         uint256 caller
     ) external onlyKeeper {
-        IBookOfOptions _boo = _getBOO();
         require(_boo.isRightholder(seqOfOpt, caller)||
             _boo.isObligor(seqOfOpt, caller), "BOOK.RSO: not interested party");
 
         OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
-        _getROS().execSwap(brf.seqOfSwap);
+        _ros.execSwap(brf.seqOfSwap);
     }    
 }

@@ -114,7 +114,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         DealsRepo.Deal memory deal = 
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
         
-        SharesRepo.Share memory share = _getBOS().getShare(seqOfShare);
+        SharesRepo.Share memory share = _bos.getShare(seqOfShare);
 
         uint64 floorPrice = getFloorPriceOfClass(share.head.class);
 
@@ -154,7 +154,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         while (len > 0) {
             uint16 class = uint16 (_classes.at(len-1));
             if (_marks[class].floorPrice > price) {
-                uint256[] memory members = _getROM().getMembersOfClass(class);
+                uint256[] memory members = _rom.getMembersOfClass(class);
 
                 if (members.length > consentParties.length) return false;
                 else if (!members.fullyCoveredBy(consentParties)) return false;
@@ -173,7 +173,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         
         uint256[] memory parties = ISigPage(ia).getParties();
 
-        uint256[] memory supporters = _getBOG().
+        uint256[] memory supporters = _bog.
             getCaseOfAttitude(motionId,1).voters;
         
         uint256[] memory consentParties = parties.merge(supporters);        

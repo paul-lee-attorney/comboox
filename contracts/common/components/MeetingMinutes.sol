@@ -137,7 +137,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
 
     function _getWeight(MotionsRepo.Motion storage m, uint256 acct) private view returns(uint64 weight) {
         if (m.votingRule.authority % 2 == 1)
-            weight = _getROM().votesAtDate(acct, m.head.shareRegDate);
+            weight = _rom.votesAtDate(acct, m.head.shareRegDate);
     }
 
     // ==== cast vote ====
@@ -161,9 +161,6 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
     function voteCounting(uint256 motionId) external onlyDirectKeeper returns(bool flag) {
 
         MotionsRepo.Motion storage m = _motions[motionId];
-
-        IRegisterOfMembers _rom = _getROM();
-        IBookOfDirectors _bod = _getBOD();
 
         if (_isDocApproval(motionId)) {
             flag = m.getDocApproval(motionId, _rom, _bod);

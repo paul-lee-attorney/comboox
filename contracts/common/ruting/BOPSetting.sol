@@ -13,7 +13,10 @@ import "../access/RegCenterSetting.sol";
 
 contract BOPSetting is RegCenterSetting {
 
-    function _getBOP() internal view returns(IBookOfPledges _bop) {
+    IBookOfPledges internal _bop;
+
+    function initBOP() external {
         _bop = IBookOfPledges(_gk.getBook(uint8(TitleOfBooks.BookOfPledges)));
+        emit SetBookRuting(uint8(TitleOfBooks.BookOfPledges), address(_bop));
     }
 }

@@ -51,7 +51,7 @@ contract ShareholdersAgreement is
 
     modifier tempReady(uint256 title) {
         require(
-            _getBOH().tempReadyFor(title),
+            _boh.tempReadyFor(title),
             "SHA.tempReadyFor: Template NOT ready"
         );
         _;
@@ -67,7 +67,7 @@ contract ShareholdersAgreement is
         tempReady(title)
         returns (address body)
     {
-        body = createClone(_getBOH().template(title));
+        body = createClone(_boh.template(title));
 
         uint40 owner = getOwner();
         uint40 gc = getGeneralCounsel();

@@ -33,6 +33,7 @@ contract RegCenterSetting {
 
     event SetRegCenter(address rc);
     event SetGeneralKeeper(address gk);
+    event SetBookRuting(uint256 title, address book);
 
     // ##################
     // ##    写端口    ##

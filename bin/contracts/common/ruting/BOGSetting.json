@@ -6,6 +6,25 @@
             "inputs": [
                 {
                     "indexed": false,
+                    "internalType": "uint256",
+                    "name": "title",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "address",
+                    "name": "book",
+                    "type": "address"
+                }
+            ],
+            "name": "SetBookRuting",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
                     "internalType": "address",
                     "name": "gk",
                     "type": "address"
@@ -26,13 +45,20 @@
             ],
             "name": "SetRegCenter",
             "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "initBOG",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
         }
     ],
-    "metadata": "{\"compiler\":{\"version\":\"0.8.8+commit.dddeac2f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gk\",\"type\":\"address\"}],\"name\":\"SetGeneralKeeper\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"rc\",\"type\":\"address\"}],\"name\":\"SetRegCenter\",\"type\":\"event\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOGSetting.sol\":\"BOGSetting\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/boa/IInvestmentAgreement.sol\":{\"keccak256\":\"0xbaa4b786f2a17d7c91893cbdd616c25a343063a8a838491e0834f4910e61dc55\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://3bedbdb3c8157a06d2c1c152ee9817f53f0d597c24989e427cd63c11e00ddd49\",\"dweb:/ipfs/QmWByRmsfDCstUc5CFdRJLHfVGRmzy5wCixqQppxxZrXoN\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/bod/IBookOfDirectors.sol\":{\"keccak256\":\"0x2a13f56b7e895fbea89f868aea9c3dbe4c9da7a7c9424f3de44c94ceb629ce31\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://3064974fac81cbb2736d21768581eb5f87720a23a3c061e177c4ca8bcc0759ff\",\"dweb:/ipfs/Qmbw8KbgJnYV4dBpwdkdmAArDt6eBWiGRrYZKQjJ4cjoKH\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/bog/IBookOfGM.sol\":{\"keccak256\":\"0x0c14af12c0c1c7b03b4d3a87f78f99c259c080ca865d0e4af699043cea2c5cae\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9503f7c8b3c8c282b862f8577009fa937ed2de9c049b51180c9f067395f0661f\",\"dweb:/ipfs/QmQHknyeSvVeBsVomTpsypuikWvHsWJaQrDupNjhn11TNB\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/rom/IRegisterOfMembers.sol\":{\"keccak256\":\"0x78dbc7062e895b83ad9bfd69b6dc953c0f4ba70e8e2fa40f8b036fd2bd7a1634\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://734c96dc49e20b20f26699094486981ba2960de066cc700d6b0083077fb7be4c\",\"dweb:/ipfs/QmPBEJsgRnRovyvtUxEXyH7ZqG3JRN9pyBTZRum3uELTyt\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/IRegCenter.sol\":{\"keccak256\":\"0xddcc0235c50faed2334a6256f6df8cda76c5b09ee44bc1380c79e85bfd590551\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://655a52b8d45d7bba3f7b97090eb60499afeab5e2fe0470242e07d08a4fd624e6\",\"dweb:/ipfs/QmfGjtU9NVws9EN6TZtuBYySWpQrKaZ4nVGMtEBau35oCv\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol\":{\"keccak256\":\"0xae85a3596053fc4bed9d01d6c49ff6efca8149b71e058b67293124a06ae341ff\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://6bed9cec944419ad07dd171b497cb9508ddf7f22a4281b34e54d7ed9f33b9e1e\",\"dweb:/ipfs/QmWFnVfjU8txerbDXtZyefKfNm9YLJxcogQgztH43KaF1k\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/IMeetingMinutes.sol\":{\"keccak256\":\"0x9e6d6dbfbdfb9b3654f23443db679264a1952cf96824c429aa90f44c0dbbfbc2\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9e13f8d1b9d4a9c70659c5fb04949bde7ecd2daf71ffc469b7f45d8488e17951\",\"dweb:/ipfs/QmNuHYCgmD8fazDABC4gHxpeAiyxZE6jivBByc8U4PF2mc\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/IRepoOfDocs.sol\":{\"keccak256\":\"0x1c51cb9c928bd44bcc8ec858566f25ba1ee6db16cba1d5603373b4dbafad85db\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://0eaa529c8e004c3560093ee5bd308b0bc9bbfeaf1d277331ebca877052d68b47\",\"dweb:/ipfs/QmWQcYt1XKQn22iRDYHtU6Ta9bzELLZ3ETikFzceuBocqv\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/ISigPage.sol\":{\"keccak256\":\"0x28066344fea5e3352f0f8aaead56d23b58b05335cee1db9c2417e16ee3a860b9\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9d15d5fdb669793a2e59a36521e16b21009b9e6754faa38e8d056acded02acb8\",\"dweb:/ipfs/QmQ68XEWxqBbqXKRcNysPkxtmfFek1N5PD5XXA8Dn2kF4m\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/BallotsBox.sol\":{\"keccak256\":\"0x014216f9434b72fd6729ad6c75e7c7cdde3c4b544f436257f03c46755dbfcea5\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://119080968e81a3624def65f57109f63cdf04367830a3cac5bb9003e87768a577\",\"dweb:/ipfs/QmWKv8o2UkeTP4LBW73ftVaui9YVGsMupgWh1xXwpjbGcf\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/Checkpoints.sol\":{\"keccak256\":\"0x39c4ddd738288395be5afdba2fcff6472feceb9dcdbb5aab975dd64d0a364797\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://90e273e2f2bd93cb28f84bf334ab19d83c890ae7422f8b0fbda15de11d23f827\",\"dweb:/ipfs/QmaMULXkR6pq89gcLs8SNDPiHiEMuamBLX5oEDy6UJEyyp\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/DelegateMap.sol\":{\"keccak256\":\"0xa04739731407bffadd72e1adbf04c59ed4995438398a1895199b31df9c491d07\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://e9cbf064085a6f5e084d0a94acb4cc51898caca72487f1660eee663bdb30d6e7\",\"dweb:/ipfs/QmPY6YmE6KWhDTQcgSUNhEo8VqyyhD9PzkGD841CtfDKdF\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/EnumerableSet.sol\":{\"keccak256\":\"0x8fd09b92673a7129e79d2a2e2d99a271ea29714f0a163a7f52dc3162a0c9be5e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a61b6bf47471f111b074428521a9b9f6393500ae16702c0602895944f2863ee1\",\"dweb:/ipfs/QmaaNSW74QPieRwhk3i7BNEHWTFio6s6cXxjgieST8gw5f\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/MotionsRepo.sol\":{\"keccak256\":\"0xe85be1aa6cc0b05a0d26057eb9dfbc5bc652166deb55c545f781a05339b5a527\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://8ae3cbe267bfac3a3d920812a4108acc550d91f07e6e0ff0402fba84eb726006\",\"dweb:/ipfs/QmQMQsY9MMYQPa87uyvAqZztQaDECySbam98ESmCz3sSTg\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/RulesParser.sol\":{\"keccak256\":\"0x801c3b96e09fb44786508526a6bbb99f9bf7577f1d4adb5ed1ca49a5cad6f457\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://650167eaea8b5b81c07a1ea6c045d8b965da2924250c9c52c64ae0cacb207393\",\"dweb:/ipfs/QmTQPxBmZ5XUDtWdS8nhyTrX7GXPGNYSmtpZ2LC6Zv9Nfi\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/SigsRepo.sol\":{\"keccak256\":\"0x7d06a0a32e9c2829b89eda808c0c6f6665bb950880d3f23902b5e85037b57f50\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://ff3b766ebb097eb8abb00016492e1a14484460c48e3fa197f0de6528aefd12d6\",\"dweb:/ipfs/QmPifVktHN8c5DMhmY2A11Ymj8faYDfPBUnMWM6J4N1rum\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/TopChain.sol\":{\"keccak256\":\"0x18de8777f0e12eb2b4ade4cf2fed09370aded2623d6266d965974d7feddccef0\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://62dfa645f971f28b0942203e41686fb661a4a273bcbb7f7c701d6c545fe2428b\",\"dweb:/ipfs/QmNcQRU3nRycH1TbmTA3UfihykW4ngvqJMosa1JCkrvekd\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOGSetting.sol\":{\"keccak256\":\"0xdcfed345eec3af9c91d84be146c6ed0dab31a81e2bf90bda0b6fc4c42624ec94\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://d37b1262d6c4400bf63eddd8b0d487e85b6d7072aa08f818aa1f0284449eadc4\",\"dweb:/ipfs/QmNmDmpP2HyYq7PcwiujM3EyzQrw47fHySYJDDM8cVg58j\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/keepers/IGeneralKeeper.sol\":{\"keccak256\":\"0x11fe5eba17f5500b953f9daeaab05768c223c6106ccaa05b81534d5514f5500c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://14e4c691f4c4e7f76b6775208d7a3f724c4e21aaa7dbfd035a71a0112096f77e\",\"dweb:/ipfs/QmNctvLmm4ZUDa5UuLDnyCCPK4uwzmcJiJitegKAGgT7RE\"]}},\"version\":1}",
-    "bytecode": "6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea264697066735822122061a6dbb6bbe8600560bf652f7fc6ca0855ad7b67494825c1750c620d99c226ae64736f6c63430008080033",
-    "deployedBytecode": "6080604052600080fdfea264697066735822122061a6dbb6bbe8600560bf652f7fc6ca0855ad7b67494825c1750c620d99c226ae64736f6c63430008080033",
-    "sourceMap": "238:181:17:-:0;;;;;;;;;;;;;;;;;;;",
-    "deployedSourceMap": "238:181:17:-:0;;;;;",
+    "metadata": "{\"compiler\":{\"version\":\"0.8.8+commit.dddeac2f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"title\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"book\",\"type\":\"address\"}],\"name\":\"SetBookRuting\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"gk\",\"type\":\"address\"}],\"name\":\"SetGeneralKeeper\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"rc\",\"type\":\"address\"}],\"name\":\"SetRegCenter\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"initBOG\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOGSetting.sol\":\"BOGSetting\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/boa/IInvestmentAgreement.sol\":{\"keccak256\":\"0xbfa48966ee07e996f2c1312a7788245f450927a19f1419f20e07acb34980359a\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://7d9771f28b2a5a8999251919aab3d59d183f7ef893f73f6b63f3a9e5c6cd23ed\",\"dweb:/ipfs/QmVa3YgMCEi1KpfvpxnqwAdUDB3mtXUkWuVZVvsd5y2Qp9\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/bod/IBookOfDirectors.sol\":{\"keccak256\":\"0x2a13f56b7e895fbea89f868aea9c3dbe4c9da7a7c9424f3de44c94ceb629ce31\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://3064974fac81cbb2736d21768581eb5f87720a23a3c061e177c4ca8bcc0759ff\",\"dweb:/ipfs/Qmbw8KbgJnYV4dBpwdkdmAArDt6eBWiGRrYZKQjJ4cjoKH\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/bog/IBookOfGM.sol\":{\"keccak256\":\"0x0c14af12c0c1c7b03b4d3a87f78f99c259c080ca865d0e4af699043cea2c5cae\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9503f7c8b3c8c282b862f8577009fa937ed2de9c049b51180c9f067395f0661f\",\"dweb:/ipfs/QmQHknyeSvVeBsVomTpsypuikWvHsWJaQrDupNjhn11TNB\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/boh/IShareholdersAgreement.sol\":{\"keccak256\":\"0x7f5157869ecf8b0720af4b379b4955f87bd545054a4ebbd43b04bb49ef96f218\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://2a481e42e75739d718f499f5a5634dee653b1c0f4b7f0c1b486184a8dc1651a6\",\"dweb:/ipfs/QmVn6i1Kpz9s9PT2xpvBoBhYi9for5w7kB1rFDQZrHVZhz\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/books/rom/IRegisterOfMembers.sol\":{\"keccak256\":\"0x91536cf4e09ec3ff9cca88ba3358af923e4b7e17591366757763746a5e5b1803\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://15455c1c01c9aabdcb7fc46e7170048a983ba2e5b7e7e491303641b455c9888b\",\"dweb:/ipfs/QmctEh8jyJbeWdkmYxxZ5toyx3WpPkGaYz7Lag4jqZjcXK\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/AccessControl.sol\":{\"keccak256\":\"0xa08a84d9ff2109f212486d39be3eb699d42576051b94b2e7b6d26455bfe64572\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://60e0613189bdf44fd6fa4980cbcf9d769e5ba5b4dab77c0ea165502dbafe91d8\",\"dweb:/ipfs/QmXf5dpG9wqigMrSuYWgFDrE6oyvaA5CEjMpGXhuJepfyf\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/IAccessControl.sol\":{\"keccak256\":\"0x148ea4143b5ff2637b9f96fd098b14ee7495dba5e6e4ffb7e9e7548a094e7f48\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://a81854695f1f7fe31722f0b0fabcbe2b39906a453fe33763d52c803d8a8dabc0\",\"dweb:/ipfs/QmNu3PGYdmkEi69ouaNgcyEK7GLDPcAR2YWzitG48k1LQL\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/IRegCenter.sol\":{\"keccak256\":\"0xa36ce60fa900d7b33c8d36605c50f47a12623a4f4bbf05dfeaa02e60d877f05a\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://8ba4012cf6470efbc0b94fbb47eae345130dc6ced2ea0422c8c117ccb64ecfc6\",\"dweb:/ipfs/QmfKQGyhGDoiNbjBTSPNq6r7kVKt8tcMQRrcksHT57cLgk\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol\":{\"keccak256\":\"0xbf7c439024f06994d516e510f7de0b96c18bb102431f599654363e73828ead4c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://4229968c6ce555e7afff4fbc5dd1c5b1a70edba317163693688c7968760f3f86\",\"dweb:/ipfs/QmVuyYafhr6vX42DuTMmg6xakvwjFsL9ViSzDesEsoFE4m\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/IMeetingMinutes.sol\":{\"keccak256\":\"0x9e6d6dbfbdfb9b3654f23443db679264a1952cf96824c429aa90f44c0dbbfbc2\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9e13f8d1b9d4a9c70659c5fb04949bde7ecd2daf71ffc469b7f45d8488e17951\",\"dweb:/ipfs/QmNuHYCgmD8fazDABC4gHxpeAiyxZE6jivBByc8U4PF2mc\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/IRepoOfDocs.sol\":{\"keccak256\":\"0x1145e5b6fe5f7a144b55df0bb251868d60dacd51c176dea977f5ca596deb68af\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://3ae4d4796cee04513412d35b0b8941ee0e324113503b847c0999fa608b87d47b\",\"dweb:/ipfs/QmSgvLTWWYfHZhTGUvyACpVgSu1q5acMZx6Mw4Vko2PiL8\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/ISigPage.sol\":{\"keccak256\":\"0xf6881eeac625dc98eed1bc92c0e34a25696d80c63e8554fd3064e93097748998\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://28ec57b12304432822a0a151a35bac274478e0434ea97d076aafa8ccf3b63b5f\",\"dweb:/ipfs/QmQCmbsXCyK8vi9WMbAroZBikmozEC5Sq9aom6MXxcQTiD\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/components/SigPage.sol\":{\"keccak256\":\"0x4d98c1f3ec817d6fb7c16b998c41127092f3b0a872d4e006fb310b04ec8f0e1c\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://9682c3bf6a603d1854ff1df63b82f4dfd5234f95b3ac972e6643909e28221010\",\"dweb:/ipfs/QmNuZUm9e9VowjwxyortYEMfAomvpuB16f6QxdWZm9bZnx\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/ArrayUtils.sol\":{\"keccak256\":\"0x5da266be61c29b2bf6563294df09e533d93280de4df7ecce20a672f0259db616\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://8f130211b9fd52c12f45ef14a9e1940f63bd060712fad45b00b2f182bf49e1a7\",\"dweb:/ipfs/QmRgsEWQPHUvzp6FcF566g8ygc5LYZ86BSAQNX4NRdVXjS\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/BallotsBox.sol\":{\"keccak256\":\"0x34c0940b1b9d5c65bb7f41ee1ae61de89c4eddd0ea893149653f0dc1f3a25c82\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://28025eb6cadad6d712a419e89f87dead1a3e3d82422b8d4535517385bf192f8e\",\"dweb:/ipfs/QmWyNi4eAz4xptSZqnYLsnjc3CTdUPZfAp3wtd58Mw7x7Z\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/Checkpoints.sol\":{\"keccak256\":\"0x40ff51d1f411255063465c70e6b4a729541cfed0397c0e4dbee09924a231a166\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://a519d5432d546e18e01816f0c3f89099a2e10912c6d5df58d0f3c7e5b236bc76\",\"dweb:/ipfs/QmacpzYsZKRTwT1J1wn45oJWcmHn1R5wVUFPKXU6sMn4Hy\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/DealsRepo.sol\":{\"keccak256\":\"0x504e155805f4e15f8eecda21615b8884ce853be368b164326608c556d092357f\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://fa6d0930962f08be2193dc14b58c43fb705ef25447f5754071fec1822fe7e269\",\"dweb:/ipfs/QmZxSGzz1roxmR8WPNcu4Pjcc67UnUZtcuanoDREqxpDxq\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/DelegateMap.sol\":{\"keccak256\":\"0xa04739731407bffadd72e1adbf04c59ed4995438398a1895199b31df9c491d07\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://e9cbf064085a6f5e084d0a94acb4cc51898caca72487f1660eee663bdb30d6e7\",\"dweb:/ipfs/QmPY6YmE6KWhDTQcgSUNhEo8VqyyhD9PzkGD841CtfDKdF\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/EnumerableSet.sol\":{\"keccak256\":\"0x8fd09b92673a7129e79d2a2e2d99a271ea29714f0a163a7f52dc3162a0c9be5e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a61b6bf47471f111b074428521a9b9f6393500ae16702c0602895944f2863ee1\",\"dweb:/ipfs/QmaaNSW74QPieRwhk3i7BNEHWTFio6s6cXxjgieST8gw5f\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/MotionsRepo.sol\":{\"keccak256\":\"0x073371412d002351fca9152aab526b3e170b66704824f69fcc48e5dc78c19599\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://33ea40a25b9a4fbabbb20d9b9b2c7b3ab83701294d32ae474ef57b5122758afb\",\"dweb:/ipfs/QmQTNtBNPhv6GNkNAAASo2RjMZboQ3yJtKLyV61NHukzaK\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/RolesRepo.sol\":{\"keccak256\":\"0x512d7c86f5a7860d15b9380c2da63297f05df193f957af9e4e649eeec062b149\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://662a2bea573c9bc33a00d7b84eeef95db2c538ae4284bd078f37925ef6b02a1f\",\"dweb:/ipfs/QmYHvkGQTNXuSx7B9XEmhPZH9KYRc7R6dPgNgrNDZ6bWLY\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/RulesParser.sol\":{\"keccak256\":\"0x4a651ab43a313dcc772932330bb914edd0de4d246596e8217a8b11e4f16ac762\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://511706cf5b0b4a4029fb0c6596a0ff8b0666d57f2bff907a67709b9e4d56428f\",\"dweb:/ipfs/QmPVwpFjvBRJ2YX1XdpL35eeJuscnSvQmGg1WkSKiHt3xu\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/SharesRepo.sol\":{\"keccak256\":\"0x028381dea207c625f15559048cda532b223bf56483557573e2ab7c8c3e4a9b76\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://4cc57448f1bdb8de684ef038b1bfeac3f75a4bea9ec4437b8ab1e2b03f7238d1\",\"dweb:/ipfs/QmawzPCB97XRjYC5yPotBjLxAvyFVJfY5mciEMAULjU133\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/SigsRepo.sol\":{\"keccak256\":\"0x8c58076737a02a3f15cce05c5a8a1f9efacfc4ee6a3ab63c7fdca3e5c15e82ae\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://b5b6072f256662fdd240742fc04d08aa69805d33d7ce4c895594915f29a5faeb\",\"dweb:/ipfs/QmWyE9rXGiZL2UYhoGv77CWJWyHW88bja7jS8CQAtoaC3S\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/lib/TopChain.sol\":{\"keccak256\":\"0x066504aab636aea5324d03f1b0992724c4a69950519556f98a74d84efb169baa\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://dd44133e7ee380529999bb630cc94ba07dbee2d301024c8edadd2ead716ee5d1\",\"dweb:/ipfs/QmZdtXMqb4NCaFTjVyUCvyezzRri7ZQLALAp2Ezp4aFmWZ\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOGSetting.sol\":{\"keccak256\":\"0xd6755d27a2145a1aeafe3a7249cbba7049f4ee761126e9075271505bff617e64\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://f70f9f361a41d3ee62bfef4ea61ba8a7d6beaaaf866ce643c9439f190e09b252\",\"dweb:/ipfs/QmXwj71RMdsTkv8y9vgFYbw4L3ZCyaYMLBLoLhjMfkRsSp\"]},\"/Users/kaptain/github.com/hardhat/comboox/contracts/keepers/IGeneralKeeper.sol\":{\"keccak256\":\"0x6326d1846ac47dedd9213e7bce2758384495993b45dcb0f9ddab1c2742b09295\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://2e7ba83b96c805c22ea483cfeec8f44b7ec0193baa99ba66909cf103ca330c88\",\"dweb:/ipfs/QmShKXqqs3Gky7Jj1p99rYmrTN3Ww4TqZHVEKVozHfKuEW\"]}},\"version\":1}",
+    "bytecode": "608060405234801561001057600080fd5b50610178806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80636825885814610030575b600080fd5b61003861003a565b005b60015460405163e0ff5b8b60e01b8152600260048201526001600160a01b039091169063e0ff5b8b9060240160206040518083038186803b15801561007e57600080fd5b505afa158015610092573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906100b69190610112565b600280546001600160a01b03929092166001600160a01b0319909216821781556040805191825260208201929092527f6aa5e483fe137161b095cd68564a336d1657057f57987b1ae21019134dbc8da2910160405180910390a1565b60006020828403121561012457600080fd5b81516001600160a01b038116811461013b57600080fd5b939250505056fea26469706673582212200186801b70b11b1337acb1f521fb25689e360febf8b8a7bfb4155848d4189c1364736f6c63430008080033",
+    "deployedBytecode": "608060405234801561001057600080fd5b506004361061002b5760003560e01c80636825885814610030575b600080fd5b61003861003a565b005b60015460405163e0ff5b8b60e01b8152600260048201526001600160a01b039091169063e0ff5b8b9060240160206040518083038186803b15801561007e57600080fd5b505afa158015610092573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906100b69190610112565b600280546001600160a01b03929092166001600160a01b0319909216821781556040805191825260208201929092527f6aa5e483fe137161b095cd68564a336d1657057f57987b1ae21019134dbc8da2910160405180910390a1565b60006020828403121561012457600080fd5b81516001600160a01b038116811461013b57600080fd5b939250505056fea26469706673582212200186801b70b11b1337acb1f521fb25689e360febf8b8a7bfb4155848d4189c1364736f6c63430008080033",
+    "sourceMap": "238:255:25:-:0;;;;;;;;;;;;;;;;;;;",
+    "deployedSourceMap": "238:255:25:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;314:177;;;:::i;:::-;;;369:3;;:41;;-1:-1:-1;;;369:41:25;;387:21;369:41;;;290:36:27;-1:-1:-1;;;;;369:3:25;;;;:11;;263:18:27;;369:41:25;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;352:4;:59;;-1:-1:-1;;;;;352:59:25;;;;-1:-1:-1;;;;;;352:59:25;;;;;;;426:58;;;804:36:27;;;871:2;856:18;;849:60;;;;426:58:25;;777:18:27;426:58:25;;;;;;;314:177::o;337:290:27:-;407:6;460:2;448:9;439:7;435:23;431:32;428:52;;;476:1;473;466:12;428:52;502:16;;-1:-1:-1;;;;;547:31:27;;537:42;;527:70;;593:1;590;583:12;527:70;616:5;337:290;-1:-1:-1;;;337:290:27:o",
     "sourcePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOGSetting.sol",
     "compiler": {
         "name": "solc",
@@ -41,70 +67,94 @@
     "ast": {
         "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/ruting/BOGSetting.sol",
         "exportedSymbols": {
+            "AccessControl": [
+                1175
+            ],
+            "ArrayUtils": [
+                3105
+            ],
             "BOGSetting": [
-                6925
+                10882
             ],
             "BallotsBox": [
-                1682
+                3305
             ],
             "Checkpoints": [
-                1968
+                3591
+            ],
+            "DealsRepo": [
+                4571
             ],
             "DelegateMap": [
-                2141
+                4744
             ],
             "EnumerableSet": [
-                2758
+                5361
+            ],
+            "IAccessControl": [
+                1292
             ],
             "IBookOfDirectors": [
-                373
+                317
             ],
             "IBookOfGM": [
-                387
+                331
             ],
             "IGeneralKeeper": [
-                6958
+                10915
             ],
             "IInvestmentAgreement": [
-                230
+                174
             ],
             "IMeetingMinutes": [
-                1223
+                1825
             ],
             "IRegCenter": [
-                874
+                1469
             ],
             "IRegisterOfMembers": [
-                704
+                772
             ],
             "IRepoOfDocs": [
-                1393
+                1983
+            ],
+            "IShareholdersAgreement": [
+                439
             ],
             "ISigPage": [
-                1482
+                2135
             ],
             "MotionsRepo": [
-                3645
+                6248
             ],
             "RegCenterSetting": [
-                972
+                1574
+            ],
+            "RolesRepo": [
+                6673
             ],
             "RulesParser": [
-                4429
+                7348
+            ],
+            "SharesRepo": [
+                8173
+            ],
+            "SigPage": [
+                2646
             ],
             "SigsRepo": [
-                4892
+                8833
             ],
             "TopChain": [
-                6898
+                10843
             ]
         },
-        "id": 6926,
+        "id": 10883,
         "license": "UNLICENSED",
         "nodeType": "SourceUnit",
         "nodes": [
             {
-                "id": 6900,
+                "id": 10845,
                 "literals": [
                     "solidity",
                     "^",
@@ -112,29 +162,29 @@
                     ".8"
                 ],
                 "nodeType": "PragmaDirective",
-                "src": "130:23:17"
+                "src": "130:23:25"
             },
             {
                 "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/books/bog/IBookOfGM.sol",
                 "file": "../../books/bog/IBookOfGM.sol",
-                "id": 6901,
+                "id": 10846,
                 "nameLocation": "-1:-1:-1",
                 "nodeType": "ImportDirective",
-                "scope": 6926,
-                "sourceUnit": 388,
-                "src": "155:39:17",
+                "scope": 10883,
+                "sourceUnit": 332,
+                "src": "155:39:25",
                 "symbolAliases": [],
                 "unitAlias": ""
             },
             {
                 "absolutePath": "/Users/kaptain/github.com/hardhat/comboox/contracts/common/access/RegCenterSetting.sol",
                 "file": "../access/RegCenterSetting.sol",
-                "id": 6902,
+                "id": 10847,
                 "nameLocation": "-1:-1:-1",
                 "nodeType": "ImportDirective",
-                "scope": 6926,
-                "sourceUnit": 973,
-                "src": "196:40:17",
+                "scope": 10883,
+                "sourceUnit": 1575,
+                "src": "196:40:25",
                 "symbolAliases": [],
                 "unitAlias": ""
             },
@@ -143,51 +193,85 @@
                 "baseContracts": [
                     {
                         "baseName": {
-                            "id": 6903,
+                            "id": 10848,
                             "name": "RegCenterSetting",
                             "nodeType": "IdentifierPath",
-                            "referencedDeclaration": 972,
-                            "src": "261:16:17"
+                            "referencedDeclaration": 1574,
+                            "src": "261:16:25"
                         },
-                        "id": 6904,
+                        "id": 10849,
                         "nodeType": "InheritanceSpecifier",
-                        "src": "261:16:17"
+                        "src": "261:16:25"
                     }
                 ],
                 "contractDependencies": [],
                 "contractKind": "contract",
                 "fullyImplemented": true,
-                "id": 6925,
+                "id": 10882,
                 "linearizedBaseContracts": [
-                    6925,
-                    972
+                    10882,
+                    1574
                 ],
                 "name": "BOGSetting",
-                "nameLocation": "247:10:17",
+                "nameLocation": "247:10:25",
                 "nodeType": "ContractDefinition",
                 "nodes": [
                     {
+                        "constant": false,
+                        "id": 10852,
+                        "mutability": "mutable",
+                        "name": "_bog",
+                        "nameLocation": "303:4:25",
+                        "nodeType": "VariableDeclaration",
+                        "scope": 10882,
+                        "src": "284:23:25",
+                        "stateVariable": true,
+                        "storageLocation": "default",
+                        "typeDescriptions": {
+                            "typeIdentifier": "t_contract$_IBookOfGM_$331",
+                            "typeString": "contract IBookOfGM"
+                        },
+                        "typeName": {
+                            "id": 10851,
+                            "nodeType": "UserDefinedTypeName",
+                            "pathNode": {
+                                "id": 10850,
+                                "name": "IBookOfGM",
+                                "nodeType": "IdentifierPath",
+                                "referencedDeclaration": 331,
+                                "src": "284:9:25"
+                            },
+                            "referencedDeclaration": 331,
+                            "src": "284:9:25",
+                            "typeDescriptions": {
+                                "typeIdentifier": "t_contract$_IBookOfGM_$331",
+                                "typeString": "contract IBookOfGM"
+                            }
+                        },
+                        "visibility": "internal"
+                    },
+                    {
                         "body": {
-                            "id": 6923,
+                            "id": 10880,
                             "nodeType": "Block",
-                            "src": "341:76:17",
+                            "src": "342:149:25",
                             "statements": [
                                 {
                                     "expression": {
-                                        "id": 6921,
+                                        "id": 10866,
                                         "isConstant": false,
                                         "isLValue": false,
                                         "isPure": false,
                                         "lValueRequested": false,
                                         "leftHandSide": {
-                                            "id": 6910,
+                                            "id": 10855,
                                             "name": "_bog",
                                             "nodeType": "Identifier",
                                             "overloadedDeclarations": [],
-                                            "referencedDeclaration": 6908,
-                                            "src": "351:4:17",
+                                            "referencedDeclaration": 10852,
+                                            "src": "352:4:25",
                                             "typeDescriptions": {
-                                                "typeIdentifier": "t_contract$_IBookOfGM_$387",
+                                                "typeIdentifier": "t_contract$_IBookOfGM_$331",
                                                 "typeString": "contract IBookOfGM"
                                             }
                                         },
@@ -201,28 +285,28 @@
                                                             "arguments": [
                                                                 {
                                                                     "expression": {
-                                                                        "id": 6916,
+                                                                        "id": 10861,
                                                                         "name": "TitleOfBooks",
                                                                         "nodeType": "Identifier",
                                                                         "overloadedDeclarations": [],
-                                                                        "referencedDeclaration": 887,
-                                                                        "src": "386:12:17",
+                                                                        "referencedDeclaration": 1483,
+                                                                        "src": "387:12:25",
                                                                         "typeDescriptions": {
-                                                                            "typeIdentifier": "t_type$_t_enum$_TitleOfBooks_$887_$",
+                                                                            "typeIdentifier": "t_type$_t_enum$_TitleOfBooks_$1483_$",
                                                                             "typeString": "type(enum RegCenterSetting.TitleOfBooks)"
                                                                         }
                                                                     },
-                                                                    "id": 6917,
+                                                                    "id": 10862,
                                                                     "isConstant": false,
                                                                     "isLValue": false,
                                                                     "isPure": true,
                                                                     "lValueRequested": false,
                                                                     "memberName": "BookOfGM",
                                                                     "nodeType": "MemberAccess",
-                                                                    "referencedDeclaration": 881,
-                                                                    "src": "386:21:17",
+                                                                    "referencedDeclaration": 1476,
+                                                                    "src": "387:21:25",
                                                                     "typeDescriptions": {
-                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$887",
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$1483",
                                                                         "typeString": "enum RegCenterSetting.TitleOfBooks"
                                                                     }
                                                                 }
@@ -230,30 +314,30 @@
                                                             "expression": {
                                                                 "argumentTypes": [
                                                                     {
-                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$887",
+                                                                        "typeIdentifier": "t_enum$_TitleOfBooks_$1483",
                                                                         "typeString": "enum RegCenterSetting.TitleOfBooks"
                                                                     }
                                                                 ],
-                                                                "id": 6915,
+                                                                "id": 10860,
                                                                 "isConstant": false,
                                                                 "isLValue": false,
                                                                 "isPure": true,
                                                                 "lValueRequested": false,
                                                                 "nodeType": "ElementaryTypeNameExpression",
-                                                                "src": "380:5:17",
+                                                                "src": "381:5:25",
                                                                 "typeDescriptions": {
                                                                     "typeIdentifier": "t_type$_t_uint8_$",
                                                                     "typeString": "type(uint8)"
                                                                 },
                                                                 "typeName": {
-                                                                    "id": 6914,
+                                                                    "id": 10859,
                                                                     "name": "uint8",
                                                                     "nodeType": "ElementaryTypeName",
-                                                                    "src": "380:5:17",
+                                                                    "src": "381:5:25",
                                                                     "typeDescriptions": {}
                                                                 }
                                                             },
-                                                            "id": 6918,
+                                                            "id": 10863,
                                                             "isConstant": false,
                                                             "isLValue": false,
                                                             "isPure": true,
@@ -261,7 +345,7 @@
                                                             "lValueRequested": false,
                                                             "names": [],
                                                             "nodeType": "FunctionCall",
-                                                            "src": "380:28:17",
+                                                            "src": "381:28:25",
                                                             "tryCall": false,
                                                             "typeDescriptions": {
                                                                 "typeIdentifier": "t_uint8",
@@ -277,32 +361,32 @@
                                                             }
                                                         ],
                                                         "expression": {
-                                                            "id": 6912,
+                                                            "id": 10857,
                                                             "name": "_gk",
                                                             "nodeType": "Identifier",
                                                             "overloadedDeclarations": [],
-                                                            "referencedDeclaration": 893,
-                                                            "src": "368:3:17",
+                                                            "referencedDeclaration": 1489,
+                                                            "src": "369:3:25",
                                                             "typeDescriptions": {
-                                                                "typeIdentifier": "t_contract$_IGeneralKeeper_$6958",
+                                                                "typeIdentifier": "t_contract$_IGeneralKeeper_$10915",
                                                                 "typeString": "contract IGeneralKeeper"
                                                             }
                                                         },
-                                                        "id": 6913,
+                                                        "id": 10858,
                                                         "isConstant": false,
                                                         "isLValue": false,
                                                         "isPure": false,
                                                         "lValueRequested": false,
                                                         "memberName": "getBook",
                                                         "nodeType": "MemberAccess",
-                                                        "referencedDeclaration": 6957,
-                                                        "src": "368:11:17",
+                                                        "referencedDeclaration": 10914,
+                                                        "src": "369:11:25",
                                                         "typeDescriptions": {
-                                                            "typeIdentifier": "t_function_external_view$_t_uint16_$returns$_t_address_$",
-                                                            "typeString": "function (uint16) view external returns (address)"
+                                                            "typeIdentifier": "t_function_external_view$_t_uint256_$returns$_t_address_$",
+                                                            "typeString": "function (uint256) view external returns (address)"
                                                         }
                                                     },
-                                                    "id": 6919,
+                                                    "id": 10864,
                                                     "isConstant": false,
                                                     "isLValue": false,
                                                     "isPure": false,
@@ -310,7 +394,7 @@
                                                     "lValueRequested": false,
                                                     "names": [],
                                                     "nodeType": "FunctionCall",
-                                                    "src": "368:41:17",
+                                                    "src": "369:41:25",
                                                     "tryCall": false,
                                                     "typeDescriptions": {
                                                         "typeIdentifier": "t_address",
@@ -325,18 +409,18 @@
                                                         "typeString": "address"
                                                     }
                                                 ],
-                                                "id": 6911,
+                                                "id": 10856,
                                                 "name": "IBookOfGM",
                                                 "nodeType": "Identifier",
                                                 "overloadedDeclarations": [],
-                                                "referencedDeclaration": 387,
-                                                "src": "358:9:17",
+                                                "referencedDeclaration": 331,
+                                                "src": "359:9:25",
                                                 "typeDescriptions": {
-                                                    "typeIdentifier": "t_type$_t_contract$_IBookOfGM_$387_$",
+                                                    "typeIdentifier": "t_type$_t_contract$_IBookOfGM_$331_$",
                                                     "typeString": "type(contract IBookOfGM)"
                                                 }
                                             },
-                                            "id": 6920,
+                                            "id": 10865,
                                             "isConstant": false,
                                             "isLValue": false,
                                             "isPure": false,
@@ -344,102 +428,242 @@
                                             "lValueRequested": false,
                                             "names": [],
                                             "nodeType": "FunctionCall",
-                                            "src": "358:52:17",
+                                            "src": "359:52:25",
                                             "tryCall": false,
                                             "typeDescriptions": {
-                                                "typeIdentifier": "t_contract$_IBookOfGM_$387",
+                                                "typeIdentifier": "t_contract$_IBookOfGM_$331",
                                                 "typeString": "contract IBookOfGM"
                                             }
                                         },
-                                        "src": "351:59:17",
+                                        "src": "352:59:25",
                                         "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IBookOfGM_$387",
+                                            "typeIdentifier": "t_contract$_IBookOfGM_$331",
                                             "typeString": "contract IBookOfGM"
                                         }
                                     },
-                                    "id": 6922,
+                                    "id": 10867,
                                     "nodeType": "ExpressionStatement",
-                                    "src": "351:59:17"
+                                    "src": "352:59:25"
+                                },
+                                {
+                                    "eventCall": {
+                                        "arguments": [
+                                            {
+                                                "arguments": [
+                                                    {
+                                                        "expression": {
+                                                            "id": 10871,
+                                                            "name": "TitleOfBooks",
+                                                            "nodeType": "Identifier",
+                                                            "overloadedDeclarations": [],
+                                                            "referencedDeclaration": 1483,
+                                                            "src": "446:12:25",
+                                                            "typeDescriptions": {
+                                                                "typeIdentifier": "t_type$_t_enum$_TitleOfBooks_$1483_$",
+                                                                "typeString": "type(enum RegCenterSetting.TitleOfBooks)"
+                                                            }
+                                                        },
+                                                        "id": 10872,
+                                                        "isConstant": false,
+                                                        "isLValue": false,
+                                                        "isPure": true,
+                                                        "lValueRequested": false,
+                                                        "memberName": "BookOfGM",
+                                                        "nodeType": "MemberAccess",
+                                                        "referencedDeclaration": 1476,
+                                                        "src": "446:21:25",
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_enum$_TitleOfBooks_$1483",
+                                                            "typeString": "enum RegCenterSetting.TitleOfBooks"
+                                                        }
+                                                    }
+                                                ],
+                                                "expression": {
+                                                    "argumentTypes": [
+                                                        {
+                                                            "typeIdentifier": "t_enum$_TitleOfBooks_$1483",
+                                                            "typeString": "enum RegCenterSetting.TitleOfBooks"
+                                                        }
+                                                    ],
+                                                    "id": 10870,
+                                                    "isConstant": false,
+                                                    "isLValue": false,
+                                                    "isPure": true,
+                                                    "lValueRequested": false,
+                                                    "nodeType": "ElementaryTypeNameExpression",
+                                                    "src": "440:5:25",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_type$_t_uint8_$",
+                                                        "typeString": "type(uint8)"
+                                                    },
+                                                    "typeName": {
+                                                        "id": 10869,
+                                                        "name": "uint8",
+                                                        "nodeType": "ElementaryTypeName",
+                                                        "src": "440:5:25",
+                                                        "typeDescriptions": {}
+                                                    }
+                                                },
+                                                "id": 10873,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": true,
+                                                "kind": "typeConversion",
+                                                "lValueRequested": false,
+                                                "names": [],
+                                                "nodeType": "FunctionCall",
+                                                "src": "440:28:25",
+                                                "tryCall": false,
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_uint8",
+                                                    "typeString": "uint8"
+                                                }
+                                            },
+                                            {
+                                                "arguments": [
+                                                    {
+                                                        "id": 10876,
+                                                        "name": "_bog",
+                                                        "nodeType": "Identifier",
+                                                        "overloadedDeclarations": [],
+                                                        "referencedDeclaration": 10852,
+                                                        "src": "478:4:25",
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_contract$_IBookOfGM_$331",
+                                                            "typeString": "contract IBookOfGM"
+                                                        }
+                                                    }
+                                                ],
+                                                "expression": {
+                                                    "argumentTypes": [
+                                                        {
+                                                            "typeIdentifier": "t_contract$_IBookOfGM_$331",
+                                                            "typeString": "contract IBookOfGM"
+                                                        }
+                                                    ],
+                                                    "id": 10875,
+                                                    "isConstant": false,
+                                                    "isLValue": false,
+                                                    "isPure": true,
+                                                    "lValueRequested": false,
+                                                    "nodeType": "ElementaryTypeNameExpression",
+                                                    "src": "470:7:25",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_type$_t_address_$",
+                                                        "typeString": "type(address)"
+                                                    },
+                                                    "typeName": {
+                                                        "id": 10874,
+                                                        "name": "address",
+                                                        "nodeType": "ElementaryTypeName",
+                                                        "src": "470:7:25",
+                                                        "typeDescriptions": {}
+                                                    }
+                                                },
+                                                "id": 10877,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": false,
+                                                "kind": "typeConversion",
+                                                "lValueRequested": false,
+                                                "names": [],
+                                                "nodeType": "FunctionCall",
+                                                "src": "470:13:25",
+                                                "tryCall": false,
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_address",
+                                                    "typeString": "address"
+                                                }
+                                            }
+                                        ],
+                                        "expression": {
+                                            "argumentTypes": [
+                                                {
+                                                    "typeIdentifier": "t_uint8",
+                                                    "typeString": "uint8"
+                                                },
+                                                {
+                                                    "typeIdentifier": "t_address",
+                                                    "typeString": "address"
+                                                }
+                                            ],
+                                            "id": 10868,
+                                            "name": "SetBookRuting",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 1503,
+                                            "src": "426:13:25",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_function_event_nonpayable$_t_uint256_$_t_address_$returns$__$",
+                                                "typeString": "function (uint256,address)"
+                                            }
+                                        },
+                                        "id": 10878,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "kind": "functionCall",
+                                        "lValueRequested": false,
+                                        "names": [],
+                                        "nodeType": "FunctionCall",
+                                        "src": "426:58:25",
+                                        "tryCall": false,
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_tuple$__$",
+                                            "typeString": "tuple()"
+                                        }
+                                    },
+                                    "id": 10879,
+                                    "nodeType": "EmitStatement",
+                                    "src": "421:63:25"
                                 }
                             ]
                         },
-                        "id": 6924,
+                        "functionSelector": "68258858",
+                        "id": 10881,
                         "implemented": true,
                         "kind": "function",
                         "modifiers": [],
-                        "name": "_getBOG",
-                        "nameLocation": "293:7:17",
+                        "name": "initBOG",
+                        "nameLocation": "323:7:25",
                         "nodeType": "FunctionDefinition",
                         "parameters": {
-                            "id": 6905,
+                            "id": 10853,
                             "nodeType": "ParameterList",
                             "parameters": [],
-                            "src": "300:2:17"
+                            "src": "330:2:25"
                         },
                         "returnParameters": {
-                            "id": 6909,
+                            "id": 10854,
                             "nodeType": "ParameterList",
-                            "parameters": [
-                                {
-                                    "constant": false,
-                                    "id": 6908,
-                                    "mutability": "mutable",
-                                    "name": "_bog",
-                                    "nameLocation": "335:4:17",
-                                    "nodeType": "VariableDeclaration",
-                                    "scope": 6924,
-                                    "src": "325:14:17",
-                                    "stateVariable": false,
-                                    "storageLocation": "default",
-                                    "typeDescriptions": {
-                                        "typeIdentifier": "t_contract$_IBookOfGM_$387",
-                                        "typeString": "contract IBookOfGM"
-                                    },
-                                    "typeName": {
-                                        "id": 6907,
-                                        "nodeType": "UserDefinedTypeName",
-                                        "pathNode": {
-                                            "id": 6906,
-                                            "name": "IBookOfGM",
-                                            "nodeType": "IdentifierPath",
-                                            "referencedDeclaration": 387,
-                                            "src": "325:9:17"
-                                        },
-                                        "referencedDeclaration": 387,
-                                        "src": "325:9:17",
-                                        "typeDescriptions": {
-                                            "typeIdentifier": "t_contract$_IBookOfGM_$387",
-                                            "typeString": "contract IBookOfGM"
-                                        }
-                                    },
-                                    "visibility": "internal"
-                                }
-                            ],
-                            "src": "324:16:17"
+                            "parameters": [],
+                            "src": "342:0:25"
                         },
-                        "scope": 6925,
-                        "src": "284:133:17",
-                        "stateMutability": "view",
+                        "scope": 10882,
+                        "src": "314:177:25",
+                        "stateMutability": "nonpayable",
                         "virtual": false,
-                        "visibility": "internal"
+                        "visibility": "external"
                     }
                 ],
-                "scope": 6926,
-                "src": "238:181:17",
+                "scope": 10883,
+                "src": "238:255:25",
                 "usedErrors": []
             }
         ],
-        "src": "130:290:17"
+        "src": "130:364:25"
     },
-    "functionHashes": {},
+    "functionHashes": {
+        "initBOG()": "68258858"
+    },
     "gasEstimates": {
         "creation": {
-            "codeDepositCost": "12600",
-            "executionCost": "66",
-            "totalCost": "12666"
+            "codeDepositCost": "75200",
+            "executionCost": "123",
+            "totalCost": "75323"
         },
-        "internal": {
-            "_getBOG()": "infinite"
+        "external": {
+            "initBOG()": "infinite"
         }
     }
 }

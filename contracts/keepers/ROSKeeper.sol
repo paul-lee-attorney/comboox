@@ -34,7 +34,7 @@ contract ROSKeeper is IROSKeeper, ROSSetting, BOSSetting, AccessControl {
         uint40 caller
     ) external onlyDirectKeeper {
         require(caller == uint40(sn >> 40), "ROSK.CS: not obligor");
-        _getROS().createSwap(sn, rightholder, paidOfConsider);
+        _ros.createSwap(sn, rightholder, paidOfConsider);
     }
 
     function transferSwap(uint256 seqOfSwap, uint40 to, uint64 amt, uint40 caller)

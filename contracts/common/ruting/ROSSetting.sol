@@ -11,7 +11,10 @@ import "../../books/ros/IRegisterOfSwaps.sol";
 import "../access/RegCenterSetting.sol";
 
 contract ROSSetting is RegCenterSetting {
-    function _getROS() internal view returns(IRegisterOfSwaps _ros) {
+    IRegisterOfSwaps internal _ros;
+
+    function initROS() external {
         _ros = IRegisterOfSwaps(_gk.getBook(uint8(TitleOfBooks.RegisterOfSwaps)));
+        emit SetBookRuting(uint8(TitleOfBooks.RegisterOfSwaps), address(_ros));
     }
 }

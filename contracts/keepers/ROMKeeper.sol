@@ -19,14 +19,14 @@ contract ROMKeeper is IROMKeeper, ROMSetting, AccessControl {
     // #############
 
     function setMaxQtyOfMembers(uint8 max) external onlyDirectKeeper {
-        _getROM().setMaxQtyOfMembers(max);
+        _rom.setMaxQtyOfMembers(max);
     }
 
     function setVoteBase(bool onPar) external onlyDirectKeeper {
-        _getROM().setVoteBase(onPar);
+        _rom.setVoteBase(onPar);
     }
 
     function setAmtBase(bool onPar) external onlyDirectKeeper {
-        _getROM().setAmtBase(onPar);
+        _rom.setAmtBase(onPar);
     }
 }

@@ -11,7 +11,11 @@ import "../../books/boo/IBookOfOptions.sol";
 import "../access/RegCenterSetting.sol";
 
 contract BOOSetting is RegCenterSetting {
-    function _getBOO() internal view returns(IBookOfOptions _boo) {
+
+    IBookOfOptions internal _boo;
+
+    function initBOO() external {
         _boo = IBookOfOptions(_gk.getBook(uint8(TitleOfBooks.BookOfOptions)));
+        emit SetBookRuting(uint8(TitleOfBooks.BookOfOptions), address(_boo));
     }
 }

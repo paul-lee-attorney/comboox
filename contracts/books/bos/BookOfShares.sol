@@ -52,7 +52,6 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         SharesRepo.Share memory newShare = 
             _repo.createShare(shareNumber, payInDeadline, paid, par);
 
-        IRegisterOfMembers _rom = _getROM();        
         _rom.addMember(newShare.head.shareholder);
 
         emit IssueShare(newShare.head.seqOfShare, paid, par);
@@ -67,7 +66,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         newShare = _repo.regShare(share);
         emit IssueShare(newShare.head.seqOfShare, newShare.body.paid, newShare.body.par);
 
-        _getROM().addShareToMember(newShare);
+        _rom.addShareToMember(newShare);
     }
 
     // ==== PayInCapital ====
@@ -92,8 +91,6 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
         SharesRepo.Share storage share = _repo.shares[uint32(bytes4(hashLock))];
         require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
-
-        IRegisterOfMembers _rom = _getROM();
 
         share.payInCapital(amount);
         _rom.changeAmtOfMember(share.head.shareholder, amount, 0, true);
@@ -127,7 +124,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _getROM().addMember(to);
+        _rom.addMember(to);
 
         SharesRepo.Share memory newShare;
 
@@ -162,7 +159,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _getROM().capDecrease(paid, par);
+        _rom.capDecrease(paid, par);
     }
 
     // ==== cleanAmt ====
@@ -219,8 +216,6 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
     function _decreaseShareAmt(SharesRepo.Share storage share, uint64 paid, uint64 par) 
         private 
     {
-        IRegisterOfMembers _rom = _getROM();
-
         if (par == share.body.par) {
             _rom.removeShareFromMember(share);
             _repo.deregShare(share.head.seqOfShare);

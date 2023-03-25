@@ -136,7 +136,7 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
         
-        if (_getBOA().getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
+        if (_boa.getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
             return false;
 
         if (
@@ -152,12 +152,12 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
         if (rule.triggerType == uint8(TriggerTypeOfAlongs.NoConditions))
             return true;
 
-        uint40 controllor = _getROM().controllor();
+        uint40 controllor = _rom.controllor();
 
-        if (controllor != _getROM().groupRep(deal.head.seller)) return false;
+        if (controllor != _rom.groupRep(deal.head.seller)) return false;
 
         (uint40 newControllor, uint16 shareRatio) = 
-            _getBOA().mockResultsOfIA(ia);
+            _boa.mockResultsOfIA(ia);
 
         if (controllor != newControllor) return true;
 

@@ -12,7 +12,10 @@ import "../../books/bog/IBookOfGM.sol";
 import "../access/RegCenterSetting.sol";
 
 contract BOGSetting is RegCenterSetting {
-    function _getBOG() internal view returns(IBookOfGM _bog) {
+    IBookOfGM internal _bog;
+
+    function initBOG() external {
         _bog = IBookOfGM(_gk.getBook(uint8(TitleOfBooks.BookOfGM)));
+        emit SetBookRuting(uint8(TitleOfBooks.BookOfGM), address(_bog));
     }
 }

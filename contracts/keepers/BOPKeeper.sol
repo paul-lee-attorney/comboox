@@ -35,13 +35,11 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
 
         PledgesRepo.Head memory head = sn.snParser();
 
-        IBookOfShares _bos = _getBOS();
-
         require(_bos.getShare(head.seqOfShare).head.shareholder == caller, 
             "BOPK.CP: NOT shareholder");
         require(head.pledgor == caller, "BOPK.CP: NOT pledgor");
 
-        head = _getBOP().createPledge(
+        head = _bop.createPledge(
             sn,
             creditor,
             guaranteeDays,
@@ -60,7 +58,6 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint64 amt,
         uint256 caller        
     ) external onlyDirectKeeper {
-        IBookOfPledges _bop = _getBOP();
         require(_bop.getPledge(seqOfShare, seqOfPld).body.creditor == caller,
             "BOPK.TP: not creditor");
         _bop.transferPledge(seqOfShare, seqOfPld, buyer, amt);
@@ -72,13 +69,12 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint64 amt,
         uint256 caller
     ) external onlyDirectKeeper {
-        IBookOfPledges _bop = _getBOP();
         PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
 
         require(pld.body.creditor == caller, "BOPK.RD: not creditor");
 
         pld = _bop.refundDebt(seqOfShare, seqOfPld, amt);
-        _getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
+        _bos.increaseCleanPaid(seqOfShare, pld.body.paid);
     }
 
     function extendPledge(
@@ -87,7 +83,6 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint16 extDays,
         uint256 caller
     ) external onlyDirectKeeper {
-        IBookOfPledges _bop = _getBOP();
         require(_bop.getPledge(seqOfShare, seqOfPld).head.pledgor == caller,
             "BOPK.EP: not pledgor");
         _bop.extendPledge(seqOfShare, seqOfPld, extDays);    
@@ -99,7 +94,6 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         bytes32 hashLock,
         uint256 caller
     ) external onlyDirectKeeper {
-        IBookOfPledges _bop = _getBOP();
         require(_bop.getPledge(seqOfShare, seqOfPld).body.creditor == caller,
             "BOPK.LP: not creditor");
         
@@ -112,13 +106,12 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         string memory hashKey,
         uint256 caller
     ) external onlyDirectKeeper {
-        IBookOfPledges _bop = _getBOP();
         PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
 
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
         
         _bop.releasePledge(seqOfShare, seqOfPld, hashKey);
-        _getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);       
+        _bos.increaseCleanPaid(seqOfShare, pld.body.paid);       
     }
 
     function execPledge(
@@ -126,16 +119,12 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint256 seqOfPld,
         uint256 caller
     ) external onlyDirectKeeper {
-        IBookOfPledges _bop = _getBOP();
         PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
 
         require(pld.body.creditor == caller,
             "BOPK.EP: not creditor");
 
         if (_bop.execPledge(seqOfShare, seqOfPld)) {
-            
-            IBookOfShares _bos = _getBOS();
-
             _bos.increaseCleanPaid(seqOfShare, pld.body.paid);
             _bos.transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid));
         }
@@ -146,12 +135,11 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint256 seqOfPld,
         uint256 caller
     ) external onlyDirectKeeper {
-        IBookOfPledges _bop = _getBOP();
         PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
 
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
         if (_bop.revokePledge(seqOfShare, seqOfPld)) {
-            _getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);   
+            _bos.increaseCleanPaid(seqOfShare, pld.body.paid);   
         }
     }
 }

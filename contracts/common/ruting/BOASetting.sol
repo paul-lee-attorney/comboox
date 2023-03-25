@@ -12,7 +12,10 @@ import "../../books/boa/IBookOfIA.sol";
 import "../access/RegCenterSetting.sol";
 
 contract BOASetting is RegCenterSetting {
-    function _getBOA() internal view returns (IBookOfIA _boa) {
+    IBookOfIA internal _boa;
+
+    function initBOA() external {
         _boa = IBookOfIA(_gk.getBook(uint8(TitleOfBooks.BookOfIA)));
+        emit SetBookRuting(uint8(TitleOfBooks.BookOfIA), address(_boa));
     }
 }

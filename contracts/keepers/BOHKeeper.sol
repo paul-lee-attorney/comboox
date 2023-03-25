@@ -40,7 +40,7 @@ contract BOHKeeper is
     // ##################
 
     modifier notEstablished(address body) {
-        require(_getBOH().getHeadOfDoc(body).state != 
+        require(_boh.getHeadOfDoc(body).state != 
             uint8(IRepoOfDocs.RODStates.Established), 
             "BOHK.mf.NE: Doc ALREADY Established");
         _;
@@ -64,12 +64,12 @@ contract BOHKeeper is
     // #############
 
     function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
-        _getBOH().setTemplate(temp, typeOfDoc);
+        _boh.setTemplate(temp, typeOfDoc);
     }
 
     function createSHA(uint8 typeOfDoc, uint256 caller) external onlyDirectKeeper {
-        require(_getROM().isMember(caller), "not MEMBER");
-        address sha = _getBOH().createDoc(typeOfDoc, caller);
+        require(_rom.isMember(caller), "not MEMBER");
+        address sha = _boh.createDoc(typeOfDoc, caller);
 
         IAccessControl(sha).init(
             caller,
@@ -85,7 +85,7 @@ contract BOHKeeper is
         onlyOwnerOf(sha, caller)
         notEstablished(sha)
     {
-        _getBOH().removeDoc(sha);
+        _boh.removeDoc(sha);
     }
 
     function circulateSHA(
@@ -101,7 +101,7 @@ contract BOHKeeper is
         RulesParser.VotingRule memory vr = 
             _getSHA().getRule(seqOfRule).votingRuleParser();
 
-        _getBOH().circulateDoc(sha, vr, docUrl, docHash);
+        _boh.circulateDoc(sha, vr, docUrl, docHash);
     }
 
     // ======== Sign SHA ========
@@ -112,14 +112,14 @@ contract BOHKeeper is
         uint256 caller
     ) external onlyDirectKeeper onlyPartyOf(sha, caller) {
         require(
-            _getBOH().getHeadOfDoc(sha).state == uint8(IRepoOfDocs.RODStates.Circulated),
+            _boh.getHeadOfDoc(sha).state == uint8(IRepoOfDocs.RODStates.Circulated),
             "SHA not in Circulated State"
         );
 
         ISigPage(sha).signDoc(true, caller, sigHash);
 
         if (ISigPage(sha).established()) 
-            _getBOH().setStateOfDoc(sha, uint8(IRepoOfDocs.RODStates.Established));
+            _boh.setStateOfDoc(sha, uint8(IRepoOfDocs.RODStates.Established));
     }
 
     function effectiveSHA(address sha, uint256 caller)
@@ -127,9 +127,6 @@ contract BOHKeeper is
         onlyDirectKeeper
         onlyPartyOf(sha, caller)
     {
-        IBookOfSHA _boh = _getBOH();
-        IRegisterOfMembers _rom = _getROM();
-
         require(
             _boh.getHeadOfDoc(sha).state ==
                 uint8(IRepoOfDocs.RODStates.Established),
@@ -148,7 +145,7 @@ contract BOHKeeper is
 
         _rom.setVoteBase(gr.basedOnPar);
 
-        _getBOD().setMaxQtyOfDirectors(gr.maxNumOfDirectors);
+        _bod.setMaxQtyOfDirectors(gr.maxNumOfDirectors);
 
         if (IShareholdersAgreement(sha).hasTitle(uint8(IShareholdersAgreement.TermTitle.LockUp)))
             _lockUpShares(sha);
@@ -164,7 +161,6 @@ contract BOHKeeper is
             uint8(IShareholdersAgreement.TermTitle.Options))).lockedShares();
         uint256 len = lockedShares.length;
         while (len > 0) {
-            IBookOfShares _bos = _getBOS();
             SharesRepo.Share memory share = _bos.getShare(lockedShares[len-1]);
             _bos.decreaseCleanPaid(share.head.seqOfShare, share.body.paid);
             len--;
@@ -174,7 +170,7 @@ contract BOHKeeper is
     function _regOptionTerms(address sha) private {
         address opts = IShareholdersAgreement(sha).
             getTerm(uint8(IShareholdersAgreement.TermTitle.Options));
-        _getBOO().regOptionTerms(opts);
+        _boo.regOptionTerms(opts);
     }
 
     function _updateGrouping(address sha, IRegisterOfMembers _rom) private {
@@ -204,7 +200,7 @@ contract BOHKeeper is
     }
 
     function _allMembersSigned(address sha) private view returns (bool) {
-        uint256[] memory members = _getROM().membersList();
+        uint256[] memory members = _rom.membersList();
         uint256 len = members.length;
         while (len > 0) {            
             if (!ISigPage(sha).isParty(members[len - 1]))
@@ -220,11 +216,11 @@ contract BOHKeeper is
         
         RulesParser.GovernanceRule memory gr = _getSHA().getRule(0).governanceRuleParser();
 
-        uint64 threashold = uint64(gr.shaEffectiveRatio) * _getROM().totalVotes() / 10000;
+        uint64 threashold = uint64(gr.shaEffectiveRatio) * _rom.totalVotes() / 10000;
         
         uint64 supportWeight;        
         while (len > 0) {
-            supportWeight += _getROM().votesInHand(parties[len-1]);
+            supportWeight += _rom.votesInHand(parties[len-1]);
             if (supportWeight > threashold) return true;
             len --;
         }

@@ -45,7 +45,7 @@ contract BODKeeper is
 
         uint8 title = bsr.nominationTitle[seqOfTitle];
 
-        _getBOD().appointOfficer(seqOfVR, title, nominator, candidate);
+        _bod.appointOfficer(seqOfVR, title, nominator, candidate);
     }
 
     function takePosition(
@@ -66,9 +66,6 @@ contract BODKeeper is
         // bytes32 vrRule = _getSHA().getRule(seqOfVR);
 
         uint8 title = bsr.nominationTitle[seqOfTitle];
-
-        IBookOfGM _bog = _getBOG();
-        IBookOfDirectors _bod = _getBOD();
 
         MotionsRepo.Head memory head = (vr.authority % 2 == 1) ? 
             _bog.getHeadOfMotion(motionId) : _bod.getHeadOfMotion(motionId);
@@ -95,8 +92,6 @@ contract BODKeeper is
 
     function removeDirector(uint256 director, uint256 appointer) external onlyDirectKeeper {
 
-        IBookOfDirectors _bod = _getBOD();
-
         require(
             _bod.isDirector(director),
             "BODKeeper.removeDirector: appointer is not a member"
@@ -110,8 +105,6 @@ contract BODKeeper is
     }
 
     function quitPosition(uint256 director) external onlyDirectKeeper {
-
-        IBookOfDirectors _bod = _getBOD();
 
         require(
             _bod.isDirector(director),
@@ -128,7 +121,7 @@ contract BODKeeper is
         uint256 delegate,
         uint256 motionId
     ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
-        _getBOD().entrustDelegate(motionId, caller, delegate);
+        _bod.entrustDelegate(motionId, caller, delegate);
     }
 
     function proposeAction(
@@ -140,7 +133,7 @@ contract BODKeeper is
         uint256 submitter,
         uint256 executor
     ) external onlyDirectKeeper directorExist(submitter) {
-        _getBOD().proposeAction(
+        _bod.proposeAction(
             typeOfAction,
             targets,
             values,
@@ -157,7 +150,7 @@ contract BODKeeper is
         bytes32 sigHash,
         uint256 caller
     ) external onlyDirectKeeper directorExist(caller) {
-        _getBOD().castVote(actionId, caller, attitude, sigHash);
+        _bod.castVote(actionId, caller, attitude, sigHash);
     }
 
     function voteCounting(uint256 motionId, uint256 caller)
@@ -165,7 +158,7 @@ contract BODKeeper is
         onlyDirectKeeper
         directorExist(caller)
     {
-        _getBOD().voteCounting(motionId);
+        _bod.voteCounting(motionId);
     }
 
     function execAction(
@@ -178,7 +171,7 @@ contract BODKeeper is
     ) external directorExist(caller) returns (uint256) {
         require(!_rc.isCOA(caller), "caller is not an EOA");
         return
-            _getBOD().execAction(
+            _bod.execAction(
                 typeOfAction,
                 targets,
                 values,

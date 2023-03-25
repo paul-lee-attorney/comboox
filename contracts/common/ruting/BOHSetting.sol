@@ -14,11 +14,14 @@ import "../access/RegCenterSetting.sol";
 
 contract BOHSetting is RegCenterSetting {
 
-    function _getBOH() internal view returns(IBookOfSHA _boh) {
+    IBookOfSHA internal _boh;
+
+    function initBOH() external {
         _boh = IBookOfSHA(_gk.getBook(uint8(TitleOfBooks.BookOfSHA)));
+        emit SetBookRuting(uint8(TitleOfBooks.BookOfSHA), address(_boh));
     }
 
     function _getSHA() internal view returns(IShareholdersAgreement _sha) {
-        _sha = IShareholdersAgreement(_getBOH().pointer());
+        _sha = IShareholdersAgreement(_boh.pointer());
     }
 }

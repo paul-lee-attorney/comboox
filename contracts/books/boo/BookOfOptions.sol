@@ -107,7 +107,7 @@ contract BookOfOptions is IBookOfOptions, BOSSetting, ROSSetting, AccessControl 
         uint64 paidOfConsider,
         uint32 seqOfTarget
     ) external onlyKeeper view returns (SwapsRepo.Swap memory swap) {
-        swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _getBOS());
+        swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _bos);
     }
 
     function regSwapOrder(
