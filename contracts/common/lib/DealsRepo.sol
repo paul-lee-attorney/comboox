@@ -8,15 +8,9 @@
 pragma solidity ^0.8.8;
 
 import "./EnumerableSet.sol";
-import "./SigsRepo.sol";
-
-import "../access/AccessControl.sol";
-
-import "../components/SigPage.sol";
 
 library DealsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
-    using SigsRepo for SigsRepo.Page;
 
     // _deals[0].head {
     //     seqOfDeal: counterOfClosedDeal;

@@ -8,7 +8,7 @@
 pragma solidity ^0.8.8;
 
 library RolesRepo {
-    bytes32 constant ATTORNEYS = bytes32("Attorneys");
+    bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
 
     struct GroupOfRole {
         mapping(uint256 => bool) isMember;
@@ -67,8 +67,8 @@ library RolesRepo {
         self.generalCounsel = gc;
 
         if (gc > 0) {
-            self.roles[ATTORNEYS].admin = gc;
-            self.roles[ATTORNEYS].isMember[gc] = true;
+            self.roles[_ATTORNEYS].admin = gc;
+            self.roles[_ATTORNEYS].isMember[gc] = true;
         }
     }
 

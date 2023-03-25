@@ -12,7 +12,6 @@ import "./DelegateMap.sol";
 import "./RulesParser.sol";
 
 import "../components/ISigPage.sol";
-import "../components/IRepoOfDocs.sol";
 
 import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/bod/IBookOfDirectors.sol";

@@ -9,7 +9,6 @@ pragma solidity ^0.8.8;
 
 
 import "./EnumerableSet.sol";
-import "../../books/rom/IRegisterOfMembers.sol";
 
 library DTClaims {
     using EnumerableSet for EnumerableSet.UintSet;

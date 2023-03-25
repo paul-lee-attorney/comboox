@@ -7,8 +7,6 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/boa/IInvestmentAgreement.sol";
-
 import "./ArrayUtils.sol";
 import "./TopChain.sol";
 import "./Checkpoints.sol";

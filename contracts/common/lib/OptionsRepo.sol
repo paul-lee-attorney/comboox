@@ -14,7 +14,6 @@ import "./CondsRepo.sol";
 import "./SwapsRepo.sol";
 
 import "../../books/bos/IBookOfShares.sol";
-import "../../books/ros/IRegisterOfSwaps.sol";
 
 library OptionsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -281,8 +280,6 @@ library OptionsRepo {
         require(rcd.obligors.contains(target.head.shareholder), "OR.IS: obligor not target shareholder");
         require(opt.body.rightholder == consider.head.shareholder, "OR.IS: rightholder not consider shareholder");
 
-        // SwapsRepo.Swap memory swap;
-
         swap.head = SwapsRepo.Head({
             seqOfSwap: 0,
             classOfTarget: target.head.class,
@@ -313,10 +310,6 @@ library OptionsRepo {
 
         swap.body.rightholder = opt.body.rightholder;
         swap.body.paidOfConsider = paidOfConsider;
-
-        // swap = _ros.regSwap(swap);
-
-        // swap.body = _ros.crystalizeSwap(swap.head.seqOfSwap, seqOfConsider, seqOfTarget);
     }
 
     function regSwapOrder(
