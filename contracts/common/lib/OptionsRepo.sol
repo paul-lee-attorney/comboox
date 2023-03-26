@@ -8,9 +8,9 @@
 pragma solidity ^0.8.8;
 
 import "./EnumerableSet.sol";
-import "./SharesRepo.sol";
 import "./Checkpoints.sol";
 import "./CondsRepo.sol";
+import "./SharesRepo.sol";
 import "./SwapsRepo.sol";
 
 import "../../books/bos/IBookOfShares.sol";

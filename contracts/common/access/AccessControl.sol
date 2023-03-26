@@ -9,15 +9,13 @@ pragma solidity ^0.8.8;
 
 import "./IAccessControl.sol";
 import "./RegCenterSetting.sol";
-import "../lib/RolesRepo.sol";
 
-// import "../../books/boh/IShareholdersAgreement.sol";
-// import "../../books/boh/IBookOfSHA.sol";
+import "../lib/RolesRepo.sol";
 
 contract AccessControl is IAccessControl, RegCenterSetting {
     using RolesRepo for RolesRepo.Roles;
 
-    bytes32 constant ATTORNEYS = bytes32("Attorneys");
+    bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
 
     RolesRepo.Roles internal _roles;
     // ##################
@@ -64,7 +62,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
 
     modifier onlyAttorney {
         require(
-            _roles.hasRole(ATTORNEYS, _msgSender()),
+            _roles.hasRole(_ATTORNEYS, _msgSender()),
             "AC.ot: not Attorney"
         );
         _;
@@ -72,7 +70,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
 
     modifier attorneyOrKeeper {
         require(
-            _roles.hasRole(ATTORNEYS, _msgSender()) ||
+            _roles.hasRole(_ATTORNEYS, _msgSender()) ||
                 _gk.isKeeper(msg.sender),
             "neither Attorney nor Bookeeper"
         );
@@ -151,7 +149,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     function lockContents() public onlyDirectKeeper {
         require(_roles.state == 1, "AC.onlyPending: Doc is finalized");
 
-        _roles.abandonRole(ATTORNEYS);
+        _roles.abandonRole(_ATTORNEYS);
         _roles.setGeneralCounsel(0);
         _roles.state = 2;
 

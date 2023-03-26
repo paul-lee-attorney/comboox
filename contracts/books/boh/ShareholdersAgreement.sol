@@ -14,12 +14,10 @@ import "../../books/boa/IInvestmentAgreement.sol";
 
 import "../../common/access/IAccessControl.sol";
 import "../../common/components/SigPage.sol";
+import "../../common/utils/CloneFactory.sol";
+import "../../common/ruting/BOHSetting.sol";
 
 import "../../common/lib/EnumerableSet.sol";
-
-import "../../common/utils/CloneFactory.sol";
-
-import "../../common/ruting/BOHSetting.sol";
 
 contract ShareholdersAgreement is
     IShareholdersAgreement,

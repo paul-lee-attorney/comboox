@@ -7,8 +7,8 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
 import "./ArrayUtils.sol";
+import "./EnumerableSet.sol";
 
 library SharesRepo {
     using EnumerableSet for EnumerableSet.UintSet;

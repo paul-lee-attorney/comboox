@@ -10,8 +10,8 @@ pragma solidity ^0.8.8;
 import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/bos/IBookOfShares.sol";
 
-import "./SharesRepo.sol";
 import "./EnumerableSet.sol";
+import "./SharesRepo.sol";
 
 library SwapsRepo {
     using EnumerableSet for EnumerableSet.UintSet;

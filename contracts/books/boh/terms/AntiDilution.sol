@@ -8,16 +8,11 @@
 pragma solidity ^0.8.8;
 
 import "../../boa/IInvestmentAgreement.sol";
-import "../../bos/IBookOfShares.sol";
-// import "../../bog/IBookOfGM.sol";
-import "../../rom/IRegisterOfMembers.sol";
 
 import "../../../common/access/AccessControl.sol";
 
 import "../../../common/lib/DealsRepo.sol";
 import "../../../common/lib/ArrayUtils.sol";
-// import "../../../common/lib/SNParser.sol";
-import "../../../common/lib/EnumerableSet.sol";
 import "../../../common/lib/SharesRepo.sol";
 
 import "../../../common/ruting/BOGSetting.sol";

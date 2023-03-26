@@ -8,10 +8,10 @@
 pragma solidity ^0.8.8;
 
 import "./ArrayUtils.sol";
-import "./TopChain.sol";
 import "./Checkpoints.sol";
 import "./EnumerableSet.sol";
 import "./SharesRepo.sol";
+import "./TopChain.sol";
 
 library MembersRepo {
     using Checkpoints for Checkpoints.History;

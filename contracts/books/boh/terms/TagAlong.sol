@@ -7,22 +7,16 @@
 
 pragma solidity ^0.8.8;
 
-import "../../boa/IInvestmentAgreement.sol";
-// import "../../boa/IBookOfIA.sol";
-import "../../bog/IBookOfGM.sol";
-
-import "../../../common/ruting/BOASetting.sol";
 import "../../../common/ruting/BOGSetting.sol";
-import "../../../common/lib/EnumerableSet.sol";
+
 import "../../../common/lib/ArrayUtils.sol";
-// import "../../../common/lib/SNParser.sol";
 
 import "./DragAlong.sol";
 
-contract TagAlong is BOASetting, BOGSetting, DragAlong {
-    using EnumerableSet for EnumerableSet.UintSet;
-    using ArrayUtils for uint40[];
+contract TagAlong is BOGSetting, DragAlong {
     using ArrayUtils for uint256[];
+    using EnumerableSet for EnumerableSet.UintSet;
+    // using ArrayUtils for uint40[];
 
     // #############
     // ##  写接口  ##

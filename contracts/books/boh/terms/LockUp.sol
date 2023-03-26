@@ -7,21 +7,18 @@
 
 pragma solidity ^0.8.8;
 
-import "../../boa/IInvestmentAgreement.sol";
-
 import "../../../common/access/AccessControl.sol";
+
 import "../../../common/lib/ArrayUtils.sol";
 import "../../../common/lib/EnumerableSet.sol";
 
-import "../../../common/ruting/BOASetting.sol";
 import "../../../common/ruting/BOGSetting.sol";
 
 import "./ILockUp.sol";
 
-contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
+contract LockUp is ILockUp, BOGSetting, AccessControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
-
 
     // 基准日条件未成就时，按“2105-09-19”设定到期日
     uint48 constant _REMOTE_FUTURE = 4282732800;
@@ -127,6 +124,5 @@ contract LockUp is ILockUp, BOASetting, BOGSetting, AccessControl {
 
         return _isExempted(deal.head.seqOfShare, agreedParties);
     }
-
 
 }

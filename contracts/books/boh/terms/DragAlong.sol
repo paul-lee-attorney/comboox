@@ -7,8 +7,6 @@
 
 pragma solidity ^0.8.8;
 
-// import "../../boa/IInvestmentAgreement.sol";
-
 import "../../../common/ruting/BOASetting.sol";
 import "../../../common/ruting/ROMSetting.sol";
 

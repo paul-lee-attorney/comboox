@@ -13,84 +13,114 @@ async function main() {
 	let libraries = {};
 
 	// ==== Libraries ====		
-	let libArrayUtils = await deployTool(deployer, "ArrayUtils", undefined);
-	let libDelegateMap = await deployTool(deployer, "DelegateMap", undefined);
-	let libBallotsBox = await deployTool(deployer, "BallotsBox", undefined);
-	let libCheckpoints = await deployTool(deployer, "Checkpoints", undefined);
-	let libEnumerableSet = await deployTool(deployer, "EnumerableSet", undefined);
-	let libRolesRepo = await deployTool(deployer, "RolesRepo", undefined);
-	let libSNParser = await deployTool(deployer, "SNParser", undefined);
-	let libSNFactory = await deployTool(deployer, "SNFactory", undefined);
-	let libTopChain = await deployTool(deployer, "TopChain", undefined);
-	
+	let libArrayUtils = await deployTool(deployer, "ArrayUtils", libraries);
+	let libBallotsBox = await deployTool(deployer, "BallotsBox", libraries);
+	let libCheckpoints = await deployTool(deployer, "Checkpoints", libraries);
+	let libEnumerableSet = await deployTool(deployer, "EnumerableSet", libraries);
+	let libDelegateMap = await deployTool(deployer, "DelegateMap", libraries);
+	let libFRClaims = await deployTool(deployer, "FRClaims", libraries);
+	let libRolesRepo = await deployTool(deployer, "RolesRepo", libraries);
+	let libRulesParser = await deployTool(deployer, "RulesParser", libraries);
+	let libTopChain = await deployTool(deployer, "TopChain", libraries);
+		
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address
 	};
 	
+	let libCondsRepo = await deployTool(deployer, "CondsRepo", libraries);
+	let libDealsRepo = await deployTool(deployer, "DealsRepo", libraries);
+	let libDTClaims = await deployTool(deployer, "DTClaims", libraries);
+	let libLockersRepo = await deployTool(deployer, "LockersRepo", libraries);
+	let libPledgesRepo = await deployTool(deployer, "PledgesRepo", libraries);
 	let libSigsRepo = await deployTool(deployer, "SigsRepo", libraries);
+	let libSwapsRepo = await deployTool(deployer, "SwapsRepo", libraries);
+
+	libraries = {
+		"BallotsBox": libBallotsBox.address
+	};
+
+	let libMotionsRepo = await deployTool(deployer, "MotionsRepo", libraries);
+
+	libraries = {
+		"ArrayUtils": libArrayUtils.address,
+		"EnumerableSet": libEnumerableSet.address
+	};
+
+	let libSharesRepo = await deployTool(deployer, "SharesRepo", libraries);
 
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address,
 		"Checkpoints": libCheckpoints.address,
-		"SNFactory": libSNFactory.address,
-		"SNParser": libSNParser.address
+		"CondsRepo": libCondsRepo.address
 	};
+
 	let libOptionsRepo = await deployTool(deployer, "OptionsRepo", libraries);
 
 	libraries = {
-		"EnumerableSet": libEnumerableSet.address,
+		"ArrayUtils": libArrayUtils.address,
 		"Checkpoints": libCheckpoints.address,
+		"EnumerableSet": libEnumerableSet.address,
+		"SharesRepo": libSharesRepo.address,
 		"TopChain": libTopChain.address
 	};
+
 	let libMembersRepo = await deployTool(deployer, "MembersRepo", libraries);
-
-	libraries = {
-		"BallotsBox": libBallotsBox.address,
-		"SNParser": libSNParser.address
-	};
-	let libMotionsRepo = await deployTool(deployer, "MotionsRepo", libraries);
-
+	
 	// ==== RegCenter ====
 	libraries = {
-		"SNParser": libSNParser.address
+		"LockersRepo": libLockersRepo.address
 	};
 	let rc = await deployTool(deployer, "RegCenter", libraries);
 
 	// ==== Templates ====
 	libraries = {
+		"ArrayUtils": libArrayUtils.address,
+		"DealsRepo": libDealsRepo.address,
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address,
-		"SNParser": libSNParser.address
+		"SigsRepo": libSigsRepo.address
 	};
+
 	let ia = await deployTool(deployer, "InvestmentAgreement", libraries);
 
 	libraries = {
-		"RolesRepo": libRolesRepo.address
-	};
-	let frd = await deployTool(deployer, "FirstRefusalDeals", libraries);
-
-	libraries = {
-		"MembersRepo": libMembersRepo.address,
-		"RolesRepo": libRolesRepo.address,
-		"SNParser": libSNParser.address,
-		"TopChain": libTopChain.address
-	};
-	let mr = await deployTool(deployer, "MockResults", libraries);
-
-	libraries = {
+		"ArrayUtils": libArrayUtils.address,
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address,
-		"SNParser": libSNParser.address
+		"SigsRepo": libSigsRepo.address
 	};
 	let sha = await deployTool(deployer, "ShareholdersAgreement", libraries);
 
 	libraries = {
-		"RolesRepo": libRolesRepo.address,
+		"ArrayUtils": libArrayUtils.address,
 		"EnumerableSet": libEnumerableSet.address,
-		"SNParser": libSNParser.address
+		"RolesRepo": libRolesRepo.address,
+	};
+	let ad = await deployTool(deployer, "AntiDilution", libraries);
+	let lu = await deployTool(deployer, "LockUp", libraries);
+
+	libraries = {
+		"EnumerableSet": libEnumerableSet.address,
+		"RolesRepo": libRolesRepo.address,
+		"RulesParser": libRulesParser.address
 	};
 	let da = await deployTool(deployer, "DragAlong", libraries);
+
+	libraries = {
+		"ArrayUtils": libArrayUtils.address,
+		"EnumerableSet": libEnumerableSet.address,
+		"RolesRepo": libRolesRepo.address,
+		"RulesParser": libRulesParser.address
+	};
+	let ta = await deployTool(deployer, "TagAlong", libraries);
 	
+	libraries = {
+		"EnumerableSet": libEnumerableSet.address,
+		"RolesRepo": libRolesRepo.address,
+		"OptionsRepo": libOptionsRepo.address
+	};
+	let op = await deployTool(deployer, "Options", libraries);
+
 };
 
 main()
