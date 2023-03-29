@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./IInvestmentAgreement.sol";
 import "./IBookOfIA.sol";
 
-import "../../common/components/RepoOfDocs.sol";
+import "../../common/components/FilesFolder.sol";
 
 import "../../common/lib/EnumerableSet.sol";
 import "../../common/lib/RulesParser.sol";
@@ -20,12 +20,12 @@ import "../../common/ruting/BOSSetting.sol";
 import "../../common/ruting/BOHSetting.sol";
 import "../../common/ruting/ROMSetting.sol";
 
-contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
-    using RulesParser for uint256;
-    using FRClaims for FRClaims.Claims;
+contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, FilesFolder {
     using DTClaims for DTClaims.Claims;
-    using TopChain for TopChain.Chain;
     using EnumerableSet for EnumerableSet.UintSet;
+    using FRClaims for FRClaims.Claims;
+    using RulesParser for uint256;
+    using TopChain for TopChain.Chain;
 
     // ia => frClaims
     mapping(address => FRClaims.Claims) private _frClaims;
@@ -59,7 +59,7 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
         uint256 caller,
         bytes32 sigHash
     ) external onlyKeeper returns (bool flag) {
-        Head memory headOfDoc = getHeadOfDoc(ia);
+        Head memory headOfDoc = getHeadOfFile(ia);
         require(headOfDoc.shaExecDeadline > block.timestamp, 
             "BOA.EFRR: missed shaExecDeadline");
 
@@ -74,8 +74,8 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
     }
 
     function _resetDoc(address ia, Head memory headOfDoc) private {
-        if (headOfDoc.state > uint8(RODStates.Circulated)) {
-            setStateOfDoc(ia, uint8(RODStates.Circulated));
+        if (headOfDoc.state > uint8(StateOfFile.Circulated)) {
+            setStateOfFile(ia, uint8(StateOfFile.Circulated));
             ISigPage(ia).setSigDeadline(false, headOfDoc.proposeDeadline);
         }
     }
@@ -104,7 +104,7 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, RepoOfDocs {
         if (_dtClaims[ia].execAlongRight(dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash))
         {
             emit ExecAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
-            _resetDoc(ia, getHeadOfDoc(ia));                
+            _resetDoc(ia, getHeadOfFile(ia));                
         }
     }
 

@@ -7,6 +7,9 @@
 
 pragma solidity ^0.8.8;
 
+import "../common/lib/MotionsRepo.sol";
+import "../common/lib/RulesParser.sol";
+
 interface IBODKeeper {
     function appointOfficer(
         uint256 seqOfBSR,
@@ -35,8 +38,8 @@ interface IBODKeeper {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 submitter,
-        uint256 executor
+        uint40 submitter,
+        uint40 executor
     ) external;
 
     function castVote(

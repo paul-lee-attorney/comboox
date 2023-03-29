@@ -11,11 +11,9 @@ import "../common/access/AccessControl.sol";
 
 import "../common/ruting/BOSSetting.sol";
 
-// import "../common/lib/SNParser.sol";
 import "./IBOSKeeper.sol";
 
 contract BOSKeeper is IBOSKeeper, BOSSetting, AccessControl {
-    // using SNParser for bytes32;
 
     // #############
     // ##   BOS   ##

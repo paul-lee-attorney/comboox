@@ -7,11 +7,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/components/IRepoOfDocs.sol";
+import "../../common/components/IFilesFolder.sol";
 import "../../common/lib/FRClaims.sol";
 import "../../common/lib/DTClaims.sol";
 
-interface IBookOfIA is IRepoOfDocs {
+interface IBookOfIA is IFilesFolder {
 
     //#################
     //##    Event    ##

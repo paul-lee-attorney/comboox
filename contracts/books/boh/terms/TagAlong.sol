@@ -9,14 +9,11 @@ pragma solidity ^0.8.8;
 
 import "../../../common/ruting/BOGSetting.sol";
 
-import "../../../common/lib/ArrayUtils.sol";
-
 import "./DragAlong.sol";
 
 contract TagAlong is BOGSetting, DragAlong {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
-    // using ArrayUtils for uint40[];
 
     // #############
     // ##  写接口  ##
@@ -36,7 +33,7 @@ contract TagAlong is BOGSetting, DragAlong {
 
         uint256[] memory agreedParties = consentParties.merge(signers);
 
-        uint256[] memory rightholders = _dragers[deal.head.seller].followers.values();
+        uint256[] memory rightholders = _repo.links[deal.head.seller].followers.values();
 
         return rightholders.fullyCoveredBy(agreedParties);
 

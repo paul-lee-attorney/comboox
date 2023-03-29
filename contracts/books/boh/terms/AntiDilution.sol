@@ -7,13 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../boa/IInvestmentAgreement.sol";
-
 import "../../../common/access/AccessControl.sol";
-
-import "../../../common/lib/DealsRepo.sol";
-import "../../../common/lib/ArrayUtils.sol";
-import "../../../common/lib/SharesRepo.sol";
 
 import "../../../common/ruting/BOGSetting.sol";
 import "../../../common/ruting/BOSSetting.sol";
@@ -25,9 +19,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
-    // classOfShare => Benchmark
-    mapping(uint256 => Benchmark) private _marks;
-    EnumerableSet.UintSet private _classes;
+    Ruler private _ruler;
 
     // #################
     // ##   修饰器    ##
@@ -47,23 +39,23 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         require (class > 0, "AD.AB: zero class");
         require (price > 0, "AD.AB: zero price");
 
-        _marks[class].classOfShare = uint16(class);
-        _marks[class].floorPrice = price;
+        _ruler.marks[class].classOfShare = uint16(class);
+        _ruler.marks[class].floorPrice = price;
 
-        _classes.add(class);
+        _ruler.classes.add(class);
     }
 
     function removeBenchmark(uint256 class) external onlyAttorney {
-        if (_classes.remove(class)) 
-            delete _marks[class];
+        if (_ruler.classes.remove(class)) 
+            delete _ruler.marks[class];
     }
 
     function addObligor(uint256 class, uint256 obligor) external onlyMarked(class) onlyAttorney {
-        _marks[class].obligors.add(obligor);
+        _ruler.marks[class].obligors.add(obligor);
     }
 
     function removeObligor(uint256 class, uint256 obligor) external onlyMarked(class) onlyAttorney {
-        _marks[class].obligors.remove(obligor);
+        _ruler.marks[class].obligors.remove(obligor);
     }
 
     // ################
@@ -71,25 +63,25 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
     // ################
 
     function isMarked(uint256 class) public view returns (bool flag) {
-        flag = _classes.contains(class);
+        flag = _ruler.classes.contains(class);
     }
 
     function getClasses() external view returns (uint256[] memory) {
-        return _classes.values();
+        return _ruler.classes.values();
     }
 
     function getFloorPriceOfClass(uint256 class)
         public
         view
         onlyMarked(class)
-        returns (uint64 price)
+        returns (uint32 price)
     {
-        price = _marks[class].floorPrice;
+        price = _ruler.marks[class].floorPrice;
     }
 
     function isObligor(uint256 class, uint256 acct) external view returns (bool flag)
     {
-        flag = _marks[class].obligors.contains(acct);
+        flag = _ruler.marks[class].obligors.contains(acct);
     }
 
     function getObligorsOfAD(uint256 class)
@@ -98,7 +90,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         onlyMarked(class)
         returns (uint256[] memory)
     {
-        return _marks[class].obligors.values();
+        return _ruler.marks[class].obligors.values();
     }
 
     function getGiftPaid(address ia, uint256 seqOfDeal, uint256 seqOfShare)
@@ -144,11 +136,11 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
             "AD.isExempted: zero consentParties"
         );
 
-        uint256 len = _classes.length();
+        uint256 len = _ruler.classes.length();
 
         while (len > 0) {
-            uint16 class = uint16 (_classes.at(len-1));
-            if (_marks[class].floorPrice > price) {
+            uint16 class = uint16 (_ruler.classes.at(len-1));
+            if (_ruler.marks[class].floorPrice > price) {
                 uint256[] memory members = _rom.getMembersOfClass(class);
 
                 if (members.length > consentParties.length) return false;

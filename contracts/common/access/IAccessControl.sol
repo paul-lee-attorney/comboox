@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/boh/IShareholdersAgreement.sol";
+import "../lib/RolesRepo.sol";
 
 interface IAccessControl {
 

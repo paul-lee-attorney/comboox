@@ -11,9 +11,6 @@ import "../common/access/AccessControl.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/BOPSetting.sol";
 
-import "../common/lib/PledgesRepo.sol";
-import "../common/lib/SharesRepo.sol";
-
 import "./IBOPKeeper.sol";
 
 contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {

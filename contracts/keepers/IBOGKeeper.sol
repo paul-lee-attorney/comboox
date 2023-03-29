@@ -7,6 +7,13 @@
 
 pragma solidity ^0.8.8;
 
+import "../common/lib/MotionsRepo.sol";
+import "../common/lib/RulesParser.sol";
+import "../common/lib/SharesRepo.sol";
+
+import "../common/components/IFilesFolder.sol";
+import "../common/components/ISigPage.sol";
+
 interface IBOGKeeper {
     // #####################
     // ##   CorpSetting   ##
@@ -26,9 +33,9 @@ interface IBOGKeeper {
         uint256 caller
     ) external;
 
-    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint256 candidate, uint256 nominator) external;
+    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint40 candidate, uint40 nominator) external;
 
-    function proposeDoc(address doc, uint256 seqOfVR, uint256 caller) external;
+    function proposeDoc(address doc, uint256 seqOfVR, uint40 caller) external;
 
     function proposeAction(
         uint256 typeOfAction,
@@ -36,8 +43,8 @@ interface IBOGKeeper {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 executor,
-        uint256 submitter
+        uint40 executor,
+        uint40 submitter
     ) external;
 
     function castVote(

@@ -7,9 +7,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/lib/TopChain.sol";
 import "../../common/lib/Checkpoints.sol";
+import "../../common/lib/EnumerableSet.sol"; 
+import "../../common/lib/MembersRepo.sol";
 import "../../common/lib/SharesRepo.sol";
+import "../../common/lib/TopChain.sol";
 
 interface IRegisterOfMembers {
     //##################

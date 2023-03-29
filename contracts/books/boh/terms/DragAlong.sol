@@ -7,15 +7,10 @@
 
 pragma solidity ^0.8.8;
 
+import "../../../common/access/AccessControl.sol";
+
 import "../../../common/ruting/BOASetting.sol";
 import "../../../common/ruting/ROMSetting.sol";
-
-import "../../../common/lib/RulesParser.sol";
-import "../../../common/lib/EnumerableSet.sol";
-import "../../../common/lib/SharesRepo.sol";
-
-import "../../../common/components/IRepoOfDocs.sol";
-import "../../../common/access/AccessControl.sol";
 
 import "./IAlongs.sol";
 
@@ -23,16 +18,14 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     using RulesParser for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    // drager => Drager
-    mapping(uint256 => Drager) internal _dragers;
-    EnumerableSet.UintSet private _dragersList;
+    DraggersRepo internal _repo;
 
     // ################
     // ##  modifier  ##
     // ################
 
     modifier dragerExist(uint256 drager) {
-        require(_dragersList.contains(drager), "DA.mf.DE: drager not exist");
+        require(_repo.draggersList.contains(drager), "DA.mf.DE: drager not exist");
         _;
     }
 
@@ -41,25 +34,25 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     // ################
 
     function createLink(uint256 rule, uint256 drager) external onlyAttorney {
-        if (_dragersList.add(drager)) {
-            _dragers[drager].linkRule = rule.linkRuleParser();
+        if (_repo.draggersList.add(drager)) {
+            _repo.links[drager].linkRule = rule.linkRuleParser();
         }
     }
 
     function addFollower(uint256 drager, uint256 follower) external onlyAttorney {
-        _dragers[drager].followers.add(follower);
+        _repo.links[drager].followers.add(follower);
     }
 
     function removeFollower(uint256 drager, uint256 follower)
         external
         onlyAttorney
     {
-        _dragers[drager].followers.remove(follower);
+        _repo.links[drager].followers.remove(follower);
     }
 
     function removeDrager(uint256 drager) external onlyAttorney {
-        if (_dragersList.remove(drager)) {
-            delete _dragers[drager];
+        if (_repo.draggersList.remove(drager)) {
+            delete _repo.links[drager];
         }
     }
 
@@ -68,11 +61,11 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
     // ################
 
     function linkRule(uint256 drager) external view returns (RulesParser.LinkRule memory) {
-        return _dragers[drager].linkRule;
+        return _repo.links[drager].linkRule;
     }
 
     function isDrager(uint256 drager) external view returns (bool) {
-        return _dragersList.contains(drager);
+        return _repo.draggersList.contains(drager);
     }
 
     function isLinked(uint256 drager, uint256 follower)
@@ -80,15 +73,15 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
         view
         returns (bool)
     {
-        return _dragers[drager].followers.contains(follower);
+        return _repo.links[drager].followers.contains(follower);
     }
 
     function dragers() external view returns (uint256[] memory) {
-        return _dragersList.values();
+        return _repo.draggersList.values();
     }
 
     function followers(uint256 drager) external view returns (uint256[] memory) {
-        return _dragers[drager].followers.values();
+        return _repo.links[drager].followers.values();
     }
 
     function priceCheck(
@@ -105,7 +98,7 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
             "DA.PC: caller is not drager"
         );
 
-        RulesParser.LinkRule memory lr = _dragers[caller].linkRule;
+        RulesParser.LinkRule memory lr = _repo.links[caller].linkRule;
 
         if (
             lr.triggerType <
@@ -134,7 +127,7 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
         
-        if (_boa.getHeadOfDoc(ia).state != uint8(IRepoOfDocs.RODStates.Circulated))
+        if (_boa.getHeadOfFile(ia).state != uint8(IFilesFolder.StateOfFile.Circulated))
             return false;
 
         if (
@@ -143,9 +136,9 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
             deal.head.typeOfDeal == uint8(DealsRepo.TypeOfDeal.PreEmptive)
         ) return false;
 
-        if (!_dragersList.contains(deal.head.seller)) return false;
+        if (!_repo.draggersList.contains(deal.head.seller)) return false;
 
-        RulesParser.LinkRule memory rule = _dragers[deal.head.seller].linkRule;
+        RulesParser.LinkRule memory rule = _repo.links[deal.head.seller].linkRule;
 
         if (rule.triggerType == uint8(TriggerTypeOfAlongs.NoConditions))
             return true;

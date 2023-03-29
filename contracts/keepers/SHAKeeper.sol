@@ -7,27 +7,12 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/boh/terms/IAntiDilution.sol";
-import "../books/boh/terms/ITerm.sol";
-import "../books/boh/terms/IAlongs.sol";
-
-import "../books/boh/IShareholdersAgreement.sol";
-
-import "../books/boa/IInvestmentAgreement.sol";
-
-import "../common/components/IRepoOfDocs.sol";
-import "../common/components/ISigPage.sol";
-
 import "../common/access/AccessControl.sol";
 
 import "../common/ruting/BOASetting.sol";
 import "../common/ruting/BOHSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
-
-import "../common/lib/RulesParser.sol";
-import "../common/lib/SharesRepo.sol";
-import "../common/lib/FRClaims.sol";
 
 import "./ISHAKeeper.sol";
 
@@ -47,7 +32,7 @@ contract SHAKeeper is
 
     modifier withinExecPeriod(address ia) {
         require(
-            _boa.getHeadOfDoc(ia).shaExecDeadline > block.timestamp,
+            _boa.getHeadOfFile(ia).shaExecDeadline > block.timestamp,
             "missed review period"
         );
         _;
@@ -55,7 +40,7 @@ contract SHAKeeper is
 
     modifier afterExecPeriod(address ia) {
         require(
-            _boa.getHeadOfDoc(ia).shaExecDeadline <= block.timestamp,
+            _boa.getHeadOfFile(ia).shaExecDeadline <= block.timestamp,
             "still within review period"
         );
         _;
@@ -63,7 +48,7 @@ contract SHAKeeper is
 
     modifier beforeProposeDeadline(address ia) {
         require(
-            _boa.getHeadOfDoc(ia).proposeDeadline >= block.timestamp,
+            _boa.getHeadOfFile(ia).proposeDeadline >= block.timestamp,
             "still within review period"
         );
         _;
@@ -71,8 +56,8 @@ contract SHAKeeper is
 
     modifier onlyEstablished(address ia) {
         require(
-            _boa.getHeadOfDoc(ia).state ==
-                uint8(IRepoOfDocs.RODStates.Established),
+            _boa.getHeadOfFile(ia).state ==
+                uint8(IFilesFolder.StateOfFile.Established),
             "IA not established"
         );
         _;
@@ -123,10 +108,10 @@ contract SHAKeeper is
 
         address term = dragAlong
             ? _getSHA().getTerm(
-                uint8(IShareholdersAgreement.TermTitle.DragAlong)
+                uint8(IRegCenter.TypeOfDoc.DragAlong)
             )
             : _getSHA().getTerm(
-                uint8(IShareholdersAgreement.TermTitle.TagAlong)
+                uint8(IRegCenter.TypeOfDoc.TagAlong)
             );
 
         require(ITerm(term).isTriggered(ia, deal), "not triggered");
@@ -229,7 +214,7 @@ contract SHAKeeper is
                 "SHAK.EAD: caller is an InitSigner");
 
         address ad = _getSHA().getTerm(
-            uint8(IShareholdersAgreement.TermTitle.AntiDilution)
+            uint8(IRegCenter.TypeOfDoc.AntiDilution)
         );
 
         uint64 giftPaid = IAntiDilution(ad).getGiftPaid(ia, seqOfDeal, seqOfShare);
@@ -327,7 +312,7 @@ contract SHAKeeper is
         require(caller == deal.body.buyer, "caller is not buyer");
 
         if (IInvestmentAgreement(ia).takeGift(seqOfDeal))
-            _boa.setStateOfDoc(ia, uint8(IRepoOfDocs.RODStates.Executed));
+            _boa.setStateOfFile(ia, uint8(IFilesFolder.StateOfFile.Executed));
 
         _bos.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _bos.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0);

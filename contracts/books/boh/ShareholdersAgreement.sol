@@ -8,32 +8,14 @@
 pragma solidity ^0.8.8;
 
 import "./IShareholdersAgreement.sol";
-import "./terms/ITerm.sol";
-
-import "../../books/boa/IInvestmentAgreement.sol";
-
-import "../../common/access/IAccessControl.sol";
-import "../../common/components/SigPage.sol";
-import "../../common/utils/CloneFactory.sol";
 import "../../common/ruting/BOHSetting.sol";
+import "../../common/components/SigPage.sol";
 
-import "../../common/lib/EnumerableSet.sol";
-
-contract ShareholdersAgreement is
-    IShareholdersAgreement,
-    CloneFactory,
-    BOHSetting,
-    SigPage
-{
+contract ShareholdersAgreement is IShareholdersAgreement, BOHSetting, SigPage {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    // title => body
-    mapping(uint256 => address) private _terms;
-    EnumerableSet.UintSet private _titlesList;
-
-    // seq => rule
-    mapping(uint256 => uint256) private _rules;
-    EnumerableSet.UintSet private _rulesList;
+    TermsRepo private _terms;
+    RulesRepo private _rules;
 
     //####################
     //##    modifier    ##
@@ -42,15 +24,7 @@ contract ShareholdersAgreement is
     modifier titleExist(uint256 title) {
         require(
             hasTitle(title),
-            "SHA.titleExist: SHA does not have such title"
-        );
-        _;
-    }
-
-    modifier tempReady(uint256 title) {
-        require(
-            _boh.tempReadyFor(title),
-            "SHA.tempReadyFor: Template NOT ready"
+            "SHA.mf.TE: title not exist"
         );
         _;
     }
@@ -59,16 +33,15 @@ contract ShareholdersAgreement is
     //##  Write I/O   ##
     //##################
 
-    function createTerm(uint256 title)
+    function createTerm(uint16 typeOfDoc, uint16 version)
         external
         onlyGeneralCounsel
-        tempReady(title)
         returns (address body)
     {
-        body = createClone(_boh.template(title));
-
         uint40 owner = getOwner();
         uint40 gc = getGeneralCounsel();
+
+        (, body) = _rc.createDoc(typeOfDoc, version, gc);        
 
         IAccessControl(body).init(
             owner,
@@ -79,21 +52,21 @@ contract ShareholdersAgreement is
 
         IAccessControl(body).setGeneralCounsel(gc);
 
-        _terms[title] = body;
-        _titlesList.add(title);
+        _terms.terms[typeOfDoc] = body;
+        _terms.seqList.add(typeOfDoc);
     }
 
-    function removeTerm(uint256 title) external onlyAttorney {
-        if (_titlesList.remove(title)) {
-            delete _terms[title];
+    function removeTerm(uint16 typeOfDoc) external onlyAttorney {
+        if (_terms.seqList.remove(typeOfDoc)) {
+            delete _terms.terms[typeOfDoc];
         }
     }
 
     function finalizeTerms() external onlyDirectKeeper {
-        uint256 len = _titlesList.length();
+        uint256 len = _terms.seqList.length();
 
         for (uint256 i = 0; i < len; i++) {
-            IAccessControl(_terms[_titlesList.at(i)]).lockContents();
+            IAccessControl(_terms.terms[_terms.seqList.at(i)]).lockContents();
         }
 
         lockContents();
@@ -105,13 +78,13 @@ contract ShareholdersAgreement is
 
         uint16 seq = uint16(rule >> 240);
 
-        _rules[seq] = rule;
-        _rulesList.add(seq);
+        _rules.rules[seq] = rule;
+        _rules.seqList.add(seq);
     }
 
     function removeRule(uint256 seq) external onlyAttorney {
-        if (_rulesList.remove(seq)) {
-            delete _rules[seq];
+        if (_rules.seqList.remove(seq)) {
+            delete _rules.rules[seq];
         }
     }
 
@@ -122,19 +95,19 @@ contract ShareholdersAgreement is
     // ==== Terms ====
 
     function hasTitle(uint256 title) public view returns (bool) {
-        return _titlesList.contains(title);
+        return _terms.seqList.contains(title);
     }
 
     function qtyOfTerms() external view returns (uint256) {
-        return _titlesList.length();
+        return _terms.seqList.length();
     }
 
     function titles() external view returns (uint256[] memory) {
-        return _titlesList.values();
+        return _terms.seqList.values();
     }
 
     function getTerm(uint256 title) external view returns (address) {
-        return _terms[title];
+        return _terms.terms[title];
     }
 
     function termIsTriggered(
@@ -142,7 +115,7 @@ contract ShareholdersAgreement is
         address ia,
         uint256 seqOfDeal
     ) public view titleExist(title) returns (bool) {
-        return ITerm(_terms[title]).isTriggered(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
+        return ITerm(_terms.terms[title]).isTriggered(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
     }
 
     function termIsExempted(
@@ -152,24 +125,24 @@ contract ShareholdersAgreement is
     ) external view titleExist(title) returns (bool) {
         if (!termIsTriggered(title, ia, seqOfDeal)) return true;
 
-        return ITerm(_terms[title]).isExempted(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
+        return ITerm(_terms.terms[title]).isExempted(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
     }
 
     // ==== Rules ====
     
     function hasRule(uint256 seq) external view returns (bool) {
-        return _rulesList.contains(seq);
+        return _rules.seqList.contains(seq);
     }
 
     function qtyOfRules() external view returns (uint256) {
-        return _rulesList.length();
+        return _rules.seqList.length();
     }
 
     function rules() external view returns (uint256[] memory) {
-        return _rulesList.values();
+        return _rules.seqList.values();
     }
 
     function getRule(uint256 seq) external view returns (uint256) {
-        return _rules[seq];
+        return _rules.rules[seq];
     }
 }

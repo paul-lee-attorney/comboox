@@ -8,15 +8,26 @@
 pragma solidity ^0.8.8;
 
 import "./ITerm.sol";
+import "../../boa/IInvestmentAgreement.sol";
+
+import "../../../common/lib/ArrayUtils.sol";
+import "../../../common/lib/DealsRepo.sol";
 import "../../../common/lib/EnumerableSet.sol";
+import "../../../common/lib/SharesRepo.sol";
 
 
 interface IAntiDilution is ITerm {
 
     struct Benchmark{
         uint16 classOfShare;
-        uint64 floorPrice;
+        uint32 floorPrice;
         EnumerableSet.UintSet obligors; 
+    }
+
+    struct Ruler {
+        // classOfShare => Benchmark
+        mapping(uint256 => Benchmark) marks;
+        EnumerableSet.UintSet classes;        
     }
 
     // ################
@@ -40,7 +51,7 @@ interface IAntiDilution is ITerm {
     function getClasses() external view returns (uint256[] memory);
 
     function getFloorPriceOfClass(uint256 class) external view
-        returns (uint64 price);
+        returns (uint32 price);
 
     function getObligorsOfAD(uint256 class)
         external view returns (uint256[] memory);

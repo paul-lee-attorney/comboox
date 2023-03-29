@@ -7,6 +7,8 @@
 
 pragma solidity ^0.8.8;
 
+import "../lib/ArrayUtils.sol";
+import "../lib/EnumerableSet.sol";
 import "../lib/SigsRepo.sol";
 
 interface ISigPage {

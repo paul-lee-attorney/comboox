@@ -21,7 +21,7 @@ contract RegCenterSetting {
         BookOfPledges, // 5
         BookOfShares, // 6
         RegisterOfMembers, // 7
-        RegisterOfSwaps
+        RegisterOfSwaps     // 8
     }
 
     IRegCenter internal _rc;
@@ -55,6 +55,6 @@ contract RegCenterSetting {
     }
 
     function _msgSender() internal returns (uint40) {
-        return _rc.userNo(msg.sender);
+        return _rc.getUserNo(msg.sender);
     }
 }

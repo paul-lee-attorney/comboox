@@ -7,9 +7,9 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/components/IRepoOfDocs.sol";
+import "../../common/components/IFilesFolder.sol";
 
-interface IBookOfSHA is IRepoOfDocs {
+interface IBookOfSHA is IFilesFolder {
 
     //##############
     //##  Event   ##

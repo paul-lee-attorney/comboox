@@ -9,17 +9,14 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfShares.sol";
 import "../../common/access/AccessControl.sol";
-import "../../common/lib/EnumerableSet.sol";
-import "../../common/lib/LockersRepo.sol";
 import "../../common/ruting/ROMSetting.sol";
 
 contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
+    using LockersRepo for LockersRepo.Repo;
     using SharesRepo for SharesRepo.Repo;
     using SharesRepo for SharesRepo.Share;
     using SharesRepo for SharesRepo.Head;
-    using LockersRepo for LockersRepo.Repo;
     using SharesRepo for uint256;
-    using EnumerableSet for EnumerableSet.UintSet;
 
     SharesRepo.Repo private _repo;
 

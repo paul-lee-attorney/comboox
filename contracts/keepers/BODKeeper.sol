@@ -13,9 +13,6 @@ import "../common/ruting/BODSetting.sol";
 import "../common/ruting/BOGSetting.sol";
 import "../common/ruting/BOHSetting.sol";
 
-import "../common/lib/MotionsRepo.sol";
-import "../common/lib/RulesParser.sol";
-
 import "./IBODKeeper.sol";
 
 contract BODKeeper is
@@ -130,8 +127,8 @@ contract BODKeeper is
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 submitter,
-        uint256 executor
+        uint40 submitter,
+        uint40 executor
     ) external onlyDirectKeeper directorExist(submitter) {
         _bod.proposeAction(
             typeOfAction,

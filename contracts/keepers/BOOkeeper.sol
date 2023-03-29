@@ -14,9 +14,6 @@ import "../common/access/AccessControl.sol";
 import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/ROSSetting.sol";
 
-import "../common/lib/OptionsRepo.sol";
-import "../common/lib/SwapsRepo.sol";
-
 contract BOOKeeper is IBOOKeeper, BOOSetting, ROSSetting, AccessControl {
 
     // ##################

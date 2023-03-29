@@ -7,12 +7,13 @@
 
 pragma solidity ^0.8.8;
 
-import "../lib/MotionsRepo.sol";
-import "../lib/DelegateMap.sol";
 import "../lib/BallotsBox.sol";
+import "../lib/DelegateMap.sol";
+import "../lib/EnumerableSet.sol";
+import "../lib/MotionsRepo.sol";
 import "../lib/RulesParser.sol";
 
-import "./IRepoOfDocs.sol";
+import "./IFilesFolder.sol";
 
 interface IMeetingMinutes {
 
@@ -52,22 +53,22 @@ interface IMeetingMinutes {
     function proposeMotion(
         uint256 motionId,
         uint256 seqOfVR,
-        uint256 proposer,
-        uint256 executor
+        uint40 proposer,
+        uint40 executor
     ) external;
 
     function nominateOfficer(
         uint256 seqOfVR,
         uint8 title, 
-        uint256 nominator, 
-        uint256 candidate
+        uint40 nominator, 
+        uint40 candidate
     ) external;
 
     function proposeDoc(
         address doc,
         uint256 seqOfVR,
-        uint256 proposer,
-        uint256 executor
+        uint40 proposer,
+        uint40 executor
     ) external;
 
     function proposeAction(
@@ -76,8 +77,8 @@ interface IMeetingMinutes {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 proposer,
-        uint256 executor
+        uint40 proposer,
+        uint40 executor
     ) external;
 
     // ==== delegate ====

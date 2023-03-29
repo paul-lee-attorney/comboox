@@ -9,28 +9,16 @@ pragma solidity ^0.8.8;
 
 import "./IRegCenter.sol";
 
-import "../lib/LockersRepo.sol";
-
 contract RegCenter is IRegCenter {
-    using LockersRepo for LockersRepo.Repo;
-
-    // users[0] {
-    //     primeKey: owner;
-    //     backupKey: bookeeper;
-    // }
-
-    // userNo => User
-    mapping(uint256 => User) private _users;
-
-    // key => userNo
-    mapping(address => uint40) private _userNo;
-
-    LockersRepo.Repo private _lockers;
+    using UsersRepo for UsersRepo.Repo;
+    using UsersRepo for uint256;
+    using DocsRepo for DocsRepo.Repo;
     
-    Reward private _rewards;
-
+    UsersRepo.Repo private _users;
+    DocsRepo.Repo private _docs;
+    
     constructor() {
-        _users[0].primeKey = msg.sender;
+        _users.users[0].primeKey = msg.sender;
     }
 
     // #################
@@ -39,37 +27,32 @@ contract RegCenter is IRegCenter {
 
     modifier onlyOwner() {
         require(
-            msg.sender == _users[0].primeKey,
-            "RC.onlyOwner: caller not owner"
+            msg.sender == _users.users[0].primeKey,
+            "RC.mf.OO: not owner"
         );
         _;
     }
 
     modifier onlyKeeper() {
         require(
-            msg.sender == _users[0].backupKey,
-            "RC.onlyKeeper: caller not keeper"
+            msg.sender == _users.users[0].backupKey,
+            "RC.mf.OK: not keeper"
         );
         _;
     }
 
     modifier onlyPrimeKey() {
         require(
-            msg.sender == _users[_userNo[msg.sender]].primeKey,
-            "RC.onlyPrimeKey: caller not primeKey"
+            msg.sender == _users.users[_users.userNo[msg.sender]].primeKey,
+            "RC.OP: not primeKey"
         );
-        _;
-    }
-
-    modifier onlyNewKey(address key) {
-        require(!isKey(key), "RC.onlyNewKey: used key");
         _;
     }
 
     modifier onlyEOA() {
         require(
-            !_users[_userNo[msg.sender]].isCOA,
-            "RC.onlyEOA: msgSender not EOA"
+            !_users.users[_users.userNo[msg.sender]].isCOA,
+            "RC.mf.OEOA: not EOA"
         );
         _;
     }
@@ -78,34 +61,20 @@ contract RegCenter is IRegCenter {
     // ##    Opts Setting    ##
     // ########################
 
-    function _rewardsParser(uint256 sn) private pure 
-        returns(Reward memory reward) 
-    {
-        reward = Reward({
-            eoaRewards: uint32(sn >> 224),
-            coaRewards: uint32(sn >> 192),
-            offAmt: uint32(sn >> 160),
-            discRate: uint16(sn >> 144),
-            distRatio: uint16(sn >> 128),
-            ceiling: uint64(sn >> 64),
-            floor: uint64(sn)
-        });
-    }
-
-    function setRewards(uint256 sn) external onlyOwner {
-        _rewards = _rewardsParser(sn);
-        emit SetRewards(sn);
+    function setReward(uint256 snOfReward) external onlyOwner {
+        _users.reward = snOfReward.rewardParser();
+        emit SetReward(snOfReward);
     }
 
     // ==== Power transfer ====
 
     function transferOwnership(address newOwner) external onlyOwner {
-        _users[0].primeKey = newOwner;
+        _users.users[0].primeKey = newOwner;
         emit TransferOwnership(newOwner);
     }
 
     function turnOverCenterKey(address newKeeper) external onlyKeeper {
-        _users[0].backupKey = newKeeper;
+        _users.users[0].backupKey = newKeeper;
         emit TurnOverCenterKey(newKeeper);
     }
 
@@ -113,121 +82,91 @@ contract RegCenter is IRegCenter {
     // ##    Points    ##
     // ##################
 
-    function mintPointsTo(uint256 to, uint216 amt) external onlyOwner {
-        _users[to].balance += amt;
-        emit MintPointsTo(to, amt);
+    function mintPoints(uint256 to, uint216 amt) external onlyOwner {
+        _users.users[to].balance += amt;
+        emit TransferPoints(0, to, amt);
     }
 
-    function mintAndLockPoints(uint256 sn, uint216 amt) external onlyOwner {
-        if (_lockers.lockValue(sn, amt, _userNo[msg.sender]))
-            emit LockPoints(sn, amt);
+    function mintAndLockPoints(uint256 snOfLocker, uint216 amt) external onlyOwner {
+        if (_users.mintAndLockPoints(snOfLocker, amt))
+            emit LockPoints(snOfLocker, amt);
     }
 
-    function transferPointsTo(uint256 to, uint216 amt)
+    function transferPoints(uint256 to, uint216 amt)
         external onlyPrimeKey onlyEOA
     {
-        uint40 caller = _userNo[msg.sender];
-
-        if (_users[caller].balance >= amt) {
-            _users[caller].balance -= amt;
-            _users[to].balance += amt;
-
-        } else revert("RC.transferPointsTo: insufficient balance");
+        if (_users.transferPoints(msg.sender, to, amt))
+            emit TransferPoints(_users.userNo[msg.sender], to, amt);
     }
 
-    function lockPoints(uint256 sn, uint216 amt) 
+    function lockPoints(uint256 snOfLocker, uint216 amt) 
         external onlyPrimeKey onlyEOA 
     {
-        uint40 caller = _userNo[msg.sender];
-
-        if (_users[caller].balance >= amt) {
-            _users[caller].balance -= amt;
-
-            if (_lockers.lockValue(sn, amt, caller))
-                emit LockPoints(sn, amt);
-
-        } else revert("RC.SP: insufficient balance");
+        if (_users.lockPoints(msg.sender, snOfLocker, amt))
+            emit LockPoints(snOfLocker, amt);
     }
 
-    function releasePoints(uint256 sn, string memory hashKey, uint8 salt)
+    function releasePoints(uint256 snOfLocker, string memory hashKey, uint8 salt)
         external onlyPrimeKey onlyEOA
     {
-        uint40 caller = _userNo[msg.sender];
+        uint256 value = _users.releasePoints(msg.sender, snOfLocker, hashKey, salt);
 
-        uint216 value = uint216(_lockers.releaseValue(sn, hashKey, salt, caller));
-
-        if (value > 0) {
-            _users[caller].balance += value;
-            emit ReleasePoints(sn, hashKey, salt, value);
-        }
+        if (value > 0)
+            emit ReleasePoints(snOfLocker, hashKey, salt, value);
     }
 
-    function withdrawPoints(uint256 sn, string memory hashKey, uint8 salt)
+    function withdrawPoints(uint256 snOfLocker, string memory hashKey, uint8 salt)
         external onlyPrimeKey onlyEOA
     {
-        uint40 caller = _userNo[msg.sender];
+        uint256 value = _users.withdrawPoints(msg.sender, snOfLocker, hashKey, salt);
 
-        uint216 value = uint216(_lockers.withdrawValue(sn, hashKey, salt, caller));
-
-        if (value > 0) {
-            _users[caller].balance += value;
-            emit WithdrawPoints(sn, hashKey, salt, value);
-        }
+        if (value > 0)
+            emit WithdrawPoints(snOfLocker, hashKey, salt, value);
     }
 
-    function checkLocker(uint256 sn) external onlyPrimeKey onlyEOA
-        view returns (uint216 amount)
+    function checkLocker(uint256 snOfLocker) external onlyPrimeKey onlyEOA
+        view returns (uint256 value)
     {
-        uint40 caller = _userNo[msg.sender];
-        amount = uint216(_lockers.checkLocker(sn, caller));        
+        value = _users.checkLocker(msg.sender, snOfLocker);
     }
 
-    // ##########################
-    // ##    User & Members    ##
-    // ##########################
-
-    // ==== reg user ====
+    // ################
+    // ##    Users   ##
+    // ################
 
     function regUser() external {
-        address msgSender = msg.sender;
-
-        require(!isKey(msgSender), "RC.RU: used key");
-
-        _users[0].attr++;        
-        uint40 seqOfUser = uint40(_users[0].attr);
-
-        _userNo[msgSender] = seqOfUser;
-
-        User storage user = _users[seqOfUser];
-
-        user.primeKey = msgSender;
-
-        // initial points awarded for new user;
-        if (_isContract(msgSender)) {
-            user.isCOA = true;
-            user.balance = _rewards.coaRewards;
-        } else user.balance = _rewards.eoaRewards;
+        _users.regUser(msg.sender);
     }
 
-    function _isContract(address acct) private view returns (bool) {
-        uint32 size;
-        assembly {
-            size := extcodesize(acct)
-        }
-        return size != 0;
+    function setBackupKey(address bKey) external onlyPrimeKey {
+        _users.setBackupKey(msg.sender, bKey);
     }
 
-    function setBackupKey(address bKey) external onlyPrimeKey onlyNewKey(bKey) {
-        uint40 caller = _userNo[msg.sender];
+    // ###############
+    // ##    Docs   ##
+    // ###############
+    function initDocsRepo(address docKeeper) external onlyKeeper {
+        if (_docs.init(_users.userNo[docKeeper]))
+            emit SetDocKeeper(docKeeper);
+    }
 
-        User storage user = _users[caller];
+    function turnOverKeyOfDocsRepo(address newKeeper) external {
+        if (_docs.turnOverRepoKey(_users.userNo[newKeeper], getMyUserNo()))
+            emit SetDocKeeper(newKeeper);
+    }
 
-        require(
-            user.backupKey == address(0),
-            "RC.setBackupKey: already set bKey"
-        );
-        user.backupKey = bKey;
-        _userNo[bKey] = caller;
+    function setTemplate(uint16 typeOfDoc, address body)
+        external returns (uint256 snOfDoc)
+    {
+        snOfDoc = _docs.setTemplate(typeOfDoc, body, getMyUserNo());
+        emit SetTemplate(snOfDoc, body);
+    }
+
+    function createDoc(uint16 typeOfDoc, uint16 version, uint40 creator) external 
+        returns(uint256 snOfDoc, address body)
+    {
+        (snOfDoc, body) = _docs.createDoc(typeOfDoc, version, creator);
+        // emit CreateDoc(snOfDoc, body);
     }
 
     // ##################
@@ -237,67 +176,93 @@ contract RegCenter is IRegCenter {
     // ==== options ====
 
     function getOwner() external view returns (address) {
-        return _users[0].primeKey;
+        return _users.users[0].primeKey;
     }
 
     function getBookeeper() external view returns (address) {
-        return _users[0].backupKey;
+        return _users.users[0].backupKey;
     }
 
-    function getRewardsSetting() external view 
-        returns (Reward memory)
+    function getRewardSetting() external view 
+        returns (UsersRepo.Reward memory)
     {
-        return _rewards;
+        return _users.reward;
     }
 
-    // ==== register ====
+    // ==== Users ====
 
     function isKey(address key) public view returns (bool) {
-        return _userNo[key] > 0;
+        return _users.userNo[key] > 0;
     }
 
     function isCOA(uint256 acct) public view returns(bool) {
-        return _users[acct].isCOA;
+        return _users.users[acct].isCOA;
     }
 
-    function getUser(uint256 acct) external view returns (User memory)
+    function getUser() external view returns (UsersRepo.User memory)
     {
-        require(_userNo[msg.sender] == acct,
-            "RC.GU: not user's primeKey");
-        return _users[acct];
+        return _users.users[_users.userNo[msg.sender]];
     }
 
-    function userNo(address targetAddr) external returns (uint40) {
-        uint40 target = _userNo[targetAddr];
-
-        if (msg.sender != targetAddr) {
-            uint64 fee = _chargeFee(target);
-
-            if (tx.origin != targetAddr) _chargeFee(_userNo[tx.origin]);
-            else _awardBonus(msg.sender, fee);
-        }
-
-        return target;
+    function getUserNo(address targetAddr) external returns (uint40) {
+        return _users.getUserNo(msg.sender, targetAddr);
     }
 
-    function _awardBonus(address querySender, uint64 fee) private {
-        uint40 sender = _userNo[querySender];
-        if (sender > 0) {
-            _users[sender].balance += (fee * uint64(_rewards.distRatio) / 10000);
-        }
+    function getMyUserNo() public view returns(uint40) {
+        return _users.userNo[msg.sender];
     }
 
-    function _chargeFee(uint40 user) private returns (uint64 fee) {
-        User storage u = _users[user];
+    // ==== Docs ====
 
-        uint32 coupon = u.counterOfV * _rewards.discRate + _rewards.offAmt;
-        fee = (coupon < (_rewards.ceiling - _rewards.floor)) ? 
-                    (_rewards.ceiling - coupon) : 
-                    _rewards.floor;
+    function counterOfVersions(uint16 typeOfDoc) external view returns(uint16 seq) {
+        seq = _docs.counterOfVersions(typeOfDoc);
+    }
 
-        if (u.balance >= fee) {
-            u.balance -= fee;
-            u.counterOfV++;
-        } else revert("RC.chargeFee: insufficient balance");
+    function counterOfDocs(uint16 typeOfDoc, uint16 version) external view returns(uint136 seq) {
+        seq = _docs.counterOfDocs(typeOfDoc, version);
+    }
+
+    function getDocKeeper () external view returns(uint40 keeper) {
+        keeper = _docs.getKeeper();
+    }
+
+    // ==== SingleCheck ====
+
+    function getTemplate(uint256 snOfDoc) external view returns (DocsRepo.Doc memory doc) {
+        doc = _docs.getTemplate(snOfDoc);
+    }
+
+    function docExist(uint256 snOfDoc) external view returns(bool) {
+        return _docs.docExist(snOfDoc);
+    }
+
+    function getDoc(uint256 snOfDoc) external view returns(DocsRepo.Doc memory doc) {
+        doc = _docs.getDoc(snOfDoc);
+    }
+
+    function verifyDoc(uint256 snOfDoc) external view returns(bool flag) {
+        flag = _docs.verifyDoc(snOfDoc);
+    }
+
+    // ==== BatchQuery ====
+
+    function getAllDocsSN() external view returns(uint256[] memory) {
+        return _docs.getAllSN();
+    }
+
+    function getBodiesList(uint16 typeOfDoc, uint16 version) external view returns(address[] memory) {
+        return _docs.getBodiesList(typeOfDoc, version);
+    } 
+
+    function getSNList(uint16 typeOfDoc, uint16 version) external view returns(uint256[] memory) {
+        return _docs.getSNList(typeOfDoc, version);
+    } 
+
+    function getDocsList(uint16 typeOfDoc, uint16 version) external view returns(DocsRepo.Doc[] memory) {
+        return _docs.getDocsList(typeOfDoc, version);
+    } 
+
+    function getTempsList(uint16 typeOfDoc) external view returns(DocsRepo.Doc[] memory) {
+        return _docs.getTempsList(typeOfDoc);
     }
 }

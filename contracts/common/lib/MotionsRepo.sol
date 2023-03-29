@@ -9,6 +9,7 @@ pragma solidity ^0.8.8;
 
 import "./BallotsBox.sol";
 import "./DelegateMap.sol";
+import "./EnumerableSet.sol";
 import "./RulesParser.sol";
 
 import "../components/ISigPage.sol";
@@ -18,6 +19,7 @@ import "../../books/bod/IBookOfDirectors.sol";
 
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     enum StateOfMotion {
         ZeroPoint,
@@ -52,26 +54,29 @@ library MotionsRepo {
         uint64 supportWeight;            
     }
 
+    struct Repo {
+        mapping(uint256 => Motion) motions;
+        EnumerableSet.UintSet motionIds;
+    }
+
     //##################
     //##    写接口    ##
     //##################
 
     // ==== propose ====
 
-    function proposeMotion(
-        Motion storage m,
-        RulesParser.VotingRule memory rule,
-        uint256 proposer,
-        uint256 executor
-    ) public returns (bool flag) {
-        if (!isProposed(m)) {
+    function proposeMotion(Repo storage repo, uint256 motionId, RulesParser.VotingRule memory rule, uint40 proposer, uint40 executor)
+        public returns (bool flag)
+    {
+        if (repo.motionIds.add(motionId)) {
+            Motion storage m = repo.motions[motionId];
 
             uint48 timestamp = uint48(block.timestamp);
 
             m.head = Head({
                 state: uint8(StateOfMotion.Proposed),
-                proposer: uint40(proposer),
-                executor: uint40(executor),
+                proposer: proposer,
+                executor: executor,
                 proposeDate: timestamp,
                 shareRegDate: timestamp + rule.shaExecDays * 86400,
                 voteStartDate: timestamp + (rule.shaExecDays + rule.reviewDays) * 86400
@@ -79,9 +84,9 @@ library MotionsRepo {
 
             m.votingRule = rule; 
 
-            flag = true;
+            flag = true;            
         }
-    }
+    } 
 
     // ==== vote ====
 

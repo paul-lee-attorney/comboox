@@ -7,18 +7,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/boh/IShareholdersAgreement.sol";
-import "../books/boh/terms/ILockUp.sol";
-
-import "../common/components/ISigPage.sol";
-
-import "../common/lib/RulesParser.sol";
-
 import "../common/ruting/BODSetting.sol";
+import "../common/ruting/BOHSetting.sol";
 import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
-import "../common/ruting/BOHSetting.sol";
 
 import "../common/access/AccessControl.sol";
 
@@ -40,8 +33,8 @@ contract BOHKeeper is
     // ##################
 
     modifier notEstablished(address body) {
-        require(_boh.getHeadOfDoc(body).state != 
-            uint8(IRepoOfDocs.RODStates.Established), 
+        require(_boh.getHeadOfFile(body).state != 
+            uint8(IFilesFolder.StateOfFile.Established), 
             "BOHK.mf.NE: Doc ALREADY Established");
         _;
     }
@@ -63,13 +56,13 @@ contract BOHKeeper is
     // ##   SHA   ##
     // #############
 
-    function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
-        _boh.setTemplate(temp, typeOfDoc);
-    }
+    // function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
+    //     _boh.setTemplate(temp, typeOfDoc);
+    // }
 
-    function createSHA(uint8 typeOfDoc, uint256 caller) external onlyDirectKeeper {
+    function createSHA(uint16 version, uint40 caller) external onlyDirectKeeper {
         require(_rom.isMember(caller), "not MEMBER");
-        address sha = _boh.createDoc(typeOfDoc, caller);
+        address sha = _boh.createDoc(uint8(IRegCenter.TypeOfDoc.ShareholdersAgreement), version, caller);
 
         IAccessControl(sha).init(
             caller,
@@ -79,14 +72,14 @@ contract BOHKeeper is
         );
     }
 
-    function removeSHA(address sha, uint256 caller)
-        external
-        onlyDirectKeeper
-        onlyOwnerOf(sha, caller)
-        notEstablished(sha)
-    {
-        _boh.removeDoc(sha);
-    }
+    // function removeSHA(address sha, uint256 caller)
+    //     external
+    //     onlyDirectKeeper
+    //     onlyOwnerOf(sha, caller)
+    //     notEstablished(sha)
+    // {
+    //     _boh.removeDoc(sha);
+    // }
 
     function circulateSHA(
         address sha,
@@ -112,14 +105,14 @@ contract BOHKeeper is
         uint256 caller
     ) external onlyDirectKeeper onlyPartyOf(sha, caller) {
         require(
-            _boh.getHeadOfDoc(sha).state == uint8(IRepoOfDocs.RODStates.Circulated),
+            _boh.getHeadOfFile(sha).state == uint8(IFilesFolder.StateOfFile.Circulated),
             "SHA not in Circulated State"
         );
 
         ISigPage(sha).signDoc(true, caller, sigHash);
 
         if (ISigPage(sha).established()) 
-            _boh.setStateOfDoc(sha, uint8(IRepoOfDocs.RODStates.Established));
+            _boh.setStateOfFile(sha, uint8(IFilesFolder.StateOfFile.Established));
     }
 
     function effectiveSHA(address sha, uint256 caller)
@@ -128,8 +121,8 @@ contract BOHKeeper is
         onlyPartyOf(sha, caller)
     {
         require(
-            _boh.getHeadOfDoc(sha).state ==
-                uint8(IRepoOfDocs.RODStates.Established),
+            _boh.getHeadOfFile(sha).state ==
+                uint8(IFilesFolder.StateOfFile.Established),
             "BOHK.ES: SHA not executed yet"
         );
 
@@ -147,10 +140,10 @@ contract BOHKeeper is
 
         _bod.setMaxQtyOfDirectors(gr.maxNumOfDirectors);
 
-        if (IShareholdersAgreement(sha).hasTitle(uint8(IShareholdersAgreement.TermTitle.LockUp)))
+        if (IShareholdersAgreement(sha).hasTitle(uint8(IRegCenter.TypeOfDoc.LockUp)))
             _lockUpShares(sha);
         
-        if (IShareholdersAgreement(sha).hasTitle(uint8(IShareholdersAgreement.TermTitle.Options))) 
+        if (IShareholdersAgreement(sha).hasTitle(uint8(IRegCenter.TypeOfDoc.Options))) 
             _regOptionTerms(sha);
 
         _updateGrouping(sha, _rom);
@@ -158,7 +151,7 @@ contract BOHKeeper is
 
     function _lockUpShares(address sha) private {
         uint256[] memory lockedShares = ILockUp(IShareholdersAgreement(sha).getTerm(
-            uint8(IShareholdersAgreement.TermTitle.Options))).lockedShares();
+            uint8(IRegCenter.TypeOfDoc.Options))).lockedShares();
         uint256 len = lockedShares.length;
         while (len > 0) {
             SharesRepo.Share memory share = _bos.getShare(lockedShares[len-1]);
@@ -169,7 +162,7 @@ contract BOHKeeper is
 
     function _regOptionTerms(address sha) private {
         address opts = IShareholdersAgreement(sha).
-            getTerm(uint8(IShareholdersAgreement.TermTitle.Options));
+            getTerm(uint8(IRegCenter.TypeOfDoc.Options));
         _boo.regOptionTerms(opts);
     }
 

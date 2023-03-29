@@ -11,17 +11,13 @@ import "./IRegisterOfMembers.sol";
 
 import "../../common/access/AccessControl.sol";
 
-import "../../common/lib/EnumerableSet.sol"; 
-import "../../common/lib/MembersRepo.sol";
-// import "../../common/lib/SharesRepo.sol"; 
-
 import "../../common/ruting/BOSSetting.sol";
 
 contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
+    using Checkpoints for Checkpoints.History;
+    using EnumerableSet for EnumerableSet.UintSet;
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
-    using EnumerableSet for EnumerableSet.UintSet;
-    using Checkpoints for Checkpoints.History;
 
     MembersRepo.Repo private _repo;
 

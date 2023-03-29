@@ -14,8 +14,6 @@ import "../../common/access/AccessControl.sol";
 import "../../common/ruting/BOSSetting.sol";
 import "../../common/ruting/ROMSetting.sol";
 
-import "../../common/lib/EnumerableSet.sol";
-
 contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using SwapsRepo for SwapsRepo.Repo;

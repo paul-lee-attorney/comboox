@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../../common/lib/SharesRepo.sol";
+import "../../common/lib/LockersRepo.sol";
 
 interface IBookOfShares {
 

@@ -11,9 +11,6 @@ import "./ISigPage.sol";
 
 import "../access/AccessControl.sol";
 
-import "../lib/EnumerableSet.sol";
-import "../lib/ArrayUtils.sol";
-
 contract SigPage is ISigPage, AccessControl {
     using SigsRepo for SigsRepo.Page;
     using EnumerableSet for EnumerableSet.UintSet;

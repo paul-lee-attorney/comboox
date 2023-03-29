@@ -7,18 +7,21 @@
 
 pragma solidity ^0.8.8;
 
+import "./terms/ITerm.sol";
+import "../../books/boa/IInvestmentAgreement.sol";
 import "../../common/components/ISigPage.sol";
+import "../../common/lib/EnumerableSet.sol";
 
 interface IShareholdersAgreement {
 
-    enum TermTitle {
-        ZeroPoint, //            0
-        LockUp, //              1
-        AntiDilution, //        2
-        DragAlong, //           3
-        TagAlong, //            4
-        Options //               5
-    }
+    // enum TypeOfDoc {
+    //      ...
+    //     AntiDilution,    22
+    //     DragAlong,       23
+    //     LockUp,          24
+    //     Options          25
+    //     TagAlong,        26
+    // }
 
     // ==== Rules ========
 
@@ -64,13 +67,25 @@ interface IShareholdersAgreement {
 
 */
 
+    struct TermsRepo {
+        // title => body
+        mapping(uint256 => address) terms;
+        EnumerableSet.UintSet seqList;
+    }
+
+    struct RulesRepo {
+        // seq => rule
+        mapping(uint256 => uint256) rules;
+        EnumerableSet.UintSet seqList;
+    }
+
     //##################
     //##    写接口     ##
     //##################
 
-    function createTerm(uint256 title) external returns (address body);
+    function createTerm(uint16 typeOfDoc, uint16 version) external returns (address body);
 
-    function removeTerm(uint256 title) external;
+    function removeTerm(uint16 typeOfDoc) external;
 
     function finalizeTerms() external;
 

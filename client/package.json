@@ -1,0 +1,14 @@
+{
+  "name": "client",
+  "version": "0.2.0",
+  "description": "client end of comboox",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "LI LI @ Jingtian & Gongcheng",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "ethers": "^5.4.0"
+  }
+}

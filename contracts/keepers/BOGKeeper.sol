@@ -10,7 +10,6 @@ pragma solidity ^0.8.8;
 import "./IBOGKeeper.sol";
 
 import "../books/boa/IInvestmentAgreement.sol";
-import "../books/boo/BookOfOptions.sol";
 
 import "../common/access/AccessControl.sol";
 
@@ -22,15 +21,6 @@ import "../common/ruting/BOOSetting.sol";
 import "../common/ruting/BOSSetting.sol";
 import "../common/ruting/ROMSetting.sol";
 import "../common/ruting/ROSSetting.sol";
-
-// import "../common/lib/SNFactory.sol";
-// import "../common/lib/SNParser.sol";
-import "../common/lib/MotionsRepo.sol";
-import "../common/lib/RulesParser.sol";
-import "../common/lib/SharesRepo.sol";
-
-import "../common/components/IRepoOfDocs.sol";
-import "../common/components/ISigPage.sol";
 
 contract BOGKeeper is
     IBOGKeeper,
@@ -69,8 +59,8 @@ contract BOGKeeper is
     function nominateOfficer(
         uint256 seqOfBSR, 
         uint256 seqOfTitle, 
-        uint256 nominator, 
-        uint256 candidate
+        uint40 nominator, 
+        uint40 candidate
     ) external onlyDirectKeeper memberExist(nominator){
         RulesParser.BoardSeatsRule memory bsr = 
             _getSHA().getRule(seqOfBSR).boardSeatsRuleParser();
@@ -86,7 +76,7 @@ contract BOGKeeper is
         else _bod.nominateOfficer(seqOfVR, title, nominator, candidate);
     }
 
-    function proposeDoc(address doc, uint256 seqOfVR, uint256 caller)
+    function proposeDoc(address doc, uint256 seqOfVR, uint40 caller)
         external
         onlyDirectKeeper
         memberExist(caller)
@@ -94,14 +84,14 @@ contract BOGKeeper is
         // ISigPage _page = ISigPageSetting(doc).getSigPage();
         require(ISigPage(doc).isParty(caller), "BOGK.PD: NOT Party of Doc");
 
-        IRepoOfDocs rod;
+        IFilesFolder rod;
         if (seqOfVR != 8 && seqOfVR != 18) rod = _boa;
         else if (seqOfVR == 8 || seqOfVR == 18) rod = _boh;
 
-        IRepoOfDocs.Head memory headOfDoc = rod.getHeadOfDoc(doc);
+        IFilesFolder.Head memory headOfDoc = rod.getHeadOfFile(doc);
 
         require(
-            headOfDoc.state == uint8(IRepoOfDocs.RODStates.Established),
+            headOfDoc.state == uint8(IFilesFolder.StateOfFile.Established),
             "BOGK.PD: doc not on Established"
         );
 
@@ -116,7 +106,7 @@ contract BOGKeeper is
             "BOGK.PM: missed votingDeadline"
         );
 
-        rod.setStateOfDoc(doc, uint8(IRepoOfDocs.RODStates.Proposed));
+        rod.setStateOfFile(doc, uint8(IFilesFolder.StateOfFile.Proposed));
 
         _bog.proposeDoc(doc, seqOfVR, caller, 0);
     }
@@ -128,8 +118,8 @@ contract BOGKeeper is
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 executor,
-        uint256 submitter
+        uint40 executor,
+        uint40 submitter
     ) external onlyDirectKeeper memberExist(submitter) {
         _bog.proposeAction(
             typeOfAction,

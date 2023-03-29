@@ -7,16 +7,23 @@
 
 pragma solidity ^0.8.8;
 
+import "../books/boh/IShareholdersAgreement.sol";
+import "../books/boh/terms/ILockUp.sol";
+
+import "../common/components/ISigPage.sol";
+
+import "../common/lib/RulesParser.sol";
+
 interface IBOHKeeper {
     // ############
     // ##  SHA   ##
     // ############
 
-    function setTempOfBOH(address temp, uint8 typeOfDoc) external;
+    // function setTempOfBOH(address temp, uint8 typeOfDoc) external;
 
-    function createSHA(uint8 typeOfDoc, uint256 caller) external;
+    function createSHA(uint16 version, uint40 caller) external;
 
-    function removeSHA(address sha, uint256 caller) external;
+    // function removeSHA(address sha, uint256 caller) external;
 
     function circulateSHA(
         address sha,

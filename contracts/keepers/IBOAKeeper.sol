@@ -7,16 +7,25 @@
 
 pragma solidity ^0.8.8;
 
+import "../books/boa/IInvestmentAgreement.sol";
+
+import "../common/components/IFilesFolder.sol";
+import "../common/components/ISigPage.sol";
+
+import "../common/lib/DocsRepo.sol";
+import "../common/lib/RulesParser.sol";
+import "../common/lib/SharesRepo.sol";
+
 interface IBOAKeeper {
     // #################
     // ##   Write IO  ##
     // #################
 
-    function setTempOfIA(address temp, uint256 typeOfDoc) external;
+    // function setTempOfIA(address temp, uint256 typeOfDoc) external;
 
-    function createIA(uint256 typeOfDoc, uint256 caller) external;
+    function createIA(uint16 version, uint40 caller) external;
 
-    function removeIA(address ia, uint256 caller) external;
+    // function removeIA(address ia, uint256 caller) external;
 
     function circulateIA(
         address ia,

@@ -7,6 +7,9 @@
 
 pragma solidity ^0.8.8;
 
+import "../common/lib/PledgesRepo.sol";
+import "../common/lib/SharesRepo.sol";
+
 interface IBOPKeeper {
     // ###################
     // ##   BOPKeeper   ##

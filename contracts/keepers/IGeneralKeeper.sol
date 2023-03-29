@@ -7,6 +7,18 @@
 
 pragma solidity ^0.8.8;
 
+import "../common/lib/RolesRepo.sol";
+
+import "./IBOAKeeper.sol";
+import "./IBODKeeper.sol";
+import "./IBOHKeeper.sol";
+import "./IBOGKeeper.sol";
+import "./IBOOKeeper.sol";
+import "./IBOPKeeper.sol";
+import "./IBOSKeeper.sol";
+import "./IROMKeeper.sol";
+import "./ISHAKeeper.sol";
+
 interface IGeneralKeeper {
 
     // enum TitleOfKeepers {
@@ -19,6 +31,18 @@ interface IGeneralKeeper {
     //     BOSKeeper, // 6
     //     ROMKeeper, // 7
     //     SHAKeeper // 8
+    // }
+
+    // enum TitleOfBooks {
+    //     BOA, // 0
+    //     BOD, // 1
+    //     BOG, // 2
+    //     BOH, // 3
+    //     BOO, // 4
+    //     BOP, // 5
+    //     BOS, // 6
+    //     ROM, // 7
+    //     ROS // 8
     // }
 
     // ###############

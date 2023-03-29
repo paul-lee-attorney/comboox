@@ -9,23 +9,14 @@ pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
 
-import "../common/lib/RolesRepo.sol";
-
 import "./IGeneralKeeper.sol";
-import "./IBOAKeeper.sol";
-import "./IBODKeeper.sol";
-import "./IBOHKeeper.sol";
-import "./IBOGKeeper.sol";
-import "./IBOOKeeper.sol";
-import "./IBOPKeeper.sol";
-import "./IBOSKeeper.sol";
-import "./IROMKeeper.sol";
-import "./ISHAKeeper.sol";
 
 contract GeneralKeeper is IGeneralKeeper, AccessControl {
     using RolesRepo for RolesRepo.Roles;
 
     bytes32 public regNumHash;
+    string public nameOfCompany;
+    string public symbolOfCompany;
 
     mapping(uint256 => address) private _books;
     mapping(uint256 => address) private _keepers;
@@ -72,17 +63,17 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   BOAKeeper   ##
     // ###################
 
-    function setTempOfIA(address temp, uint256 typeOfDoc) external onlyDirectKeeper {
-        IBOAKeeper(_keepers[0]).setTempOfIA(temp, typeOfDoc);
+    // function setTempOfIA(address temp, uint256 typeOfDoc) external onlyDirectKeeper {
+    //     IBOAKeeper(_keepers[0]).setTempOfIA(temp, typeOfDoc);
+    // }
+
+    function createIA(uint16 version) external {
+        IBOAKeeper(_keepers[0]).createIA(version, _msgSender());
     }
 
-    function createIA(uint256 typeOfIA) external {
-        IBOAKeeper(_keepers[0]).createIA(typeOfIA, _msgSender());
-    }
-
-    function removeIA(address body) external {
-        IBOAKeeper(_keepers[0]).removeIA(body, _msgSender());
-    }
+    // function removeIA(address body) external {
+    //     IBOAKeeper(_keepers[0]).removeIA(body, _msgSender());
+    // }
 
     function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external {
         IBOAKeeper(_keepers[0]).circulateIA(body, _msgSender(), docUrl, docHash);
@@ -154,7 +145,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 executor
+        uint40 executor
     ) external {
         IBODKeeper(_keepers[1]).proposeAction(
             typeOfAction,
@@ -212,7 +203,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOGKeeper(_keepers[2]).entrustDelegate(motionId, delegate, _msgSender());
     }
 
-    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint256 candidate) external {
+    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint40 candidate) external {
         IBOGKeeper(_keepers[2]).nominateOfficer(seqOfBSR, seqOfTitle, candidate, _msgSender());
     }
 
@@ -226,7 +217,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 executor
+        uint40 executor
     ) external {
         IBOGKeeper(_keepers[2]).proposeAction(
                 typeOfAction,
@@ -281,17 +272,17 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  BOHKeeper   ##
     // ##################
 
-    function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
-        IBOHKeeper(_keepers[3]).setTempOfBOH(temp, typeOfDoc);
+    // function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
+    //     IBOHKeeper(_keepers[3]).setTempOfBOH(temp, typeOfDoc);
+    // }
+
+    function createSHA(uint16 version) external {
+        IBOHKeeper(_keepers[3]).createSHA(version, _msgSender());
     }
 
-    function createSHA(uint8 typeOfDoc) external {
-        IBOHKeeper(_keepers[3]).createSHA(typeOfDoc, _msgSender());
-    }
-
-    function removeSHA(address body) external {
-        IBOHKeeper(_keepers[3]).removeSHA(body, _msgSender());
-    }
+    // function removeSHA(address body) external {
+    //     IBOHKeeper(_keepers[3]).removeSHA(body, _msgSender());
+    // }
 
     function circulateSHA(address body, uint256 seqOfVR, bytes32 docUrl, bytes32 docHash) external {
         IBOHKeeper(_keepers[3]).circulateSHA(body, seqOfVR, docUrl, docHash, _msgSender());

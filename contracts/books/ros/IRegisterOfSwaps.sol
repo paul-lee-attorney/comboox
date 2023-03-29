@@ -7,6 +7,7 @@
 
 pragma solidity ^0.8.8;
 
+import "../../common/lib/EnumerableSet.sol";
 import "../../common/lib/SwapsRepo.sol";
 
 interface IRegisterOfSwaps {

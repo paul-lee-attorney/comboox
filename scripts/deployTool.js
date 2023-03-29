@@ -1,6 +1,15 @@
+// SPDX-License-Identifier: UNLICENSED
+
+/* *
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * All Rights Reserved.
+ * */
 
 const hre = require("hardhat");
 const path = require("path");
+const fs = require("fs");
+
+const contractsDir = path.join(__dirname, "..", "client", "src", "contracts");
 
 async function deployTool(signer, targetName, libraries) {
 
@@ -22,8 +31,6 @@ async function deployTool(signer, targetName, libraries) {
 };
 
 function saveFrontendFiles(targetName, target) {
-  const fs = require("fs");
-  const contractsDir = path.join(__dirname, "..", "client", "src", "contracts");
 
   if (!fs.existsSync(contractsDir)) {
     fs.mkdirSync(contractsDir);
@@ -31,7 +38,7 @@ function saveFrontendFiles(targetName, target) {
 
   const fileNameOfContractAddrList = path.join(contractsDir, "contract-address.json");
 
-  let objContractAddrList = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
+  const objContractAddrList = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
   objContractAddrList[targetName] = target.address;
 
   fs.writeFileSync(
@@ -39,16 +46,27 @@ function saveFrontendFiles(targetName, target) {
     JSON.stringify(objContractAddrList, undefined, 2)
   );
 
-  const TargetArtifact = hre.artifacts.readArtifactSync(targetName);
+  copyArtifactsOf(targetName);
+};
 
-  let fileNameOfTargetArtifact = targetName + ".json";
+async function copyArtifactsOf(targetName) {
+
+  if (!fs.existsSync(contractsDir)) {
+    fs.mkdirSync(contractsDir);
+  }
+
+  const TargetArtifact = hre.artifacts.readArtifactSync(targetName);
+  const fileNameOfTargetArtifact = targetName + ".json";
 
   fs.writeFileSync(
     path.join(contractsDir, fileNameOfTargetArtifact),
     JSON.stringify(TargetArtifact, null, 2)
   );
+
+  console.log("Copied ", targetName, "'s artifacts to file: ", fileNameOfTargetArtifact);
 };
 
 module.exports = {
-  deployTool
+  deployTool,
+  copyArtifactsOf
 };

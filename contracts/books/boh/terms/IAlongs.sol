@@ -7,13 +7,13 @@
 
 pragma solidity ^0.8.8;
 
+import "../../../common/lib/ArrayUtils.sol";
 import "../../../common/lib/DealsRepo.sol";
 import "../../../common/lib/EnumerableSet.sol";
 import "../../../common/lib/SharesRepo.sol";
 import "../../../common/lib/RulesParser.sol";
 
-// import "../../boa/IInvestmentAgreement.sol";
-// import "../../bos/IBookOfShares.sol";
+import "../../../common/components/IFilesFolder.sol";
 
 interface IAlongs {
 
@@ -24,9 +24,15 @@ interface IAlongs {
         ControlChangedWithHigherROE
     }
 
-    struct Drager {
+    struct Link {
         EnumerableSet.UintSet followers;
         RulesParser.LinkRule linkRule;
+    }
+
+    struct DraggersRepo {        
+        // drager => Link
+        mapping(uint256 => Link) links;
+        EnumerableSet.UintSet  draggersList;
     }
 
     // ################

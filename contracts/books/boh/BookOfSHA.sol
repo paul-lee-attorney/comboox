@@ -9,9 +9,9 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfSHA.sol";
 
-import "../../common/components/RepoOfDocs.sol";
+import "../../common/components/FilesFolder.sol";
 
-contract BookOfSHA is IBookOfSHA, RepoOfDocs {
+contract BookOfSHA is IBookOfSHA, FilesFolder {
 
     address private _pointer;
 
@@ -20,8 +20,8 @@ contract BookOfSHA is IBookOfSHA, RepoOfDocs {
     //##################
 
     function changePointer(address body) external onlyDirectKeeper onlyRegistered(body) {
-        if (_pointer != address(0)) setStateOfDoc(_pointer, uint8(RODStates.Revoked));
-        setStateOfDoc(body, uint8(RODStates.Executed));
+        if (_pointer != address(0)) setStateOfFile(_pointer, uint8(StateOfFile.Revoked));
+        setStateOfFile(body, uint8(StateOfFile.Executed));
         _pointer = body;
         emit ChangePointer(body);
     }

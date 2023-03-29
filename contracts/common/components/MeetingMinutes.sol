@@ -7,33 +7,22 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/access/AccessControl.sol";
+import "../access/AccessControl.sol";
 
-import "../../common/ruting/BODSetting.sol";
-import "../../common/ruting/BOHSetting.sol";
-import "../../common/ruting/ROMSetting.sol";
-
-import "../../books/rom/IRegisterOfMembers.sol";
-import "../../books/bod/IBookOfDirectors.sol";
-
-import "../../common/lib/RulesParser.sol";
-import "../../common/lib/EnumerableSet.sol";
-import "../../common/lib/MotionsRepo.sol";
-import "../../common/lib/DelegateMap.sol";
-import "../../common/lib/BallotsBox.sol";
-
-import "../../common/components/IRepoOfDocs.sol";
+import "../ruting/BODSetting.sol";
+import "../ruting/BOHSetting.sol";
+import "../ruting/ROMSetting.sol";
 
 import "./IMeetingMinutes.sol";
 
 contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, AccessControl {
     using DelegateMap for DelegateMap.Map;
-    using BallotsBox for BallotsBox.Box;
     using EnumerableSet for EnumerableSet.UintSet;
     using MotionsRepo for MotionsRepo.Motion;
+    using MotionsRepo for MotionsRepo.Repo;
+    using RulesParser for uint256;
 
-    mapping (uint256 => MotionsRepo.Motion) private _motions;
-    EnumerableSet.UintSet private _motionIds;
+    MotionsRepo.Repo private _repo;
 
     //##################
     //##    Write     ##
@@ -44,21 +33,17 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
     function proposeMotion(
         uint256 motionId,
         uint256 seqOfVR,
-        uint256 proposer,
-        uint256 executor
-    ) public onlyKeeper {
-        if (_motionIds.add(motionId)) {
-            MotionsRepo.Motion storage m = _motions[motionId];
-            
-            RulesParser.VotingRule memory rule = RulesParser.votingRuleParser(_getSHA().getRule(seqOfVR));
+        uint40 proposer,
+        uint40 executor
+    ) public onlyKeeper {           
+        RulesParser.VotingRule memory rule = _getSHA().getRule(seqOfVR).votingRuleParser();
 
-            emit ProposeMotion(motionId, seqOfVR, proposer, executor);
-            m.proposeMotion(rule, proposer, executor);
-            
-        } else revert ("MM.PM: motion already proposed");
+        if (_repo.proposeMotion(motionId, rule, proposer, executor))
+            emit ProposeMotion(motionId, seqOfVR, proposer, executor);    
+        else revert ("MM.PM: motion already proposed");
     }
 
-    function nominateOfficer(uint256 seqOfVR, uint8 title, uint256 nominator, uint256 candidate)
+    function nominateOfficer(uint256 seqOfVR, uint8 title, uint40 nominator, uint40 candidate)
         external
         onlyKeeper
     {
@@ -74,8 +59,8 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
     function proposeDoc(
         address doc,
         uint256 seqOfVR,
-        uint256 proposer,
-        uint256 executor
+        uint40 proposer,
+        uint40 executor
     ) external onlyDirectKeeper {
         uint256 motionId = (seqOfVR << 160) + uint256(uint160(doc));
         proposeMotion(motionId, seqOfVR, proposer, executor);
@@ -87,8 +72,8 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 proposer,
-        uint256 executor
+        uint40 proposer,
+        uint40 executor
     ) external onlyDirectKeeper {
         uint256 motionId = _hashAction(
             seqOfVR,
@@ -124,7 +109,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         uint256 delegate
     ) external onlyDirectKeeper {
 
-        MotionsRepo.Motion storage m = _motions[motionId];
+        MotionsRepo.Motion storage m = _repo.motions[motionId];
 
         require(m.head.proposer > 0, "MM.ED: motion not proposed");
         require(m.head.shareRegDate <= block.timestamp, "MM.ED: not reach shareRegDate");
@@ -148,7 +133,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         uint8 attitude,
         bytes32 sigHash
     ) external onlyDirectKeeper {
-        MotionsRepo.Motion storage m = _motions[motionId];
+        MotionsRepo.Motion storage m = _repo.motions[motionId];
 
         uint64 weight = _getWeight(m, caller);
 
@@ -160,7 +145,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
 
     function voteCounting(uint256 motionId) external onlyDirectKeeper returns(bool flag) {
 
-        MotionsRepo.Motion storage m = _motions[motionId];
+        MotionsRepo.Motion storage m = _repo.motions[motionId];
 
         if (_isDocApproval(motionId)) {
             flag = m.getDocApproval(motionId, _rom, _bod);
@@ -183,16 +168,16 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
             && (seqOfVR <= 16) && ((motionId >> 176) == 0); 
     }
 
-    function _getDocRepo(uint256 motionId) private view returns(IRepoOfDocs _rod) {
+    function _getDocRepo(uint256 motionId) private view returns(IFilesFolder _rod) {
         uint16 seqOfVR = uint16(motionId >> 160);
-        if (seqOfVR == 8 || seqOfVR == 16) _rod = IRepoOfDocs(_gk.getBook(uint8(TitleOfBooks.BookOfSHA)));
-        else _rod = IRepoOfDocs(_gk.getBook(uint8(TitleOfBooks.BookOfIA)));
+        if (seqOfVR == 8 || seqOfVR == 16) _rod = IFilesFolder(_gk.getBook(uint8(TitleOfBooks.BookOfSHA)));
+        else _rod = IFilesFolder(_gk.getBook(uint8(TitleOfBooks.BookOfIA)));
     }
 
     // ==== execute ====
 
     function motionExecuted(uint256 motionId) external onlyKeeper {
-        _motions[motionId].head.state = uint8(MotionsRepo.StateOfMotion.Executed);
+        _repo.motions[motionId].head.state = uint8(MotionsRepo.StateOfMotion.Executed);
     }
 
     function execAction(
@@ -211,7 +196,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
             desHash
         );
 
-        MotionsRepo.Motion storage m = _motions[motionId];
+        MotionsRepo.Motion storage m = _repo.motions[motionId];
 
         require(
             m.head.state == uint8(MotionsRepo.StateOfMotion.Passed),
@@ -253,7 +238,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         view
         returns (DelegateMap.Voter memory)
     {
-        return _motions[motionId].map.voters[acct];
+        return _repo.motions[motionId].map.voters[acct];
     }
 
     function getDelegateOf(uint256 motionId, uint256 acct)
@@ -261,13 +246,13 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         view
         returns (uint40)
     {
-        return _motions[motionId].map.getDelegateOf(uint40(acct));
+        return _repo.motions[motionId].map.getDelegateOf(uint40(acct));
     }
 
     // ==== motion ====
 
     function isProposed(uint256 motionId) external view returns (bool) {
-        return _motionIds.contains(motionId);
+        return _repo.motionIds.contains(motionId);
     }
 
     function getHeadOfMotion(uint256 motionId)
@@ -275,11 +260,11 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         view
         returns (MotionsRepo.Head memory head)
     {
-        head = _motions[motionId].head;
+        head = _repo.motions[motionId].head;
     }
 
     function getVotingRuleOfMotion(uint256 motionId) external view returns (RulesParser.VotingRule memory m) {
-        return _motions[motionId].votingRule;
+        return _repo.motions[motionId].votingRule;
     }
 
     // ==== voting ====
@@ -289,7 +274,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         view 
         returns (bool) 
     {
-        return _motions[motionId].box.ballots[acct].sigDate > 0;
+        return _repo.motions[motionId].box.ballots[acct].sigDate > 0;
     }
 
     function isVotedFor(
@@ -297,7 +282,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         uint256 acct,
         uint8 atti
     ) external view returns (bool) {
-        return _motions[motionId].box.ballots[acct].attitude == atti;
+        return _repo.motions[motionId].box.ballots[acct].attitude == atti;
     }
 
     function getCaseOfAttitude(uint256 motionId, uint8 atti)
@@ -305,7 +290,7 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         view
         returns (BallotsBox.Case memory )
     {
-        return _motions[motionId].box.cases[atti];
+        return _repo.motions[motionId].box.cases[atti];
     }
 
     function getBallot(uint256 motionId, uint256 acct)
@@ -313,16 +298,16 @@ contract MeetingMinutes is IMeetingMinutes, BODSetting, BOHSetting, ROMSetting, 
         view
         returns (BallotsBox.Ballot memory)
     {
-        return _motions[motionId].box.ballots[acct];
+        return _repo.motions[motionId].box.ballots[acct];
     }
 
     function isPassed(uint256 motionId) external view returns (bool) {
         return
-            _motions[motionId].head.state == uint8(MotionsRepo.StateOfMotion.Passed);
+            _repo.motions[motionId].head.state == uint8(MotionsRepo.StateOfMotion.Passed);
     }
 
     function isExecuted(uint256 motionId) external view returns (bool) {
         return
-            _motions[motionId].head.state == uint8(MotionsRepo.StateOfMotion.Executed);
+            _repo.motions[motionId].head.state == uint8(MotionsRepo.StateOfMotion.Executed);
     }
 }

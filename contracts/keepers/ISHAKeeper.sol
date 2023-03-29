@@ -7,6 +7,21 @@
 
 pragma solidity ^0.8.8;
 
+import "../books/boh/terms/IAntiDilution.sol";
+import "../books/boh/terms/ITerm.sol";
+import "../books/boh/terms/IAlongs.sol";
+
+import "../books/boh/IShareholdersAgreement.sol";
+
+import "../books/boa/IInvestmentAgreement.sol";
+
+import "../common/components/IFilesFolder.sol";
+import "../common/components/ISigPage.sol";
+
+import "../common/lib/RulesParser.sol";
+import "../common/lib/SharesRepo.sol";
+import "../common/lib/FRClaims.sol";
+
 interface ISHAKeeper {
 
     // ======== TagAlong & DragAlong ========

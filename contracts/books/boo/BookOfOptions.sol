@@ -9,11 +9,7 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfOptions.sol";
 
-import "../boh/terms/IOptions.sol";
-
 import "../../common/access/AccessControl.sol";
-import "../../common/lib/EnumerableSet.sol";
-
 import "../../common/ruting/BOSSetting.sol";
 import "../../common/ruting/ROSSetting.sol";
 

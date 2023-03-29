@@ -10,8 +10,6 @@ pragma solidity ^0.8.8;
 import "./IAccessControl.sol";
 import "./RegCenterSetting.sol";
 
-import "../lib/RolesRepo.sol";
-
 contract AccessControl is IAccessControl, RegCenterSetting {
     using RolesRepo for RolesRepo.Roles;
 
