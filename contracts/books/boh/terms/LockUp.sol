@@ -9,14 +9,11 @@ pragma solidity ^0.8.8;
 
 import "../../../common/access/AccessControl.sol";
 
-import "../../../common/lib/ArrayUtils.sol";
-import "../../../common/lib/EnumerableSet.sol";
-
-import "../../../common/ruting/BOGSetting.sol";
+// import "../../../common/ruting/BOGSetting.sol";
 
 import "./ILockUp.sol";
 
-contract LockUp is ILockUp, BOGSetting, AccessControl {
+contract LockUp is ILockUp, AccessControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -115,7 +112,7 @@ contract LockUp is ILockUp, BOGSetting, AccessControl {
         
         uint256 motionId = uint256(uint160(ia));
                
-        uint256[] memory consentParties = _bog.
+        uint256[] memory consentParties = _gk.getBOG().
             getCaseOfAttitude(motionId,1).voters;
 
         uint256[] memory parties = ISigPage(ia).getParties();

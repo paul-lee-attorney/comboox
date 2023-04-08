@@ -7,6 +7,7 @@
 
 pragma solidity ^0.8.8;
 
+import "../../keepers/IGeneralKeeper.sol";
 import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/bos/IBookOfShares.sol";
 
@@ -91,11 +92,11 @@ library SwapsRepo {
             uint256 sn,
             uint40 rightholder, 
             uint64 paidOfConsider,
-            IRegisterOfMembers _rom
+            IGeneralKeeper _gk
     ) public returns (Head memory head) 
     {
         head = snParser(sn);
-        head = issueSwap(repo, head, rightholder, paidOfConsider, _rom);
+        head = issueSwap(repo, head, rightholder, paidOfConsider, _gk);
     }
 
     function issueSwap(
@@ -103,7 +104,7 @@ library SwapsRepo {
         Head memory head,
         uint40 rightholder, 
         uint64 paidOfConsider,
-        IRegisterOfMembers _rom
+        IGeneralKeeper _gk
     ) public returns(Head memory newHead) {
         Swap memory swap;
 
@@ -115,20 +116,20 @@ library SwapsRepo {
         swap.body.paidOfConsider = paidOfConsider;
         swap.body.state = uint8(StateOfSwap.Issued);
 
-        newHead = regSwap(repo, swap, _rom).head;
+        newHead = regSwap(repo, swap, _gk).head;
     }
 
     function regSwap(
         Repo storage repo,
         Swap memory swap,
-        IRegisterOfMembers _rom
+        IGeneralKeeper _gk
     ) public returns(Swap memory newSwap){
-        require(_rom.isClassMember(swap.head.obligor, swap.head.classOfTarget), 
+        require(_gk.getROM().isClassMember(swap.head.obligor, swap.head.classOfTarget), 
             "SR.RS: obligor not memberOfTargetClass");
-        require(_rom.isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
+        require(_gk.getROM().isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
             "SR.RS: rightholder not memberOfConsiderClass");
 
-        require(block.timestamp < swap.head.triggerDate, "SR.RS: triggerDate not future");
+        require(block.timestamp <= swap.head.triggerDate, "SR.RS: triggerDate not future");
         require(block.timestamp >= swap.head.createDate, "SR.RS: future createDate");
 
         require(swap.head.rateOfSwap > 0, "SR.RS: zero rateOfSwap");
@@ -170,7 +171,7 @@ library SwapsRepo {
         uint256 seqOfSwap,
         uint40 buyer,
         uint64 amt,
-        IRegisterOfMembers _rom
+        IGeneralKeeper _gk
     ) public returns(Head memory head) {
         Swap storage swap = repo.swaps[seqOfSwap];
 
@@ -186,22 +187,22 @@ library SwapsRepo {
         if (newSwap.body.state == uint8(StateOfSwap.Crystalized))
             newSwap.body.paidOfTarget = amt * uint64(newSwap.head.rateOfSwap) / 10000;
         
-        head = regSwap(repo, newSwap, _rom).head;
+        head = regSwap(repo, newSwap, _gk).head;
     }
 
     function crystalizeSwap(
         Swap storage swap,
         uint32 seqOfConsider,
         uint32 seqOfTarget,
-        IBookOfShares _bos
+        IGeneralKeeper _gk
     ) public returns (Body memory){
         require(block.timestamp < swap.head.triggerDate + uint48(swap.head.closingDays) * 86400,
             "SR.CS: swap expired");
 
         require(swap.body.state == uint8(StateOfSwap.Issued), "SR.CS: wrong state");
 
-        SharesRepo.Share memory consider = _bos.getShare(seqOfConsider);
-        SharesRepo.Share memory target = _bos.getShare(seqOfTarget);
+        SharesRepo.Share memory consider = _gk.getBOS().getShare(seqOfConsider);
+        SharesRepo.Share memory target = _gk.getBOS().getShare(seqOfTarget);
 
         require(consider.head.shareholder == swap.body.rightholder, 
             "SR.CS: consider not rightholder's share");

@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../../../common/lib/OptionsRepo.sol";
+import "../../../common/lib/EnumerableSet.sol";
 
 interface IOptions {
     // ################

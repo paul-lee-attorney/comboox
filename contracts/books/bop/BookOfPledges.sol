@@ -10,9 +10,9 @@ pragma solidity ^0.8.8;
 import "./IBookOfPledges.sol";
 
 import "../../common/access/AccessControl.sol";
-import "../../common/ruting/BOSSetting.sol";
+// import "../../common/ruting/BOSSetting.sol";
 
-contract BookOfPledges is IBookOfPledges, BOSSetting, AccessControl {
+contract BookOfPledges is IBookOfPledges, AccessControl {
     using PledgesRepo for PledgesRepo.Repo;
     using PledgesRepo for PledgesRepo.Pledge;
 

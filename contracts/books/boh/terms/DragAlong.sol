@@ -9,12 +9,12 @@ pragma solidity ^0.8.8;
 
 import "../../../common/access/AccessControl.sol";
 
-import "../../../common/ruting/BOASetting.sol";
-import "../../../common/ruting/ROMSetting.sol";
+// import "../../../common/ruting/BOASetting.sol";
+// import "../../../common/ruting/ROMSetting.sol";
 
 import "./IAlongs.sol";
 
-contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
+contract DragAlong is IAlongs, AccessControl {
     using RulesParser for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -127,7 +127,7 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
         
-        if (_boa.getHeadOfFile(ia).state != uint8(IFilesFolder.StateOfFile.Circulated))
+        if (_gk.getBOA().getHeadOfFile(ia).state != uint8(IFilesFolder.StateOfFile.Circulated))
             return false;
 
         if (
@@ -143,12 +143,12 @@ contract DragAlong is IAlongs, BOASetting, ROMSetting, AccessControl {
         if (rule.triggerType == uint8(TriggerTypeOfAlongs.NoConditions))
             return true;
 
-        uint40 controllor = _rom.controllor();
+        uint40 controllor = _gk.getROM().controllor();
 
-        if (controllor != _rom.groupRep(deal.head.seller)) return false;
+        if (controllor != _gk.getROM().groupRep(deal.head.seller)) return false;
 
         (uint40 newControllor, uint16 shareRatio) = 
-            _boa.mockResultsOfIA(ia);
+            _gk.getBOA().mockResultsOfIA(ia);
 
         if (controllor != newControllor) return true;
 

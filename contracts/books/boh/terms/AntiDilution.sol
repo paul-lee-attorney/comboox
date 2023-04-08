@@ -9,13 +9,13 @@ pragma solidity ^0.8.8;
 
 import "../../../common/access/AccessControl.sol";
 
-import "../../../common/ruting/BOGSetting.sol";
-import "../../../common/ruting/BOSSetting.sol";
-import "../../../common/ruting/ROMSetting.sol";
+// import "../../../common/ruting/BOGSetting.sol";
+// import "../../../common/ruting/BOSSetting.sol";
+// import "../../../common/ruting/ROMSetting.sol";
 
 import "./IAntiDilution.sol";
 
-contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, AccessControl {
+contract AntiDilution is IAntiDilution, AccessControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -101,7 +101,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         DealsRepo.Deal memory deal = 
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
         
-        SharesRepo.Share memory share = _bos.getShare(seqOfShare);
+        SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
 
         uint64 floorPrice = getFloorPriceOfClass(share.head.class);
 
@@ -141,7 +141,7 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         while (len > 0) {
             uint16 class = uint16 (_ruler.classes.at(len-1));
             if (_ruler.marks[class].floorPrice > price) {
-                uint256[] memory members = _rom.getMembersOfClass(class);
+                uint256[] memory members = _gk.getROM().getMembersOfClass(class);
 
                 if (members.length > consentParties.length) return false;
                 else if (!members.fullyCoveredBy(consentParties)) return false;
@@ -160,8 +160,8 @@ contract AntiDilution is IAntiDilution, BOGSetting, BOSSetting, ROMSetting, Acce
         
         uint256[] memory parties = ISigPage(ia).getParties();
 
-        uint256[] memory supporters = _bog.
-            getCaseOfAttitude(motionId,1).voters;
+        uint256[] memory supporters = _gk.getBOG().
+            getCaseOfAttitude(motionId, 1).voters;
         
         uint256[] memory consentParties = parties.merge(supporters);        
 

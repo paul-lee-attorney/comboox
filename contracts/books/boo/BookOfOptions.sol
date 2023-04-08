@@ -10,10 +10,10 @@ pragma solidity ^0.8.8;
 import "./IBookOfOptions.sol";
 
 import "../../common/access/AccessControl.sol";
-import "../../common/ruting/BOSSetting.sol";
-import "../../common/ruting/ROSSetting.sol";
+// import "../../common/ruting/BOSSetting.sol";
+// import "../../common/ruting/ROSSetting.sol";
 
-contract BookOfOptions is IBookOfOptions, BOSSetting, ROSSetting, AccessControl {
+contract BookOfOptions is IBookOfOptions, AccessControl {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
     using OptionsRepo for OptionsRepo.Repo;
@@ -103,7 +103,7 @@ contract BookOfOptions is IBookOfOptions, BOSSetting, ROSSetting, AccessControl 
         uint64 paidOfConsider,
         uint32 seqOfTarget
     ) external onlyKeeper view returns (SwapsRepo.Swap memory swap) {
-        swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _bos);
+        swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _gk);
     }
 
     function regSwapOrder(

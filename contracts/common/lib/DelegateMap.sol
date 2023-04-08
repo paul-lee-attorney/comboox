@@ -7,6 +7,8 @@
 
 pragma solidity ^0.8.8;
 
+import "../../books/rom/IRegisterOfMembers.sol";
+
 library DelegateMap {
 
     struct Voter {
@@ -27,8 +29,8 @@ library DelegateMap {
 
     function entrustDelegate(
         Map storage map,
-        uint256 principal,
-        uint256 delegate,
+        uint40 principal,
+        uint40 delegate,
         uint64 weight
     ) public returns (bool flag) {
         require(principal != 0, "DM.ED: zero principal");
@@ -41,7 +43,7 @@ library DelegateMap {
             Voter storage p = map.voters[principal];
             Voter storage d = map.voters[delegate];
 
-            p.delegate = uint40(delegate);
+            p.delegate = delegate;
             p.weight = weight;
             p.repWeight += weight;
             p.repHead ++;
@@ -49,7 +51,7 @@ library DelegateMap {
             d.repHead += p.repHead;
             d.repWeight += p.repWeight;
            
-            d.principals.push(uint40(principal));
+            d.principals.push(principal);
 
             flag = true;
         }
@@ -68,5 +70,17 @@ library DelegateMap {
             d = acct;
             acct = map.voters[d].delegate;
         }
+    }
+
+    function getLeavesWeightAtDate(Map storage map, uint256 acct, uint48 baseDate, IRegisterOfMembers _rom)
+        public view returns(uint64 weight)
+    {
+        uint40[] memory leaves = map.voters[acct].principals;
+        uint256 len = leaves.length;
+        while (len > 0) {
+            weight += getLeavesWeightAtDate(map, leaves[len-1], baseDate, _rom);
+            len--;
+        }
+        weight += _rom.votesAtDate(acct, baseDate);
     }
 }

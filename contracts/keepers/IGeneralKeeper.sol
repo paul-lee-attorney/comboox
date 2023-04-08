@@ -18,6 +18,17 @@ import "./IBOPKeeper.sol";
 import "./IBOSKeeper.sol";
 import "./IROMKeeper.sol";
 import "./ISHAKeeper.sol";
+import "./IROSKeeper.sol";
+
+import "../books/boa/IBookOfIA.sol";
+import "../books/bod/IBookOfDirectors.sol";
+import "../books/bog/IBookOfGM.sol";
+import "../books/boh/IBookOfSHA.sol";
+import "../books/boo/IBookOfOptions.sol";
+import "../books/bop/IBookOfPledges.sol";
+import "../books/bos/IBookOfShares.sol";
+import "../books/rom/IRegisterOfMembers.sol";
+import "../books/ros/IRegisterOfSwaps.sol";
 
 interface IGeneralKeeper {
 
@@ -30,7 +41,8 @@ interface IGeneralKeeper {
     //     BOPKeeper, // 5
     //     BOSKeeper, // 6
     //     ROMKeeper, // 7
-    //     SHAKeeper // 8
+    //     SHAKeeper, // 8
+    //     ROSKeeper, // 9
     // }
 
     // enum TitleOfBooks {
@@ -62,4 +74,33 @@ interface IGeneralKeeper {
     function isKeeper(address caller) external view returns (bool flag);
 
     function getBook(uint256) external view returns(address book);
+
+    function setBookeeper(uint256 title, address keeper) external;
+
+    function setBook(uint256 title, address keeper) external;
+
+    // ###############
+    // ##   Ruting  ##
+    // ###############
+
+    function getBOA() external view returns (IBookOfIA);
+
+    function getBOD() external view returns (IBookOfDirectors);
+
+    function getBOG() external view returns (IBookOfGM);
+
+    function getBOH() external view returns (IBookOfSHA);
+
+    function getSHA() external view returns (IShareholdersAgreement);
+
+    function getBOO() external view returns (IBookOfOptions);
+
+    function getBOP() external view returns (IBookOfPledges);
+
+    function getBOS() external view returns (IBookOfShares);
+
+    function getROM() external view returns (IRegisterOfMembers);
+
+    function getROS() external view returns (IRegisterOfSwaps);
+
 }

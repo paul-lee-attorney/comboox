@@ -7,13 +7,8 @@
 
 pragma solidity ^0.8.8;
 
-import "../lib/BallotsBox.sol";
-import "../lib/DelegateMap.sol";
-import "../lib/EnumerableSet.sol";
 import "../lib/MotionsRepo.sol";
 import "../lib/RulesParser.sol";
-
-import "./IFilesFolder.sol";
 
 interface IMeetingMinutes {
 
@@ -21,145 +16,149 @@ interface IMeetingMinutes {
     //##    events    ##
     //##################
 
-    event ProposeMotion(
-        uint256 indexed motionId,
-        uint256 seqOfRule,
-        uint256 proposer,
-        uint256 executor
-    );
+    event CreateMotion(uint256 indexed snOfMotion, uint256 indexed contents);
 
-    event EntrustDelegate(
-        uint256 indexed motionId,
-        uint256 principal,
-        uint256 delegate,
-        uint64 weight
-    );
+    event ProposeMotion(uint256 indexed seqOfMotion, uint256 indexed proposer);
 
-    event CastVote(
-        uint256 indexed motionId,
-        uint256 caller,
-        uint8 attitude,
-        bytes32 sigHash
-    );
+    event EntrustDelegate(uint256 indexed seqOfMotion, uint256 delegate, uint256 principal, uint64 weight);
 
-    event VoteCounting(uint256 indexed motionId, uint8 state);
+    event CastVote(uint256 indexed seqOfMotion, uint256 indexed caller, uint8 indexed attitude, bytes32 sigHash);    
 
-    event ExecuteAction(uint256 indexed motionId, bool flag);
+    event VoteCounting(uint256 indexed seqOfMotion, uint8 indexed result);            
 
-    //##################
+    event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
+
+    event ExecAction(uint256 indexed contents, bool result);
+
+    //#################
     //##    写接口    ##
-    //##################
+    //#################
 
-    function proposeMotion(
-        uint256 motionId,
-        uint256 seqOfVR,
-        uint40 proposer,
-        uint40 executor
-    ) external;
+    function createMotion(
+        MotionsRepo.Head memory head,
+        uint256 contents
+    ) external returns (uint64);
 
     function nominateOfficer(
-        uint256 seqOfVR,
-        uint8 title, 
-        uint40 nominator, 
-        uint40 candidate
-    ) external;
+        uint256 seqOfPos,
+        uint16 seqOfVR,
+        uint40 canidate,
+        uint40 nominator
+    ) external returns(uint64);
+
+    function proposeToRemoveOfficer(
+        uint256 seqOfPos,
+        uint16 seqOfVR,
+        uint40 nominator    
+    ) external returns(uint64);
 
     function proposeDoc(
         address doc,
-        uint256 seqOfVR,
-        uint40 proposer,
-        uint40 executor
-    ) external;
+        uint16 seqOfVR,
+        uint40 executor,
+        uint40 proposer    
+    ) external returns(uint64);
 
     function proposeAction(
-        uint256 seqOfVR,
+        uint16 seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 proposer,
-        uint40 executor
-    ) external;
+        uint40 executor,
+        uint40 proposer
+    ) external returns(uint64);
 
-    // ==== delegate ====
+    function proposeMotion(
+        uint256 seqOfMotion,
+        uint40 proposer
+    ) external;
 
     function entrustDelegate(
-        uint256 motionId,
-        uint256 principal,
-        uint256 delegate
+        uint256 seqOfMotion,
+        uint40 delegate, 
+        uint40 principal,
+        uint64 weight
     ) external;
+
+    // ==== Vote ====
 
     function castVote(
-        uint256 motionId,
-        uint256 caller,
+        uint256 seqOfMotion,
         uint8 attitude,
-        bytes32 sigHash
+        bytes32 sigHash,
+        IRegisterOfMembers _rom,
+        uint256 caller
     ) external;
 
-    function voteCounting(uint256 motionId) external returns (bool flag);
+    // ==== UpdateVoteResult ====
 
-    function motionExecuted(uint256 motionId) external;
+    function voteCounting(uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) external;
+
+    // ==== ExecResolution ====
+
+    function execResolution(uint256 seqOfMotion, uint256 contents, uint40 caller)
+        external;
 
     function execAction(
-        uint256 seqOfVR,
+        uint16 seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
-        uint256 caller,
-        bytes32 desHash
-    ) external returns (uint256);
+        bytes32 desHash,
+        uint256 seqOfMotion,
+        uint40 caller
+    ) external;
 
-    //##################
-    //##    Read     ##
+    //################
+    //##    Read    ##
     //################
 
-    // ==== delegate ====
 
-    function getVoterOfDelegateMap(uint256 motionId, uint256 acct)
-        external
-        view
-        returns (DelegateMap.Voter memory v);
+    // ==== Motions ====
 
-    function getDelegateOf(uint256 motionId, uint256 acct)
-        external
-        view
-        returns (uint40);
+    function isProposed(uint256 seqOfMotion) external view returns (bool);
+
+    function voteStarted(uint256 seqOfMotion) external view returns (bool);
+
+    function voteEnded(uint256 seqOfMotion) external view returns (bool);
+
+    // ==== Delegate ====
+
+    function getVoterOfDelegateMap(uint256 seqOfMotion, uint256 acct)
+        external view returns (DelegateMap.Voter memory);
+
+    function getDelegateOf(uint256 seqOfMotion, uint40 acct)
+        external view returns (uint40);
+
+    function getLeavesWeightAtDate(
+        uint256 seqOfMotion, 
+        uint40 caller,
+        uint48 baseDate, 
+        IRegisterOfMembers _rom 
+    ) external view returns(uint64 weight);
 
     // ==== motion ====
 
-    function isProposed(uint256 motionId) external view returns (bool);
-
-    function getHeadOfMotion(uint256 motionId)
-        external
-        view
-        returns (MotionsRepo.Head memory head);
-
-    function getVotingRuleOfMotion(uint256 motionId) external view returns (RulesParser.VotingRule memory);
+    function getMotion(uint256 seqOfMotion)
+        external view returns (MotionsRepo.Motion memory motion);
 
     // ==== voting ====
 
-    function isVoted(uint256 motionId, uint256 acct) 
-        external 
-        view 
-        returns (bool);
+    function isVoted(uint256 seqOfMotion, uint256 acct) external view returns (bool);
 
     function isVotedFor(
-        uint256 motionId,
+        uint256 seqOfMotion,
         uint256 acct,
         uint8 atti
     ) external view returns (bool);
 
-    function getCaseOfAttitude(uint256 motionId, uint8 atti)
-        external
-        view
-        returns (BallotsBox.Case memory);
+    function getCaseOfAttitude(uint256 seqOfMotion, uint8 atti)
+        external view returns (BallotsBox.Case memory );
 
-    function getBallot(uint256 motionId, uint256 acct)
-        external
-        view
-        returns (BallotsBox.Ballot memory);
+    function getBallot(uint256 seqOfMotion, uint256 acct)
+        external view returns (BallotsBox.Ballot memory);
 
-    function isPassed(uint256 motionId) external view returns (bool);
+    function isPassed(uint256 seqOfMotion) external view returns (bool);
 
-    function isExecuted(uint256 motionId) external view returns (bool);
 }

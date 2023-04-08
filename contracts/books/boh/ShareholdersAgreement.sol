@@ -8,10 +8,9 @@
 pragma solidity ^0.8.8;
 
 import "./IShareholdersAgreement.sol";
-import "../../common/ruting/BOHSetting.sol";
 import "../../common/components/SigPage.sol";
 
-contract ShareholdersAgreement is IShareholdersAgreement, BOHSetting, SigPage {
+contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     using EnumerableSet for EnumerableSet.UintSet;
 
     TermsRepo private _terms;
@@ -38,19 +37,21 @@ contract ShareholdersAgreement is IShareholdersAgreement, BOHSetting, SigPage {
         onlyGeneralCounsel
         returns (address body)
     {
-        uint40 owner = getOwner();
+        // uint40 owner = getOwner();
         uint40 gc = getGeneralCounsel();
 
-        (, body) = _rc.createDoc(typeOfDoc, version, gc);        
+        uint256 snOfDoc = (uint256(typeOfDoc) << 240) + (uint256(version) << 224);
 
-        IAccessControl(body).init(
-            owner,
+        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, msg.sender);        
+
+        IAccessControl(doc.body).init(
+            gc,
             address(this),
             address(_rc),
             address(_gk)
         );
 
-        IAccessControl(body).setGeneralCounsel(gc);
+        // IAccessControl(body).setGeneralCounsel(gc);
 
         _terms.terms[typeOfDoc] = body;
         _terms.seqList.add(typeOfDoc);
@@ -62,15 +63,15 @@ contract ShareholdersAgreement is IShareholdersAgreement, BOHSetting, SigPage {
         }
     }
 
-    function finalizeTerms() external onlyDirectKeeper {
-        uint256 len = _terms.seqList.length();
+    // function finalizeTerms() external onlyDirectKeeper {
+    //     uint256 len = _terms.seqList.length();
 
-        for (uint256 i = 0; i < len; i++) {
-            IAccessControl(_terms.terms[_terms.seqList.at(i)]).lockContents();
-        }
+    //     for (uint256 i = 0; i < len; i++) {
+    //         IAccessControl(_terms.terms[_terms.seqList.at(i)]).lockContents();
+    //     }
 
-        lockContents();
-    }
+    //     lockContents();
+    // }
 
     // ==== Rules ====
     

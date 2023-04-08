@@ -9,11 +9,11 @@ pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
 
-import "../common/ruting/BOSSetting.sol";
+// import "../common/ruting/BOSSetting.sol";
 
 import "./IBOSKeeper.sol";
 
-contract BOSKeeper is IBOSKeeper, BOSSetting, AccessControl {
+contract BOSKeeper is IBOSKeeper, AccessControl {
 
     // #############
     // ##   BOS   ##
@@ -21,25 +21,25 @@ contract BOSKeeper is IBOSKeeper, BOSSetting, AccessControl {
 
     function setPayInAmt(uint256 sn, uint64 amount) 
     external onlyDirectKeeper {
-        _bos.setPayInAmt(sn, amount);
+        _gk.getBOS().setPayInAmt(sn, amount);
     }
 
     function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint8 salt, uint256 caller)
     external onlyDirectKeeper {
-        _bos.requestPaidInCapital(snOfLocker, hashKey, salt, caller);
+        _gk.getBOS().requestPaidInCapital(snOfLocker, hashKey, salt, caller);
     }
 
     function withdrawPayInAmt(uint256 snOfLocker) external onlyDirectKeeper {
-        _bos.withdrawPayInAmt(snOfLocker);
+        _gk.getBOS().withdrawPayInAmt(snOfLocker);
     }
 
     function decreaseCapital(uint256 seqOfShare, uint64 paid, uint64 par) 
     external onlyDirectKeeper {
-        _bos.decreaseCapital(seqOfShare, paid, par);
+        _gk.getBOS().decreaseCapital(seqOfShare, paid, par);
     }
 
     function updatePaidInDeadline(uint256 seqOfShare, uint48 line) 
     external onlyDirectKeeper {
-        _bos.updatePaidInDeadline(seqOfShare, line);
+        _gk.getBOS().updatePaidInDeadline(seqOfShare, line);
     }
 }

@@ -20,18 +20,18 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     // ##   修饰器      ##
     // ##################
 
-    modifier onlyDirectKeeper() {
-        require(
-            _roles.isDirectKeeper(msg.sender),
-            "AC.onlyDirectKeeper: not direct keeper"
-        );
-        _;
-    }
-
     modifier onlyOwner {
         require(
             _roles.isOwner(_msgSender()),
             "AC.ow: not owner"
+        );
+        _;
+    }
+
+    modifier onlyDirectKeeper() {
+        require(
+            _roles.isDirectKeeper(msg.sender),
+            "AC.onlyDirectKeeper: not direct keeper"
         );
         _;
     }
@@ -75,9 +75,8 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         _;
     }
 
-
     modifier onlyFinalized() {
-        require(_roles.state == 2, "AC.onlyFinalized: Doc is still pending");
+        require(_roles.state == 2, "AC.mf.OF: still pending");
         _;
     }
 
@@ -91,27 +90,20 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         address regCenter,
         address generalKeeper
     ) external {
-        _setRegCenter(regCenter);
-
-        _setGeneralKeeper(generalKeeper);
-
         _roles.initDoc(owner, directKeeper);
-
+        _setRegCenter(regCenter);
+        _setGeneralKeeper(generalKeeper);
         emit Init(owner, directKeeper, regCenter, generalKeeper);
     }
 
-    function setDirectKeeper(address keeper) external {
-        _roles.setBookeeper(msg.sender, keeper);
-        emit SetDirectKeeper(keeper);
+    function setOwner(uint256 acct) external virtual {
+        _roles.setOwner(acct, _msgSender());
+        emit SetOwner(acct);
     }
 
-    function setOwner(uint256 acct)
-        external
-        virtual
-        ownerOrDirectBookeeper
-    {
-        _roles.setOwner(acct);
-        emit SetOwner(acct);
+    function setDirectKeeper(address keeper) external {
+        _roles.setBookeeper(keeper, msg.sender);
+        emit SetDirectKeeper(keeper);
     }
 
     function setGeneralCounsel(uint256 acct)
@@ -119,36 +111,37 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         virtual
         ownerOrDirectBookeeper
     {
-        _roles.setGeneralCounsel(acct);
+        _roles.setGeneralCounsel(acct, _msgSender());
         emit SetGeneralCounsel(acct);
     }
 
     function setRoleAdmin(bytes32 role, uint256 acct) external {
-        _roles.setRoleAdmin(role, _msgSender(), acct);
+        _roles.setRoleAdmin(role, acct, _msgSender());
     }
 
     function grantRole(bytes32 role, uint256 acct) external {
-        _roles.grantRole(role, _msgSender(), acct);
+        _roles.grantRole(role, acct, _msgSender());
     }
 
     function revokeRole(bytes32 role, uint256 acct) external {
-        _roles.revokeRole(role, _msgSender(), acct);
+        _roles.revokeRole(role, acct, _msgSender());
     }
 
     function renounceRole(bytes32 role) external {
-        uint40 msgSender = _msgSender();
-        _roles.renounceRole(role, msgSender);
+        _roles.renounceRole(role, _msgSender());
     }
 
-    function abandonRole(bytes32 role) external onlyDirectKeeper {
-        _roles.abandonRole(role);
+    function abandonRole(bytes32 role) external {
+        _roles.abandonRole(role, _msgSender());
     }
 
-    function lockContents() public onlyDirectKeeper {
-        require(_roles.state == 1, "AC.onlyPending: Doc is finalized");
+    function lockContents() public {
+        require(_roles.state == 1, "AC.LC: Doc is finalized");
 
-        _roles.abandonRole(_ATTORNEYS);
-        _roles.setGeneralCounsel(0);
+        _roles.abandonRole(_ATTORNEYS, _msgSender());
+        _roles.setGeneralCounsel(0, _msgSender());
+        _roles.setOwner(0, _msgSender());
+
         _roles.state = 2;
 
         emit LockContents();

@@ -23,7 +23,7 @@ contract BookOfGM is IBookOfGM, MeetingMinutes {
         _rc.regUser();
     }
 
-    function createBoardSeal(address bod) external onlyDirectKeeper {
-        _rc.setBackupKey(bod);
+    function createBoardSeal(address board) external onlyDirectKeeper {
+        _rc.setBackupKey(board);
     }
 }

@@ -41,10 +41,10 @@ interface ISigPage {
     function isSeller(bool initPage, uint256 acct)
         external view returns(bool flag);
 
-    function isParty(bool initPage, uint256 acct)
+    function isParty(uint256 acct)
         external view returns(bool flag);
 
-    function isSigner(bool initPage, uint256 acct)
+    function isSigner(uint256 acct)
         external view returns (bool flag);
 
     function getBuyers(bool initPage)
@@ -55,9 +55,6 @@ interface ISigPage {
 
     function getParties() external view
         returns (uint256[] memory parties);
-
-    function isParty(uint256 acct) external view 
-        returns (bool flag);
 
     function getSigOfParty(bool initParty, uint256 acct) external view
         returns (uint256[] memory seqOfDeals, SigsRepo.Signature memory sig);

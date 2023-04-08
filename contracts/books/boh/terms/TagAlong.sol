@@ -7,11 +7,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../common/ruting/BOGSetting.sol";
+// import "../../../common/ruting/BOGSetting.sol";
 
 import "./DragAlong.sol";
 
-contract TagAlong is BOGSetting, DragAlong {
+contract TagAlong is DragAlong {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -20,11 +20,11 @@ contract TagAlong is BOGSetting, DragAlong {
     // #############
 
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {        
-        require(_bog.isPassed(uint256(uint160(ia))), "motion NOT passed");
+        require(_gk.getBOG().isPassed(uint256(uint160(ia))), "motion NOT passed");
 
         if (!isTriggered(ia, deal)) return true;
 
-        uint256[] memory consentParties = _bog.getCaseOfAttitude(
+        uint256[] memory consentParties = _gk.getBOG().getCaseOfAttitude(
             uint256(uint160(ia)),
             1
         ).voters;

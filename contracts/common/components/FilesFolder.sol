@@ -48,14 +48,11 @@ contract FilesFolder is IFilesFolder, AccessControl {
     //##    写接口     ##
     //##################
 
-    function createDoc(uint16 typeOfDoc, uint16 version, uint40 creator)
+    function regFile(uint256 snOfDoc, address body)
         public
         onlyDirectKeeper
-        returns (address body)
     {
-        uint256 snOfDoc;
-
-        (snOfDoc, body) = _rc.createDoc(typeOfDoc, version, creator);
+        // (snOfDoc, body) = _rc.createDoc(typeOfDoc, version, creator);
 
         if (_folder.filesList.add(body)) {
             emit UpdateStateOfFile(body, uint8(StateOfFile.Created));

@@ -8,12 +8,12 @@
 pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
-import "../common/ruting/BOSSetting.sol";
-import "../common/ruting/BOPSetting.sol";
+// import "../common/ruting/BOSSetting.sol";
+// import "../common/ruting/BOPSetting.sol";
 
 import "./IBOPKeeper.sol";
 
-contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
+contract BOPKeeper is IBOPKeeper, AccessControl {
     using PledgesRepo for uint256;
 
     // ###################
@@ -32,11 +32,11 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
 
         PledgesRepo.Head memory head = sn.snParser();
 
-        require(_bos.getShare(head.seqOfShare).head.shareholder == caller, 
+        require(_gk.getBOS().getShare(head.seqOfShare).head.shareholder == caller, 
             "BOPK.CP: NOT shareholder");
         require(head.pledgor == caller, "BOPK.CP: NOT pledgor");
 
-        head = _bop.createPledge(
+        head = _gk.getBOP().createPledge(
             sn,
             creditor,
             guaranteeDays,
@@ -45,7 +45,7 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
             guaranteedAmt
         );
 
-        _bos.decreaseCleanPaid(head.seqOfShare, paid);
+        _gk.getBOS().decreaseCleanPaid(head.seqOfShare, paid);
     }
 
     function transferPledge(
@@ -55,9 +55,9 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint64 amt,
         uint256 caller        
     ) external onlyDirectKeeper {
-        require(_bop.getPledge(seqOfShare, seqOfPld).body.creditor == caller,
+        require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).body.creditor == caller,
             "BOPK.TP: not creditor");
-        _bop.transferPledge(seqOfShare, seqOfPld, buyer, amt);
+        _gk.getBOP().transferPledge(seqOfShare, seqOfPld, buyer, amt);
     }
 
     function refundDebt(
@@ -66,12 +66,12 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint64 amt,
         uint256 caller
     ) external onlyDirectKeeper {
-        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
+        PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
 
         require(pld.body.creditor == caller, "BOPK.RD: not creditor");
 
-        pld = _bop.refundDebt(seqOfShare, seqOfPld, amt);
-        _bos.increaseCleanPaid(seqOfShare, pld.body.paid);
+        pld = _gk.getBOP().refundDebt(seqOfShare, seqOfPld, amt);
+        _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
     }
 
     function extendPledge(
@@ -80,9 +80,9 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint16 extDays,
         uint256 caller
     ) external onlyDirectKeeper {
-        require(_bop.getPledge(seqOfShare, seqOfPld).head.pledgor == caller,
+        require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).head.pledgor == caller,
             "BOPK.EP: not pledgor");
-        _bop.extendPledge(seqOfShare, seqOfPld, extDays);    
+        _gk.getBOP().extendPledge(seqOfShare, seqOfPld, extDays);    
     }
 
     function lockPledge(
@@ -91,10 +91,10 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         bytes32 hashLock,
         uint256 caller
     ) external onlyDirectKeeper {
-        require(_bop.getPledge(seqOfShare, seqOfPld).body.creditor == caller,
+        require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).body.creditor == caller,
             "BOPK.LP: not creditor");
         
-        _bop.lockPledge(seqOfShare, seqOfPld, hashLock);    
+        _gk.getBOP().lockPledge(seqOfShare, seqOfPld, hashLock);    
     }
 
     function releasePledge(
@@ -103,12 +103,12 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         string memory hashKey,
         uint256 caller
     ) external onlyDirectKeeper {
-        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
+        PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
 
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
         
-        _bop.releasePledge(seqOfShare, seqOfPld, hashKey);
-        _bos.increaseCleanPaid(seqOfShare, pld.body.paid);       
+        _gk.getBOP().releasePledge(seqOfShare, seqOfPld, hashKey);
+        _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);       
     }
 
     function execPledge(
@@ -116,14 +116,14 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint256 seqOfPld,
         uint256 caller
     ) external onlyDirectKeeper {
-        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
+        PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
 
         require(pld.body.creditor == caller,
             "BOPK.EP: not creditor");
 
-        if (_bop.execPledge(seqOfShare, seqOfPld)) {
-            _bos.increaseCleanPaid(seqOfShare, pld.body.paid);
-            _bos.transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid));
+        if (_gk.getBOP().execPledge(seqOfShare, seqOfPld)) {
+            _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
+            _gk.getBOS().transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid));
         }
     }
 
@@ -132,11 +132,11 @@ contract BOPKeeper is IBOPKeeper, BOPSetting, BOSSetting, AccessControl {
         uint256 seqOfPld,
         uint256 caller
     ) external onlyDirectKeeper {
-        PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
+        PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
 
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
-        if (_bop.revokePledge(seqOfShare, seqOfPld)) {
-            _bos.increaseCleanPaid(seqOfShare, pld.body.paid);   
+        if (_gk.getBOP().revokePledge(seqOfShare, seqOfPld)) {
+            _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);   
         }
     }
 }

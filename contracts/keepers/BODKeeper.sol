@@ -9,172 +9,259 @@ pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
 
-import "../common/ruting/BODSetting.sol";
-import "../common/ruting/BOGSetting.sol";
-import "../common/ruting/BOHSetting.sol";
-
 import "./IBODKeeper.sol";
 
-contract BODKeeper is
-    IBODKeeper,
-    BODSetting,
-    BOGSetting,
-    BOHSetting,
-    AccessControl
-{
+contract BODKeeper is IBODKeeper, AccessControl {
     using RulesParser for uint256;
 
-    function appointOfficer(
-        uint256 seqOfBSR,
-        uint256 seqOfTitle,
-        uint256 nominator,
-        uint256 candidate
-    ) external onlyDirectKeeper {
-        
-        RulesParser.BoardSeatsRule memory bsr = 
-            _getSHA().getRule(seqOfBSR).boardSeatsRuleParser();
+    //##################
+    //##   Modifier   ##
+    //##################
 
-        require(bsr.rightholder == nominator, 
-            "BOGK.AO: nominator not rightholder");
-
-        uint256 seqOfVR = bsr.vrSeqOfNomination[seqOfTitle];
-        require(seqOfVR > 10 && seqOfVR < 21, "BOGK.AO: not Board voting issue");
-
-        uint8 title = bsr.nominationTitle[seqOfTitle];
-
-        _bod.appointOfficer(seqOfVR, title, nominator, candidate);
+    modifier directorExist(uint256 acct) {
+        require(_gk.getBOD().isDirector(acct), 
+            "BODK.DE: not director");
+        _;
     }
 
-    function takePosition(
-        uint256 seqOfBSR, 
-        uint256 seqOfTitle,
-        uint256 motionId, 
-        uint256 candidate 
-    ) external onlyDirectKeeper {
+    //###############
+    //##   Write   ##
+    //###############
 
-        RulesParser.BoardSeatsRule memory bsr = 
-            _getSHA().getRule(seqOfBSR).boardSeatsRuleParser();
+    // ==== CreateMotion ====
 
-        uint256 seqOfVR = bsr.vrSeqOfNomination[seqOfTitle];
+    // ---- Officers ----
 
-        RulesParser.VotingRule memory vr = 
-            _getSHA().getRule(seqOfVR).votingRuleParser();
+    function nominateOfficer(
+        uint256 seqOfPos,
+        uint40 candidate,
+        uint40 nominator
+    ) external onlyDirectKeeper directorExist(nominator) {
 
-        // bytes32 vrRule = _getSHA().getRule(seqOfVR);
+        IBookOfDirectors _bod = _gk.getBOD();
 
-        uint8 title = bsr.nominationTitle[seqOfTitle];
+        OfficersRepo.Position memory pos =
+            _bod.getPosition(seqOfPos);
 
-        MotionsRepo.Head memory head = (vr.authority % 2 == 1) ? 
-            _bog.getHeadOfMotion(motionId) : _bod.getHeadOfMotion(motionId);
+        require(pos.nominator == 0 || 
+            pos.nominator == nominator, 
+            "BODK.NO: has no nominationRight");
 
-        require(motionId == uint256(
-            keccak256(
-                abi.encode(seqOfVR, title, head.proposer, candidate, head.proposeDate)
-            )
-        ), "BODK.TP: incorrect motionId");
-
-        require(head.state == uint8(MotionsRepo.StateOfMotion.Passed), 
-            "BODK.TP: candidate not be approved or already in position");
-
-        require(
-            head.executor == candidate,
-            "BODK.TP: caller is not the candidate"
-        );
-
-        if (vr.authority % 2 == 1) _bog.motionExecuted(motionId);
-        else _bod.motionExecuted(motionId);
-        
-        _bod.takePosition(seqOfBSR, title, candidate, head.proposer);
+        uint64 seqOfMotion = 
+            _bod.nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
+        _bod.proposeMotion(seqOfMotion, nominator);
     }
 
-    function removeDirector(uint256 director, uint256 appointer) external onlyDirectKeeper {
+    function proposeToRemoveOfficer(
+        uint256 seqOfPos,
+        uint40 nominator
+    ) external onlyDirectKeeper directorExist(nominator) {
 
-        require(
-            _bod.isDirector(director),
-            "BODKeeper.removeDirector: appointer is not a member"
-        );
-        require(
-            _bod.getDirector(director).appointer == appointer,
-            "BODKeeper.reoveDirector: caller is not appointer"
-        );
+        IBookOfDirectors _bod = _gk.getBOD();
 
-        _bod.removeDirector(director);
+        OfficersRepo.Position memory pos =
+            _bod.getPosition(seqOfPos);
+
+        require(pos.nominator == 0 || 
+            pos.nominator == nominator, 
+            "BODK.NO: has no nominationRight");
+
+        uint64 seqOfMotion = _bod.proposeToRemoveOfficer(seqOfPos, pos.seqOfVR, nominator);
+        _bod.proposeMotion(seqOfMotion, nominator);
     }
 
-    function quitPosition(uint256 director) external onlyDirectKeeper {
+    // ---- Docs ----
 
-        require(
-            _bod.isDirector(director),
-            "BODKeeper.quitPosition: appointer is not a member"
-        );
+    function proposeDoc(
+        address doc,
+        uint16 seqOfVR,
+        uint40 executor,
+        uint40 proposer
+    ) external onlyDirectKeeper directorExist(proposer) {
 
-        _bod.removeDirector(director);
+        IBookOfDirectors _bod = _gk.getBOD();
+
+        uint64 seqOfMotion = _bod.proposeDoc(doc, seqOfVR, executor, proposer);
+        _bod.proposeMotion(seqOfMotion, proposer);
     }
 
-    // ==== resolution ====
-
-    function entrustDelegate(
-        uint256 caller,
-        uint256 delegate,
-        uint256 motionId
-    ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
-        _bod.entrustDelegate(motionId, caller, delegate);
-    }
+    // ---- Actions ----
 
     function proposeAction(
-        uint8 typeOfAction,
+        uint16 seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 submitter,
-        uint40 executor
-    ) external onlyDirectKeeper directorExist(submitter) {
-        _bod.proposeAction(
+        uint40 executor,
+        uint40 proposer
+    ) external onlyDirectKeeper directorExist(proposer){
+        IBookOfDirectors _bod = _gk.getBOD();
+        uint64 seqOfMotion = _bod.proposeAction(
+            seqOfVR,
+            targets,
+            values,
+            params,
+            desHash,
+            executor,
+            proposer
+        );
+        _bod.proposeMotion(seqOfMotion, proposer);
+    }
+
+    // ==== Cast Vote ====
+
+    function entrustDelegate(
+        uint256 seqOfMotion,
+        uint40 delegate,
+        uint40 caller
+    ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
+        _avoidanceCheck(seqOfMotion, caller);
+        _gk.getBOD().entrustDelegate(seqOfMotion, delegate, caller, 0);
+    }
+
+    function castVote(
+        uint256 seqOfMotion,
+        uint8 attitude,
+        bytes32 sigHash,
+        uint256 caller
+    ) external onlyDirectKeeper directorExist(caller) {
+        _avoidanceCheck(seqOfMotion, caller);
+        _gk.getBOD().castVote(seqOfMotion, attitude, sigHash, _gk.getROM(), caller);
+    }
+
+    function _avoidanceCheck(uint256 seqOfMotion, uint256 caller) private view {
+        MotionsRepo.Motion memory motion = _gk.getBOD().getMotion(seqOfMotion);
+
+        if (motion.head.typeOfMotion == 
+                uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) 
+        {
+            address doc = address(uint160(motion.contents));
+            
+            OfficersRepo.Position[] memory poses = 
+                _gk.getBOD().getOfficer(caller);
+            uint256 len = poses.length;            
+            while (len > 0) {
+                require (!ISigPage(doc).isSigner(poses[len-1].nominator), 
+                    "BODK.RPC: is related party");
+                len --;
+            }
+            require (!ISigPage(doc).isSigner(caller), 
+                "BODK.RPC: is related party");
+
+        }
+    }
+
+    // ==== Vote Counting ====
+
+    function voteCounting(uint256 seqOfMotion, uint256 caller)
+        external onlyDirectKeeper directorExist(caller)
+    {
+        IBookOfDirectors _bod = _gk.getBOD();
+
+        MotionsRepo.Motion memory motion = 
+            _bod.getMotion(seqOfMotion);
+
+        MotionsRepo.VoteCalBase memory base;
+        BallotsBox.Case memory case0 = _bod.getCaseOfAttitude(seqOfMotion, 0);
+
+        if (motion.votingRule.onlyAttendance) {
+            base.totalHead = _bod.getCaseOfAttitude(seqOfMotion, 0).sumOfHead;
+        } else {
+            base.totalHead = uint64(_bod.getNumOfDirectors());
+            if (motion.votingRule.impliedConsent) {
+                base.supportHead = (base.totalHead - case0.sumOfHead);                
+            }
+
+            if (motion.head.typeOfMotion == 
+                uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) 
+            {
+                uint256[] memory parties = 
+                    ISigPage((address(uint160(motion.contents)))).getParties();
+                uint256 len = parties.length;
+
+                while (len > 0) {
+                    uint64 voteHead = 
+                        uint64(_bod.getBoardSeatsOccupied(uint40(parties[len - 1])));
+
+                    if (voteHead > 0) {
+                        if (motion.votingRule.partyAsConsent) {
+                            if (!motion.votingRule.impliedConsent) {
+                                base.supportHead += voteHead;
+                            }
+                        } else {
+                            base.totalHead -= voteHead;
+                            if (motion.votingRule.impliedConsent) {
+                                base.supportHead -= voteHead;
+                            }
+                        }
+                    }
+
+                    len--;
+                }                
+            }
+        }
+
+        _bod.voteCounting(seqOfMotion, base);
+    }
+
+    // ==== Exec Motion ====
+
+    function takePosition(
+        uint256 seqOfMotion,
+        uint256 seqOfPos,
+        uint40 caller 
+    ) external onlyDirectKeeper {
+
+        IBookOfDirectors _bod = _gk.getBOD(); 
+    
+        require(_bod.getMotion(seqOfMotion).head.typeOfMotion == 
+            uint8(MotionsRepo.TypeOfMotion.ElectOfficer), 
+            "BODK.TO: not a suitable motion");
+
+        _bod.execResolution(seqOfMotion, seqOfPos, caller);
+        _bod.takePosition(seqOfPos, caller);
+    }
+
+    function quitPosition(uint256 seqOfPos, uint40 caller)
+        external onlyDirectKeeper 
+    {
+        _gk.getBOD().quitPosition(seqOfPos, caller);
+    }
+
+    function removeOfficer (
+        uint256 seqOfMotion, 
+        uint256 seqOfPos,
+        uint40 target,
+        uint40 caller
+    ) external onlyDirectKeeper {
+        IBookOfDirectors _bod = _gk.getBOD();
+        
+        require(_bod.getMotion(seqOfMotion).head.typeOfMotion == 
+            uint8(MotionsRepo.TypeOfMotion.RemoveOfficer), 
+            "BODK.TO: not a suitable motion");
+
+        _bod.execResolution(seqOfMotion, seqOfPos, caller);
+        _bod.removeOfficer(seqOfMotion, seqOfPos, target, caller);        
+    }
+
+    function execAction(
+        uint16 typeOfAction,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint256 seqOfMotion,
+        uint40 caller
+    ) external directorExist(caller) {
+        _gk.getBOD().execAction(
             typeOfAction,
             targets,
             values,
             params,
             desHash,
-            submitter,
-            executor
+            seqOfMotion,
+            caller
         );
-    }
-
-    function castVote(
-        uint256 actionId,
-        uint8 attitude,
-        bytes32 sigHash,
-        uint256 caller
-    ) external onlyDirectKeeper directorExist(caller) {
-        _bod.castVote(actionId, caller, attitude, sigHash);
-    }
-
-    function voteCounting(uint256 motionId, uint256 caller)
-        external
-        onlyDirectKeeper
-        directorExist(caller)
-    {
-        _bod.voteCounting(motionId);
-    }
-
-    function execAction(
-        uint8 typeOfAction,
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory params,
-        bytes32 desHash,
-        uint256 caller
-    ) external directorExist(caller) returns (uint256) {
-        require(!_rc.isCOA(caller), "caller is not an EOA");
-        return
-            _bod.execAction(
-                typeOfAction,
-                targets,
-                values,
-                params,
-                caller,
-                desHash
-            );
     }
 }

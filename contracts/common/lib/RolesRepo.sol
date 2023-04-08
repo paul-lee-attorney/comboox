@@ -9,6 +9,8 @@ pragma solidity ^0.8.8;
 
 library RolesRepo {
     bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
+    // bytes32 private constant _ACCOUNTANTS = bytes32("Accountants");
+    // bytes32 private constant _ADMINS = bytes32("Admins");
 
     struct GroupOfRole {
         mapping(uint256 => bool) isMember;
@@ -34,7 +36,7 @@ library RolesRepo {
     ) public {
 
         require(self.state == 0, 
-            "RR.initiate: already initiated");
+            "RR.ID: already initiated");
 
         self.state = 1;
         self.owner = uint40(owner);
@@ -43,25 +45,32 @@ library RolesRepo {
 
     function setBookeeper(
         Roles storage self,
-        address caller,
-        address acct
+        address acct,
+        address caller
     ) public {
         require(caller == self.bookeeper, 
-            "RR.setBookeeper: caller not bookeeper");
+            "RR.SK: not bookeeper");
         self.bookeeper = acct;
     }
 
     function setOwner(
         Roles storage self,
-        uint256 acct
+        uint256 acct,
+        uint256 caller
     ) public {
+        require(caller == self.owner, 
+            "RR.SO: not owner");
         self.owner = uint40(acct);
     }
 
     function setGeneralCounsel(
         Roles storage self,
-        uint256 acct
+        uint256 acct,
+        uint256 caller
     ) public {
+        require(caller == self.owner ||
+            caller == self.generalCounsel, 
+            "RR.SGC: neither owner nor gc");
         uint40 gc = uint40(acct);
         
         self.generalCounsel = gc;
@@ -77,13 +86,13 @@ library RolesRepo {
     function setRoleAdmin(
         Roles storage self,
         bytes32 role,
-        uint256 caller,
-        uint256 acct
+        uint256 acct,
+        uint256 caller
     ) public {
 
         require(
             caller == self.owner,
-            "RR.setRoleAdmin: caller not owner"
+            "RR.SRA: not owner"
         );
 
         self.roles[role].admin = uint40(acct);
@@ -92,12 +101,12 @@ library RolesRepo {
     function grantRole(
         Roles storage self,
         bytes32 role,
-        uint256 caller,
-        uint256 acct
+        uint256 acct,
+        uint256 caller
     ) public {
         require(
             caller == roleAdmin(self, role),
-            "RR.grantRole: caller not admin of role"
+            "RR.GR: not adminOfRole"
         );
         self.roles[role].isMember[acct] = true;
     }
@@ -105,11 +114,11 @@ library RolesRepo {
     function revokeRole(
         Roles storage self,
         bytes32 role,
-        uint256 originator,
-        uint256 acct
+        uint256 acct,
+        uint256 caller
     ) public {
-        require(originator == roleAdmin(self, role), 
-            "RR.revokeRole: originator not admin");
+        require(caller == roleAdmin(self, role), 
+            "RR.RR: not adminOfRole");
 
         delete self.roles[role].isMember[acct];
     }
@@ -117,15 +126,19 @@ library RolesRepo {
     function renounceRole(
         Roles storage self,
         bytes32 role,
-        uint256 originator
+        uint256 caller
     ) public {
-        delete self.roles[role].isMember[originator];
+        delete self.roles[role].isMember[caller];
     }
 
     function abandonRole(
         Roles storage self,
-        bytes32 role
+        bytes32 role,
+        uint256 caller
     ) public {
+        require(caller == self.owner ||
+            caller == roleAdmin(self, role), 
+            "RR.AR: neither owner nor adminOfRole");
         self.roles[role].admin = 0;
         delete self.roles[role];
     }

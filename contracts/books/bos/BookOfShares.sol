@@ -9,9 +9,9 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfShares.sol";
 import "../../common/access/AccessControl.sol";
-import "../../common/ruting/ROMSetting.sol";
+// import "../../common/ruting/ROMSetting.sol";
 
-contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
+contract BookOfShares is IBookOfShares, AccessControl {
     using LockersRepo for LockersRepo.Repo;
     using SharesRepo for SharesRepo.Repo;
     using SharesRepo for SharesRepo.Share;
@@ -50,12 +50,12 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         SharesRepo.Share memory newShare = 
             _repo.createShare(shareNumber, payInDeadline, paid, par);
 
-        _rom.addMember(newShare.head.shareholder);
+        _gk.getROM().addMember(newShare.head.shareholder);
 
         emit IssueShare(newShare.head.seqOfShare, paid, par);
 
-        _rom.addShareToMember(newShare);
-        _rom.capIncrease(paid, par);
+        _gk.getROM().addShareToMember(newShare);
+        _gk.getROM().capIncrease(paid, par);
     }
 
     function regShare(SharesRepo.Share memory share) 
@@ -64,7 +64,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         newShare = _repo.regShare(share);
         emit IssueShare(newShare.head.seqOfShare, newShare.body.paid, newShare.body.par);
 
-        _rom.addShareToMember(newShare);
+        _gk.getROM().addShareToMember(newShare);
     }
 
     // ==== PayInCapital ====
@@ -85,8 +85,8 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
             require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
             share.payInCapital(amount);
-            _rom.changeAmtOfMember(share.head.shareholder, amount, 0, true);
-            _rom.capIncrease(amount, 0);
+            _gk.getROM().changeAmtOfMember(share.head.shareholder, amount, 0, true);
+            _gk.getROM().capIncrease(amount, 0);
         }
     }
 
@@ -110,7 +110,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _rom.addMember(to);
+        _gk.getROM().addMember(to);
 
         SharesRepo.Share memory newShare;
 
@@ -145,7 +145,7 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _rom.capDecrease(paid, par);
+        _gk.getROM().capDecrease(paid, par);
     }
 
     // ==== cleanAmt ====
@@ -203,11 +203,11 @@ contract BookOfShares is IBookOfShares, ROMSetting, AccessControl {
         private 
     {
         if (par == share.body.par) {
-            _rom.removeShareFromMember(share);
+            _gk.getROM().removeShareFromMember(share);
             _repo.deregShare(share.head.seqOfShare);
         } else {
             _subAmtFromShare(share, paid, par);
-            _rom.changeAmtOfMember(
+            _gk.getROM().changeAmtOfMember(
                 share.head.shareholder,
                 paid,
                 par,

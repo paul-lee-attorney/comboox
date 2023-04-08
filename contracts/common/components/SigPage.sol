@@ -85,16 +85,10 @@ contract SigPage is ISigPage, AccessControl {
             _sigPages[1].sellers.contains(acct);
     }
 
-    function isParty(bool initPage, uint256 acct)
-        public view returns(bool flag)
-    {
-        flag = isBuyer(initPage, acct) || isSeller(initPage, acct);
-    }
-
-    function isSigner(bool initPage, uint256 acct)
+    function isSigner(uint256 acct)
         external view returns (bool flag) 
     {
-        flag = initPage ? _sigPages[0].isSigner(acct) :
+        flag = _sigPages[0].isSigner(acct) ||
             _sigPages[1].isSigner(acct);
     }
 

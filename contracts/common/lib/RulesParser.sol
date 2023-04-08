@@ -12,66 +12,70 @@ library RulesParser {
     // ======== GovernanceRule ========
 
     struct GovernanceRule {
-        uint16 seq;
+        uint16 seqOfRule;
         uint8 qtyOfSubRule;
         uint8 seqOfSubRule;
         bool basedOnPar;
-        uint16 proposalThreshold;
-        uint8 maxNumOfDirectors;
-        uint8 tenureOfBoard;
+        uint16 proposeWeightRatioOfShares;
+        uint16 proposeHeadNumOfDirectors;
+        uint16 maxNumOfMembers;
+        uint16 maxNumOfDirectors;
+        uint16 tenureMonOfBoard;
         uint16 shaEffectiveRatio;
     }
 
     function governanceRuleParser(uint256 sn) public pure returns (GovernanceRule memory rule) {
         rule = GovernanceRule({
-            seq: uint16(sn >> 240),
+            seqOfRule: uint16(sn >> 240),
             qtyOfSubRule: uint8(sn >> 232),
             seqOfSubRule: uint8(sn >> 224),
             basedOnPar: uint8(sn >> 216) == 1,
-            proposalThreshold: uint16(sn >> 200),
-            maxNumOfDirectors: uint8(sn >> 192),
-            tenureOfBoard: uint8(sn >> 184),
-            shaEffectiveRatio: uint16(sn >> 168)
+            proposeWeightRatioOfShares: uint16(sn >> 200),
+            proposeHeadNumOfDirectors: uint16(sn >> 184),
+            maxNumOfMembers: uint16(sn >> 168),
+            maxNumOfDirectors: uint16(sn >> 152),
+            tenureMonOfBoard: uint16(sn >> 136),
+            shaEffectiveRatio: uint16(sn >> 120)
         });
     }
 
     // ---- VotingRule ----
 
     struct VotingRule{
-        uint16 seq;
+        uint16 seqOfRule;
         uint8 qtyOfSubRule;
         uint8 seqOfSubRule;
-        uint8 authority;
+        uint16 authority;
         uint16 headRatio;
         uint16 amountRatio;
         bool onlyAttendance;
         bool impliedConsent;
         bool partyAsConsent;
         bool againstShallBuy;
-        uint8 shaExecDays;
-        uint8 reviewDays;
-        uint8 votingDays;
-        uint8 execDaysForPutOpt;
-        uint40[3] vetoers;
+        uint16 shaExecDays;
+        uint16 reviewDays;
+        uint16 votingDays;
+        uint16 execDaysForPutOpt;
+        uint40[2] vetoers;
     }
 
     function votingRuleParser(uint256 sn) public pure returns (VotingRule memory rule) {
         rule = VotingRule({
-            seq: uint16(sn >> 240),
+            seqOfRule: uint16(sn >> 240),
             qtyOfSubRule: uint8(sn >> 232),
             seqOfSubRule: uint8(sn >> 224),
-            authority: uint8(sn >> 216),
-            headRatio: uint16(sn >> 200),
-            amountRatio: uint16(sn >> 184),
-            onlyAttendance: uint8(sn >> 176) == 1,
-            impliedConsent: uint8(sn >> 168) == 1,
-            partyAsConsent: uint8(sn >> 160) == 1,
-            againstShallBuy: uint8(sn >> 152) == 1,
-            shaExecDays: uint8(sn >> 144),
-            reviewDays: uint8(sn >> 136),
-            votingDays: uint8(sn >> 128),
-            execDaysForPutOpt: uint8(sn >> 120),
-            vetoers: [uint40(sn >> 80), uint40(sn >> 40), uint40(sn)]
+            authority: uint16(sn >> 208),
+            headRatio: uint16(sn >> 192),
+            amountRatio: uint16(sn >> 176),
+            onlyAttendance: uint8(sn >> 168) == 1,
+            impliedConsent: uint8(sn >> 160) == 1,
+            partyAsConsent: uint8(sn >> 152) == 1,
+            againstShallBuy: uint8(sn >> 144) == 1,
+            shaExecDays: uint16(sn >> 128),
+            reviewDays: uint16(sn >> 112),
+            votingDays: uint16(sn >> 96),
+            execDaysForPutOpt: uint16(sn >> 80),
+            vetoers: [uint40(sn >> 40), uint40(sn)]
         });
     }
 
@@ -84,35 +88,40 @@ library RulesParser {
     ...
 */
 
-    struct BoardSeatsRule {
-        uint16 seq;
+    struct PositionAllocateRule {
+        uint16 seqOfRule;
         uint8 qtyOfSubRule;
         uint8 seqOfSubRule;
-        uint40 rightholder;
-        uint16 qtyOfBoardSeats;
-        uint8[7] nominationTitle;
-        uint16[7] vrSeqOfNomination;
+        bool removePos;
+        uint16 seqOfPos;
+        uint16 titleOfPos;
+        uint40 nominator;
+        uint16 seqOfVR;
+        uint48 endDate;
+        uint16 para;
+        uint16 arg;
     }
 
-    function boardSeatsRuleParser(uint256 sn) public pure returns(BoardSeatsRule memory rule) {
-        rule = BoardSeatsRule({
-            seq: uint16(sn >> 240),
+    function positionAllocateRuleParser(uint256 sn) public pure returns(PositionAllocateRule memory rule) {
+        rule = PositionAllocateRule({
+            seqOfRule: uint16(sn >> 240),
             qtyOfSubRule: uint8(sn >> 232),
             seqOfSubRule: uint8(sn >> 224),
-            rightholder: uint40(sn >> 184),
-            qtyOfBoardSeats: uint16(sn >> 168),
-            nominationTitle: [uint8(sn >> 160), uint8(sn >> 152), uint8(sn >> 144), uint8(sn >> 136), uint8(sn >> 128),
-                uint8(sn >> 120), uint8(sn >> 112)],
-            vrSeqOfNomination: [uint16(sn >> 96), uint16(sn >> 80), uint16(sn >> 64),
-                uint16(sn >> 48), uint16(sn >> 32), uint16(sn >> 16),
-                uint16(sn)]
+            removePos: uint8(sn >> 216) == 1,
+            seqOfPos: uint16(sn >> 200),
+            titleOfPos: uint16(sn >> 184),
+            nominator: uint40(sn >> 144),
+            seqOfVR: uint16(sn >> 128),
+            endDate: uint48(sn >> 80),
+            para: uint16(sn >> 64),
+            arg: uint16(sn >> 48)
         });
     }
 
     // ---- FirstRefusal Rule ----
 
     struct FirstRefusalRule {
-        uint16 seq;
+        uint16 seqOfRule;
         uint8 qtyOfSubRule;
         uint8 seqOfSubRule;
         uint8 typeOfDeal;
@@ -124,7 +133,7 @@ library RulesParser {
 
     function firstRefusalRuleParser(uint256 sn) public pure returns(FirstRefusalRule memory rule) {
         rule = FirstRefusalRule({
-            seq: uint16(sn >> 240),
+            seqOfRule: uint16(sn >> 240),
             qtyOfSubRule: uint8(sn >> 232),
             seqOfSubRule: uint8(sn >> 224),
             typeOfDeal: uint8(sn >> 216),
@@ -139,7 +148,7 @@ library RulesParser {
     // ---- GroupUpdateOrder ----
 
     struct GroupUpdateOrder {
-        uint16 seq;
+        uint16 seqOfRule;
         uint8 qtyOfSubRule;
         uint8 seqOfSubRule;
         bool addMember;
@@ -149,7 +158,7 @@ library RulesParser {
 
     function groupUpdateOrderParser(uint256 sn) public pure returns(GroupUpdateOrder memory order) {
         order = GroupUpdateOrder({
-            seq: uint16(sn >> 240),
+            seqOfRule: uint16(sn >> 240),
             qtyOfSubRule: uint8(sn >> 232),
             seqOfSubRule: uint8(sn >> 224),
             addMember: uint8(sn >> 216) == 1,
@@ -162,7 +171,7 @@ library RulesParser {
     // ======== LinkRule ========
 
     struct LinkRule {
-        uint16 seq;
+        uint16 seqOfRule;
         uint8 qtyOfSubRule;
         uint8 seqOfSubRule;
         uint40 drager;
@@ -176,7 +185,7 @@ library RulesParser {
 
     function linkRuleParser(uint256 sn) public pure returns (LinkRule memory rule) {
         return LinkRule({
-            seq: uint16(sn >> 240),
+            seqOfRule: uint16(sn >> 240),
             qtyOfSubRule: uint8(sn >> 232),
             seqOfSubRule: uint8(sn >> 224),
             drager: uint40(sn >> 184),

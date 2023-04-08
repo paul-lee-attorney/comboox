@@ -10,6 +10,9 @@ pragma solidity ^0.8.8;
 import "./ITerm.sol";
 import "../../../common/lib/EnumerableSet.sol";
 
+import "../../../common/lib/ArrayUtils.sol";
+import "../../../common/lib/EnumerableSet.sol";
+
 
 interface ILockUp is ITerm {
 

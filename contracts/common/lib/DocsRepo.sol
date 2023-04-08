@@ -15,9 +15,12 @@ library DocsRepo {
      struct Head {
         uint16 typeOfDoc;
         uint16 version;
-        uint136 seqOfDoc;
+        uint64 seqOfDoc;
         uint40 creator;
         uint48 createDate;
+        uint16 para;
+        uint24 argu;
+        uint32 data;        
     }
  
     struct Doc {
@@ -32,15 +35,6 @@ library DocsRepo {
     }
 
     //##################
-    //##    Modifier  ##
-    //##################
-
-    modifier onlyKeeper(Repo storage repo, uint40 caller) {
-        require(getKeeper(repo) == caller, "DR.mf.OK: not keeper");
-        _;
-    }
-
-    //##################
     //##    写接口     ##
     //##################
 
@@ -48,18 +42,24 @@ library DocsRepo {
         head = Head({
             typeOfDoc: uint16(sn >> 240),
             version: uint16(sn >> 224),
-            seqOfDoc: uint136(sn >> 88),
-            creator: uint40(sn >> 48),
-            createDate: uint48(sn)
+            seqOfDoc: uint64(sn >> 160),
+            creator: uint40(sn >> 120),
+            createDate: uint48(sn >> 72),
+            para: uint16(sn >> 56),
+            argu: uint24(sn >> 32),
+            data: uint32(sn)
         });
     }
 
     function codifyHead(Head memory head) public pure returns(uint256 sn) {
         sn = (uint256(head.typeOfDoc) << 240) +
             (uint256(head.version) << 224) +
-            (uint256(head.seqOfDoc) << 88) +
-            (uint256(head.creator) << 48) +
-            (uint256(head.createDate));
+            (uint256(head.seqOfDoc) << 160) +
+            (uint256(head.creator) << 120) +
+            (uint256(head.createDate) << 72) +
+            (uint256(head.para) << 56) +
+            (uint256(head.argu) << 32) +
+            head.data;
     }
 
     function init(Repo storage repo, uint40 caller) 
@@ -71,70 +71,58 @@ library DocsRepo {
     }
 
     function turnOverRepoKey(Repo storage repo, uint40 keeper, uint40 caller) 
-        onlyKeeper(repo, caller) public returns (bool flag) 
+        public returns (bool flag) 
     {
+        require(getKeeper(repo) == caller, "DR.TORK: not keeper");
         if (caller != keeper) {
             flag = _setKeeper(repo, keeper);
         }
     } 
 
     function setTemplate(
-        Repo storage repo, 
-        uint16 typeOfDoc,
+        Repo storage repo,
+        uint256 snOfDoc, 
         address body,
         uint40 caller
-    ) public onlyKeeper(repo, caller) returns (uint256 snOfDoc) {
-        require(typeOfDoc > 0, "DR.ST: zero typeOfDoc");
+    ) public returns (Doc memory doc) {
+        doc.head = snParser(snOfDoc);
 
-        Head memory head = Head({
-            typeOfDoc: typeOfDoc,
-            version: _increaseCounterOfVersions(repo, typeOfDoc),
-            seqOfDoc: 0,
-            creator: 0,
-            createDate: 0
-        });
+        require(doc.head.typeOfDoc > 0, "DR.ST: zero typeOfDoc");
+        require(caller == getKeeper(repo), "DR.ST: not keeper");
 
-        snOfDoc = codifyHead(head);
-
-        repo.snList.add(snOfDoc);
-
-        head.creator = caller;
-        head.createDate = uint48(block.timestamp);
-
-        Doc storage doc = repo.docs[head.typeOfDoc][head.version][0];
-
-        doc.head = head;
+        doc.head.creator = caller;
+        doc.head.version = _increaseCounterOfVersions(repo, doc.head.typeOfDoc);
+        doc.head.createDate = uint48(block.timestamp);
         doc.body = body;
+
+        if (repo.snList.add(codifyHead(doc.head))) {
+            repo.docs[doc.head.typeOfDoc][doc.head.version][0] = doc;
+        }
     }
 
-    function createDoc(Repo storage repo, uint16 typeOfDoc, uint16 version, uint40 creator)
-        public returns (uint256 snOfDoc, address body)
+    function createDoc(Repo storage repo, uint256 snOfDoc, uint40 creator)
+        public returns (Doc memory doc)
     {
-        require(typeOfDoc > 0, "DR.CD: zero typeOfDoc");
-        require(version > 0, "DR.CD: zero version");
+        doc.head = snParser(snOfDoc);
+
+        require(doc.head.typeOfDoc > 0, "DR.CD: zero typeOfDoc");
+        require(doc.head.version > 0, "DR.CD: zero version");
         require(creator > 0, "DR.CD: zero creator");
 
-        address temp = repo.docs[typeOfDoc][version][0].body;
+        doc.head.creator = creator;
+
+        address temp = repo.docs[doc.head.typeOfDoc][doc.head.version][0].body;
 
         require(temp != address(0), "DR.CD: template not ready");
     
-        body = _createClone(temp);
+        doc.body = _createClone(temp);
 
-        Head memory head = Head({
-            typeOfDoc: typeOfDoc,
-            version: version,
-            seqOfDoc: _increaseCounterOfDocs(repo, typeOfDoc, version),
-            creator: creator,
-            createDate: uint48(block.timestamp)
-        });
+        doc.head.seqOfDoc = _increaseCounterOfDocs(repo, doc.head.typeOfDoc, doc.head.version);
+        doc.head.createDate = uint48(block.timestamp);
 
-        snOfDoc = codifyHead(head);
-
-        repo.snList.add(snOfDoc);
-
-        Doc storage doc = repo.docs[head.typeOfDoc][head.version][head.seqOfDoc];
-        doc.head = head;
-        doc.body = body;    
+        if (repo.snList.add(codifyHead(doc.head))) {
+            repo.docs[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc] = doc;
+        }
     }
 
     function _setKeeper(Repo storage repo, uint40 keeper) private returns (bool flag) {
@@ -144,12 +132,12 @@ library DocsRepo {
         }
     }
 
-    function _increaseCounterOfVersions(Repo storage repo, uint16 typeOfDoc) private returns(uint16 version) {
+    function _increaseCounterOfVersions(Repo storage repo, uint256 typeOfDoc) private returns(uint16 version) {
         repo.docs[typeOfDoc][0][0].head.version++;
         version = repo.docs[typeOfDoc][0][0].head.version;
     }
 
-    function _increaseCounterOfDocs(Repo storage repo, uint16 typeOfDoc, uint16 version) private returns(uint136 seq) {
+    function _increaseCounterOfDocs(Repo storage repo, uint256 typeOfDoc, uint256 version) private returns(uint64 seq) {
         repo.docs[typeOfDoc][version][0].head.seqOfDoc++;
         seq = repo.docs[typeOfDoc][version][0].head.seqOfDoc;
     }
@@ -226,11 +214,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     //##   read I/O   ##
     //##################
 
-    function counterOfVersions(Repo storage repo, uint16 typeOfDoc) public view returns(uint16 seq) {
+    function counterOfVersions(Repo storage repo, uint256 typeOfDoc) public view returns(uint16 seq) {
         seq = repo.docs[typeOfDoc][0][0].head.version;
     }
 
-    function counterOfDocs(Repo storage repo, uint16 typeOfDoc, uint16 version) public view returns(uint136 seq) {
+    function counterOfDocs(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(uint64 seq) {
         seq = repo.docs[typeOfDoc][version][0].head.seqOfDoc;
     }
 
@@ -267,7 +255,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return repo.snList.values();
     }
 
-    function getBodiesList(Repo storage repo, uint16 typeOfDoc, uint16 version) public view returns(address[] memory) {
+    function getBodiesList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(address[] memory) {
         uint256 len = counterOfDocs(repo, typeOfDoc, version);
         address[] memory output = new address[](len);
         while (len > 0) {
@@ -277,7 +265,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return output;
     } 
 
-    function getSNList(Repo storage repo, uint16 typeOfDoc, uint16 version) public view returns(uint256[] memory) {
+    function getSNList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(uint256[] memory) {
         uint256 len = counterOfDocs(repo, typeOfDoc, version);
         uint256[] memory output = new uint256[](len);
         while (len > 0) {
@@ -287,7 +275,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return output;
     } 
 
-    function getDocsList(Repo storage repo, uint16 typeOfDoc, uint16 version) public view returns(Doc[] memory) {
+    function getDocsList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(Doc[] memory) {
         uint256 len = counterOfDocs(repo, typeOfDoc, version);
         Doc[] memory output = new Doc[](len);
         while (len > 0) {
@@ -297,7 +285,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return output;
     } 
 
-    function getTempsList(Repo storage repo, uint16 typeOfDoc) public view returns(Doc[] memory) {
+    function getTempsList(Repo storage repo, uint256 typeOfDoc) public view returns(Doc[] memory) {
         uint256 len = counterOfVersions(repo, typeOfDoc);
         Doc[] memory output = new Doc[](len);
         while (len > 0) {

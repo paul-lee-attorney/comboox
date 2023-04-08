@@ -9,7 +9,7 @@ pragma solidity ^0.8.8;
 
 import "../../common/components/IFilesFolder.sol";
 
-interface IBookOfSHA is IFilesFolder {
+interface IBookOfSHA is IFilesFolder{
 
     //##############
     //##  Event   ##

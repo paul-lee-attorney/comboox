@@ -11,10 +11,10 @@ import "./IRegisterOfSwaps.sol";
 
 import "../../common/access/AccessControl.sol";
 
-import "../../common/ruting/BOSSetting.sol";
-import "../../common/ruting/ROMSetting.sol";
+// import "../../common/ruting/BOSSetting.sol";
+// import "../../common/ruting/ROMSetting.sol";
 
-contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessControl {
+contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using SwapsRepo for SwapsRepo.Repo;
     using SwapsRepo for SwapsRepo.Swap;
@@ -31,7 +31,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
         uint40 rightholder, 
         uint64 paidOfConsider
     ) external onlyKeeper {
-        SwapsRepo.Head memory head = _repo.createSwap(sn, rightholder, paidOfConsider, _rom);
+        SwapsRepo.Head memory head = _repo.createSwap(sn, rightholder, paidOfConsider, _gk);
         emit CreateSwap(head.seqOfSwap, rightholder, head.obligor, paidOfConsider, head.rateOfSwap);
     }
 
@@ -40,14 +40,14 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
         uint40 rightholder, 
         uint64 paidOfConsider
     ) external onlyKeeper {
-        SwapsRepo.Head memory regHead = _repo.issueSwap(head, rightholder, paidOfConsider, _rom);
+        SwapsRepo.Head memory regHead = _repo.issueSwap(head, rightholder, paidOfConsider, _gk);
         emit CreateSwap(regHead.seqOfSwap, rightholder, regHead.obligor, paidOfConsider, regHead.rateOfSwap);
     }
     
     function regSwap(SwapsRepo.Swap memory swap) external onlyKeeper 
         returns (SwapsRepo.Swap memory newSwap)
     {
-        newSwap = _repo.regSwap(swap, _rom);
+        newSwap = _repo.regSwap(swap, _gk);
         emit CreateSwap(newSwap.head.seqOfSwap, newSwap.body.rightholder, newSwap.head.obligor, newSwap.body.paidOfConsider, newSwap.head.rateOfSwap);
     }
 
@@ -56,7 +56,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
     {
         SwapsRepo.Swap memory swap;
 
-        swap.head = _repo.splitSwap(seqOfSwap, to, amt, _rom);
+        swap.head = _repo.splitSwap(seqOfSwap, to, amt, _gk);
         swap = _repo.swaps[swap.head.seqOfSwap];
 
         emit CreateSwap(swap.head.seqOfSwap, swap.body.rightholder, swap.head.obligor, swap.body.paidOfConsider, swap.head.rateOfSwap);
@@ -65,7 +65,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, BOSSetting, ROMSetting, AccessCont
     function crystalizeSwap(uint256 seqOfSwap, uint32 seqOfConsider, uint32 seqOfTarget)
         external onlyKeeper returns(SwapsRepo.Body memory body)
     {        
-        body = _repo.swaps[seqOfSwap].crystalizeSwap(seqOfConsider, seqOfTarget, _bos);
+        body = _repo.swaps[seqOfSwap].crystalizeSwap(seqOfConsider, seqOfTarget, _gk);
         emit CrystalizeSwap(seqOfSwap, seqOfConsider, body.paidOfConsider, seqOfTarget, body.paidOfTarget);
     }
 

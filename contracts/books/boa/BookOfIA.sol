@@ -12,15 +12,11 @@ import "./IBookOfIA.sol";
 
 import "../../common/components/FilesFolder.sol";
 
-import "../../common/lib/EnumerableSet.sol";
-import "../../common/lib/RulesParser.sol";
-import "../../common/lib/TopChain.sol";
+// import "../../common/ruting/BOSSetting.sol";
+// import "../../common/ruting/BOHSetting.sol";
+// import "../../common/ruting/ROMSetting.sol";
 
-import "../../common/ruting/BOSSetting.sol";
-import "../../common/ruting/BOHSetting.sol";
-import "../../common/ruting/ROMSetting.sol";
-
-contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, FilesFolder {
+contract BookOfIA is IBookOfIA, FilesFolder {
     using DTClaims for DTClaims.Claims;
     using EnumerableSet for EnumerableSet.UintSet;
     using FRClaims for FRClaims.Claims;
@@ -47,7 +43,7 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, FilesFolder 
     ) external onlyDirectKeeper {
         uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
         RulesParser.VotingRule memory vr = 
-            _getSHA().getRule(typeOfIA).votingRuleParser();
+            _gk.getSHA().getRule(typeOfIA).votingRuleParser();
         circulateDoc(ia, vr, docUrl, docHash);
     }
 
@@ -85,7 +81,7 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, FilesFolder 
         uint256 seqOfDeal
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {        
         emit AcceptFirstRefusalClaims(ia, seqOfDeal);
-        output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _rom);
+        output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _gk.getROM());
     }
 
     // ==== DragAlong & TagAlong ====
@@ -122,8 +118,8 @@ contract BookOfIA is IBookOfIA, BOHSetting, ROMSetting, BOSSetting, FilesFolder 
         private
         returns (bool flag)
     {        
-        if (_mockOfIA[ia].qtyOfMembers() == 0) {
-            _mockOfIA[ia].restoreChain(_rom.getSnapshot());
+        if (_mockOfIA[ia].getNumOfMembers() == 0) {
+            _mockOfIA[ia].restoreChain(_gk.getROM().getSnapshot());
             _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia));
 
             flag = true;

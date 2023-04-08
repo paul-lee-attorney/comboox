@@ -9,93 +9,92 @@ pragma solidity ^0.8.8;
 
 import "../../common/components/IMeetingMinutes.sol";
 
-interface IBookOfDirectors is IMeetingMinutes {
+// import "../../common/lib/EnumerableSet.sol";
+import "../../common/lib/OfficersRepo.sol";
+// import "../../common/lib/RulesParser.sol";
 
-    enum TitleOfDirectors {
-        ZeroPoint,
-        Chairman,
-        ViceChairman,
-        Director,
-        CEO,
-        CFO,
-        COO,
-        CTO,
-        President,
-        VicePresident,
-        SeniorManager,
-        Manager,
-        ViceManager        
-    }
-
-    struct Officer {
-        uint8 title; 
-        uint40 acct;
-        uint40 appointer;
-        uint48 startDate;
-        uint48 endDate;
-    }
+interface IBookOfDirectors is IMeetingMinutes{
 
     //###################
     //##    events    ##
     //##################
 
-    event SetMaxQtyOfDirectors(uint8 max);
+    event AddPosition(uint256 indexed snOfPos);
 
-    event AppointOfficer(
-        uint256 indexed acct,
-        uint8 title,
-        uint256 appointer
-    );
+    event RemovePosition(uint256 indexed seqOfPos);
 
-    event AddDirector(
-        uint256 indexed acct,
-        uint8 title,
-        uint256 appointer,
-        uint48 startDate,
-        uint48 endDate
-    );
+    event TakePosition(uint256 indexed snOfPos);
 
-    event RemoveDirector(uint256 indexed acct);
+    event QuitPosition(uint256 indexed seqOfPos, uint256 indexed caller);
+
+    event RemoveOfficer(uint256 indexed seqOfMotion, uint256 indexed seqOfPos, uint256 target, uint256 caller);
+
+    // event ExecAction(uint256 indexed contents, bool success);
 
     //##################
     //##    写接口    ##
     //##################
 
-    // ======== Directors ========
+    function createPosition(uint256 snOfPos) external;
 
-    function setMaxQtyOfDirectors(uint8 max) external;
+    function updatePosition(OfficersRepo.Position memory pos) external;
 
-    function appointOfficer(
-        uint256 seqOfVR,
-        uint8 title,
-        uint256 nominator,
-        uint256 candidate
+    function removePosition(uint256 seqOfPos) external;
+
+    function takePosition (uint256 seqOfPos, uint40 caller) external;
+
+    function quitPosition (uint256 seqOfPos, uint40 caller)
+        external; 
+
+    function removeOfficer (
+        uint256 seqOfMotion, 
+        uint256 seqOfPos, 
+        uint40 target, 
+        uint40 caller
     ) external;
-
-    function removeDirector(uint256 acct) external;
-
-    function takePosition(uint256 seqOfBSR, uint8 titile, uint256 candidate, uint256 nominator) external;
 
     //##################
     //##    读接口    ##
     //##################
+    
+    function posExist(uint256 seqOfPos) external view returns (bool flag);
 
-    function maxQtyOfDirectors() external view returns (uint8);
+    function isOccupied(uint256 seqOfPos) external view returns (bool flag);
 
-    function qtyOfDirectors() external view returns (uint16);
+    function getPosList() external view returns(uint256[] memory list);
 
-    function isDirector(uint256 acct) external view returns (bool);
+    function getPosition(uint256 seqOfPos) external view 
+        returns (OfficersRepo.Position memory pos);
+
+    function getFullPosInfo() external view 
+        returns(OfficersRepo.Position[] memory list);
 
     function isOfficer(uint256 acct) external view returns (bool);
 
-    function whoIs(uint8 title) external view returns (uint40);
+    function hasPosition(uint256 acct, uint256 seqOfPos)
+        external view returns(bool flag);
 
-    function getDirector(uint256 acct)
-        external
-        view
-        returns(Officer memory director);
+    function getPosInHand(uint256 acct) 
+        external view returns (uint256[] memory ls);
 
-    function directors() external view returns (uint256[] memory);
+    function getOfficer(uint256 acct) external view 
+        returns(OfficersRepo.Position[] memory ls);
 
-    function boardSeatsOf(uint256 acct) external view returns(uint256);    
+    function getOffList() external view returns (uint256[] memory ls);
+
+    function getNumOfOfficers() external view returns (uint256 num);
+
+    function isDirector(uint256 acct) external view returns (bool flag);
+
+    function getNumOfDirectors() external view returns (uint256 num);
+
+    function getDirectorsList() external view 
+        returns (uint256[] memory list);
+
+    function getBoardSeatsQuota(uint256 acct) external view 
+        returns(uint256 quota);
+
+    function getBoardSeatsOccupied(uint40 acct) external view 
+        returns (uint256 num);
+
 }

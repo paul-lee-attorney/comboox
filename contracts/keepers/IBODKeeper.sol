@@ -7,56 +7,89 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/lib/MotionsRepo.sol";
+import "../books/bod/IBookOfDirectors.sol";
+
+// import "../common/lib/UsersRepo.sol";
+// import "../common/lib/MotionsRepo.sol";
 import "../common/lib/RulesParser.sol";
 
 interface IBODKeeper {
-    function appointOfficer(
-        uint256 seqOfBSR,
-        uint256 seqOfTitle,
-        uint256 nominator,
-        uint256 candidate
+    function nominateOfficer(
+        uint256 seqOfPos,
+        uint40 candidate,
+        uint40 nominator
     ) external;
 
-    function takePosition(uint256 seqOfBSR, uint256 seqOfTitile, uint256 motionId, uint256 candidate) external;
-
-    function removeDirector(uint256 director, uint256 appointer) external;
-
-    function quitPosition(uint256 director) external;
-
-    // ==== resolution ====
-
-    function entrustDelegate(
-        uint256 caller,
-        uint256 delegate,
-        uint256 actionId
+    function proposeToRemoveOfficer(
+        uint256 seqOfPos,
+        uint40 nominator
     ) external;
+
+    // ---- Docs ----
+
+    function proposeDoc(
+        address doc,
+        uint16 seqOfVR,
+        uint40 executor,
+        uint40 proposer
+    ) external;
+
+    // ---- Actions ----
 
     function proposeAction(
-        uint8 typeOfAction,
+        uint16 seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 submitter,
-        uint40 executor
+        uint40 executor,
+        uint40 proposer
+    ) external;
+
+    // ==== Cast Vote ====
+
+    function entrustDelegate(
+        uint256 seqOfMotion,
+        uint40 delegate,
+        uint40 caller
     ) external;
 
     function castVote(
-        uint256 actionId,
+        uint256 seqOfMotion,
         uint8 attitude,
         bytes32 sigHash,
         uint256 caller
     ) external;
 
-    function voteCounting(uint256 actionId, uint256 caller) external;
+    // ==== Vote Counting ====
+
+    function voteCounting(uint256 seqOfMotion, uint256 caller)
+        external;
+
+    // ==== Exec Motion ====
+
+    function takePosition(
+        uint256 seqOfMotion,
+        uint256 seqOfPos,
+        uint40 caller 
+    ) external;
+
+    function quitPosition(uint256 seqOfPos, uint40 caller) external;
+
+    function removeOfficer (
+        uint256 seqOfMotion, 
+        uint256 seqOfPos,
+        uint40 target,
+        uint40 caller
+    ) external;
 
     function execAction(
-        uint8 typeOfAction,
+        uint16 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 caller
-    ) external returns (uint256);
+        uint256 seqOfMotion,
+        uint40 caller
+    ) external;
 }

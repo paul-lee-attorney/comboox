@@ -8,7 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../lib/EnumerableSet.sol";
-import "../lib/DocsRepo.sol";
+// import "../lib/DocsRepo.sol";
 import "../lib/RulesParser.sol";
 
 interface IFilesFolder {
@@ -56,7 +56,7 @@ interface IFilesFolder {
     //##    写接口    ##
     //##################
 
-    function createDoc(uint16 typeOfDoc, uint16 version, uint40 creator) external returns (address body);
+    function regFile(uint256 snOfDoc, address body) external;
 
     function circulateDoc(
         address body,

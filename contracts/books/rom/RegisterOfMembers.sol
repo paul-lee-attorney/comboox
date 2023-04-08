@@ -11,9 +11,9 @@ import "./IRegisterOfMembers.sol";
 
 import "../../common/access/AccessControl.sol";
 
-import "../../common/ruting/BOSSetting.sol";
+// import "../../common/ruting/BOSSetting.sol";
 
-contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
+contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
     using MembersRepo for MembersRepo.Repo;
@@ -24,6 +24,14 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
     //##################
     //##   Modifier   ##
     //##################
+
+    modifier onlyBOS() {
+        require(
+            msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfShares)),
+            "ROM.mf.OBOS: msgSender is not BOS"
+        );
+        _;
+    }
 
     modifier memberExist(uint256 acct) {
         require(isMember(acct), "ROM.memberExist: NOT Member");
@@ -66,13 +74,13 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
 
     function addMember(uint256 acct) external onlyBOS {
         require(
-            _repo.chain.qtyOfMembers() < _repo.chain.maxQtyOfMembers() ||
+            _repo.chain.getNumOfMembers() < _repo.chain.maxQtyOfMembers() ||
                 _repo.chain.maxQtyOfMembers() == 0,
             "ROM.addMember: Qty of Members overflow"
         );
 
         if (_repo.chain.addNode(acct)) 
-            emit AddMember(acct, _repo.chain.qtyOfMembers());
+            emit AddMember(acct, _repo.chain.getNumOfMembers());
     }
 
     function addShareToMember(SharesRepo.Share memory share) external onlyBOS {
@@ -223,8 +231,8 @@ contract RegisterOfMembers is IRegisterOfMembers, BOSSetting, AccessControl {
         list = _repo.members[acct].sharesInHand.values();
     }
 
-    function qtyOfMembers() external view returns (uint32) {
-        return _repo.chain.qtyOfMembers();
+    function getNumOfMembers() external view returns (uint32) {
+        return _repo.chain.getNumOfMembers();
     }
 
     function membersList() external view returns (uint256[] memory) {

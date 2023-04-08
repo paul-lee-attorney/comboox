@@ -48,9 +48,10 @@ interface IShareholdersAgreement {
     |   18  |                   |   SHA        | VR for Update SHA                          |
     |   19  |                   |  O-Issue-B   | VR for Ordinary Issues Of Board            |
     |   20  |                   |  S-Issue-B   | VR for Special Issues Of Board             |
+    |   21  | UnilateralDecision| UniDecPower  | UnilateralDicisionPowerWithoutVoting       |
     ...
 
-    |  256  |  BoardSeatsRule   |      BSR     | Board Seats Allocation Rights to Members   |
+    |  256  | PositionAllocateRule |   PA Rule   | Management Positions' Allocation Rules    |
     ...
 
     |  512  | FirstRefusalRule  |  FR for CI...| FR rule for Investment Deal                |
@@ -87,7 +88,7 @@ interface IShareholdersAgreement {
 
     function removeTerm(uint16 typeOfDoc) external;
 
-    function finalizeTerms() external;
+    // function finalizeTerms() external;
 
     // ==== Rules ====
     function addRule(uint256 rule) external;

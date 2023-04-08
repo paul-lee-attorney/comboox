@@ -7,8 +7,6 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../common/lib/EnumerableSet.sol";
-
 import "../../../common/access/AccessControl.sol";
 
 import "./IOptions.sol";

@@ -8,8 +8,12 @@
 pragma solidity ^0.8.8;
 
 import "../../common/components/IFilesFolder.sol";
-import "../../common/lib/FRClaims.sol";
+
 import "../../common/lib/DTClaims.sol";
+import "../../common/lib/EnumerableSet.sol";
+import "../../common/lib/FRClaims.sol";
+import "../../common/lib/RulesParser.sol";
+import "../../common/lib/TopChain.sol";
 
 interface IBookOfIA is IFilesFolder {
 

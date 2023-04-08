@@ -12,7 +12,9 @@ import "../books/boh/terms/ILockUp.sol";
 
 import "../common/components/ISigPage.sol";
 
+import "../common/lib/OfficersRepo.sol";
 import "../common/lib/RulesParser.sol";
+import "../common/lib/DocsRepo.sol";
 
 interface IBOHKeeper {
     // ############
@@ -21,7 +23,7 @@ interface IBOHKeeper {
 
     // function setTempOfBOH(address temp, uint8 typeOfDoc) external;
 
-    function createSHA(uint16 version, uint40 caller) external;
+    function createSHA(uint16 version, address primeKeyOfCaller, uint40 caller) external;
 
     // function removeSHA(address sha, uint256 caller) external;
 

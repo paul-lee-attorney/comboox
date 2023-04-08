@@ -74,8 +74,8 @@ library TopChain {
 
         if (n.ptr == 0) {
             require(
-                qtyOfMembers(chain) < maxQtyOfMembers(chain),
-                "TC.addNode: qtyOfMembers overflow"
+                getNumOfMembers(chain) < maxQtyOfMembers(chain),
+                "TC.addNode: getNumOfMembers overflow"
             );
 
             _increaseQtyOfMembers(chain);
@@ -371,7 +371,7 @@ library TopChain {
         return chain.nodes[0].next;
     }
 
-    function qtyOfMembers(Chain storage chain) public view returns (uint32) {
+    function getNumOfMembers(Chain storage chain) public view returns (uint32) {
         return uint32(chain.nodes[0].ptr);
     }
 
@@ -535,7 +535,7 @@ library TopChain {
         view
         returns (uint256[] memory)
     {
-        uint256 len = qtyOfMembers(chain);
+        uint256 len = getNumOfMembers(chain);
         uint256 start = chain.nodes[0].next;
 
         return _subList(chain, start, len);
@@ -567,7 +567,7 @@ library TopChain {
         view
         returns (Node[] memory)
     {
-        uint256 len = qtyOfMembers(chain);
+        uint256 len = getNumOfMembers(chain);
 
         Node[] memory list = new Node[](len + 1);
 

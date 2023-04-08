@@ -10,6 +10,7 @@ pragma solidity ^0.8.8;
 import "../common/lib/MotionsRepo.sol";
 import "../common/lib/RulesParser.sol";
 import "../common/lib/SharesRepo.sol";
+import "../common/lib/OfficersRepo.sol";
 
 import "../common/components/IFilesFolder.sol";
 import "../common/components/ISigPage.sol";
@@ -21,55 +22,69 @@ interface IBOGKeeper {
 
     function createCorpSeal() external;
 
-    function createBoardSeal() external;
+    function createBoardSeal(address board) external;
 
     // ################
     // ##   Motion   ##
     // ################
 
-    function entrustDelegate(
-        uint256 motionId,
-        uint256 delegate,
-        uint256 caller
+    function nominateDirector(
+        uint256 seqOfPos,
+        uint40 candidate,
+        uint40 nominator
     ) external;
 
-    function nominateOfficer(uint256 seqOfBSR, uint256 seqOfTitle, uint40 candidate, uint40 nominator) external;
+    function proposeToRemoveDirector(
+        uint256 seqOfPos,
+        uint40 caller
+    ) external;
 
-    function proposeDoc(address doc, uint256 seqOfVR, uint40 caller) external;
+    function proposeDocOfGM(address doc, uint16 seqOfVR, uint40 executor,  uint40 proposer) external;
 
-    function proposeAction(
-        uint256 typeOfAction,
+    function proposeActionOfGM(
+        uint16 seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
         uint40 executor,
-        uint40 submitter
+        uint40 proposer
     ) external;
 
-    function castVote(
-        uint256 motionId,
+    function entrustDelegateOfMember(uint256 motionId, uint40 delegate, uint40 caller) external;
+
+    function proposeMotionOfGM(uint256 seqOfMotion,uint40 caller) external;
+
+    function castVoteOfGM(
+        uint256 seqOfMotion,
         uint8 attitude,
         bytes32 sigHash,
         uint256 caller
     ) external;
 
-    function voteCounting(uint256 motionId, uint256 caller) external;
+    function voteCountingOfGM(uint256 seqOfMotion, uint256 caller) external;
 
-    function execAction(
-        uint256 typeOfAction,
+    function takeSeat(
+        uint256 seqOfMotion,
+        uint256 seqOfPos,
+        uint40 caller 
+    ) external;
+
+    function removeDirector (
+        uint256 seqOfMotion, 
+        uint256 seqOfPos,
+        uint40 target,
+        uint40 caller
+    ) external;
+
+    function execActionOfGM(
+        uint16 typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 caller
-    ) external returns (uint256);
-
-    function requestToBuy(
-        uint256 motionId,
-        uint256 seqOfDeal,
-        uint256 againstVoter,
-        uint32 seqOfTarget,
-        uint256 caller
+        uint256 seqOfMotion,
+        uint40 caller
     ) external;
+
 }

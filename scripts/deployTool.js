@@ -63,7 +63,7 @@ async function copyArtifactsOf(targetName) {
     JSON.stringify(TargetArtifact, null, 2)
   );
 
-  console.log("Copied ", targetName, "'s artifacts to file: ", fileNameOfTargetArtifact);
+  console.log("Copied ", targetName, "'s artifacts to file: ", fileNameOfTargetArtifact, "\n");
 };
 
 module.exports = {

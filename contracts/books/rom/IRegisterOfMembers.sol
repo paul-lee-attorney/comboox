@@ -120,7 +120,7 @@ interface IRegisterOfMembers {
 
     function groupRep(uint256 acct) external view returns (uint40);
 
-    function qtyOfMembers() external view returns (uint32);
+    function getNumOfMembers() external view returns (uint32);
 
     function membersList() external view returns (uint256[] memory);
 
