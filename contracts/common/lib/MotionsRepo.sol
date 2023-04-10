@@ -16,7 +16,6 @@ library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
     using DelegateMap for DelegateMap.Map;
     using EnumerableSet for EnumerableSet.UintSet;
-    using RulesParser for uint256;
 
     enum TypeOfMotion {
         ZeroPoint,

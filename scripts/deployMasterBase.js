@@ -61,8 +61,7 @@ async function main() {
 	libraries = {
 		"BallotsBox": libBallotsBox.address,
 		"DelegateMap": libDelegateMap.address,
-		"EnumerableSet": libEnumerableSet.address,
-		"RulesParser": libRulesParser.address
+		"EnumerableSet": libEnumerableSet.address
 	};
 	const libMotionsRepo = await deployTool(signers[0], "MotionsRepo", libraries);
 
@@ -144,17 +143,32 @@ async function main() {
 	await deployTool(signers[0], "BOOKeeper", libraries);
 	await deployTool(signers[0], "BOSKeeper", libraries);
 	await deployTool(signers[0], "ROMKeeper", libraries);
+
+	libraries = {
+		"RolesRepo": libRolesRepo.address,
+		"SwapsRepo": libSwapsRepo.address
+	}	
 	await deployTool(signers[0], "ROSKeeper", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
-	await deployTool(signers[0], "BOAKeeper", libraries);
-	await deployTool(signers[0], "BODKeeper", libraries);
 	await deployTool(signers[0], "BOGKeeper", libraries);
-	await deployTool(signers[0], "BOHKeeper", libraries);
 	await deployTool(signers[0], "SHAKeeper", libraries);
+
+	libraries = {
+		"DocsRepo": libDocsRepo.address,
+		"RolesRepo": libRolesRepo.address,
+		"RulesParser": libRulesParser.address		
+	}
+	await deployTool(signers[0], "BOAKeeper", libraries);
+	await deployTool(signers[0], "BOHKeeper", libraries);
+
+	libraries = {
+		"RolesRepo": libRolesRepo.address
+	}
+	await deployTool(signers[0], "BODKeeper", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,

@@ -12,7 +12,6 @@ import "../common/access/AccessControl.sol";
 import "./IBODKeeper.sol";
 
 contract BODKeeper is IBODKeeper, AccessControl {
-    using RulesParser for uint256;
 
     //##################
     //##   Modifier   ##
