@@ -44,8 +44,8 @@ library DTClaims {
         bool dragAlong,
         uint256 seqOfDeal,
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par,
+        uint paid,
+        uint par,
         uint256 claimer,
         bytes32 sigHash
     ) public returns (bool flag) {
@@ -59,8 +59,8 @@ library DTClaims {
             Claim memory newClaim = Claim({
                     typeOfClaim: cat,
                     seqOfShare: uint32(seqOfShare),
-                    paid: paid,
-                    par: par,
+                    paid: uint64(paid),
+                    par: uint64(par),
                     claimer: uint40(claimer),
                     sigDate: uint48(block.timestamp),
                     sigHash: sigHash
@@ -80,8 +80,8 @@ library DTClaims {
 
                 if (paid > mClaim.paid || par > mClaim.par)
                 {
-                    mClaim.paid = paid > mClaim.paid  ? paid :  mClaim.paid;
-                    mClaim.par = par > mClaim.par ? par : mClaim.par;
+                    mClaim.paid = paid > mClaim.paid  ? newClaim.paid :  mClaim.paid;
+                    mClaim.par = par > mClaim.par ? newClaim.par : mClaim.par;
 
                     Claim memory dClaim = cls.packs[seqOfDeal][0].claims[seqOfShare];
                     Claim memory tClaim = cls.packs[seqOfDeal][1].claims[seqOfShare];

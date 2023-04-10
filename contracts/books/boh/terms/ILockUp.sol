@@ -26,7 +26,7 @@ interface ILockUp is ITerm {
     // ##   Write    ##
     // ################
 
-    function setLocker(uint256 seqOfShare, uint48 dueDate) external;
+    function setLocker(uint256 seqOfShare, uint dueDate) external;
 
     function delLocker(uint256 seqOfShare) external;
 

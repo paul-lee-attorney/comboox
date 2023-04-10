@@ -10,8 +10,6 @@ pragma solidity ^0.8.8;
 import "./IBookOfOptions.sol";
 
 import "../../common/access/AccessControl.sol";
-// import "../../common/ruting/BOSSetting.sol";
-// import "../../common/ruting/ROSSetting.sol";
 
 contract BookOfOptions is IBookOfOptions, AccessControl {
     using Checkpoints for Checkpoints.History;
@@ -38,9 +36,9 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     function createOption(
         uint256 sn,
         uint256 snOfCond,
-        uint40 rightholder,
-        uint64 paid,
-        uint64 par
+        uint rightholder,
+        uint paid,
+        uint par
     ) external onlyKeeper returns(OptionsRepo.Head memory head) {
         head = _repo.createOption(sn, snOfCond, rightholder, paid, par);
         emit CreateOpt(head.seqOfOpt, OptionsRepo.codifyHead(head));
@@ -84,9 +82,9 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
 
     function updateOracle(
         uint256 seqOfOpt,
-        uint64 d1,
-        uint64 d2,
-        uint64 d3
+        uint d1,
+        uint d2,
+        uint d3
     ) external onlyDirectKeeper {
         emit UpdateOracle(seqOfOpt, d1, d2, d3);
         _repo.records[seqOfOpt].oracles.push(d1, d2, d3);
@@ -99,9 +97,9 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
 
     function createSwapOrder(
         uint256 seqOfOpt,
-        uint32 seqOfConsider,
-        uint64 paidOfConsider,
-        uint32 seqOfTarget
+        uint seqOfConsider,
+        uint paidOfConsider,
+        uint seqOfTarget
     ) external onlyKeeper view returns (SwapsRepo.Swap memory swap) {
         swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _gk);
     }
@@ -117,9 +115,9 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     function updateStateOfBrief(
         uint256 seqOfOpt,
         uint256 seqOfBrf,
-        uint8 state
+        uint state
     ) external onlyKeeper {
-        _repo.records[seqOfOpt].briefs[seqOfBrf].state = state;
+        _repo.records[seqOfOpt].briefs[seqOfBrf].state = uint8(state);
 
         emit UpdateStateOfBrief(seqOfOpt, seqOfBrf, state);
     }
@@ -187,7 +185,7 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
 
     // ==== Oracles ====
 
-    function getOracleAtDate(uint256 seqOfOpt, uint48 date)
+    function getOracleAtDate(uint256 seqOfOpt, uint date)
         external
         view
         optionExist(seqOfOpt)
@@ -204,7 +202,5 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     {
         return _repo.records[seqOfOpt].oracles.pointsOfHistory();
     }
-
-    // ==== 
 
 }

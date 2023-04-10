@@ -7,12 +7,6 @@
 
 pragma solidity ^0.8.8;
 
-// import "../common/ruting/BODSetting.sol";
-// import "../common/ruting/BOHSetting.sol";
-// import "../common/ruting/BOOSetting.sol";
-// import "../common/ruting/BOSSetting.sol";
-// import "../common/ruting/ROMSetting.sol";
-
 import "../common/access/AccessControl.sol";
 
 import "./IBOHKeeper.sol";
@@ -52,12 +46,12 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
     //     _gk.getBOH().setTemplate(temp, typeOfDoc);
     // }
 
-    function createSHA(uint16 version, address primeKeyOfCaller, uint40 caller) external onlyDirectKeeper {
+    function createSHA(uint version, address primeKeyOfCaller, uint caller) external onlyDirectKeeper {
         require(_gk.getROM().isMember(caller), "not MEMBER");
         // address sha = _gk.getBOH().createDoc(uint8(IRegCenter.TypeOfDoc.ShareholdersAgreement), version, caller);
 
         uint256 snOfDoc = uint256(uint8(IRegCenter.TypeOfDoc.ShareholdersAgreement)) << 240 +
-            uint256(version) << 224; 
+            version << 224; 
 
         DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, primeKeyOfCaller);
 

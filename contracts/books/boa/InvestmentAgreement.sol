@@ -13,9 +13,8 @@ import "../../common/components/SigPage.sol";
 import "./IInvestmentAgreement.sol";
 
 contract InvestmentAgreement is IInvestmentAgreement, SigPage {
-    using EnumerableSet for EnumerableSet.UintSet;
-    using SigsRepo for SigsRepo.Page;
     using DealsRepo for DealsRepo.Repo;
+    using SigsRepo for SigsRepo.Page;
 
     DealsRepo.Repo private _repo;
 
@@ -25,17 +24,16 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
 
     function createDeal(
         uint256 sn,
-        uint40 buyer,
-        uint40 groupOfBuyer,
-        uint64 paid,
-        uint64 par
+        uint buyer,
+        uint groupOfBuyer,
+        uint paid,
+        uint par
     ) external attorneyOrKeeper returns (uint16 seqOfDeal) {
         seqOfDeal = _repo.createDeal(sn, buyer, groupOfBuyer, paid, par);
     }
 
     function regDeal(DealsRepo.Deal memory deal) 
-        public attorneyOrKeeper 
-        returns(uint16 seqOfDeal) 
+        public attorneyOrKeeper returns(uint16 seqOfDeal) 
     {
         seqOfDeal = _repo.regDeal(deal);
 
@@ -65,9 +63,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     function releaseDealSubject(uint256 seq)
-        external
-        onlyDirectKeeper
-        returns (bool flag)
+        external onlyDirectKeeper returns (bool flag)
     {
         flag = _repo.releaseDealSubject(seq);
     }
@@ -75,7 +71,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function clearDealCP(
         uint256 seq,
         bytes32 hashLock,
-        uint48 closingDate
+        uint closingDate
     ) external onlyDirectKeeper {
         emit ClearDealCP(seq, hashLock, closingDate);
         _repo.clearDealCP(seq, hashLock, closingDate);
@@ -113,8 +109,8 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         flag = _repo.takeGift(seq);
     }
 
-    function setTypeOfIA(uint8 t) external onlyAttorney {
-        _repo.deals[0].head.typeOfDeal = t;
+    function setTypeOfIA(uint t) external onlyAttorney {
+        _repo.setTypeOfIA(t);
     }
 
     //  #################################
@@ -122,42 +118,42 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     //  ################################
 
     function getTypeOfIA() external view returns (uint8) {
-        return _repo.deals[0].head.typeOfDeal;
+        return _repo.getTypeOfIA();
     }
 
     function counterOfDeal() public view returns (uint16) {
-        return _repo.deals[0].head.preSeq;
+        return _repo.counterOfDeal();
     }
 
     function counterOfClosedDeal() public view returns (uint16) {
-        return _repo.deals[0].head.seqOfDeal;
+        return _repo.counterOfClosedDeal();
     }
 
-    function isDeal(uint256 seq) public view returns (bool) {
-        return _repo.deals[seq].head.seqOfDeal == seq;
+    function isDeal(uint256 seqOfDeal) public view returns (bool) {
+        return _repo.isDeal(seqOfDeal);
     }
 
     function getHeadOfDeal(uint256 seq) external view returns (DealsRepo.Head memory)
     {
-        return _repo.deals[seq].head;
+        return _repo.getHeadOfDeal(seq);
     }
 
     function getBodyOfDeal(uint256 seq) external view returns (DealsRepo.Body memory)
     {
-        return _repo.deals[seq].body;
+        return _repo.getBodyOfDeal(seq);
     }
 
     function getHashLockOfDeal(uint256 seq) external view returns (bytes32)
     {
-        return _repo.deals[seq].hashLock;
+        return _repo.getHashLockOfDeal(seq);
     }
     
     function getDeal(uint256 seq) external view returns (DealsRepo.Deal memory)
     {
-        return _repo.deals[seq];
+        return _repo.getDeal(seq);
     }
 
     function getSNList() external view returns (uint256[] memory) {
-        return _repo.snList.values();
+        return _repo.getSNList();
     }
 }

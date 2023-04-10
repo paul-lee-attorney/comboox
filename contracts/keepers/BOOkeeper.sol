@@ -11,9 +11,6 @@ import "./IBOOKeeper.sol";
 
 import "../common/access/AccessControl.sol";
 
-// import "../common/ruting/BOOSetting.sol";
-// import "../common/ruting/ROSSetting.sol";
-
 contract BOOKeeper is IBOOKeeper, AccessControl {
 
     // ##################
@@ -38,9 +35,9 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
 
     function updateOracle(
         uint256 seqOfOpt,
-        uint64 d1,
-        uint64 d2,
-        uint64 d3
+        uint d1,
+        uint d2,
+        uint d3
     ) external onlyDirectKeeper {
         _gk.getBOO().updateOracle(seqOfOpt, d1, d2, d3);
     }
@@ -55,9 +52,9 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
 
     function placeSwapOrder(
         uint256 seqOfOpt,
-        uint32 seqOfConsider,
-        uint32 paidOfConsider,
-        uint32 seqOfTarget,
+        uint seqOfConsider,
+        uint paidOfConsider,
+        uint seqOfTarget,
         uint256 caller
     ) external onlyKeeper onlyRightholder(seqOfOpt, caller) {
         SwapsRepo.Swap memory swap = 

@@ -12,29 +12,14 @@ import "./DelegateMap.sol";
 import "./EnumerableSet.sol";
 import "./RulesParser.sol";
 
-// import "../components/ISigPage.sol";
-
-// import "../../keepers/IGeneralKeeper.sol";
-
-// import "../../books/rom/IRegisterOfMembers.sol";
-// import "../../books/bod/IBookOfDirectors.sol";
-
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
-    using EnumerableSet for EnumerableSet.UintSet;
     using DelegateMap for DelegateMap.Map;
+    using EnumerableSet for EnumerableSet.UintSet;
     using RulesParser for uint256;
 
     enum TypeOfMotion {
         ZeroPoint,
-        // UpdateSHA,
-        // ApproveIA,
-        // ApproveDocOfGM,
-        // IncreaseCapital,
-        // DecreaseCapital,
-        // ElectDirector,
-        // RemoveDirector,
-        // ApproveActionOfGM,
         ElectOfficer,
         RemoveOfficer,
         ApproveDoc,
@@ -131,9 +116,7 @@ library MotionsRepo {
         Repo storage repo,
         Head memory head,
         uint256 contents
-        // uint40 caller
     ) public returns (Head memory) {
-        // head = snParser(snOfMotion);
 
         require(head.typeOfMotion > 0, "MR.CM: zero typeOfMotion");
         require(head.seqOfVR > 0, "MR.CM: zero seqOfVR");
@@ -164,9 +147,9 @@ library MotionsRepo {
     function entrustDelegate(
         Repo storage repo,
         uint256 seqOfMotion,
-        uint40 delegate,
-        uint40 principal,
-        uint64 weight
+        uint delegate,
+        uint principal,
+        uint weight
     ) public returns (bool flag) {
         Motion storage m = repo.motions[seqOfMotion];
 
@@ -183,7 +166,7 @@ library MotionsRepo {
         Repo storage repo,
         uint256 seqOfMotion,
         RulesParser.VotingRule memory vr,
-        uint40 caller 
+        uint caller 
     ) public returns (Body memory body) {
 
         // require(seqOfMotion > 0, "MR.PM: zero seqOfMotion");
@@ -198,7 +181,7 @@ library MotionsRepo {
         uint48 timestamp = uint48(block.timestamp);
 
         body = Body({
-            proposer: caller,
+            proposer: uint40(caller),
             proposeDate: timestamp,
             shareRegDate: timestamp + uint48(vr.shaExecDays) * 86400,
             voteStartDate: timestamp + uint48(vr.reviewDays) * 86400,
@@ -217,7 +200,7 @@ library MotionsRepo {
         Repo storage repo,
         uint256 seqOfMotion,
         uint256 acct,
-        uint8 attitude,
+        uint attitude,
         bytes32 sigHash,
         IRegisterOfMembers _rom
     ) public returns (bool flag) {
@@ -313,13 +296,13 @@ library MotionsRepo {
         Repo storage repo,
         uint256 seqOfMotion,
         uint256 contents,
-        uint40 executor
+        uint executor
     ) public {
         Motion storage m = repo.motions[seqOfMotion];
         require (m.contents == contents, "MR.ER: wrong contents");
         require (m.body.state == uint8(StateOfMotion.Passed), 
             "MR.ER: motion not passed");
-        require (m.head.executor == executor, "MR.ER: not executor");
+        require (m.head.executor == uint40(executor), "MR.ER: not executor");
 
         m.body.state = uint8(StateOfMotion.Executed);
     }
@@ -358,8 +341,8 @@ library MotionsRepo {
         return repo.records[seqOfMotion].map.voters[acct];
     }
 
-    function getDelegateOf(Repo storage repo, uint256 seqOfMotion, uint40 acct)
-        public view returns (uint40)
+    function getDelegateOf(Repo storage repo, uint256 seqOfMotion, uint acct)
+        public view returns (uint)
     {
         return repo.records[seqOfMotion].map.getDelegateOf(acct);
     }
@@ -367,8 +350,8 @@ library MotionsRepo {
     function getLeavesWeightAtDate(
         Repo storage repo, 
         uint256 seqOfMotion, 
-        uint40 acct,
-        uint48 baseDate, 
+        uint acct,
+        uint baseDate, 
         IRegisterOfMembers _rom
     ) public view returns(uint64 weight)
     {
@@ -388,28 +371,28 @@ library MotionsRepo {
     function isVoted(Repo storage repo, uint256 seqOfMotion, uint256 acct) 
         public view returns (bool) 
     {
-        return repo.records[seqOfMotion].box.ballots[acct].sigDate > 0;
+        return repo.records[seqOfMotion].box.isVoted(acct);
     }
 
     function isVotedFor(
         Repo storage repo,
         uint256 seqOfMotion,
         uint256 acct,
-        uint8 atti
+        uint256 atti
     ) public view returns (bool) {
-        return repo.records[seqOfMotion].box.ballots[acct].attitude == atti;
+        return repo.records[seqOfMotion].box.isVotedFor(acct, atti);
     }
 
-    function getCaseOfAttitude(Repo storage repo, uint256 seqOfMotion, uint8 atti)
+    function getCaseOfAttitude(Repo storage repo, uint256 seqOfMotion, uint256 atti)
         public view returns (BallotsBox.Case memory )
     {
-        return repo.records[seqOfMotion].box.cases[atti];
+        return repo.records[seqOfMotion].box.getCaseOfAttitude(atti);
     }
 
     function getBallot(Repo storage repo, uint256 seqOfMotion, uint256 acct)
         public view returns (BallotsBox.Ballot memory)
     {
-        return repo.records[seqOfMotion].box.ballots[acct];
+        return repo.records[seqOfMotion].box.getBallot(acct);
     }
 
     function isPassed(Repo storage repo, uint256 seqOfMotion) public view returns (bool) {

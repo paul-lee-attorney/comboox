@@ -58,20 +58,20 @@ interface IBookOfPledges {
 
     function createPledge(
         uint256 sn,
-        uint40 creditor,
-        uint16 guaranteeDays,
-        uint64 paid,
-        uint64 par,
-        uint64 guaranteedAmt
+        uint creditor,
+        uint guaranteeDays,
+        uint paid,
+        uint par,
+        uint guaranteedAmt
     ) external returns(PledgesRepo.Head memory head);
 
     function issuePledge(
         PledgesRepo.Head memory head,
-        uint40 creditor,
-        uint16 guaranteeDays,
-        uint64 paid,
-        uint64 par,
-        uint64 guaranteedAmt
+        uint creditor,
+        uint guaranteeDays,
+        uint paid,
+        uint par,
+        uint guaranteedAmt
     ) external returns(PledgesRepo.Head memory regHead);
 
     function regPledge(
@@ -81,20 +81,20 @@ interface IBookOfPledges {
     function transferPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint40 buyer,
-        uint64 amt
+        uint buyer,
+        uint amt
     ) external returns (PledgesRepo.Pledge memory newPld);
 
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint64 amt
+        uint amt
     ) external returns (PledgesRepo.Pledge memory newPld);
 
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint16 extDays
+        uint extDays
     ) external;
 
     // ==== Lock/Release/Exec/Revoke ====

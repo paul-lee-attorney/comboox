@@ -20,7 +20,10 @@ library SharesRepo {
         uint16 class; // 股票类别/轮次编号
         uint48 issueDate; // 股票签发日期（秒时间戳）
         uint40 shareholder; // 股东代码
-        uint32 price; // 发行价格（实缴出资价）
+        uint32 priceOfPaid; // 发行价格（实缴出资价）
+        uint32 priceOfPar; // 发行价格（认缴出资价）
+        uint16 para;
+        uint8 arg;
     }
 
     struct Body {
@@ -29,6 +32,7 @@ library SharesRepo {
         uint64 par; // 认缴出资（注册资本面值）
         uint64 cleanPaid; // 清洁实缴出资（扣除出质、远期、销售要约金额）
         uint8 state;
+        uint8 para;
     }
 
     //Share 股票
@@ -55,7 +59,10 @@ library SharesRepo {
             class: uint16(sn >> 176),
             issueDate: uint48(sn >> 128),
             shareholder: uint40(sn >> 88),
-            price: uint32(sn >> 56)
+            priceOfPaid: uint32(sn >> 56),
+            priceOfPar: uint32(sn >> 24),
+            para: uint16(sn >> 8),
+            arg: uint8(sn)
         });
     }
 
@@ -66,23 +73,27 @@ library SharesRepo {
             uint256(head.class) << 176 + 
             uint256(head.issueDate) << 128 +
             uint256(head.shareholder) << 88 +
-            uint256(head.price) << 56;
+            uint256(head.priceOfPaid) << 56 + 
+            uint256(head.priceOfPar) << 24 +
+            uint256(head.para) << 8 +
+            head.arg;
     }
 
     // ==== issue/regist share ====
 
-    function createShare(Repo storage repo, uint256 sharenumber, uint48 payInDeadline, uint64 paid, uint64 par)
+    function createShare(Repo storage repo, uint256 sharenumber, uint payInDeadline, uint paid, uint par)
         public returns (Share memory newShare)
     {
 
         Share memory share;
         share.head = snParser(sharenumber);
         share.body = Body({
-            payInDeadline: payInDeadline,
-            paid: paid,
-            par: par,
-            cleanPaid: paid,
-            state: 0
+            payInDeadline: uint48(payInDeadline),
+            paid: uint48(paid),
+            par: uint48(par),
+            cleanPaid: uint48(paid),
+            state: 0,
+            para: 0
         });
         newShare = issueShare(repo, share);
     }
@@ -149,7 +160,7 @@ library SharesRepo {
 
     // ==== amountChange ====
 
-    function payInCapital(Share storage share, uint64 amt) public
+    function payInCapital(Share storage share, uint amt) public
     {
         require(amt > 0, "SR.PIC: zero amount");
 
@@ -157,51 +168,51 @@ library SharesRepo {
         require(share.body.paid + amt <= share.body.par, 
             "SR.PIC: payIn amount overflow");
 
-        share.body.paid += amt;
-        share.body.cleanPaid += amt;
+        share.body.paid += uint64(amt);
+        share.body.cleanPaid += uint64(amt);
     }
 
-    function subAmtFromShare(Share storage share, uint64 paid, uint64 par) public
+    function subAmtFromShare(Share storage share, uint paid, uint par) public
     {
         require(par > 0, "SR.SAFS: zero par");
         require(share.body.cleanPaid >= paid, "SR.SAFS: insufficient cleanPaid");
 
-        share.body.paid -= paid;
-        share.body.par -= par;
+        share.body.paid -= uint64(paid);
+        share.body.par -= uint64(par);
 
-        share.body.cleanPaid -= paid;
+        share.body.cleanPaid -= uint64(paid);
     }
 
-    function increaseCleanPaid(Share storage share, uint64 paid) public
+    function increaseCleanPaid(Share storage share, uint paid) public
     {
         require(paid > 0, "SR.SAFS: zero amt");
 
         // require(share.body.cleanPar + par <= share.body.par, "SR.SAFS: par overflow");
         require(share.body.cleanPaid + paid <= share.body.paid, "SR.SAFS: paid overflow");
 
-        share.body.cleanPaid += paid;
+        share.body.cleanPaid += uint64(paid);
         // share.body.cleanPar += par;
     }
 
-    function decreaseCleanPaid(Share storage share, uint64 paid) public
+    function decreaseCleanPaid(Share storage share, uint paid) public
     {
         require(paid > 0, "SR.SAFS: zero amt");
 
         // require(share.body.cleanPar >= par, "SR.SAFS: insufficient cleanPar");
         require(share.body.cleanPaid >= paid, "SR.SAFS: insufficient cleanPaid");
 
-        share.body.cleanPaid -= paid;
+        share.body.cleanPaid -= uint64(paid);
         // share.body.cleanPar -= par;
     }
 
     // ==== update head of Share ====
 
-    function updatePayInDeadline(Share storage share, uint48 deadline) public 
+    function updatePayInDeadline(Share storage share, uint deadline) public 
     {
         require (block.timestamp < deadline, "SR.UPID: passed deadline");
         require (block.timestamp <= share.body.payInDeadline, "SR.UPID: missed original deadline");
 
-        share.body.payInDeadline = deadline;
+        share.body.payInDeadline = uint48(deadline);
     }
 
     //####################
@@ -218,7 +229,7 @@ library SharesRepo {
         seqOfShare = repo.shares[0].head.class;
     }
 
-    function sharesOfClass(Repo storage repo, uint16 class) 
+    function sharesOfClass(Repo storage repo, uint class) 
         public view returns (uint256[] memory seqList)
     {
         require (class > 0, "SR.SOC: zero class");

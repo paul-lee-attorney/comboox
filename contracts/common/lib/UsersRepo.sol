@@ -79,7 +79,7 @@ library UsersRepo {
         });
     }
 
-    function mintAndLockPoints(Repo storage repo, uint256 snOfLocker, uint216 amt) 
+    function mintAndLockPoints(Repo storage repo, uint256 snOfLocker, uint amt) 
         public returns (bool flag) 
     {
         flag = repo.lockers.lockValue(snOfLocker, amt, 0);
@@ -89,26 +89,26 @@ library UsersRepo {
         Repo storage repo, 
         address msgSender, 
         uint256 to, 
-        uint216 amt
+        uint amt
     ) public returns (bool flag)
     {
         uint40 from = repo.userNo[msgSender];
 
-        if (repo.users[from].balance >= amt) {
-            repo.users[from].balance -= amt;
-            repo.users[to].balance += amt;
+        if (repo.users[from].balance >= uint216(amt)) {
+            repo.users[from].balance -= uint216(amt);
+            repo.users[to].balance += uint216(amt);
             flag = true;
         }
     }
 
-    function lockPoints(Repo storage repo, address msgSender, uint256 snOfLocker, uint216 amt) 
+    function lockPoints(Repo storage repo, address msgSender, uint256 snOfLocker, uint amt) 
         public returns (bool flag)
     {
-        uint40 caller = repo.userNo[msgSender];
+        uint caller = repo.userNo[msgSender];
         User storage user = repo.users[caller];
 
         if (user.balance >= amt) {
-            user.balance -= amt;
+            user.balance -= uint216(amt);
 
             flag = repo.lockers.lockValue(snOfLocker, amt, caller);
         }
@@ -119,9 +119,9 @@ library UsersRepo {
         address msgSender, 
         uint256 snOfLocker, 
         string memory hashKey, 
-        uint8 salt
+        uint salt
     ) public returns (uint216 value) {
-        uint40 caller = repo.userNo[msgSender];
+        uint caller = repo.userNo[msgSender];
         value = uint216(repo.lockers.releaseValue(snOfLocker, hashKey, salt, caller));
         if (value > 0) {
             repo.users[caller].balance += value;
@@ -133,9 +133,9 @@ library UsersRepo {
         address msgSender, 
         uint256 snOfLocker, 
         string memory hashKey, 
-        uint8 salt
+        uint salt
     ) public returns (uint216 value) {
-        uint40 caller = repo.userNo[msgSender];
+        uint caller = repo.userNo[msgSender];
         value = uint216(repo.lockers.withdrawValue(snOfLocker, hashKey, salt, caller));
         if (value > 0) {
             repo.users[caller].balance += value;
@@ -147,7 +147,7 @@ library UsersRepo {
         address msgSender,
         uint256 snOfLocker
     ) public view returns (uint216 value) {
-        uint40 caller = repo.userNo[msgSender];
+        uint caller = repo.userNo[msgSender];
         value = uint216(repo.lockers.checkLocker(snOfLocker, caller));
     }
 
@@ -262,16 +262,16 @@ library UsersRepo {
         return repo.userNo[msgSender];
     }
 
-    function _awardBonus(Repo storage repo, address querySender, uint64 fee) 
+    function _awardBonus(Repo storage repo, address querySender, uint fee) 
         private 
     {
-        uint40 sender = repo.userNo[querySender];
+        uint sender = repo.userNo[querySender];
         if (sender > 0) {
-            repo.users[sender].balance += (fee * uint64(repo.reward.distRatio) / 10000);
+            repo.users[sender].balance += uint64(fee * repo.reward.distRatio / 10000);
         }
     }
 
-    function _chargeFee(Repo storage repo, uint40 user) 
+    function _chargeFee(Repo storage repo, uint user) 
         private returns (uint64 fee) 
     {
         User storage u = repo.users[user];

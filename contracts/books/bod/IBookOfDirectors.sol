@@ -9,9 +9,7 @@ pragma solidity ^0.8.8;
 
 import "../../common/components/IMeetingMinutes.sol";
 
-// import "../../common/lib/EnumerableSet.sol";
 import "../../common/lib/OfficersRepo.sol";
-// import "../../common/lib/RulesParser.sol";
 
 interface IBookOfDirectors is IMeetingMinutes{
 
@@ -41,16 +39,15 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     function removePosition(uint256 seqOfPos) external;
 
-    function takePosition (uint256 seqOfPos, uint40 caller) external;
+    function takePosition (uint256 seqOfPos, uint caller) external;
 
-    function quitPosition (uint256 seqOfPos, uint40 caller)
-        external; 
+    function quitPosition (uint256 seqOfPos, uint caller) external; 
 
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos, 
-        uint40 target, 
-        uint40 caller
+        uint target, 
+        uint caller
     ) external;
 
     //##################
@@ -94,7 +91,7 @@ interface IBookOfDirectors is IMeetingMinutes{
     function getBoardSeatsQuota(uint256 acct) external view 
         returns(uint256 quota);
 
-    function getBoardSeatsOccupied(uint40 acct) external view 
+    function getBoardSeatsOccupied(uint acct) external view 
         returns (uint256 num);
 
 }

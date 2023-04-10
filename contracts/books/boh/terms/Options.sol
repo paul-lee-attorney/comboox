@@ -27,9 +27,9 @@ contract Options is IOptions, AccessControl {
     function createOption(
         uint256 snOfOpt,
         uint256 snOfCond,
-        uint40 rightholder,
-        uint64 paid,
-        uint64 par
+        uint rightholder,
+        uint paid,
+        uint par
     ) external onlyAttorney returns (OptionsRepo.Head memory head) {
         head = _repo.createOption(snOfOpt, snOfCond, rightholder, paid, par);
     }

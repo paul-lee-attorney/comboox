@@ -16,33 +16,33 @@ interface IBOPKeeper {
     // ###################
     function createPledge(
         uint256 sn,
-        uint40 creditor,
-        uint16 guaranteeDays,
-        uint64 paid,
-        uint64 par,
-        uint64 guaranteedAmt,
+        uint creditor,
+        uint guaranteeDays,
+        uint paid,
+        uint par,
+        uint guaranteedAmt,
         uint256 caller
     ) external;
 
     function transferPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint40 buyer,
-        uint64 amt,
+        uint buyer,
+        uint amt,
         uint256 caller        
     ) external;
 
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint64 amt,
+        uint amt,
         uint256 caller
     ) external;
 
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint16 extDays,
+        uint extDays,
         uint256 caller
     ) external;
 

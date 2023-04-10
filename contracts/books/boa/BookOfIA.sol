@@ -7,14 +7,9 @@
 
 pragma solidity ^0.8.8;
 
-import "./IInvestmentAgreement.sol";
 import "./IBookOfIA.sol";
 
 import "../../common/components/FilesFolder.sol";
-
-// import "../../common/ruting/BOSSetting.sol";
-// import "../../common/ruting/BOHSetting.sol";
-// import "../../common/ruting/ROMSetting.sol";
 
 contract BookOfIA is IBookOfIA, FilesFolder {
     using DTClaims for DTClaims.Claims;
@@ -91,8 +86,8 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         bool dragAlong,
         uint256 seqOfDeal,
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par,
+        uint paid,
+        uint par,
         uint256 caller,
         bytes32 sigHash
     ) external onlyKeeper
@@ -126,7 +121,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         }
     }
 
-    function mockDealOfSell (address ia, uint40 seller, uint64 amount) 
+    function mockDealOfSell (address ia, uint seller, uint amount) 
         external
         onlyKeeper
         returns (bool flag) 
@@ -134,7 +129,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         flag = _mockOfIA[ia].mockDealOfSell(seller, amount);
     }
 
-    function mockDealOfBuy (address ia, uint40 buyer, uint40 groupRep, uint64 amount) 
+    function mockDealOfBuy (address ia, uint buyer, uint groupRep, uint amount) 
         external
         onlyKeeper
         returns (bool flag) 

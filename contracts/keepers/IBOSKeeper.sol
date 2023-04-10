@@ -14,17 +14,17 @@ interface IBOSKeeper {
 
     // ==== BOS funcs ====
 
-    function setPayInAmt(uint256 snOfLocker, uint64 amount) external;
+    function setPayInAmt(uint256 snOfLocker, uint amount) external;
 
-    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint8 salt, uint256 caller) external;
+    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint salt, uint256 caller) external;
 
     function withdrawPayInAmt(uint256 snOfLocker) external;
 
     function decreaseCapital(
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par
+        uint paid,
+        uint par
     ) external;
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint48 line) external;
+    function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
 }

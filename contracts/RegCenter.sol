@@ -82,31 +82,31 @@ contract RegCenter is IRegCenter {
     // ##    Points    ##
     // ##################
 
-    function mintPoints(uint256 to, uint216 amt) external onlyOwner {
-        _users.users[to].balance += amt;
+    function mintPoints(uint256 to, uint amt) external onlyOwner {
+        _users.users[to].balance += uint216(amt);
         emit TransferPoints(0, to, amt);
     }
 
-    function mintAndLockPoints(uint256 snOfLocker, uint216 amt) external onlyOwner {
+    function mintAndLockPoints(uint256 snOfLocker, uint amt) external onlyOwner {
         if (_users.mintAndLockPoints(snOfLocker, amt))
             emit LockPoints(snOfLocker, amt);
     }
 
-    function transferPoints(uint256 to, uint216 amt)
+    function transferPoints(uint256 to, uint amt)
         external onlyPrimeKey onlyEOA
     {
         if (_users.transferPoints(msg.sender, to, amt))
             emit TransferPoints(_users.userNo[msg.sender], to, amt);
     }
 
-    function lockPoints(uint256 snOfLocker, uint216 amt) 
+    function lockPoints(uint256 snOfLocker, uint amt) 
         external onlyPrimeKey onlyEOA 
     {
         if (_users.lockPoints(msg.sender, snOfLocker, amt))
             emit LockPoints(snOfLocker, amt);
     }
 
-    function releasePoints(uint256 snOfLocker, string memory hashKey, uint8 salt)
+    function releasePoints(uint256 snOfLocker, string memory hashKey, uint salt)
         external onlyPrimeKey onlyEOA
     {
         uint256 value = _users.releasePoints(msg.sender, snOfLocker, hashKey, salt);
@@ -115,7 +115,7 @@ contract RegCenter is IRegCenter {
             emit ReleasePoints(snOfLocker, hashKey, salt, value);
     }
 
-    function withdrawPoints(uint256 snOfLocker, string memory hashKey, uint8 salt)
+    function withdrawPoints(uint256 snOfLocker, string memory hashKey, uint salt)
         external onlyPrimeKey onlyEOA
     {
         uint256 value = _users.withdrawPoints(msg.sender, snOfLocker, hashKey, salt);
@@ -173,28 +173,37 @@ contract RegCenter is IRegCenter {
     // ###############
 
     function createComp(address primeKeyOfKeeper, address primeKeyOfOwner) external 
-        returns(DocsRepo.Doc[19] memory docs)
+        returns(DocsRepo.Doc[20] memory docs)
     {
         uint40 owner = _users.getUserNo(msg.sender, primeKeyOfOwner);
+
+        docs[19] = _createDocAtLatestVersion(19, primeKeyOfOwner);
+        IAccessControl(docs[19].body).init(
+            owner,
+            address(this),
+            address(this),
+            docs[19].body
+        );
 
         docs[9] = _createDocAtLatestVersion(9, primeKeyOfOwner);
         IAccessControl(docs[9].body).init(
             owner,
+            docs[19].body,
             address(this),
-            address(this),
-            docs[9].body
+            docs[19].body
         );
+        IGeneralKeeper(docs[19].body).setBookeeper(9, docs[9].body);
 
         uint16 i;
         while (i < 9) {
             docs[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
             IAccessControl(docs[i].body).init(
                 owner,
-                docs[9].body,
+                docs[19].body,
                 address(this),
-                docs[9].body
+                docs[19].body
             );
-            IGeneralKeeper(docs[9].body).setBookeeper(i, docs[i].body);
+            IGeneralKeeper(docs[19].body).setBookeeper(i, docs[i].body);
 
             uint16 j = i+10;
 
@@ -203,14 +212,14 @@ contract RegCenter is IRegCenter {
                 owner,
                 docs[i].body,
                 address(this),
-                docs[9].body
+                docs[19].body
             );
-            IGeneralKeeper(docs[9].body).setBook(i, docs[j].body);
+            IGeneralKeeper(docs[19].body).setBook(i, docs[j].body);
                         
             i++;
         }
 
-        IAccessControl(docs[9].body).setDirectKeeper(primeKeyOfKeeper); 
+        IAccessControl(docs[19].body).setDirectKeeper(primeKeyOfKeeper); 
     }
 
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal

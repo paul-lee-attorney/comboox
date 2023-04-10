@@ -28,6 +28,7 @@ library PledgesRepo {
         uint48 triggerDate;
         uint40 pledgor;
         uint40 debtor;
+        uint32 data;
     }
 
     struct Body {
@@ -63,7 +64,8 @@ library PledgesRepo {
             createDate: uint48(sn >> 160),
             triggerDate: uint48(sn >> 112),
             pledgor: uint40(sn >> 72),
-            debtor: uint40(sn >> 32)
+            debtor: uint40(sn >> 32),
+            data: uint32(sn)
         });
     } 
 
@@ -73,17 +75,18 @@ library PledgesRepo {
             uint256(head.createDate) << 160 +
             uint256(head.triggerDate) << 112 +
             uint256(head.pledgor) << 72 +
-            uint256(head.debtor) << 32;
+            uint256(head.debtor) << 32 +
+            head.data;
     } 
 
     function createPledge(
             Repo storage repo, 
             uint256 sn, 
-            uint40 creditor,
-            uint16 guaranteeDays, 
-            uint64 paid,
-            uint64 par,
-            uint64 guaranteedAmt
+            uint creditor,
+            uint guaranteeDays, 
+            uint paid,
+            uint par,
+            uint guaranteedAmt
     ) public returns (Head memory head) 
     {
         head = snParser(sn);
@@ -93,11 +96,11 @@ library PledgesRepo {
     function issuePledge(
         Repo storage repo,
         Head memory head,
-        uint40 creditor,
-        uint16 guaranteeDays,
-        uint64 paid,
-        uint64 par,
-        uint64 guaranteedAmt
+        uint creditor,
+        uint guaranteeDays,
+        uint paid,
+        uint par,
+        uint guaranteedAmt
     ) public returns(Head memory regHead) {
         Pledge memory pld;
 
@@ -106,11 +109,11 @@ library PledgesRepo {
         pld.head = head;
 
         pld.body = Body({
-            creditor: creditor,
-            guaranteeDays: guaranteeDays,
-            paid: paid,
-            par: par,
-            guaranteedAmt: guaranteedAmt,
+            creditor: uint40(creditor),
+            guaranteeDays: uint16(guaranteeDays),
+            paid: uint64(paid),
+            par: uint64(par),
+            guaranteedAmt: uint64(guaranteedAmt),
             state: uint8(StateOfPld.Issued)
         });
 
@@ -141,8 +144,8 @@ library PledgesRepo {
         Repo storage repo,
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint40 buyer,
-        uint64 amt
+        uint buyer,
+        uint amt
     ) public returns(Pledge memory newPld) {
 
         Pledge storage pld = repo.pledges[seqOfShare][seqOfPld];
@@ -156,14 +159,14 @@ library PledgesRepo {
 
         newPld = pld;
 
-        uint64 ratio = amt * 10000 / newPld.body.guaranteedAmt;
+        uint64 ratio = uint64(amt) * 10000 / newPld.body.guaranteedAmt;
 
         newPld.body.paid = newPld.body.paid * ratio / 10000;
         newPld.body.par = newPld.body.par * ratio / 10000;
-        newPld.body.guaranteedAmt = amt;
+        newPld.body.guaranteedAmt = uint64(amt);
 
         if (buyer > 0) {
-            newPld.body.creditor = buyer;
+            newPld.body.creditor = uint40(buyer);
             newPld.head = regPledge(repo, newPld);
         }
 
@@ -181,12 +184,12 @@ library PledgesRepo {
 
     function extendPledge(
         Pledge storage pld,
-        uint16 extDays
+        uint extDays
     ) public {
         require(pld.body.state < uint8(StateOfPld.Released), "PR.EP: wrong state");
         require(block.timestamp < pld.head.triggerDate + uint48(pld.body.guaranteeDays) * 86400, 
             "PR.UP: pledge expired");
-        pld.body.guaranteeDays += extDays;
+        pld.body.guaranteeDays += uint16(extDays);
     }
 
     // ==== Lock & Release ====
@@ -263,9 +266,19 @@ library PledgesRepo {
         return repo.pledges[seqOfShare][0].head.seqOfPld;
     }
 
+    function getSNList(Repo storage repo) public view returns (uint256[] memory list)
+    {
+        list = repo.snList.values();
+    }
+
+    function getPledge(Repo storage repo, uint256 seqOfShare, uint seqOfPld) 
+        public view returns (Pledge memory)
+    {
+        return repo.pledges[seqOfShare][seqOfPld];
+    } 
+
     function getPledgesOfShare(Repo storage repo, uint256 seqOfShare) 
-        public view 
-        returns (Pledge[] memory) 
+        public view returns (Pledge[] memory) 
     {
         uint256 len = counterOfPld(repo, seqOfShare);
 
@@ -280,10 +293,4 @@ library PledgesRepo {
 
         return output;
     }
-
-    function getSNList(Repo storage repo) public view returns (uint256[] memory list)
-    {
-        list = repo.snList.values();
-    }
-
 }

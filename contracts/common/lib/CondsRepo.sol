@@ -143,9 +143,9 @@ library CondsRepo {
     }
 
     function checkCond(
-        uint8 compOpr,
-        uint64 para,
-        uint64 data
+        uint compOpr,
+        uint para,
+        uint data
     ) public pure returns (bool flag) {
         if (compOpr == uint8(ComOps.Equal)) flag = data == para;
         else if (compOpr == uint8(ComOps.NotEqual)) flag = data != para;
@@ -158,15 +158,15 @@ library CondsRepo {
 
     function checkSoleCond(
         Cond memory cond,
-        uint64 data
+        uint data
     ) public pure returns (bool flag) {
         flag = checkCond(cond.compOpr1, cond.para1, data);
     }
 
     function checkCondsOfTwo(
         Cond memory cond,
-        uint64 data1,
-        uint64 data2
+        uint data1,
+        uint data2
     ) public pure returns (bool flag) {
         bool flag1;
         bool flag2;
@@ -185,9 +185,9 @@ library CondsRepo {
 
     function checkCondsOfThree(
         Cond memory cond,
-        uint64 data1,
-        uint64 data2,
-        uint64 data3
+        uint data1,
+        uint data2,
+        uint data3
     ) public pure returns (bool flag) {
         bool flag1;
         bool flag2;

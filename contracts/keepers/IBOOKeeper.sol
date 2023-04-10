@@ -17,9 +17,9 @@ interface IBOOKeeper {
 
     function updateOracle(
         uint256 seqOfOpt,
-        uint64 d1,
-        uint64 d2,
-        uint64 d3
+        uint d1,
+        uint d2,
+        uint d3
     ) external;
 
     function execOption(uint256 seqOfOpt, uint256 caller)
@@ -27,9 +27,9 @@ interface IBOOKeeper {
 
     function placeSwapOrder(
         uint256 seqOfOpt,
-        uint32 seqOfConsider,
-        uint32 paidOfConsider,
-        uint32 seqOfTarget,
+        uint seqOfConsider,
+        uint paidOfConsider,
+        uint seqOfTarget,
         uint256 caller
     ) external;
 

@@ -33,7 +33,8 @@ contract RegCenterSetting {
         BOPKeeper, // 5
         BOSKeeper, // 6
         ROMKeeper, // 7
-        SHAKeeper  // 8
+        ROSKeeper, // 8
+        SHAKeeper  // 9
     }
 
     IRegCenter internal _rc;

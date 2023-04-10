@@ -34,7 +34,7 @@ interface IAntiDilution is ITerm {
     // ##   Write    ##
     // ################
 
-    function addBenchmark(uint256 class, uint32 price) external;
+    function addBenchmark(uint256 class, uint price) external;
 
     function removeBenchmark(uint256 class) external;
 

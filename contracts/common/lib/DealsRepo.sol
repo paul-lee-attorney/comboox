@@ -97,7 +97,7 @@ library DealsRepo {
     //##    写接口    ##
     //#################
 
-    function snParser(uint256 sn) public pure returns(Head memory head) {
+    function snParser(uint sn) public pure returns(Head memory head) {
         return Head({
             typeOfDeal: uint8(sn >> 248),
             seqOfDeal: uint16(sn >> 232),
@@ -111,24 +111,24 @@ library DealsRepo {
         });
     } 
 
-    function codifyHead(Head memory head) public pure returns(uint256 sn) {
-        sn = uint256(head.typeOfDeal) << 248 +
-            uint256(head.seqOfDeal) << 232 +
-            uint256(head.preSeq) << 216 +
-            uint256(head.classOfShare) << 200 +
-            uint256(head.seqOfShare) << 168 +
-            uint256(head.seller) << 128 +
-            uint256(head.priceOfPaid) << 96 +
-            uint256(head.priceOfPar) << 64;
+    function codifyHead(Head memory head) public pure returns(uint sn) {
+        sn = uint(head.typeOfDeal) << 248 +
+            uint(head.seqOfDeal) << 232 +
+            uint(head.preSeq) << 216 +
+            uint(head.classOfShare) << 200 +
+            uint(head.seqOfShare) << 168 +
+            uint(head.seller) << 128 +
+            uint(head.priceOfPaid) << 96 +
+            uint(head.priceOfPar) << 64;
     }
 
     function createDeal(
         Repo storage repo,
-        uint256 sn,
-        uint40 buyer,
-        uint40 groupOfBuyer,
-        uint64 paid,
-        uint64 par
+        uint sn,
+        uint buyer,
+        uint groupOfBuyer,
+        uint paid,
+        uint par
     ) public returns (uint16 seqOfDeal)  {
 
         Deal memory deal;
@@ -136,10 +136,10 @@ library DealsRepo {
         deal.head = snParser(sn);
 
         deal.body = Body({
-            buyer: buyer,
-            groupOfBuyer: groupOfBuyer,
-            paid: paid,
-            par: par,
+            buyer: uint40(buyer),
+            groupOfBuyer: uint40(groupOfBuyer),
+            paid: uint64(paid),
+            par: uint64(par),
             state: 0
         });
 
@@ -196,7 +196,7 @@ library DealsRepo {
         Repo storage repo,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint48 closingDate
+        uint closingDate
     ) public {
         Deal storage deal = repo.deals[seqOfDeal];
 
@@ -210,7 +210,7 @@ library DealsRepo {
 
         deal.body.state = uint8(StateOfDeal.Cleared);
         deal.hashLock = hashLock;
-        if (closingDate != 0) deal.head.closingDate = closingDate;
+        if (closingDate != 0) deal.head.closingDate = uint48(closingDate);
     }
 
     function closeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
@@ -304,9 +304,17 @@ library DealsRepo {
         repo.deals[0].head.seqOfDeal++;
     }
 
-    //  #################################
-    //  ##       查询接口               ##
+    function setTypeOfIA(Repo storage repo, uint t) public {
+        repo.deals[0].head.typeOfDeal = uint8(t);
+    }
+
     //  ################################
+    //  ##       查询接口              ##
+    //  ###############################
+
+    function getTypeOfIA(Repo storage repo) external view returns (uint8) {
+        return repo.deals[0].head.typeOfDeal;
+    }
 
     function counterOfDeal(Repo storage repo) public view returns (uint16) {
         return repo.deals[0].head.preSeq;
@@ -315,4 +323,33 @@ library DealsRepo {
     function counterOfClosedDeal(Repo storage repo) public view returns (uint16) {
         return repo.deals[0].head.seqOfDeal;
     }
+
+    function isDeal(Repo storage repo, uint256 seqOfDeal) public view returns (bool) {
+        return repo.deals[seqOfDeal].head.seqOfDeal == seqOfDeal;
+    }
+
+    function getHeadOfDeal(Repo storage repo, uint256 seq) external view returns (Head memory)
+    {
+        return repo.deals[seq].head;
+    }
+
+    function getBodyOfDeal(Repo storage repo,  uint256 seq) external view returns (Body memory)
+    {
+        return repo.deals[seq].body;
+    }
+
+    function getHashLockOfDeal(Repo storage repo, uint256 seq) external view returns (bytes32)
+    {
+        return repo.deals[seq].hashLock;
+    }
+    
+    function getDeal(Repo storage repo, uint256 seq) external view returns (Deal memory)
+    {
+        return repo.deals[seq];
+    }
+
+    function getSNList(Repo storage repo) external view returns (uint256[] memory) {
+        return repo.snList.values();
+    }
+
 }

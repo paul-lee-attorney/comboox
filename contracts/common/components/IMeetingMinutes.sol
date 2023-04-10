@@ -20,9 +20,9 @@ interface IMeetingMinutes {
 
     event ProposeMotion(uint256 indexed seqOfMotion, uint256 indexed proposer);
 
-    event EntrustDelegate(uint256 indexed seqOfMotion, uint256 delegate, uint256 principal, uint64 weight);
+    event EntrustDelegate(uint256 indexed seqOfMotion, uint256 delegate, uint256 principal, uint weight);
 
-    event CastVote(uint256 indexed seqOfMotion, uint256 indexed caller, uint8 indexed attitude, bytes32 sigHash);    
+    event CastVote(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);    
 
     event VoteCounting(uint256 indexed seqOfMotion, uint8 indexed result);            
 
@@ -41,51 +41,51 @@ interface IMeetingMinutes {
 
     function nominateOfficer(
         uint256 seqOfPos,
-        uint16 seqOfVR,
-        uint40 canidate,
-        uint40 nominator
+        uint seqOfVR,
+        uint canidate,
+        uint nominator
     ) external returns(uint64);
 
     function proposeToRemoveOfficer(
         uint256 seqOfPos,
-        uint16 seqOfVR,
-        uint40 nominator    
+        uint seqOfVR,
+        uint nominator    
     ) external returns(uint64);
 
     function proposeDoc(
         address doc,
-        uint16 seqOfVR,
-        uint40 executor,
-        uint40 proposer    
+        uint seqOfVR,
+        uint executor,
+        uint proposer    
     ) external returns(uint64);
 
     function proposeAction(
-        uint16 seqOfVR,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 executor,
-        uint40 proposer
+        uint executor,
+        uint proposer
     ) external returns(uint64);
 
     function proposeMotion(
         uint256 seqOfMotion,
-        uint40 proposer
+        uint proposer
     ) external;
 
     function entrustDelegate(
         uint256 seqOfMotion,
-        uint40 delegate, 
-        uint40 principal,
-        uint64 weight
+        uint delegate, 
+        uint principal,
+        uint weight
     ) external;
 
     // ==== Vote ====
 
     function castVote(
         uint256 seqOfMotion,
-        uint8 attitude,
+        uint attitude,
         bytes32 sigHash,
         IRegisterOfMembers _rom,
         uint256 caller
@@ -97,17 +97,17 @@ interface IMeetingMinutes {
 
     // ==== ExecResolution ====
 
-    function execResolution(uint256 seqOfMotion, uint256 contents, uint40 caller)
+    function execResolution(uint256 seqOfMotion, uint256 contents, uint caller)
         external;
 
     function execAction(
-        uint16 seqOfVR,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion,
-        uint40 caller
+        uint caller
     ) external;
 
     //################
@@ -128,13 +128,13 @@ interface IMeetingMinutes {
     function getVoterOfDelegateMap(uint256 seqOfMotion, uint256 acct)
         external view returns (DelegateMap.Voter memory);
 
-    function getDelegateOf(uint256 seqOfMotion, uint40 acct)
-        external view returns (uint40);
+    function getDelegateOf(uint256 seqOfMotion, uint acct)
+        external view returns (uint);
 
     function getLeavesWeightAtDate(
         uint256 seqOfMotion, 
-        uint40 caller,
-        uint48 baseDate, 
+        uint caller,
+        uint baseDate, 
         IRegisterOfMembers _rom 
     ) external view returns(uint64 weight);
 
@@ -150,10 +150,10 @@ interface IMeetingMinutes {
     function isVotedFor(
         uint256 seqOfMotion,
         uint256 acct,
-        uint8 atti
+        uint atti
     ) external view returns (bool);
 
-    function getCaseOfAttitude(uint256 seqOfMotion, uint8 atti)
+    function getCaseOfAttitude(uint256 seqOfMotion, uint atti)
         external view returns (BallotsBox.Case memory );
 
     function getBallot(uint256 seqOfMotion, uint256 acct)

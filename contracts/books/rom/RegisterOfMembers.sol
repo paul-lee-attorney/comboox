@@ -11,8 +11,6 @@ import "./IRegisterOfMembers.sol";
 
 import "../../common/access/AccessControl.sol";
 
-// import "../../common/ruting/BOSSetting.sol";
-
 contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -47,7 +45,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     //##    写接口    ##
     //##################
 
-    function setMaxQtyOfMembers(uint32 max) external onlyDirectKeeper {
+    function setMaxQtyOfMembers(uint max) external onlyDirectKeeper {
         _repo.chain.setMaxQtyOfMembers(max);
         emit SetMaxQtyOfMembers(max);
     }
@@ -62,12 +60,12 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
             emit SetAmtBase(onPar);
     }
 
-    function capIncrease(uint64 paid, uint64 par) external onlyBOS {
+    function capIncrease(uint paid, uint par) external onlyBOS {
         _repo.changeAmtOfCap(paid, par, true);
         emit CapIncrease(paid, par);
     }
 
-    function capDecrease(uint64 paid, uint64 par) external onlyBOS {
+    function capDecrease(uint paid, uint par) external onlyBOS {
         _repo.changeAmtOfCap(paid, par, false);
         emit CapDecrease(paid, par);
     }
@@ -101,9 +99,9 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     function changeAmtOfMember(
-        uint40 acct,
-        uint64 deltaPaid,
-        uint64 deltaPar,
+        uint acct,
+        uint deltaPaid,
+        uint deltaPar,
         bool increase
     ) public onlyBOS {
         if (!increase) {
@@ -130,7 +128,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         );
     }
 
-    function addMemberToGroup(uint40 acct, uint40 root)
+    function addMemberToGroup(uint acct, uint root)
         external
         onlyKeeper
     {
@@ -170,7 +168,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.members[0].votesInHand.latest();
     }
 
-    function capAtDate(uint48 date)
+    function capAtDate(uint date)
         external
         view
         returns (Checkpoints.Checkpoint memory cap)
@@ -214,7 +212,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.chain.nodes[acct].amt;
     }
 
-    function votesAtDate(uint256 acct, uint48 date)
+    function votesAtDate(uint256 acct, uint date)
         external
         view
         returns (uint64)
@@ -249,13 +247,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.chain.affiliated(acct1, acct2);
     }
 
-    function isClassMember(uint256 acct, uint16 class)
+    function isClassMember(uint256 acct, uint class)
         external view returns(bool flag)
     {
         flag = _repo.isClassMember(acct, class);
     }
 
-    function getMembersOfClass(uint16 class)
+    function getMembersOfClass(uint class)
         external view returns(uint256[] memory members)
     {
         members = _repo.getMembersOfClass(class);

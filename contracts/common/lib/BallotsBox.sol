@@ -43,13 +43,13 @@ library BallotsBox {
 
     function castVote(
         Box storage box,
-        uint256 acct,
-        uint8 attitude,
-        uint32 head,
-        uint64 weight,
+        uint acct,
+        uint attitude,
+        uint head,
+        uint weight,
         bytes32 sigHash
     ) public returns (bool flag) {
-        uint40 voter = uint40(acct);        
+        // uint40 voter = uint40(acct);        
         require(
             attitude == uint8(AttitudeOfVote.Support) ||
                 attitude == uint8(AttitudeOfVote.Against) ||
@@ -57,26 +57,65 @@ library BallotsBox {
             "BB.CV: attitude overflow"
         );
 
-        if (box.ballots[voter].sigDate == 0) {
-            box.ballots[voter] = Ballot({
-                acct: voter,
-                attitude: attitude,
-                head: head,
-                weight: weight,
+        Ballot storage b = box.ballots[acct];
+
+        if (b.sigDate == 0) {
+            box.ballots[acct] = Ballot({
+                acct: uint40(acct),
+                attitude: uint8(attitude),
+                head: uint32(head),
+                weight: uint64(weight),
                 sigDate: uint48(block.timestamp),
                 blocknumber: uint64(block.number),
                 sigHash: sigHash
             });
 
-            box.cases[attitude].sumOfHead += head;
-            box.cases[attitude].sumOfWeight += weight;
-            box.cases[attitude].voters.push(voter);
+            Case storage c = box.cases[attitude];
 
-            box.cases[uint8(AttitudeOfVote.All)].sumOfHead += head;
-            box.cases[uint8(AttitudeOfVote.All)].sumOfWeight += weight;
-            box.cases[uint8(AttitudeOfVote.All)].voters.push(voter);
+            c.sumOfHead += b.head;
+            c.sumOfWeight += b.weight;
+            c.voters.push(acct);
+
+            c = box.cases[uint8(AttitudeOfVote.All)];
+
+            c.sumOfHead += b.head;
+            c.sumOfWeight += b.weight;
+            c.voters.push(acct);
 
             flag = true;
         }
     }
+
+    // #################
+    // ##    Read     ##
+    // #################
+
+    function isVoted(Box storage box, uint256 acct) 
+        public view returns (bool) 
+    {
+        return box.ballots[acct].sigDate > 0;
+    }
+
+    function isVotedFor(
+        Box storage box,
+        uint256 acct,
+        uint256 atti
+    ) public view returns (bool) {
+        return box.ballots[acct].attitude == atti;
+    }
+
+    function getCaseOfAttitude(Box storage box, uint256 atti)
+        public view returns (Case memory )
+    {
+        return box.cases[atti];
+    }
+
+    function getBallot(Box storage box, uint256 acct)
+        public view returns (Ballot memory)
+    {
+        return box.ballots[acct];
+    }
+
+
+
 }

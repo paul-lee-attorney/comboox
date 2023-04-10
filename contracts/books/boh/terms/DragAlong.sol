@@ -9,14 +9,11 @@ pragma solidity ^0.8.8;
 
 import "../../../common/access/AccessControl.sol";
 
-// import "../../../common/ruting/BOASetting.sol";
-// import "../../../common/ruting/ROMSetting.sol";
-
 import "./IAlongs.sol";
 
 contract DragAlong is IAlongs, AccessControl {
-    using RulesParser for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
+    using RulesParser for uint256;
 
     DraggersRepo internal _repo;
 
@@ -114,7 +111,7 @@ contract DragAlong is IAlongs, AccessControl {
         }
 
         if (
-            _roeOfDeal(deal.head.priceOfPaid, share.head.price, deal.head.closingDate, share.head.issueDate) >=
+            _roeOfDeal(deal.head.priceOfPaid, share.head.priceOfPaid, deal.head.closingDate, share.head.issueDate) >=
             lr.roe
         ) return true;
 

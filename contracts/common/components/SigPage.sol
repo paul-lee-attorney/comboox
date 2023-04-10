@@ -12,9 +12,9 @@ import "./ISigPage.sol";
 import "../access/AccessControl.sol";
 
 contract SigPage is ISigPage, AccessControl {
-    using SigsRepo for SigsRepo.Page;
-    using EnumerableSet for EnumerableSet.UintSet;
     using ArrayUtils for uint256[];
+    using EnumerableSet for EnumerableSet.UintSet;
+    using SigsRepo for SigsRepo.Page;
 
     SigsRepo.Page[2] internal _sigPages;
 
@@ -22,7 +22,7 @@ contract SigPage is ISigPage, AccessControl {
     //##    设置接口     ##
     //####################
 
-    function setSigDeadline(bool initPage, uint48 sigDeadline) external onlyAttorney
+    function setSigDeadline(bool initPage, uint sigDeadline) external onlyAttorney
     {
         if (initPage) _sigPages[0].setSigDeadline(sigDeadline);
         else _sigPages[1].setSigDeadline(sigDeadline);
@@ -30,7 +30,7 @@ contract SigPage is ISigPage, AccessControl {
         emit SetSigDeadline(initPage, sigDeadline);
     }
 
-    function regSig(uint256 seqOfDeal, uint256 signer, uint48 sigDate, bytes32 sigHash)
+    function regSig(uint256 seqOfDeal, uint256 signer, uint sigDate, bytes32 sigHash)
         external onlyKeeper returns (bool flag)
     {
         flag = _sigPages[1].regSig(seqOfDeal, signer, sigDate, sigHash);
@@ -127,8 +127,11 @@ contract SigPage is ISigPage, AccessControl {
 
     function getSigOfParty(bool initPage, uint256 acct) 
         external view
-        returns (uint256[] memory seqOfDeals, SigsRepo.Signature memory sig)
-    {
+        returns (
+            uint256[] memory seqOfDeals, 
+            SigsRepo.Signature memory sig,
+            bytes32 sigHash
+    ) {
         if (initPage) {
             return _sigPages[0].sigOfParty(acct);
         } else {

@@ -18,7 +18,7 @@ contract ROMKeeper is IROMKeeper, AccessControl {
     // ##   ROM   ##
     // #############
 
-    function setMaxQtyOfMembers(uint8 max) external onlyDirectKeeper {
+    function setMaxQtyOfMembers(uint max) external onlyDirectKeeper {
         _gk.getROM().setMaxQtyOfMembers(max);
     }
 

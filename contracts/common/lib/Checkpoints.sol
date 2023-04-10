@@ -27,23 +27,23 @@ library Checkpoints {
 
     function push(
         History storage self,
-        uint64 paid,
-        uint64 par,
-        uint64 cleanPaid
+        uint paid,
+        uint par,
+        uint cleanPaid
     ) public {
 
         uint256 pos = counterOfPoints(self);
 
-        uint48 timestamp= uint48 (block.timestamp);
+        uint48 timestamp = uint48 (block.timestamp);
 
         Checkpoint memory point = Checkpoint({
             timestamp: timestamp,
-            paid: paid,
-            par: par,
-            cleanPaid: cleanPaid
+            paid: uint64(paid),
+            par: uint64(par),
+            cleanPaid: uint64(cleanPaid)
         });
 
-        if (pos > 0 && self.checkpoints[pos].timestamp == timestamp) {
+        if (self.checkpoints[pos].timestamp == timestamp) {
             self.checkpoints[pos] = point;
         } else {
             self.checkpoints[pos+1] = point;

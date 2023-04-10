@@ -34,8 +34,8 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     function nominateOfficer(
         uint256 seqOfPos,
-        uint40 candidate,
-        uint40 nominator
+        uint candidate,
+        uint nominator
     ) external onlyDirectKeeper directorExist(nominator) {
 
         IBookOfDirectors _bod = _gk.getBOD();
@@ -54,7 +54,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     function proposeToRemoveOfficer(
         uint256 seqOfPos,
-        uint40 nominator
+        uint nominator
     ) external onlyDirectKeeper directorExist(nominator) {
 
         IBookOfDirectors _bod = _gk.getBOD();
@@ -74,9 +74,9 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     function proposeDoc(
         address doc,
-        uint16 seqOfVR,
-        uint40 executor,
-        uint40 proposer
+        uint seqOfVR,
+        uint executor,
+        uint proposer
     ) external onlyDirectKeeper directorExist(proposer) {
 
         IBookOfDirectors _bod = _gk.getBOD();
@@ -88,13 +88,13 @@ contract BODKeeper is IBODKeeper, AccessControl {
     // ---- Actions ----
 
     function proposeAction(
-        uint16 seqOfVR,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 executor,
-        uint40 proposer
+        uint executor,
+        uint proposer
     ) external onlyDirectKeeper directorExist(proposer){
         IBookOfDirectors _bod = _gk.getBOD();
         uint64 seqOfMotion = _bod.proposeAction(
@@ -113,8 +113,8 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     function entrustDelegate(
         uint256 seqOfMotion,
-        uint40 delegate,
-        uint40 caller
+        uint delegate,
+        uint caller
     ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
         _avoidanceCheck(seqOfMotion, caller);
         _gk.getBOD().entrustDelegate(seqOfMotion, delegate, caller, 0);
@@ -122,7 +122,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     function castVote(
         uint256 seqOfMotion,
-        uint8 attitude,
+        uint attitude,
         bytes32 sigHash,
         uint256 caller
     ) external onlyDirectKeeper directorExist(caller) {
@@ -210,7 +210,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
     function takePosition(
         uint256 seqOfMotion,
         uint256 seqOfPos,
-        uint40 caller 
+        uint caller 
     ) external onlyDirectKeeper {
 
         IBookOfDirectors _bod = _gk.getBOD(); 
@@ -223,7 +223,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
         _bod.takePosition(seqOfPos, caller);
     }
 
-    function quitPosition(uint256 seqOfPos, uint40 caller)
+    function quitPosition(uint256 seqOfPos, uint caller)
         external onlyDirectKeeper 
     {
         _gk.getBOD().quitPosition(seqOfPos, caller);
@@ -232,8 +232,8 @@ contract BODKeeper is IBODKeeper, AccessControl {
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint40 target,
-        uint40 caller
+        uint target,
+        uint caller
     ) external onlyDirectKeeper {
         IBookOfDirectors _bod = _gk.getBOD();
         
@@ -246,13 +246,13 @@ contract BODKeeper is IBODKeeper, AccessControl {
     }
 
     function execAction(
-        uint16 typeOfAction,
+        uint typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion,
-        uint40 caller
+        uint caller
     ) external directorExist(caller) {
         _gk.getBOD().execAction(
             typeOfAction,

@@ -23,7 +23,7 @@ interface IBOAKeeper {
 
     // function setTempOfIA(address temp, uint256 typeOfDoc) external;
 
-    function createIA(uint256 snOfIA, address primeKeyOfCaller, uint40 caller) external;
+    function createIA(uint256 snOfIA, address primeKeyOfCaller, uint caller) external;
 
     // function removeIA(address ia, uint256 caller) external;
 
@@ -46,7 +46,7 @@ interface IBOAKeeper {
         address ia,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint48 closingDate,
+        uint closingDate,
         uint256 caller
     ) external;
 

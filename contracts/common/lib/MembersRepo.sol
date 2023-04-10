@@ -14,11 +14,11 @@ import "./SharesRepo.sol";
 import "./TopChain.sol";
 
 library MembersRepo {
+    using ArrayUtils for uint256[];
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
-    using TopChain for TopChain.Chain;
     using SharesRepo for SharesRepo.Head;
-    using ArrayUtils for uint256[];
+    using TopChain for TopChain.Chain;
 
     struct Member {
         Checkpoints.History votesInHand;
@@ -82,7 +82,7 @@ library MembersRepo {
 
     // ==== Member ====
 
-    function delMember(Repo storage gm, uint40 acct)
+    function delMember(Repo storage gm, uint acct)
         public
         returns (bool flag)
     {
@@ -114,22 +114,22 @@ library MembersRepo {
 
     function changeAmtOfMember(
         Repo storage gm,
-        uint40 acct,
-        uint64 deltaPaid,
-        uint64 deltaPar,
+        uint acct,
+        uint deltaPaid,
+        uint deltaPar,
         bool increase
     ) public {
-        uint64 deltaAmt = (gm.chain.basedOnPar()) ? deltaPar : deltaPaid;
+        uint deltaAmt = (gm.chain.basedOnPar()) ? deltaPar : deltaPaid;
         gm.chain.changeAmt(acct, deltaAmt, increase);
 
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.latest();
 
         if (increase) {
-            cp.paid += deltaPaid;
-            cp.par += deltaPar;
+            cp.paid += uint64(deltaPaid);
+            cp.par += uint64(deltaPar);
         } else {
-            cp.paid -= deltaPaid;
-            cp.par -= deltaPar;
+            cp.paid -= uint64(deltaPaid);
+            cp.par -= uint64(deltaPar);
         }
 
         gm.members[acct].votesInHand.push(cp.paid, cp.par, cp.cleanPaid);
@@ -137,18 +137,18 @@ library MembersRepo {
 
     function changeAmtOfCap(
         Repo storage gm,
-        uint64 deltaPaid,
-        uint64 deltaPar,
+        uint deltaPaid,
+        uint deltaPar,
         bool increase
     ) public {
         Checkpoints.Checkpoint memory cp = gm.members[0].votesInHand.latest();
 
         if (increase) {
-            cp.paid += deltaPaid;
-            cp.par += deltaPar;
+            cp.paid += uint64(deltaPaid);
+            cp.par += uint64(deltaPar);
         } else {
-            cp.paid -= deltaPaid;
-            cp.par -= deltaPar;
+            cp.paid -= uint64(deltaPaid);
+            cp.par -= uint64(deltaPar);
         }
 
         updateOwnersEquity(gm, cp);
@@ -186,13 +186,13 @@ library MembersRepo {
     function votesAtDate(
         Repo storage gm,
         uint256 acct,
-        uint48 date
+        uint date
     ) public view returns (uint64 vote) {
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.getAtDate(date);
         vote = gm.chain.basedOnPar() ? cp.par : cp.paid;
     }
 
-    function isClassMember(Repo storage gm, uint256 acct, uint16 class)
+    function isClassMember(Repo storage gm, uint256 acct, uint class)
         public view returns (bool flag)
     {
         uint256[] memory shares = gm.members[acct].sharesInHand.values();
@@ -206,7 +206,7 @@ library MembersRepo {
         }
     }
 
-    function getMembersOfClass(Repo storage gm, uint16 class)
+    function getMembersOfClass(Repo storage gm, uint class)
         public view returns(uint256[] memory output)
     {
         uint256[] memory shares = gm.members[0].sharesInHand.values();

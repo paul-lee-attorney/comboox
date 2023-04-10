@@ -18,9 +18,9 @@ interface IOptions {
     function createOption(
         uint256 snOfOpt,
         uint256 snOfCond,
-        uint40 rightholder,
-        uint64 paid,
-        uint64 par
+        uint rightholder,
+        uint paid,
+        uint par
     ) external returns (OptionsRepo.Head memory head); 
 
     function delOption(uint256 seqOfOpt) external returns(bool flag);

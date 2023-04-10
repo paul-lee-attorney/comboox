@@ -12,7 +12,7 @@ interface IROMKeeper {
     // ##  ROM   ##
     // ############
 
-    function setMaxQtyOfMembers(uint8 max) external;
+    function setMaxQtyOfMembers(uint max) external;
 
     function setVoteBase(bool onPar) external;
 

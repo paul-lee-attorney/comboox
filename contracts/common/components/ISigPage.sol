@@ -13,16 +13,16 @@ import "../lib/SigsRepo.sol";
 
 interface ISigPage {
 
-    event SetSigDeadline (bool initPage, uint48 SigDeadline);
+    event SetSigDeadline (bool initPage, uint SigDeadline);
 
-    function setSigDeadline(bool initPage, uint48 sigDeadline) external;
+    function setSigDeadline(bool initPage, uint sigDeadline) external;
 
     function addBlank(bool beBuyer, uint256 seqOfDeal, uint256 acct)
         external;
 
     function signDoc(bool initPage, uint256 caller, bytes32 sigHash) external;    
 
-    function regSig(uint256 seqOfDeal, uint256 signer, uint48 sigDate, bytes32 sigHash)
+    function regSig(uint256 seqOfDeal, uint256 signer, uint sigDate, bytes32 sigHash)
         external returns(bool flag);
 
     //##################
@@ -57,8 +57,15 @@ interface ISigPage {
         returns (uint256[] memory parties);
 
     function getSigOfParty(bool initParty, uint256 acct) external view
-        returns (uint256[] memory seqOfDeals, SigsRepo.Signature memory sig);
+        returns (
+            uint256[] memory seqOfDeals, 
+            SigsRepo.Signature memory sig,
+            bytes32 sigHash
+        );
 
     function getSigsOfPage(bool initPage) external view
-        returns (SigsRepo.Signature[] memory sigsOfBuyer, SigsRepo.Signature[] memory sigsOfSeller);
+        returns (
+            SigsRepo.Signature[] memory sigsOfBuyer, 
+            SigsRepo.Signature[] memory sigsOfSeller
+        );
 }

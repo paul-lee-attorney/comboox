@@ -38,7 +38,7 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
     // ##   InvestmentAgreement   ##
     // #############################
 
-    function createIA(uint256 snOfDoc, address primeKeyOfCaller, uint40 caller) external onlyDirectKeeper {
+    function createIA(uint256 snOfDoc, address primeKeyOfCaller, uint caller) external onlyDirectKeeper {
         require(_gk.getROM().isMember(caller), "caller not MEMBER");
         
         DocsRepo.Doc memory doc = _rc.createDoc(
@@ -120,7 +120,7 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
         address ia,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint48 closingDate,
+        uint closingDate,
         uint256 caller
     ) external onlyDirectKeeper {
         require(
@@ -215,7 +215,7 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
-        _gk.getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.priceOfPaid);
+        _gk.getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, deal.head.priceOfPaid, deal.head.priceOfPar);
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal) public onlyDirectKeeper {
@@ -229,7 +229,10 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
             class: deal.head.classOfShare,
             issueDate: uint48(block.timestamp),
             shareholder: deal.body.buyer,
-            price: deal.head.priceOfPaid
+            priceOfPaid: deal.head.priceOfPaid,
+            priceOfPar: deal.head.priceOfPar,
+            para: 0,
+            arg: 0
         });
 
         share.body = SharesRepo.Body({
@@ -237,7 +240,8 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
             paid: deal.body.paid,
             par: deal.body.par,
             cleanPaid: deal.body.paid,
-            state: 0
+            state: 0,
+            para: 0
         });
 
         _gk.getBOS().regShare(share);

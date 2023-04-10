@@ -9,10 +9,6 @@ pragma solidity ^0.8.8;
 
 import "../../../common/access/AccessControl.sol";
 
-// import "../../../common/ruting/BOGSetting.sol";
-// import "../../../common/ruting/BOSSetting.sol";
-// import "../../../common/ruting/ROMSetting.sol";
-
 import "./IAntiDilution.sol";
 
 contract AntiDilution is IAntiDilution, AccessControl {
@@ -34,13 +30,13 @@ contract AntiDilution is IAntiDilution, AccessControl {
     // ##   写接口   ##
     // ################
 
-    function addBenchmark(uint256 class, uint32 price) external onlyAttorney {        
+    function addBenchmark(uint256 class, uint price) external onlyAttorney {        
 
         require (class > 0, "AD.AB: zero class");
         require (price > 0, "AD.AB: zero price");
 
         _ruler.marks[class].classOfShare = uint16(class);
-        _ruler.marks[class].floorPrice = price;
+        _ruler.marks[class].floorPrice = uint32(price);
 
         _ruler.classes.add(class);
     }

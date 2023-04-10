@@ -9,8 +9,6 @@ pragma solidity ^0.8.8;
 
 import "../../../common/access/AccessControl.sol";
 
-// import "../../../common/ruting/BOGSetting.sol";
-
 import "./ILockUp.sol";
 
 contract LockUp is ILockUp, AccessControl {
@@ -29,8 +27,8 @@ contract LockUp is ILockUp, AccessControl {
     // ##   写接口    ##
     // ################
 
-    function setLocker(uint256 seqOfShare, uint48 dueDate) external onlyAttorney {
-        _lockers[seqOfShare].dueDate = dueDate == 0 ? _REMOTE_FUTURE : dueDate;
+    function setLocker(uint256 seqOfShare, uint dueDate) external onlyAttorney {
+        _lockers[seqOfShare].dueDate = uint48(dueDate) == 0 ? _REMOTE_FUTURE : uint48(dueDate);
         _lockers[0].keyHolders.add(seqOfShare);
     }
 

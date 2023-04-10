@@ -57,6 +57,8 @@ library OptionsRepo {
         uint64 paid;
         uint64 par;
         uint8 state;
+        uint16 para;
+        uint16 arg;
     }
 
     struct Option {
@@ -117,7 +119,7 @@ library OptionsRepo {
             (uint256(head.triggerDate) << 72) +
             (uint256(head.execDays) << 56) +
             (uint256(head.closingDays) << 40) + 
-            uint256(head.obligor);
+            head.obligor;
     }
 
     function codifyBrief(Brief memory brf) public pure returns (uint256 sn) {
@@ -135,9 +137,9 @@ library OptionsRepo {
         Repo storage repo,
         uint256 snOfOpt,
         uint256 snOfCond,
-        uint40 rightholder,
-        uint64 paid,
-        uint64 par
+        uint rightholder,
+        uint paid,
+        uint par
     ) public returns (Head memory head) 
     {
         Option memory opt;
@@ -146,10 +148,12 @@ library OptionsRepo {
         opt.cond = snOfCond.snParser();
         opt.body = Body({
             closingDate: opt.head.triggerDate + (uint48(opt.head.execDays) + uint48(opt.head.closingDays)) * 86400,
-            rightholder: rightholder,
-            paid: paid,
-            par: par,
-            state: 0
+            rightholder: uint40(rightholder),
+            paid: uint64(paid),
+            par: uint64(par),
+            state: 0,
+            para: 0,
+            arg: 0
         });
 
         head = issueOption(repo, opt);
@@ -262,9 +266,9 @@ library OptionsRepo {
     function createSwapOrder(
         Repo storage repo,
         uint256 seqOfOpt,
-        uint32 seqOfConsider,
-        uint64 paidOfConsider,
-        uint32 seqOfTarget,
+        uint seqOfConsider,
+        uint paidOfConsider,
+        uint seqOfTarget,
         IGeneralKeeper _gk    
     ) public view returns(SwapsRepo.Swap memory swap) {
 
@@ -288,14 +292,15 @@ library OptionsRepo {
             triggerDate: uint48(block.timestamp) + 120,
             closingDays: uint16((opt.body.closingDate + 43200 - block.timestamp) / 86400),
             obligor: opt.head.obligor,
-            rateOfSwap: 0
+            rateOfSwap: 0,
+            para: 0
         });
 
         if (opt.head.typeOfOpt % 4 < 2) 
-            swap.head.rateOfSwap = consider.head.price * 10000 / opt.head.rate;
+            swap.head.rateOfSwap = consider.head.priceOfPaid * 10000 / opt.head.rate;
         else {
-            swap.head.rateOfSwap = consider.head.price * (365 + opt.head.rate) * 
-                uint32(block.timestamp - consider.head.issueDate) * 100/ (864 * 365 * target.head.price);
+            swap.head.rateOfSwap = consider.head.priceOfPaid * (365 + opt.head.rate) * 
+                uint32(block.timestamp - consider.head.issueDate) * 100/ (864 * 365 * target.head.priceOfPaid);
         }
 
         if (opt.head.typeOfOpt % 2 == 1) {
@@ -309,7 +314,7 @@ library OptionsRepo {
         }
 
         swap.body.rightholder = opt.body.rightholder;
-        swap.body.paidOfConsider = paidOfConsider;
+        swap.body.paidOfConsider = uint64(paidOfConsider);
     }
 
     function regSwapOrder(

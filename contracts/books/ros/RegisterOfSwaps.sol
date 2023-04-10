@@ -11,9 +11,6 @@ import "./IRegisterOfSwaps.sol";
 
 import "../../common/access/AccessControl.sol";
 
-// import "../../common/ruting/BOSSetting.sol";
-// import "../../common/ruting/ROMSetting.sol";
-
 contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using SwapsRepo for SwapsRepo.Repo;
@@ -28,8 +25,8 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
 
     function createSwap(
         uint256 sn,
-        uint40 rightholder, 
-        uint64 paidOfConsider
+        uint rightholder, 
+        uint paidOfConsider
     ) external onlyKeeper {
         SwapsRepo.Head memory head = _repo.createSwap(sn, rightholder, paidOfConsider, _gk);
         emit CreateSwap(head.seqOfSwap, rightholder, head.obligor, paidOfConsider, head.rateOfSwap);
@@ -37,8 +34,8 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
 
     function issueSwap(
         SwapsRepo.Head memory head,
-        uint40 rightholder, 
-        uint64 paidOfConsider
+        uint rightholder, 
+        uint paidOfConsider
     ) external onlyKeeper {
         SwapsRepo.Head memory regHead = _repo.issueSwap(head, rightholder, paidOfConsider, _gk);
         emit CreateSwap(regHead.seqOfSwap, rightholder, regHead.obligor, paidOfConsider, regHead.rateOfSwap);
@@ -51,7 +48,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
         emit CreateSwap(newSwap.head.seqOfSwap, newSwap.body.rightholder, newSwap.head.obligor, newSwap.body.paidOfConsider, newSwap.head.rateOfSwap);
     }
 
-    function transferSwap(uint256 seqOfSwap, uint40 to, uint64 amt)
+    function transferSwap(uint256 seqOfSwap, uint to, uint amt)
         external onlyKeeper
     {
         SwapsRepo.Swap memory swap;
@@ -62,7 +59,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
         emit CreateSwap(swap.head.seqOfSwap, swap.body.rightholder, swap.head.obligor, swap.body.paidOfConsider, swap.head.rateOfSwap);
     }
 
-    function crystalizeSwap(uint256 seqOfSwap, uint32 seqOfConsider, uint32 seqOfTarget)
+    function crystalizeSwap(uint256 seqOfSwap, uint seqOfConsider, uint seqOfTarget)
         external onlyKeeper returns(SwapsRepo.Body memory body)
     {        
         body = _repo.swaps[seqOfSwap].crystalizeSwap(seqOfConsider, seqOfTarget, _gk);

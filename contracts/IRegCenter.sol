@@ -25,8 +25,8 @@ interface IRegCenter {
         BOPKeeper,          // 5
         BOSKeeper,          // 6
         ROMKeeper,          // 7
-        SHAKeeper,          // 8
-        GeneralKeeper,      // 9
+        ROSKeeper,          // 8
+        SHAKeeper,          // 9
         BookOfIA,           // 10
         BookOfDirectors,    // 11
         BookOfGM,           // 12
@@ -36,7 +36,7 @@ interface IRegCenter {
         BookOfShares,       // 16
         RegisterOfMembers,  // 17
         RegisterOfSwaps,    // 18
-        ZeroPoint,          // 19
+        GeneralKeeper,      // 19
         InvestmentAgreement,// 20
         ShareholdersAgreement,// 21
         AntiDilution,       // 22
@@ -64,9 +64,9 @@ interface IRegCenter {
 
     event LockPoints(uint256 indexed snOfLocker, uint256 value);
 
-    event ReleasePoints(uint256 indexed sn, string hashKey, uint8 salt, uint256 value);
+    event ReleasePoints(uint256 indexed sn, string hashKey, uint salt, uint256 value);
 
-    event WithdrawPoints(uint256 indexed sn, string hashKey, uint8 salt, uint256 value);
+    event WithdrawPoints(uint256 indexed sn, string hashKey, uint salt, uint256 value);
 
     // ==== Docs ====
     event SetDocKeeper(address indexed keeper);
@@ -92,17 +92,17 @@ interface IRegCenter {
 
     // ==== Mint/Sell Points ====
 
-    function mintPoints(uint256 to, uint216 amt) external;
+    function mintPoints(uint256 to, uint amt) external;
 
-    function mintAndLockPoints(uint256 sn, uint216 amt) external;
+    function mintAndLockPoints(uint256 sn, uint amt) external;
 
-    function transferPoints(uint256 to, uint216 amt) external;
+    function transferPoints(uint256 to, uint amt) external;
 
-    function lockPoints(uint256 sn, uint216 amt) external;
+    function lockPoints(uint256 sn, uint amt) external;
 
-    function releasePoints(uint256 sn, string memory hashKey, uint8 salt) external;
+    function releasePoints(uint256 sn, string memory hashKey, uint salt) external;
 
-    function withdrawPoints(uint256 sn, string memory hashKey, uint8 salt) external;
+    function withdrawPoints(uint256 sn, string memory hashKey, uint salt) external;
 
     function checkLocker(uint256 sn) external view returns (uint256 value);
 
@@ -126,7 +126,7 @@ interface IRegCenter {
     // ==== Comp ====
 
     function createComp(address primeKeyOfKeeper, address primeKeyOfOwner) external 
-        returns(DocsRepo.Doc[19] memory docs);
+        returns(DocsRepo.Doc[20] memory docs);
 
     // ##################
     // ##   查询端口   ##

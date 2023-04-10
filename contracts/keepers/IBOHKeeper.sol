@@ -23,7 +23,7 @@ interface IBOHKeeper {
 
     // function setTempOfBOH(address temp, uint8 typeOfDoc) external;
 
-    function createSHA(uint16 version, address primeKeyOfCaller, uint40 caller) external;
+    function createSHA(uint version, address primeKeyOfCaller, uint caller) external;
 
     // function removeSHA(address sha, uint256 caller) external;
 

@@ -9,7 +9,6 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfShares.sol";
 import "../../common/access/AccessControl.sol";
-// import "../../common/ruting/ROMSetting.sol";
 
 contract BookOfShares is IBookOfShares, AccessControl {
     using LockersRepo for LockersRepo.Repo;
@@ -43,7 +42,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== IssueShare ====
 
-    function issueShare(uint256 shareNumber, uint48 payInDeadline, uint64 paid, uint64 par) 
+    function issueShare(uint256 shareNumber, uint payInDeadline, uint paid, uint par) 
         external onlyKeeper
     {
 
@@ -69,14 +68,14 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== PayInCapital ====
 
-    function setPayInAmt(uint256 snOfLocker, uint64 amount) 
+    function setPayInAmt(uint256 snOfLocker, uint amount) 
         external onlyDirectKeeper
     {
         if (_lockers.lockValue(snOfLocker, amount, uint32(snOfLocker >> 216)))
             emit SetPayInAmt(snOfLocker, amount);
     }
 
-    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint8 salt, uint256 caller)
+    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint salt, uint256 caller)
         external onlyDirectKeeper
     {
         uint64 amount = uint64(_lockers.releaseValue(snOfLocker, hashKey, salt, caller));
@@ -99,10 +98,11 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     function transferShare(
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par,
-        uint40 to,
-        uint32 price
+        uint paid,
+        uint par,
+        uint to,
+        uint priceOfPaid,
+        uint priceOfPar
     ) external onlyKeeper shareExist(seqOfShare) notFreezed(seqOfShare) {
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
@@ -119,16 +119,20 @@ contract BookOfShares is IBookOfShares, AccessControl {
             preSeq: share.head.seqOfShare,            
             class: share.head.class,
             issueDate: uint48(block.timestamp),
-            shareholder: to,
-            price: price
+            shareholder: uint40(to),
+            priceOfPaid: uint32(priceOfPaid),
+            priceOfPar: uint32(priceOfPar),
+            para: 0,
+            arg: 0
         });
 
         newShare.body = SharesRepo.Body({
             payInDeadline: share.body.payInDeadline,
-            paid: paid,
-            par: par,
-            cleanPaid: paid,
-            state: 0
+            paid: uint64(paid),
+            par: uint64(par),
+            cleanPaid: uint64(paid),
+            state: 0,
+            para: 0
         });        
 
         regShare(newShare);
@@ -138,8 +142,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     function decreaseCapital(
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par
+        uint paid,
+        uint par
     ) external onlyDirectKeeper shareExist(seqOfShare) notFreezed(seqOfShare) {
         SharesRepo.Share storage share = _repo.shares[seqOfShare];        
 
@@ -150,7 +154,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== cleanAmt ====
 
-    function decreaseCleanPaid(uint256 seqOfShare, uint64 paid)
+    function decreaseCleanPaid(uint256 seqOfShare, uint paid)
         external shareExist(seqOfShare) notFreezed(seqOfShare)
     {
         require(msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfPledges)) ||
@@ -160,7 +164,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
         _repo.shares[seqOfShare].decreaseCleanPaid(paid);
     }
 
-    function increaseCleanPaid(uint256 seqOfShare, uint64 paid)
+    function increaseCleanPaid(uint256 seqOfShare, uint paid)
         external shareExist(seqOfShare) notFreezed(seqOfShare)
     {
         require(msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfPledges)) ||
@@ -172,14 +176,14 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== State & PaidInDeadline ====
 
-    function updateStateOfShare(uint256 seqOfShare, uint8 state)
+    function updateStateOfShare(uint256 seqOfShare, uint state)
         external onlyDirectKeeper shareExist(seqOfShare)
     {
         emit UpdateStateOfShare(seqOfShare, state);
-        _repo.shares[seqOfShare].body.state = state;
+        _repo.shares[seqOfShare].body.state = uint8(state);
     }
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint48 deadline)
+    function updatePaidInDeadline(uint256 seqOfShare, uint deadline)
         external onlyDirectKeeper shareExist(seqOfShare)
     {
         emit UpdatePaidInDeadline(seqOfShare, deadline);
@@ -193,13 +197,13 @@ contract BookOfShares is IBookOfShares, AccessControl {
             emit DeregisterShare(seqOfShare);
     }
 
-    function _payInCapital(SharesRepo.Share storage share, uint64 amount) private 
+    function _payInCapital(SharesRepo.Share storage share, uint amount) private 
     {
         emit PayInCapital(share.head.seqOfShare, amount);
         share.payInCapital(amount);
     }
 
-    function _decreaseShareAmt(SharesRepo.Share storage share, uint64 paid, uint64 par) 
+    function _decreaseShareAmt(SharesRepo.Share storage share, uint paid, uint par) 
         private 
     {
         if (par == share.body.par) {
@@ -218,8 +222,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     function _subAmtFromShare(
         SharesRepo.Share storage share,
-        uint64 paid,
-        uint64 par
+        uint paid,
+        uint par
     ) private {
 
         emit SubAmountFromShare(share.head.seqOfShare, paid, par);
@@ -268,7 +272,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
         amount = uint64(_lockers.lockers[snOfLocker]);
     }
 
-    function getSharesOfClass(uint16 class) external view
+    function getSharesOfClass(uint class) external view
         returns (uint256[] memory seqList)
     {
         return _repo.sharesOfClass(class);

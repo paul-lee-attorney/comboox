@@ -12,11 +12,7 @@ import "./IBookOfDirectors.sol";
 import "../../common/components/MeetingMinutes.sol";
 
 contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
-    // using MotionsRepo for MotionsRepo.Repo;
-    // using MotionsRepo for MotionsRepo.Motion;
     using OfficersRepo for OfficersRepo.Repo;
-    // using EnumerableSet for EnumerableSet.UintSet;
-    // using RulesParser for uint256;
 
     OfficersRepo.Repo private _repo;
 
@@ -42,14 +38,13 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
 
     // ---- Officers ----
 
-    function takePosition (uint256 seqOfPos, uint40 caller) external onlyKeeper
+    function takePosition (uint256 seqOfPos, uint caller) external onlyKeeper
     {
         uint256 snOfPos = _repo.takePosition(seqOfPos, caller);
         emit TakePosition(snOfPos);
     }
 
-    function quitPosition (uint256 seqOfPos, uint40 caller)
-        external onlyDirectKeeper
+    function quitPosition (uint256 seqOfPos, uint caller) external onlyDirectKeeper
     {
         if (_repo.quitPosition(seqOfPos, caller))
             emit QuitPosition(seqOfPos, caller);
@@ -58,63 +53,13 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos, 
-        uint40 target, 
-        uint40 caller
+        uint target, 
+        uint caller
     ) external onlyDirectKeeper
     {
         if (_repo.quitPosition(seqOfPos, target))
             emit RemoveOfficer(seqOfMotion, seqOfPos, target, caller);
     }
-
-    // function execAction(
-    //     uint16 seqOfVR,
-    //     address[] memory targets,
-    //     uint256[] memory values,
-    //     bytes[] memory params,
-    //     bytes32 desHash,
-    //     uint256 seqOfMotion,
-    //     uint40 caller
-    // ) external onlyDirectKeeper {
-    //     uint256 contents = _hashAction(
-    //         seqOfVR,
-    //         targets,
-    //         values,
-    //         params,
-    //         desHash
-    //     );
-
-    //     execResolution(seqOfMotion, contents, caller);
-
-    //     if (_execute(targets, values, params)) {
-    //         emit ExecAction(contents, true);
-    //     } else emit ExecAction(contents, false);
-    // }
-
-    // function _hashAction(
-    //     uint256 seqOfVR,
-    //     address[] memory targets,
-    //     uint256[] memory values,
-    //     bytes[] memory params,
-    //     bytes32 desHash
-    // ) private pure returns (uint256) {
-    //     return
-    //         uint256(
-    //             keccak256(
-    //                 abi.encode(seqOfVR, targets, values, params, desHash)
-    //             )
-    //         );
-    // }
-
-    // function _execute(
-    //     address[] memory targets,
-    //     uint256[] memory values,
-    //     bytes[] memory params
-    // ) private returns (bool success) {
-    //     for (uint256 i = 0; i < targets.length; i++) {
-    //         (success, ) = targets[i].call{value: values[i]}(params[i]);
-    //         if (!success) return success;
-    //     }
-    // }
 
     //##################
     //##    读接口    ##
@@ -200,7 +145,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         quota = _repo.getBoardSeatsQuota(acct);
     } 
 
-    function getBoardSeatsOccupied(uint40 acct) external view 
+    function getBoardSeatsOccupied(uint acct) external view 
         returns (uint256 num)
     {
         num = _repo.getBoardSeatsOccupied(acct);

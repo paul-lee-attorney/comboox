@@ -50,7 +50,7 @@ interface IFilesFolder {
     //##  Event   ##
     //##############
 
-    event UpdateStateOfFile(address indexed body, uint8 state);
+    event UpdateStateOfFile(address indexed body, uint state);
 
     //##################
     //##    写接口    ##
@@ -65,7 +65,7 @@ interface IFilesFolder {
         bytes32 docHash
     ) external;
 
-    function setStateOfFile(address body, uint8 state) external;
+    function setStateOfFile(address body, uint state) external;
 
     //##################
     //##   read I/O   ##

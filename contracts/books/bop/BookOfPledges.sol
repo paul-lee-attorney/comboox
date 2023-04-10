@@ -24,11 +24,11 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
 
     function createPledge(
         uint256 sn,
-        uint40 creditor,
-        uint16 guaranteeDays,
-        uint64 paid,
-        uint64 par,
-        uint64 guaranteedAmt
+        uint creditor,
+        uint guaranteeDays,
+        uint paid,
+        uint par,
+        uint guaranteedAmt
     ) external onlyDirectKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
             sn,
@@ -50,11 +50,11 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
 
     function issuePledge(
         PledgesRepo.Head memory head,
-        uint40 creditor,
-        uint16 guaranteeDays,
-        uint64 paid,
-        uint64 par,
-        uint64 guaranteedAmt
+        uint creditor,
+        uint guaranteeDays,
+        uint paid,
+        uint par,
+        uint guaranteedAmt
     ) external onlyKeeper returns(PledgesRepo.Head memory regHead)
     {
         regHead = _repo.issuePledge(
@@ -94,8 +94,8 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function transferPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint40 buyer,
-        uint64 amt
+        uint buyer,
+        uint amt
     ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
     {
         require(buyer > 0, "BOP.TP: zero buyer");
@@ -117,7 +117,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint64 amt
+        uint amt
     ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
     {
         newPld = _repo.splitPledge(seqOfShare, seqOfPld, 0, amt);
@@ -128,7 +128,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint16 extDays
+        uint extDays
     ) external onlyKeeper {
         _repo.pledges[seqOfShare][seqOfPld].extendPledge(extDays);
         emit ExtendPledge(seqOfShare, seqOfPld, extDays);

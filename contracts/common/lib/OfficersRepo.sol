@@ -8,7 +8,6 @@
 pragma solidity ^0.8.8;
 
 import "./EnumerableSet.sol";
-import "./RulesParser.sol";
 
 library OfficersRepo {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -137,14 +136,14 @@ library OfficersRepo {
     function takePosition (
         Repo storage repo,
         uint256 seqOfPos,
-        uint40 acct
+        uint acct
     ) public returns (uint256 ) {
         require (seqOfPos > 0, "OR.TP: zero seqOfPos");
         require (acct > 0, "OR.TP: zero acct");
         
         Position storage pos = repo.positions[seqOfPos];
 
-        pos.acct = acct;
+        pos.acct = uint40(acct);
         pos.startDate = uint48(block.timestamp);
 
         repo.officers.add(acct);
@@ -160,7 +159,7 @@ library OfficersRepo {
     function quitPosition(
         Repo storage repo, 
         uint256 seqOfPos,
-        uint40 acct
+        uint acct
     ) public returns (bool flag)
     {
         Position memory pos = repo.positions[seqOfPos];
@@ -288,7 +287,7 @@ library OfficersRepo {
         }       
     }
 
-    function getBoardSeatsOccupied(Repo storage repo, uint40 acct) public view 
+    function getBoardSeatsOccupied(Repo storage repo, uint acct) public view 
         returns (uint256 num)
     {
         uint256[] memory dl = repo.board.values();

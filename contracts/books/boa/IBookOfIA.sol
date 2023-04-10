@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../../common/components/IFilesFolder.sol";
+import "./IInvestmentAgreement.sol";
 
 import "../../common/lib/DTClaims.sol";
 import "../../common/lib/EnumerableSet.sol";
@@ -24,7 +25,7 @@ interface IBookOfIA is IFilesFolder {
     event ExecFirstRefusalRight(address ia, uint256 seqOfDeal, uint256 caller);
 
     event ExecAlongRight(address ia, bool dragAlong, uint256 seqOfDeal, 
-    uint256 seqOfShare, uint64 paid, uint64 par, uint256 claimer, bytes32 sigHash);
+    uint256 seqOfShare, uint paid, uint par, uint256 claimer, bytes32 sigHash);
 
     event AcceptFirstRefusalClaims(address ia, uint256 seqOfDeal);
 
@@ -55,8 +56,8 @@ interface IBookOfIA is IFilesFolder {
         bool dragAlong,
         uint256 seqOfDeal,
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par,
+        uint paid,
+        uint par,
         uint256 caller,
         bytes32 sigHash
     ) external;
@@ -65,11 +66,11 @@ interface IBookOfIA is IFilesFolder {
         external
         returns (bool flag);
 
-    function mockDealOfSell (address ia, uint40 seller, uint64 amount) 
+    function mockDealOfSell (address ia, uint seller, uint amount) 
         external
         returns (bool flag); 
 
-    function mockDealOfBuy (address ia, uint40 buyer, uint40 groupRep, uint64 amount) 
+    function mockDealOfBuy (address ia, uint buyer, uint groupRep, uint amount) 
         external
         returns (bool flag);
 

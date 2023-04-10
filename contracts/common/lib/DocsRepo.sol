@@ -62,7 +62,7 @@ library DocsRepo {
             head.data;
     }
 
-    function init(Repo storage repo, uint40 caller) 
+    function init(Repo storage repo, uint caller) 
         public returns(bool flag)
     {
         if (getKeeper(repo) == 0) {
@@ -70,7 +70,7 @@ library DocsRepo {
         }
     }
 
-    function turnOverRepoKey(Repo storage repo, uint40 keeper, uint40 caller) 
+    function turnOverRepoKey(Repo storage repo, uint keeper, uint caller) 
         public returns (bool flag) 
     {
         require(getKeeper(repo) == caller, "DR.TORK: not keeper");
@@ -83,14 +83,14 @@ library DocsRepo {
         Repo storage repo,
         uint256 snOfDoc, 
         address body,
-        uint40 caller
+        uint caller
     ) public returns (Doc memory doc) {
         doc.head = snParser(snOfDoc);
 
         require(doc.head.typeOfDoc > 0, "DR.ST: zero typeOfDoc");
         require(caller == getKeeper(repo), "DR.ST: not keeper");
 
-        doc.head.creator = caller;
+        doc.head.creator = uint40(caller);
         doc.head.version = _increaseCounterOfVersions(repo, doc.head.typeOfDoc);
         doc.head.createDate = uint48(block.timestamp);
         doc.body = body;
@@ -100,7 +100,7 @@ library DocsRepo {
         }
     }
 
-    function createDoc(Repo storage repo, uint256 snOfDoc, uint40 creator)
+    function createDoc(Repo storage repo, uint256 snOfDoc, uint creator)
         public returns (Doc memory doc)
     {
         doc.head = snParser(snOfDoc);
@@ -109,7 +109,7 @@ library DocsRepo {
         require(doc.head.version > 0, "DR.CD: zero version");
         require(creator > 0, "DR.CD: zero creator");
 
-        doc.head.creator = creator;
+        doc.head.creator = uint40(creator);
 
         address temp = repo.docs[doc.head.typeOfDoc][doc.head.version][0].body;
 
@@ -125,9 +125,9 @@ library DocsRepo {
         }
     }
 
-    function _setKeeper(Repo storage repo, uint40 keeper) private returns (bool flag) {
+    function _setKeeper(Repo storage repo, uint keeper) private returns (bool flag) {
         if (keeper > 0) {
-            repo.docs[0][0][0].head.creator = keeper;
+            repo.docs[0][0][0].head.creator = uint40(keeper);
             flag = true;
         }
     }

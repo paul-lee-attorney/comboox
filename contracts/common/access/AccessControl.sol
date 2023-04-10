@@ -96,7 +96,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         emit Init(owner, directKeeper, regCenter, generalKeeper);
     }
 
-    function setOwner(uint256 acct) external virtual {
+    function setOwner(uint256 acct) external {
         _roles.setOwner(acct, _msgSender());
         emit SetOwner(acct);
     }
@@ -107,9 +107,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     }
 
     function setGeneralCounsel(uint256 acct)
-        external
-        virtual
-        ownerOrDirectBookeeper
+        external ownerOrDirectBookeeper
     {
         _roles.setGeneralCounsel(acct, _msgSender());
         emit SetGeneralCounsel(acct);

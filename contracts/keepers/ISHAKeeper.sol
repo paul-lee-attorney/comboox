@@ -31,8 +31,8 @@ interface ISHAKeeper {
         uint256 seqOfDeal,
         bool dragAlong,
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par,
+        uint paid,
+        uint par,
         uint256 caller,
         bytes32 sigHash
     ) external;
@@ -58,7 +58,7 @@ interface ISHAKeeper {
     function takeGiftShares(
         address ia,
         uint256 seqOfDeal,
-        uint40 caller
+        uint caller
     ) external;
 
     // ======== FirstRefusal ========

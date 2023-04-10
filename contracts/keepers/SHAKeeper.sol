@@ -9,11 +9,6 @@ pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
 
-// import "../common/ruting/BOASetting.sol";
-// import "../common/ruting/BOHSetting.sol";
-// import "../common/ruting/BOSSetting.sol";
-// import "../common/ruting/ROMSetting.sol";
-
 import "./ISHAKeeper.sol";
 
 contract SHAKeeper is ISHAKeeper, AccessControl {
@@ -67,8 +62,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfDeal,
         bool dragAlong,
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par,
+        uint paid,
+        uint par,
         uint256 caller,
         bytes32 sigHash
     ) external onlyDirectKeeper withinExecPeriod(ia) {
@@ -219,7 +214,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
     function _createGiftDeals(
         address ia,
         uint256 seqOfDeal,
-        uint64 giftPaid,
+        uint giftPaid,
         uint256[] memory obligors,
         uint256 caller,
         bytes32 sigHash
@@ -254,7 +249,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         address ia,
         uint256 seqOfDeal,
         uint256 seqOfShare,
-        uint64 giftPaid
+        uint giftPaid
     ) private returns (uint256 seqOfGiftDeal, uint64 result) {
         
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
@@ -264,7 +259,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         if (share.body.cleanPaid > 0) {
 
-            lockAmount = (share.body.cleanPaid < giftPaid) ? share.body.cleanPaid : giftPaid;
+            lockAmount = (share.body.cleanPaid < giftPaid) ? share.body.cleanPaid : uint64(giftPaid);
 
             DealsRepo.Deal memory giftDeal = DealsRepo.Deal({
                 head: DealsRepo.Head({
@@ -292,13 +287,13 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
             _gk.getBOS().decreaseCleanPaid(share.head.seqOfShare, lockAmount);
         }
-        result = giftPaid - lockAmount;
+        result = uint64(giftPaid) - lockAmount;
     }
 
     function takeGiftShares(
         address ia,
         uint256 seqOfDeal,
-        uint40 caller
+        uint caller
     ) external onlyDirectKeeper {
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
@@ -308,7 +303,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             _gk.getBOA().setStateOfFile(ia, uint8(IFilesFolder.StateOfFile.Executed));
 
         _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
-        _gk.getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0);
+        _gk.getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0, 0);
     }
 
     // ======== FirstRefusal ========

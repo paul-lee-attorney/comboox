@@ -43,8 +43,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     // ---- Officers ----
     function nominateDirector(
         uint256 seqOfPos,
-        uint40 candidate,
-        uint40 nominator
+        uint candidate,
+        uint nominator
     ) external onlyDirectKeeper memberExist(nominator) {
 
         OfficersRepo.Position memory pos =
@@ -64,7 +64,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     function proposeToRemoveDirector(
         uint256 seqOfPos,
-        uint40 caller
+        uint caller
     ) external onlyDirectKeeper memberExist(caller) {
 
         OfficersRepo.Position memory pos =
@@ -86,9 +86,9 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     function proposeDocOfGM(
         address doc,
-        uint16 seqOfVR,
-        uint40 executor,
-        uint40 proposer
+        uint seqOfVR,
+        uint executor,
+        uint proposer
     ) external onlyDirectKeeper memberExist(proposer) {
 
         IBookOfGM _bog = _gk.getBOG();
@@ -104,13 +104,13 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     }
 
     function proposeActionOfGM(
-        uint16 seqOfVR,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 executor,
-        uint40 proposer
+        uint executor,
+        uint proposer
     ) external onlyDirectKeeper memberExist(proposer) {
         _gk.getBOG().proposeAction(
             seqOfVR,
@@ -127,8 +127,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     function entrustDelegateOfMember(
         uint256 seqOfMotion,
-        uint40 delegate,
-        uint40 caller
+        uint delegate,
+        uint caller
     ) external onlyDirectKeeper memberExist(caller) memberExist(delegate) {
         _avoidanceCheck(seqOfMotion, caller);
 
@@ -145,7 +145,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     function proposeMotionOfGM(
         uint256 seqOfMotion,
-        uint40 caller
+        uint caller
     ) external onlyKeeper memberExist(caller) {
 
         IBookOfGM _bog = _gk.getBOG();
@@ -169,7 +169,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     function castVoteOfGM(
         uint256 seqOfMotion,
-        uint8 attitude,
+        uint attitude,
         bytes32 sigHash,
         uint256 caller
     ) external onlyDirectKeeper memberExist(caller) {
@@ -256,7 +256,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     function takeSeat(
         uint256 seqOfMotion,
         uint256 seqOfPos,
-        uint40 caller 
+        uint caller 
     ) external onlyDirectKeeper {
 
         IBookOfGM _bog = _gk.getBOG();
@@ -272,8 +272,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     function removeDirector (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint40 director,
-        uint40 caller
+        uint director,
+        uint caller
     ) external onlyDirectKeeper {
         IBookOfGM _bog = _gk.getBOG();
 
@@ -286,13 +286,13 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     }
 
     function execActionOfGM(
-        uint16 typeOfAction,
+        uint typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion,
-        uint40 caller
+        uint caller
     ) external {
         _gk.getBOG().execAction(
             typeOfAction,

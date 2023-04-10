@@ -20,11 +20,11 @@ interface IRegisterOfMembers {
 
     event SetVoteBase(bool basedOnPar);
 
-    event CapIncrease(uint64 paid, uint64 par);
+    event CapIncrease(uint paid, uint par);
 
-    event CapDecrease(uint64 paid, uint64 par);
+    event CapDecrease(uint paid, uint par);
 
-    event SetMaxQtyOfMembers(uint32 max);
+    event SetMaxQtyOfMembers(uint max);
 
     event SetAmtBase(bool basedOnPar);
 
@@ -35,20 +35,20 @@ interface IRegisterOfMembers {
     event RemoveShareFromMember(uint32 indexed seqOfShare, uint40 indexed acct);
 
     event ChangeAmtOfMember(
-        uint40 indexed acct,
-        uint64 paid,
-        uint64 par,
+        uint indexed acct,
+        uint paid,
+        uint par,
         bool increase
     );
 
-    event DecreaseAmountFromMember(
-        uint40 indexed acct,
-        uint64 paid,
-        uint64 par,
-        uint64 blocknumber
-    );
+    // event DecreaseAmountFromMember(
+    //     uint40 indexed acct,
+    //     uint64 paid,
+    //     uint64 par,
+    //     uint64 blocknumber
+    // );
 
-    event AddMemberToGroup(uint40 indexed acct, uint40 indexed root);
+    event AddMemberToGroup(uint indexed acct, uint indexed root);
 
     event RemoveMemberFromGroup(uint256 indexed acct, uint256 indexed root);
 
@@ -60,11 +60,11 @@ interface IRegisterOfMembers {
 
     function setVoteBase(bool onPar) external;
 
-    function capIncrease(uint64 paid, uint64 par) external;
+    function capIncrease(uint paid, uint par) external;
 
-    function capDecrease(uint64 paid, uint64 par) external;
+    function capDecrease(uint paid, uint par) external;
 
-    function setMaxQtyOfMembers(uint32 max) external;
+    function setMaxQtyOfMembers(uint max) external;
 
     function setAmtBase(bool basedOnPar) external;
 
@@ -75,13 +75,13 @@ interface IRegisterOfMembers {
     function removeShareFromMember(SharesRepo.Share memory share) external;
 
     function changeAmtOfMember(
-        uint40 acct,
-        uint64 deltaPaid,
-        uint64 deltaPar,
+        uint acct,
+        uint deltaPaid,
+        uint deltaPar,
         bool decrease
     ) external;
 
-    function addMemberToGroup(uint40 acct, uint40 root) external;
+    function addMemberToGroup(uint acct, uint root) external;
 
     function removeMemberFromGroup(uint256 acct, uint256 root) external;
 
@@ -95,7 +95,7 @@ interface IRegisterOfMembers {
 
     function ownersEquity() external view returns(Checkpoints.Checkpoint memory cap);
 
-    function capAtDate(uint48 date) external view
+    function capAtDate(uint date) external view
         returns (Checkpoints.Checkpoint memory cap);
 
     function totalVotes() external view returns (uint64);
@@ -113,7 +113,7 @@ interface IRegisterOfMembers {
 
     function votesInHand(uint256 acct) external view returns (uint64);
 
-    function votesAtDate(uint256 acct, uint48 date) external view
+    function votesAtDate(uint256 acct, uint date) external view
         returns (uint64);
 
     function sharesInHand(uint256 acct) external view returns (uint256[] memory);
@@ -127,10 +127,10 @@ interface IRegisterOfMembers {
     function affiliated(uint256 acct1, uint256 acct2) external view
         returns (bool);
     
-    function isClassMember(uint256 acct, uint16 class)
+    function isClassMember(uint256 acct, uint class)
         external view returns(bool flag);
 
-    function getMembersOfClass(uint16 class)
+    function getMembersOfClass(uint class)
         external view returns(uint256[] memory members);
 
     // ==== group ====

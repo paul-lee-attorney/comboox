@@ -36,6 +36,7 @@ library SwapsRepo {
         uint16 closingDays;
         uint40 obligor;
         uint32 rateOfSwap;
+        uint8 para;
     }
 
     struct Body {
@@ -45,6 +46,7 @@ library SwapsRepo {
         uint32 seqOfTarget;
         uint64 paidOfTarget;
         uint8 state;
+        uint16 para;
     }
 
     struct Swap {
@@ -72,7 +74,8 @@ library SwapsRepo {
             triggerDate: uint48(sn >> 96),
             closingDays: uint16(sn >> 80),
             obligor: uint40(sn >> 40),
-            rateOfSwap: uint32(sn >> 8)
+            rateOfSwap: uint32(sn >> 8),
+            para: uint8(sn)
         });
     } 
 
@@ -84,14 +87,15 @@ library SwapsRepo {
             (uint256(head.triggerDate) << 96) +
             (uint256(head.closingDays) << 80) +
             (uint256(head.obligor) << 40) +
-            (uint256(head.rateOfSwap) << 8);
+            (uint256(head.rateOfSwap) << 8) +
+            head.para;
     } 
 
     function createSwap(
             Repo storage repo, 
             uint256 sn,
-            uint40 rightholder, 
-            uint64 paidOfConsider,
+            uint rightholder, 
+            uint paidOfConsider,
             IGeneralKeeper _gk
     ) public returns (Head memory head) 
     {
@@ -102,8 +106,8 @@ library SwapsRepo {
     function issueSwap(
         Repo storage repo,
         Head memory head,
-        uint40 rightholder, 
-        uint64 paidOfConsider,
+        uint rightholder, 
+        uint paidOfConsider,
         IGeneralKeeper _gk
     ) public returns(Head memory newHead) {
         Swap memory swap;
@@ -112,8 +116,8 @@ library SwapsRepo {
 
         swap.head = head;
 
-        swap.body.rightholder = rightholder;
-        swap.body.paidOfConsider = paidOfConsider;
+        swap.body.rightholder = uint40(rightholder);
+        swap.body.paidOfConsider = uint64(paidOfConsider);
         swap.body.state = uint8(StateOfSwap.Issued);
 
         newHead = regSwap(repo, swap, _gk).head;
@@ -123,7 +127,7 @@ library SwapsRepo {
         Repo storage repo,
         Swap memory swap,
         IGeneralKeeper _gk
-    ) public returns(Swap memory newSwap){
+    ) public returns(Swap memory){
         require(_gk.getROM().isClassMember(swap.head.obligor, swap.head.classOfTarget), 
             "SR.RS: obligor not memberOfTargetClass");
         require(_gk.getROM().isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
@@ -133,20 +137,19 @@ library SwapsRepo {
         require(block.timestamp >= swap.head.createDate, "SR.RS: future createDate");
 
         require(swap.head.rateOfSwap > 0, "SR.RS: zero rateOfSwap");
-
         require(swap.body.paidOfConsider > 0, "SR.RS: zero paidOfConsider");
 
-        newSwap = swap;
+        swap.head.seqOfSwap = _increaseCounterOfSwap(repo);
 
-        newSwap.head.seqOfSwap = _increaseCounterOfSwap(repo);
+        repo.swaps[swap.head.seqOfSwap] = swap;
+        repo.snList.add(codifyHead(swap.head));
 
-        repo.swaps[newSwap.head.seqOfSwap] = newSwap;
-        repo.snList.add(codifyHead(newSwap.head));
+        return swap;
     }
 
     function decreaseAmtOfSwap(
         Swap storage swap,
-        uint64 amt
+        uint amt
     ) public returns(bool flag) {
 
         require(block.timestamp < swap.head.triggerDate + uint48(swap.head.closingDays) * 86400,
@@ -154,12 +157,12 @@ library SwapsRepo {
         require(swap.body.paidOfConsider >= amt, "SR.DAOS: amt overflow");
 
         if (swap.body.state < uint8(StateOfSwap.Locked)) {
-            swap.body.paidOfConsider -= amt;
+            swap.body.paidOfConsider -= uint64(amt);
             
             if (swap.body.paidOfConsider == 0) 
                 swap.body.state == uint8(StateOfSwap.Revoked);
             else if (swap.body.state == uint8(StateOfSwap.Crystalized)) {
-                swap.body.paidOfTarget -= amt * uint64(swap.head.rateOfSwap) / 10000;
+                swap.body.paidOfTarget -= uint64(amt * swap.head.rateOfSwap) / 10000;
             }
             
             flag = true;
@@ -169,8 +172,8 @@ library SwapsRepo {
     function splitSwap(
         Repo storage repo,
         uint256 seqOfSwap,
-        uint40 buyer,
-        uint64 amt,
+        uint buyer,
+        uint amt,
         IGeneralKeeper _gk
     ) public returns(Head memory head) {
         Swap storage swap = repo.swaps[seqOfSwap];
@@ -181,19 +184,19 @@ library SwapsRepo {
 
         decreaseAmtOfSwap(swap, amt);
 
-        if (buyer > 0) newSwap.body.rightholder = buyer;
-        newSwap.body.paidOfConsider = amt;
+        if (buyer > 0) newSwap.body.rightholder = uint40(buyer);
+        newSwap.body.paidOfConsider = uint64(amt);
 
         if (newSwap.body.state == uint8(StateOfSwap.Crystalized))
-            newSwap.body.paidOfTarget = amt * uint64(newSwap.head.rateOfSwap) / 10000;
+            newSwap.body.paidOfTarget = uint64(amt * newSwap.head.rateOfSwap) / 10000;
         
         head = regSwap(repo, newSwap, _gk).head;
     }
 
     function crystalizeSwap(
         Swap storage swap,
-        uint32 seqOfConsider,
-        uint32 seqOfTarget,
+        uint seqOfConsider,
+        uint seqOfTarget,
         IGeneralKeeper _gk
     ) public returns (Body memory){
         require(block.timestamp < swap.head.triggerDate + uint48(swap.head.closingDays) * 86400,
@@ -223,11 +226,12 @@ library SwapsRepo {
 
         swap.body = Body({
             rightholder: swap.body.rightholder,
-            seqOfConsider: seqOfConsider,
+            seqOfConsider: uint32(seqOfConsider),
             paidOfConsider: swap.body.paidOfConsider,
-            seqOfTarget: seqOfTarget,
+            seqOfTarget: uint32(seqOfTarget),
             paidOfTarget: paidOfTarget,
-            state: uint8(StateOfSwap.Crystalized)
+            state: uint8(StateOfSwap.Crystalized),
+            para: 0
         });
 
         return swap.body;

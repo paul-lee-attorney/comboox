@@ -22,11 +22,11 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
     function createPledge(
         uint256 sn,
-        uint40 creditor,
-        uint16 guaranteeDays,
-        uint64 paid,
-        uint64 par,
-        uint64 guaranteedAmt,
+        uint creditor,
+        uint guaranteeDays,
+        uint paid,
+        uint par,
+        uint guaranteedAmt,
         uint256 caller
     ) external onlyDirectKeeper {
 
@@ -51,8 +51,8 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     function transferPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint40 buyer,
-        uint64 amt,
+        uint buyer,
+        uint amt,
         uint256 caller        
     ) external onlyDirectKeeper {
         require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).body.creditor == caller,
@@ -63,7 +63,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint64 amt,
+        uint amt,
         uint256 caller
     ) external onlyDirectKeeper {
         PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
@@ -77,7 +77,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint16 extDays,
+        uint extDays,
         uint256 caller
     ) external onlyDirectKeeper {
         require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).head.pledgor == caller,
@@ -123,7 +123,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
         if (_gk.getBOP().execPledge(seqOfShare, seqOfPld)) {
             _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
-            _gk.getBOS().transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid));
+            _gk.getBOS().transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid), 0);
         }
     }
 

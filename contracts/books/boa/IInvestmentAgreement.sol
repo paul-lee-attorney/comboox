@@ -18,7 +18,7 @@ interface IInvestmentAgreement {
     event ClearDealCP(
         uint256 indexed seq,
         bytes32 hashLock,
-        uint48 closingDate
+        uint closingDate
     );
 
     event CloseDeal(uint256 indexed seq, string hashKey);
@@ -35,10 +35,10 @@ interface IInvestmentAgreement {
 
     function createDeal(
         uint256 sn,
-        uint40 buyer,
-        uint40 groupOfBuyer,
-        uint64 paid,
-        uint64 par
+        uint buyer,
+        uint groupOfBuyer,
+        uint paid,
+        uint par
     ) external returns(uint16 seqOfDeal);
 
     function regDeal(DealsRepo.Deal memory deal) external returns(uint16 seqOfDeal);
@@ -49,7 +49,7 @@ interface IInvestmentAgreement {
 
     function releaseDealSubject(uint256 seq) external returns (bool flag);
 
-    function clearDealCP( uint256 seq, bytes32 hashLock, uint48 closingDate) external;
+    function clearDealCP( uint256 seq, bytes32 hashLock, uint closingDate) external;
 
     function closeDeal(uint256 seq, string memory hashKey)
         external returns (bool);
@@ -61,11 +61,11 @@ interface IInvestmentAgreement {
 
     function takeGift(uint256 seq) external returns(bool);
 
-    function setTypeOfIA(uint8 t) external;
+    function setTypeOfIA(uint t) external;
 
-    //  ######################
+    //  #####################
     //  ##     查询接口     ##
-    //  ######################
+    //  #####################
 
     // ======== InvestmentAgreement ========
     function getTypeOfIA() external view returns (uint8);

@@ -65,7 +65,7 @@ interface IGeneralKeeper {
 
     event SetBookeeper(uint256 title, address keeper);
 
-    event SetRegNumberHash(bytes32 numHash);
+    event SetCompInfo(bytes32 regNumHash, string nameOfCompany, string symbolOfCompany);
 
     // ######################
     // ##   AccessControl  ##

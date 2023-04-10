@@ -29,9 +29,9 @@ library DelegateMap {
 
     function entrustDelegate(
         Map storage map,
-        uint40 principal,
-        uint40 delegate,
-        uint64 weight
+        uint principal,
+        uint delegate,
+        uint weight
     ) public returns (bool flag) {
         require(principal != 0, "DM.ED: zero principal");
         require(delegate != 0, "DM.ED: zero delegate");
@@ -43,15 +43,15 @@ library DelegateMap {
             Voter storage p = map.voters[principal];
             Voter storage d = map.voters[delegate];
 
-            p.delegate = delegate;
-            p.weight = weight;
-            p.repWeight += weight;
+            p.delegate = uint40(delegate);
+            p.weight = uint64(weight);
+            p.repWeight += uint64(weight);
             p.repHead ++;
 
             d.repHead += p.repHead;
             d.repWeight += p.repWeight;
            
-            d.principals.push(principal);
+            d.principals.push(uint40(principal));
 
             flag = true;
         }
@@ -61,10 +61,10 @@ library DelegateMap {
     // ##    Read     ##
     // #################
 
-    function getDelegateOf(Map storage map, uint40 acct)
+    function getDelegateOf(Map storage map, uint acct)
         public
         view
-        returns (uint40 d)
+        returns (uint d)
     {
         while (acct > 0) {
             d = acct;
@@ -72,7 +72,7 @@ library DelegateMap {
         }
     }
 
-    function getLeavesWeightAtDate(Map storage map, uint256 acct, uint48 baseDate, IRegisterOfMembers _rom)
+    function getLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IRegisterOfMembers _rom)
         public view returns(uint64 weight)
     {
         uint40[] memory leaves = map.voters[acct].principals;

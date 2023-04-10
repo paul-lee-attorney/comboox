@@ -32,66 +32,66 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     function nominateOfficer(
         uint256 seqOfPos,
-        uint16 seqOfVR,
-        uint40 candidate,
-        uint40 nominator    
+        uint seqOfVR,
+        uint candidate,
+        uint nominator    
     ) external onlyDirectKeeper returns(uint64) {
         MotionsRepo.Head memory head;
 
         head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.ElectOfficer);
-        head.seqOfVR = seqOfVR;
-        head.creator = nominator;
-        head.executor = candidate;
+        head.seqOfVR = uint16(seqOfVR);
+        head.creator = uint40(nominator);
+        head.executor = uint40(candidate);
 
         return createMotion(head, seqOfPos);
     }
 
     function proposeToRemoveOfficer(
         uint256 seqOfPos,
-        uint16 seqOfVR,
-        uint40 nominator    
+        uint seqOfVR,
+        uint nominator    
     ) external onlyDirectKeeper returns(uint64) {
         MotionsRepo.Head memory head;
 
         head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.RemoveOfficer);
-        head.seqOfVR = seqOfVR;
-        head.creator = nominator;
-        head.executor = nominator;
+        head.seqOfVR = uint16(seqOfVR);
+        head.creator = uint40(nominator);
+        head.executor = uint40(nominator);
 
         return createMotion(head, seqOfPos);
     }
 
     function proposeDoc(
         address doc,
-        uint16 seqOfVR,
-        uint40 executor,
-        uint40 proposer    
+        uint seqOfVR,
+        uint executor,
+        uint proposer    
     ) external onlyDirectKeeper returns(uint64) {
         MotionsRepo.Head memory head;
 
         head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.ApproveDoc);
-        head.seqOfVR = seqOfVR;
-        head.creator = proposer;
-        head.executor = executor;
+        head.seqOfVR = uint16(seqOfVR);
+        head.creator = uint40(proposer);
+        head.executor = uint40(executor);
 
         return createMotion(head, uint256(uint160(doc)));
     }
 
     function proposeAction(
-        uint16 seqOfVR,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 executor,
-        uint40 proposer
+        uint executor,
+        uint proposer
     ) external onlyDirectKeeper returns (uint64){
         MotionsRepo.Head memory head;
 
         head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.ApproveAction);
-        head.seqOfVR = seqOfVR;
-        head.creator = proposer;
-        head.executor = executor;
+        head.seqOfVR = uint16(seqOfVR);
+        head.creator = uint40(proposer);
+        head.executor = uint40(executor);
 
         uint256 contents = _hashAction(
             seqOfVR,
@@ -122,7 +122,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     function proposeMotion(
         uint256 seqOfMotion,
-        uint40 proposer
+        uint proposer
     ) public onlyDirectKeeper {
         MotionsRepo.Motion memory m = _repo.motions[seqOfMotion];
         RulesParser.VotingRule memory rule = 
@@ -137,9 +137,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     function entrustDelegate(
         uint256 seqOfMotion,
-        uint40 delegate, 
-        uint40 principal,
-        uint64 weight
+        uint delegate, 
+        uint principal,
+        uint weight
     ) external onlyDirectKeeper {
         _repo.entrustDelegate(seqOfMotion, delegate, principal, weight);
         emit EntrustDelegate(seqOfMotion, delegate, principal, weight);
@@ -149,7 +149,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     function castVote(
         uint256 seqOfMotion,
-        uint8 attitude,
+        uint attitude,
         bytes32 sigHash,
         IRegisterOfMembers _rom,
         uint256 caller
@@ -169,7 +169,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     // ==== ExecResolution ====
 
-    function execResolution(uint256 seqOfMotion, uint256 contents, uint40 caller)
+    function execResolution(uint256 seqOfMotion, uint256 contents, uint caller)
         public onlyKeeper 
     {
         _repo.execResolution(seqOfMotion, contents, caller);
@@ -177,13 +177,13 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     }
 
     function execAction(
-        uint16 seqOfVR,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion,
-        uint40 caller
+        uint caller
     ) external onlyDirectKeeper {
 
         MotionsRepo.Motion memory motion =  
@@ -245,16 +245,16 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         return _repo.getVoterOfDelegateMap(seqOfMotion, acct);
     }
 
-    function getDelegateOf(uint256 seqOfMotion, uint40 acct)
-        external view returns (uint40)
+    function getDelegateOf(uint256 seqOfMotion, uint acct)
+        external view returns (uint)
     {
         return _repo.getDelegateOf(seqOfMotion, acct);
     }
 
     function getLeavesWeightAtDate(
         uint256 seqOfMotion, 
-        uint40 caller,
-        uint48 baseDate, 
+        uint caller,
+        uint baseDate, 
         IRegisterOfMembers _rom 
     ) external view returns(uint64 weight)
     {
@@ -279,12 +279,12 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function isVotedFor(
         uint256 seqOfMotion,
         uint256 acct,
-        uint8 atti
+        uint atti
     ) external view returns (bool) {
         return _repo.isVotedFor(seqOfMotion, acct, atti);
     }
 
-    function getCaseOfAttitude(uint256 seqOfMotion, uint8 atti)
+    function getCaseOfAttitude(uint256 seqOfMotion, uint atti)
         external view returns (BallotsBox.Case memory )
     {
         return _repo.getCaseOfAttitude(seqOfMotion, atti);
@@ -299,6 +299,4 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function isPassed(uint256 seqOfMotion) external view returns (bool) {
         return _repo.isPassed(seqOfMotion);
     }
-
-
 }

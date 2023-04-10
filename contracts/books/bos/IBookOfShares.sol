@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -16,23 +16,23 @@ interface IBookOfShares {
     //##    Event     ##
     //##################
 
-    event IssueShare(uint256 indexed seqOfShare, uint64 paid, uint64 par);
+    event IssueShare(uint256 indexed seqOfShare, uint paid, uint par);
 
-    event PayInCapital(uint256 indexed seqOfShare, uint64 amount);
+    event PayInCapital(uint256 indexed seqOfShare, uint amount);
 
-    event SubAmountFromShare(uint256 indexed seqOfShare, uint64 paid, uint64 par);
+    event SubAmountFromShare(uint256 indexed seqOfShare, uint paid, uint par);
 
     event DeregisterShare(uint256 indexed seqOfShare);
 
-    event UpdateStateOfShare(uint256 indexed seqOfShare, uint8 state);
+    event UpdateStateOfShare(uint256 indexed seqOfShare, uint state);
 
-    event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint48 paidInDeadline);
+    event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint paidInDeadline);
 
-    event DecreaseCleanPaid(uint256 indexed seqOfShare, uint64 paid);
+    event DecreaseCleanPaid(uint256 indexed seqOfShare, uint paid);
 
-    event IncreaseCleanPaid(uint256 indexed seqOfShare, uint64 paid);
+    event IncreaseCleanPaid(uint256 indexed seqOfShare, uint paid);
 
-    event SetPayInAmt(uint256 indexed snOfLocker, uint64 amount);
+    event SetPayInAmt(uint256 indexed snOfLocker, uint amount);
 
     event WithdrawPayInAmt(uint256 indexed snOfLocker);
 
@@ -40,37 +40,38 @@ interface IBookOfShares {
     //##    写接口    ##
     //##################
 
-    function issueShare(uint256 shareNumber, uint48 payInDeadline, uint64 paid,uint64 par) external;
+    function issueShare(uint256 shareNumber, uint payInDeadline, uint paid, uint par) external;
 
     function regShare(SharesRepo.Share memory share) external returns(SharesRepo.Share memory newShare);
 
-    function setPayInAmt(uint256 snOfLocker, uint64 amount) external;
+    function setPayInAmt(uint256 snOfLocker, uint amount) external;
 
-    function requestPaidInCapital(uint256 hashLock, string memory hashKey, uint8 salt, uint256 caller) external;
+    function requestPaidInCapital(uint256 hashLock, string memory hashKey, uint salt, uint256 caller) external;
 
     function withdrawPayInAmt(uint256 hashLock) external;
 
     function transferShare(
         uint256 seqOfShare,
-        uint64 paid,
-        uint64 par,
-        uint40 to,
-        uint32 price
+        uint paid,
+        uint par,
+        uint to,
+        uint priceOfPaid,
+        uint priceOfPar
     ) external;
 
-    function decreaseCapital(uint256 seqOfShare, uint64 paid, uint64 par) external;
+    function decreaseCapital(uint256 seqOfShare, uint paid, uint par) external;
 
     // ==== CleanPaid ====
 
-    function decreaseCleanPaid(uint256 seqOfShare, uint64 paid) external;
+    function decreaseCleanPaid(uint256 seqOfShare, uint paid) external;
 
-    function increaseCleanPaid(uint256 seqOfShare, uint64 paid) external;
+    function increaseCleanPaid(uint256 seqOfShare, uint paid) external;
 
     // ==== State & PaidInDeadline ====
 
-    function updateStateOfShare(uint256 seqOfShare, uint8 state) external;
+    function updateStateOfShare(uint256 seqOfShare, uint state) external;
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint48 paidInDeadline) external;
+    function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
 
     // ##################
     // ##   查询接口   ##
@@ -95,6 +96,6 @@ interface IBookOfShares {
 
     function getLocker(uint256 snOfLocker) external view returns (uint64 amount);
 
-    function getSharesOfClass(uint16 class) external view
+    function getSharesOfClass(uint class) external view
         returns (uint256[] memory seqList);
 }

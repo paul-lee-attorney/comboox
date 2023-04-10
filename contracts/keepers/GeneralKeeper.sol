@@ -12,7 +12,6 @@ import "../common/access/AccessControl.sol";
 import "./IGeneralKeeper.sol";
 
 contract GeneralKeeper is IGeneralKeeper, AccessControl {
-    using RolesRepo for RolesRepo.Roles;
 
     bytes32 public regNumHash;
     string public nameOfCompany;
@@ -25,14 +24,20 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   AccessControl  ##
     // ######################
 
-    function setRegNumHash (bytes32 _regNumHash) external onlyOwner {
-        emit SetRegNumberHash(regNumHash);
+    function setCompInfo (
+        bytes32 _regNumHash,
+        string memory _name,
+        string memory _symbol
+    ) external onlyOwner {
+        emit SetCompInfo(_regNumHash, _name, _symbol);
         regNumHash = _regNumHash;
+        nameOfCompany = _name;
+        symbolOfCompany = _symbol;
     }
 
-    function setOwner(uint256 acct) external override {
-        _roles.setOwner(acct, _msgSender());
-    }
+    // function setOwner(uint256 acct) external override {
+    //     _roles.setOwner(acct, _msgSender());
+    // }
 
     function setBookeeper(uint256 title, address keeper) 
     external onlyDirectKeeper {

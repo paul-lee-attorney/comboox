@@ -26,20 +26,24 @@ interface IBookOfOptions {
 
     event RemoveObligorFromOpt(uint256 indexed seqOfOpt, uint256 obligor);
 
-    event UpdateOracle(uint256 indexed seqOfOpt, uint64 data1, uint64 data2, uint64 data3);
+    event UpdateOracle(uint256 indexed seqOfOpt, uint data1, uint data2, uint data3);
 
     event ExecOpt(uint256 indexed seqOfOpt);
 
     event RegSwapOrder(uint256 indexed seqOfOpt, uint256 codeOfBrf);
 
-    event UpdateStateOfBrief(uint256 indexed seqOfOpt, uint256 seqOfBrf, uint8 state);
+    event UpdateStateOfBrief(uint256 indexed seqOfOpt, uint256 seqOfBrf, uint state);
+
+    // ################
+    // ##   Write    ##
+    // ################
 
     function createOption(
         uint256 sn,
         uint256 snOfCond,
-        uint40 rightholder,
-        uint64 paid,
-        uint64 par
+        uint rightholder,
+        uint paid,
+        uint par
     ) external returns(OptionsRepo.Head memory head);
 
     function issueOption(OptionsRepo.Option memory opt) external 
@@ -53,18 +57,18 @@ interface IBookOfOptions {
 
     function updateOracle(
         uint256 seqOfOpt,
-        uint64 d1,
-        uint64 d2,
-        uint64 d3
+        uint d1,
+        uint d2,
+        uint d3
     ) external;
 
     function execOption(uint256 seqOfOpt) external;
 
     function createSwapOrder(
         uint256 seqOfOpt,
-        uint32 seqOfConsider,
-        uint64 paidOfConsider,
-        uint32 seqOfTarget
+        uint seqOfConsider,
+        uint paidOfConsider,
+        uint seqOfTarget
     ) external view returns (SwapsRepo.Swap memory swap);
 
     function regSwapOrder(
@@ -75,7 +79,7 @@ interface IBookOfOptions {
     function updateStateOfBrief(
         uint256 seqOfOpt,
         uint256 seqOfBrf,
-        uint8 state
+        uint state
     ) external;
 
     // ################
@@ -112,7 +116,7 @@ interface IBookOfOptions {
 
     // ==== oracles ====
 
-    function getOracleAtDate(uint256 seqOfOpt, uint48 date)
+    function getOracleAtDate(uint256 seqOfOpt, uint date)
         external view returns (Checkpoints.Checkpoint memory);
 
     function getALLOraclesOfOption(uint256 seqOfOpt)

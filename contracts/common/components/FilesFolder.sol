@@ -91,9 +91,9 @@ contract FilesFolder is IFilesFolder, AccessControl {
         }
     }
 
-    function setStateOfFile(address body, uint8 state) public onlyRegistered(body) onlyKeeper {
+    function setStateOfFile(address body, uint state) public onlyRegistered(body) onlyKeeper {
         emit UpdateStateOfFile(body, state);
-        _folder.files[body].head.state = state;
+        _folder.files[body].head.state = uint8(state);
     }
 
     //##################

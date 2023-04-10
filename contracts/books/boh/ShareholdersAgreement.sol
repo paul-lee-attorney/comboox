@@ -32,7 +32,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     //##  Write I/O   ##
     //##################
 
-    function createTerm(uint16 typeOfDoc, uint16 version)
+    function createTerm(uint typeOfDoc, uint version)
         external
         onlyGeneralCounsel
         returns (address body)
@@ -40,7 +40,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         // uint40 owner = getOwner();
         uint40 gc = getGeneralCounsel();
 
-        uint256 snOfDoc = (uint256(typeOfDoc) << 240) + (uint256(version) << 224);
+        uint256 snOfDoc = (typeOfDoc << 240) + (version << 224);
 
         DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, msg.sender);        
 
@@ -57,21 +57,11 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         _terms.seqList.add(typeOfDoc);
     }
 
-    function removeTerm(uint16 typeOfDoc) external onlyAttorney {
+    function removeTerm(uint typeOfDoc) external onlyAttorney {
         if (_terms.seqList.remove(typeOfDoc)) {
             delete _terms.terms[typeOfDoc];
         }
     }
-
-    // function finalizeTerms() external onlyDirectKeeper {
-    //     uint256 len = _terms.seqList.length();
-
-    //     for (uint256 i = 0; i < len; i++) {
-    //         IAccessControl(_terms.terms[_terms.seqList.at(i)]).lockContents();
-    //     }
-
-    //     lockContents();
-    // }
 
     // ==== Rules ====
     

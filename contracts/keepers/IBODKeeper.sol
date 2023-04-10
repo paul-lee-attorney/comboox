@@ -16,47 +16,47 @@ import "../common/lib/RulesParser.sol";
 interface IBODKeeper {
     function nominateOfficer(
         uint256 seqOfPos,
-        uint40 candidate,
-        uint40 nominator
+        uint candidate,
+        uint nominator
     ) external;
 
     function proposeToRemoveOfficer(
         uint256 seqOfPos,
-        uint40 nominator
+        uint nominator
     ) external;
 
     // ---- Docs ----
 
     function proposeDoc(
         address doc,
-        uint16 seqOfVR,
-        uint40 executor,
-        uint40 proposer
+        uint seqOfVR,
+        uint executor,
+        uint proposer
     ) external;
 
     // ---- Actions ----
 
     function proposeAction(
-        uint16 seqOfVR,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint40 executor,
-        uint40 proposer
+        uint executor,
+        uint proposer
     ) external;
 
     // ==== Cast Vote ====
 
     function entrustDelegate(
         uint256 seqOfMotion,
-        uint40 delegate,
-        uint40 caller
+        uint delegate,
+        uint caller
     ) external;
 
     function castVote(
         uint256 seqOfMotion,
-        uint8 attitude,
+        uint attitude,
         bytes32 sigHash,
         uint256 caller
     ) external;
@@ -71,25 +71,25 @@ interface IBODKeeper {
     function takePosition(
         uint256 seqOfMotion,
         uint256 seqOfPos,
-        uint40 caller 
+        uint caller 
     ) external;
 
-    function quitPosition(uint256 seqOfPos, uint40 caller) external;
+    function quitPosition(uint256 seqOfPos, uint caller) external;
 
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint40 target,
-        uint40 caller
+        uint target,
+        uint caller
     ) external;
 
     function execAction(
-        uint16 typeOfAction,
+        uint typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion,
-        uint40 caller
+        uint caller
     ) external;
 }

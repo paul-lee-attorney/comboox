@@ -50,8 +50,8 @@ library TopChain {
 
     // ==== Setting ====
 
-    function setMaxQtyOfMembers(Chain storage chain, uint32 max) public {
-        chain.nodes[0].amt = max;
+    function setMaxQtyOfMembers(Chain storage chain, uint max) public {
+        chain.nodes[0].amt = uint32(max);
     }
 
     function setVoteBase(Chain storage chain, bool onPar)
@@ -104,19 +104,19 @@ library TopChain {
 
     // ==== ChangeAmt ====
 
-    function changeAmt(Chain storage chain, uint256 acct, uint64 deltaAmt, bool increase) 
+    function changeAmt(Chain storage chain, uint256 acct, uint deltaAmt, bool increase) 
         public memberExist(chain, acct) returns (bool flag) 
     {
         Node storage n = chain.nodes[acct];
 
         if (increase) {
-            n.amt += deltaAmt;
-            n.sum += deltaAmt;
+            n.amt += uint64(deltaAmt);
+            n.sum += uint64(deltaAmt);
 
             _increaseTotalVotes(chain, deltaAmt);
         } else {
-            n.amt -= deltaAmt;
-            n.sum -= deltaAmt;
+            n.amt -= uint64(deltaAmt);
+            n.sum -= uint64(deltaAmt);
 
             _decreaseTotalVotes(chain, deltaAmt);
         }
@@ -124,11 +124,11 @@ library TopChain {
         if (n.cat == 2) {
             Node storage r = chain.nodes[n.ptr];
 
-            if (increase) r.sum += deltaAmt;
-            else r.sum -= deltaAmt;
+            if (increase) r.sum += uint64(deltaAmt);
+            else r.sum -= uint64(deltaAmt);
 
             flag = _move(chain, n.ptr, increase);
-        } else flag = _move(chain, uint40(acct), increase);
+        } else flag = _move(chain, acct, increase);
     }
 
     // ==== jumpChain ====
@@ -149,7 +149,7 @@ library TopChain {
 
         require(chain.nodes[root].cat < 2, "TC.T2S: leaf as root");
 
-        flag = _carveOut(chain, acct) && _vInsert(chain, uint40(acct), uint40(root));
+        flag = _carveOut(chain, acct) && _vInsert(chain, acct, root);
     }
 
     function sub2Top(Chain storage chain, uint256 acct)
@@ -173,7 +173,7 @@ library TopChain {
                 true
             );
 
-            flag = _hInsert(chain, uint40(acct), uint40(prev), uint40(next));
+            flag = _hInsert(chain, acct, prev, next);
         }
     }
 
@@ -265,25 +265,25 @@ library TopChain {
 
     function _hInsert(
         Chain storage chain,
-        uint40 acct,
-        uint40 prev,
-        uint40 next
+        uint acct,
+        uint prev,
+        uint next
     ) private returns (bool flag) {
         Node storage n = chain.nodes[acct];
 
-        chain.nodes[prev].next = acct;
-        n.prev = prev;
+        chain.nodes[prev].next = uint40(acct);
+        n.prev = uint40(prev);
 
-        chain.nodes[next].prev = acct;
-        n.next = next;
+        chain.nodes[next].prev = uint40(acct);
+        n.next = uint40(next);
 
         flag = true;
     }
 
     function _vInsert(
         Chain storage chain,
-        uint40 acct,
-        uint40 root
+        uint acct,
+        uint root
     ) private returns (bool flag) {
         Node storage n = chain.nodes[acct];
         Node storage r = chain.nodes[root];
@@ -294,14 +294,14 @@ library TopChain {
             n.next = 0;
         } else if (r.cat == 1) {
             n.next = r.ptr;
-            chain.nodes[n.next].prev = acct;
+            chain.nodes[n.next].prev = uint40(acct);
         }
 
-        n.prev = root;
-        n.ptr = root;
+        n.prev = uint40(root);
+        n.ptr = uint40(root);
         n.cat = 2;
 
-        r.ptr = acct;
+        r.ptr = uint40(acct);
         r.sum += n.amt;
 
         _move(chain, root, true);
@@ -313,7 +313,7 @@ library TopChain {
 
     function _move(
         Chain storage chain,
-        uint40 acct,
+        uint acct,
         bool increase
     ) private returns (bool flag) {
         Node storage n = chain.nodes[acct];
@@ -327,7 +327,7 @@ library TopChain {
         );
 
         if (next != n.next || prev != n.prev) {
-            flag = _branchOff(chain, acct) && _hInsert(chain, acct, uint40(prev), uint40(next));
+            flag = _branchOff(chain, acct) && _hInsert(chain, acct, prev, next);
         }
     }
 
@@ -341,12 +341,12 @@ library TopChain {
         chain.nodes[0].ptr--;
     }
 
-    function _increaseTotalVotes(Chain storage chain, uint64 deltaAmt) private {
-        chain.nodes[0].sum += deltaAmt;
+    function _increaseTotalVotes(Chain storage chain, uint deltaAmt) private {
+        chain.nodes[0].sum += uint64(deltaAmt);
     }
 
-    function _decreaseTotalVotes(Chain storage chain, uint64 deltaAmt) private {
-        chain.nodes[0].sum -= deltaAmt;
+    function _decreaseTotalVotes(Chain storage chain, uint deltaAmt) private {
+        chain.nodes[0].sum -= uint64(deltaAmt);
     }
 
     //##################
@@ -358,7 +358,7 @@ library TopChain {
         view
         returns (bool)
     {
-        return acct > 0 && chain.nodes[acct].ptr != 0;
+        return chain.nodes[acct].ptr != 0;
     }
 
     // ==== Zero Node ====
@@ -613,7 +613,7 @@ library TopChain {
     function mockDealOfSell(
         Chain storage chain, 
         uint256 seller, 
-        uint64 amount
+        uint amount
     ) public returns (bool flag)
     {
         changeAmt(chain, seller, amount, false);
@@ -627,7 +627,7 @@ library TopChain {
         Chain storage chain, 
         uint256 buyer, 
         uint256 group,
-        uint64 amount
+        uint amount
     ) public returns (bool flag) {
         if (!isMember(chain, buyer))
             addNode(chain, buyer);

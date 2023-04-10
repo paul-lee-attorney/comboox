@@ -16,9 +16,9 @@ interface IRegisterOfSwaps {
     //##    Event     ##
     //##################
 
-    event CreateSwap(uint256 indexed seqOfSwap, uint40 rightholder, uint40 obligor, uint64 paidOfConsider, uint32 rateOfSwap);
+    event CreateSwap(uint256 indexed seqOfSwap, uint rightholder, uint obligor, uint paidOfConsider, uint rateOfSwap);
 
-    event CrystalizeSwap(uint256 indexed seqOfSwap, uint32 seqOfConsider, uint64 paidOfConsider, uint32 seqOfTarget, uint64 paidOfTarget);
+    event CrystalizeSwap(uint256 indexed seqOfSwap, uint seqOfConsider, uint paidOfConsider, uint seqOfTarget, uint paidOfTarget);
 
     event LockSwap(uint256 indexed seqOfSwap, bytes32 hashLock);
 
@@ -34,21 +34,21 @@ interface IRegisterOfSwaps {
 
     function createSwap(
         uint256 sn,
-        uint40 rightholder, 
-        uint64 paidOfConsider
+        uint rightholder, 
+        uint paidOfConsider
     ) external;
 
     function issueSwap(
         SwapsRepo.Head memory head,
-        uint40 rightholder, 
-        uint64 paidOfConsider
+        uint rightholder, 
+        uint paidOfConsider
     ) external;
     
     function regSwap(SwapsRepo.Swap memory swap) external returns(SwapsRepo.Swap memory newSwap);
 
-    function transferSwap(uint256 seqOfSwap, uint40 to, uint64 amt) external;
+    function transferSwap(uint256 seqOfSwap, uint to, uint amt) external;
 
-    function crystalizeSwap(uint256 seqOfSwap, uint32 seqOfConsider, uint32 seqOfTarget) 
+    function crystalizeSwap(uint256 seqOfSwap, uint seqOfConsider, uint seqOfTarget) 
         external returns(SwapsRepo.Body memory body);
 
     function lockSwap(uint256 seqOfSwap, bytes32 hashLock) external returns (bool flag);

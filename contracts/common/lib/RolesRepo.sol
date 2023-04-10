@@ -9,8 +9,6 @@ pragma solidity ^0.8.8;
 
 library RolesRepo {
     bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
-    // bytes32 private constant _ACCOUNTANTS = bytes32("Accountants");
-    // bytes32 private constant _ADMINS = bytes32("Admins");
 
     struct GroupOfRole {
         mapping(uint256 => bool) isMember;
