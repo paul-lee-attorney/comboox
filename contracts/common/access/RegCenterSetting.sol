@@ -13,28 +13,30 @@ import "../../keepers/IGeneralKeeper.sol";
 contract RegCenterSetting {
 
     enum TitleOfBooks {
-        BookOfIA,           // 0
-        BookOfDirectors,    // 1
-        BookOfGM,           // 2
-        BookOfSHA,          // 3
-        BookOfOptions,      // 4
-        BookOfPledges,      // 5
-        BookOfShares,       // 6
-        RegisterOfMembers,  // 7
-        RegisterOfSwaps     // 8
+        ZeroPoint,
+        BookOfIA,           // 1
+        BookOfDirectors,    // 2
+        BookOfGM,           // 3
+        BookOfSHA,          // 4
+        BookOfOptions,      // 5
+        BookOfPledges,      // 6
+        BookOfShares,       // 7
+        RegisterOfMembers,  // 8
+        RegisterOfSwaps     // 9
     }
 
     enum TitleOfKeepers {
-        BOAKeeper, // 0
-        BODKeeper, // 1
-        BOGKeeper, // 2
-        BOHKeeper, // 3
-        BOOKeeper, // 4
-        BOPKeeper, // 5
-        BOSKeeper, // 6
-        ROMKeeper, // 7
-        ROSKeeper, // 8
-        SHAKeeper  // 9
+        ZeroPoint,
+        BOAKeeper, // 1
+        BODKeeper, // 2
+        BOGKeeper, // 3
+        BOHKeeper, // 4
+        BOOKeeper, // 5
+        BOPKeeper, // 6
+        BOSKeeper, // 7
+        ROMKeeper, // 8
+        ROSKeeper, // 9
+        SHAKeeper  // 10
     }
 
     IRegCenter internal _rc;

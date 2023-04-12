@@ -83,7 +83,7 @@ async function main() {
 		"DocsRepo": libDocsRepo.address,
 		"UsersRepo": libUsersRepo.address
 	};
-	await deployTool(signers[0], "RegCenter", libraries);
+	let rc = await deployTool(signers[0], "RegCenter", libraries);
 
 	// ==== Deploy Templates ====
 
@@ -94,7 +94,7 @@ async function main() {
 		"RolesRepo": libRolesRepo.address,
 		"SigsRepo": libSigsRepo.address
 	};
-	await deployTool(signers[0], "InvestmentAgreement", libraries);
+	let ia = await deployTool(signers[0], "InvestmentAgreement", libraries);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
@@ -102,22 +102,22 @@ async function main() {
 		"RolesRepo": libRolesRepo.address,
 		"SigsRepo": libSigsRepo.address
 	};
-	await deployTool(signers[0], "ShareholdersAgreement", libraries);
+	let sha = await deployTool(signers[0], "ShareholdersAgreement", libraries);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address
 	};
-	await deployTool(signers[0], "AntiDilution", libraries);
-	await deployTool(signers[0], "LockUp", libraries);
+	let ad = await deployTool(signers[0], "AntiDilution", libraries);
+	let lu = await deployTool(signers[0], "LockUp", libraries);
 
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address
 	};
-	await deployTool(signers[0], "DragAlong", libraries);
+	let da = await deployTool(signers[0], "DragAlong", libraries);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
@@ -125,56 +125,56 @@ async function main() {
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address
 	};
-	await deployTool(signers[0], "TagAlong", libraries);
+ 	let ta = await deployTool(signers[0], "TagAlong", libraries);
 	
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address,
 		"OptionsRepo": libOptionsRepo.address
 	};
-	await deployTool(signers[0], "Options", libraries);
+	let op = await deployTool(signers[0], "Options", libraries);
 
 	// ==== Keepers ====
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address
 	}
-	await deployTool(signers[0], "GeneralKeeper", libraries);
-	await deployTool(signers[0], "BOOKeeper", libraries);
-	await deployTool(signers[0], "BOSKeeper", libraries);
-	await deployTool(signers[0], "ROMKeeper", libraries);
+	let gk = await deployTool(signers[0], "GeneralKeeper", libraries);
+	let booKeeper = await deployTool(signers[0], "BOOKeeper", libraries);
+	let bosKeeper = await deployTool(signers[0], "BOSKeeper", libraries);
+	let romKeeper = await deployTool(signers[0], "ROMKeeper", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"SwapsRepo": libSwapsRepo.address
 	}	
-	await deployTool(signers[0], "ROSKeeper", libraries);
+	let rosKeeper = await deployTool(signers[0], "ROSKeeper", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
-	await deployTool(signers[0], "BOGKeeper", libraries);
-	await deployTool(signers[0], "SHAKeeper", libraries);
+	let bogKeeper = await deployTool(signers[0], "BOGKeeper", libraries);
+	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries);
 
 	libraries = {
 		"DocsRepo": libDocsRepo.address,
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
-	await deployTool(signers[0], "BOAKeeper", libraries);
-	await deployTool(signers[0], "BOHKeeper", libraries);
+	let boaKeeper = await deployTool(signers[0], "BOAKeeper", libraries);
+	let bohKeeper = await deployTool(signers[0], "BOHKeeper", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address
 	}
-	await deployTool(signers[0], "BODKeeper", libraries);
+	let bodKeeper = await deployTool(signers[0], "BODKeeper", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"PledgesRepo": libPledgesRepo.address
 	}
-	await deployTool(signers[0], "BOPKeeper", libraries);
+	let bopKeeper = await deployTool(signers[0], "BOPKeeper", libraries);
 
 	// ==== Books ====
 
@@ -186,7 +186,7 @@ async function main() {
 		"RulesParser": libRulesParser.address,
 		"TopChain": libTopChain.address
 	}
-	await deployTool(signers[0], "BookOfIA", libraries);
+	let boa = await deployTool(signers[0], "BookOfIA", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -194,20 +194,20 @@ async function main() {
 		"OfficersRepo": libOfficersRepo.address,
 		"RulesParser": libRulesParser.address
 	}
-	await deployTool(signers[0], "BookOfDirectors", libraries);
+	let bod = await deployTool(signers[0], "BookOfDirectors", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"MotionsRepo": libMotionsRepo.address,
 		"RulesParser": libRulesParser.address
 	}
-	await deployTool(signers[0], "BookOfGM", libraries);
+	let bog = await deployTool(signers[0], "BookOfGM", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"EnumerableSet": libEnumerableSet.address
 	}
-	await deployTool(signers[0], "BookOfSHA", libraries);
+	let boh = await deployTool(signers[0], "BookOfSHA", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -215,20 +215,20 @@ async function main() {
 		"EnumerableSet": libEnumerableSet.address,
 		"OptionsRepo": libOptionsRepo.address
 	}
-	await deployTool(signers[0], "BookOfOptions", libraries);
+	let boo = await deployTool(signers[0], "BookOfOptions", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"PledgesRepo": libPledgesRepo.address
 	}
-	await deployTool(signers[0], "BookOfPledges", libraries);
+	let bop = await deployTool(signers[0], "BookOfPledges", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"LockersRepo": libLockersRepo.address,
 		"SharesRepo": libSharesRepo.address
 	}
-	await deployTool(signers[0], "BookOfShares", libraries);
+	let bos = await deployTool(signers[0], "BookOfShares", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -237,15 +237,131 @@ async function main() {
 		"MembersRepo": libMembersRepo.address,
 		"TopChain": libTopChain.address
 	}
-	await deployTool(signers[0], "RegisterOfMembers", libraries);
+	let rom = await deployTool(signers[0], "RegisterOfMembers", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"EnumerableSet": libEnumerableSet.address,
 		"SwapsRepo": libSwapsRepo.address
 	}
-	await deployTool(signers[0], "RegisterOfSwaps", libraries);
+	let ros = await deployTool(signers[0], "RegisterOfSwaps", libraries);
+
+	// ==== SetTemplate ====
+	await rc.setBackupKey(signers[1].address);
+	console.log("set up bookeeper: ", signers[1].address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0001"), boaKeeper.address);
+	console.log("set template for BOAKeeper at address: ", boaKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0002"), bodKeeper.address);
+	console.log("set template for BODKeeper at address: ", bodKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0003"), bogKeeper.address);
+	console.log("set template for BOGKeeper at address: ", bogKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0004"), bohKeeper.address);
+	console.log("set template for BOHKeeper at address: ", bohKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0005"), booKeeper.address);
+	console.log("set template for BOOKeeper at address: ", booKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0006"), bopKeeper.address);
+	console.log("set template for BOPKeeper at address: ", bopKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0007"), bosKeeper.address);
+	console.log("set template for BOSKeeper at address: ", bosKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0008"), romKeeper.address);
+	console.log("set template for ROMKeeper at address: ", romKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0009"), rosKeeper.address);
+	console.log("set template for ROSKeeper at address: ", rosKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("000a"), shaKeeper.address);
+	console.log("set template for SHAKeeper at address: ", shaKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("000b"), boa.address);
+	console.log("set template for BOA at address: ", boa.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("000c"), bod.address);
+	console.log("set template for BOD at address: ", bod.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("000d"), bog.address);
+	console.log("set template for BOG at address: ", bog.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("000e"), boh.address);
+	console.log("set template for BOH at address: ", boh.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("000f"), boo.address);
+	console.log("set template for BOO at address: ", boo.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0010"), bop.address);
+	console.log("set template for BOP at address: ", bop.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0011"), bos.address);
+	console.log("set template for BOS at address: ", bos.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0012"), rom.address);
+	console.log("set template for ROM at address: ", rom.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0013"), ros.address);
+	console.log("set template for ROS at address: ", ros.address, "\n");
+	
+	await rc.connect(signers[1]).setTemplate(codifyHead("0014"), gk.address);
+	console.log("set template for GK at address: ", gk.address, "\n");
+	
+	await rc.connect(signers[1]).setTemplate(codifyHead("0015"), ia.address);
+	console.log("set template for IA at address: ", ia.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0016"), sha.address);
+	console.log("set template for SHA at address: ", sha.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0017"), ad.address);
+	console.log("set template for AD at address: ", ad.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0018"), da.address);
+	console.log("set template for DA at address: ", da.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("0019"), lu.address);
+	console.log("set template for LU at address: ", lu.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("001a"), op.address);
+	console.log("set template for OP at address: ", op.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate(codifyHead("001b"), ta.address);
+	console.log("set template for TA at address: ", ta.address, "\n");
+
+	// ==== Reg Users ====
+
+	await rc.connect(signers[2]).regUser();
+	console.log("regUser: ", signers[2].address, " at No: ", parseInt( await rc.connect(signers[2]).getMyUserNo()));
+
+	await rc.connect(signers[3]).regUser();
+	console.log("regUser: ", signers[3].address, " at No: ", parseInt( await rc.connect(signers[3]).getMyUserNo()));
+
+	await rc.connect(signers[4]).regUser();
+	console.log("regUser: ", signers[4].address, " at No: ", parseInt( await rc.connect(signers[4]).getMyUserNo()));
+
+	await rc.connect(signers[5]).regUser();
+	console.log("regUser: ", signers[5].address, " at No: ", parseInt( await rc.connect(signers[5]).getMyUserNo()));
+	
+	await rc.connect(signers[6]).regUser();
+	console.log("regUser: ", signers[6].address, " at No: ", parseInt( await rc.connect(signers[6]).getMyUserNo()));
+
+	await rc.connect(signers[7]).regUser();
+	console.log("regUser: ", signers[7].address, " at No: ", parseInt( await rc.connect(signers[7]).getMyUserNo()));
+
+	await rc.connect(signers[8]).regUser();
+	console.log("regUser: ", signers[8].address, " at No: ", parseInt( await rc.connect(signers[8]).getMyUserNo()));
+
+	await rc.connect(signers[9]).regUser();
+	console.log("regUser: ", signers[9].address, " at No: ", parseInt( await rc.connect(signers[9]).getMyUserNo()));
+
 };
+
+function codifyHead(typeOfDoc) {
+	return hre.ethers.BigNumber.from('0x' + typeOfDoc.padEnd(64, '0'));
+}
 
 main()
   .then(() => process.exit(0))

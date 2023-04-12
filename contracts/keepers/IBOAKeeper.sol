@@ -23,15 +23,15 @@ interface IBOAKeeper {
 
     // function setTempOfIA(address temp, uint256 typeOfDoc) external;
 
-    function createIA(uint256 snOfIA, address primeKeyOfCaller, uint caller) external;
+    function createIA(uint256 version, address primeKeyOfCaller, uint caller) external;
 
     // function removeIA(address ia, uint256 caller) external;
 
     function circulateIA(
         address ia,
-        uint256 caller,
         bytes32 docUrl,
-        bytes32 docHash
+        bytes32 docHash,
+        uint256 caller
     ) external;
 
     function signIA(

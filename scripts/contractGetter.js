@@ -13,7 +13,7 @@ async function contractGetter(targetName) {
 
   const artOfTarget = getArtifactsOfContract(targetName);
 
-  const target = await hre.ethers.getContractAt(artOfTarget.abi, artOfTarget.address);
+  const target = await hre.ethers.getContractAt(artOfTarget.art.abi, artOfTarget.address);
 
   console.log("getContract: ", targetName, "from address: ", artOfTarget.address);
 
@@ -25,8 +25,16 @@ function getArtifactsOfContract(targetName) {
   const contractsDir = path.join(__dirname, "..", "client", "src", "contracts");
 
   const fileNameOfTargetArtifacts = path.join(contractsDir, targetName + ".json");
- 
-  let artOfTarget = JSON.parse(fs.readFileSync(fileNameOfTargetArtifacts,"utf-8"));
+
+  const fileNameOfContractAddrList = path.join(contractsDir, "contract-address.json");
+
+  let artOfTarget = {};
+
+  const objContractAddrList = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
+
+  artOfTarget.address = objContractAddrList[targetName];
+
+  artOfTarget.art = JSON.parse(fs.readFileSync(fileNameOfTargetArtifacts,"utf-8"));
 
   return artOfTarget;
 };

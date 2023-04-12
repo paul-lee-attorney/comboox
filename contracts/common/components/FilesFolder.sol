@@ -12,88 +12,75 @@ import "./IFilesFolder.sol";
 import "../access/AccessControl.sol";
 
 contract FilesFolder is IFilesFolder, AccessControl {
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using FilesRepo for FilesRepo.Repo;
 
-    Folder private _folder;
-
-    //####################
-    //##    modifier    ##
-    //####################
-
-    modifier onlyRegistered(address body) {
-        require(
-            _folder.filesList.contains(body),
-            "ROD.md.OR: doc NOT registered"
-        );
-        _;
-    }
-
-    modifier onlyForPending(address body) {
-        require(
-            _folder.files[body].head.state == uint8(StateOfFile.Created),
-            "ROD.md.OFP: Doc not pending"
-        );
-        _;
-    }
-
-    modifier onlyForCirculated(address body) {
-        require(
-            _folder.files[body].head.state == uint8(StateOfFile.Circulated),
-            "ROD.md.OFC: Doc not Circulated"
-        );
-        _;
-    }
+    FilesRepo.Repo private _repo;
 
     //##################
     //##    写接口     ##
     //##################
 
     function regFile(uint256 snOfDoc, address body)
-        public
-        onlyDirectKeeper
+        external onlyDirectKeeper
     {
-        // (snOfDoc, body) = _rc.createDoc(typeOfDoc, version, creator);
-
-        if (_folder.filesList.add(body)) {
-            emit UpdateStateOfFile(body, uint8(StateOfFile.Created));
-
-            File storage file = _folder.files[body];
-            
-            file.head.snOfDoc = snOfDoc;
-            file.head.state = uint8(StateOfFile.Created);
-        }
+        if (_repo.regFile(snOfDoc, body)) 
+            emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Created));
     }
 
-    function circulateDoc(
+    function circulateFile(
         address body,
+        uint16 signingDays,
+        uint16 closingDays,
         RulesParser.VotingRule memory vr,
         bytes32 docUrl,
         bytes32 docHash
-    ) public onlyDirectKeeper onlyForPending(body) {
-
-        emit UpdateStateOfFile(body, uint8(StateOfFile.Circulated));
-
-        File storage file = _folder.files[body];
-
-        file.head.shaExecDeadline =
-            uint48(block.timestamp) +
-            uint48(vr.shaExecDays) * 86400;
-
-        file.head.proposeDeadline =
-            file.head.shaExecDeadline +
-            uint48(vr.reviewDays) * 86400;
-
-        file.head.state = uint8(StateOfFile.Circulated);
-
-        if (docUrl != bytes32(0) || docHash != bytes32(0)){
-            file.ref.docUrl = docUrl;
-            file.ref.docHash = docHash;            
-        }
+    ) external onlyDirectKeeper {
+        _repo.circulateFile(body, signingDays, closingDays, vr, docUrl, docHash);
+        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Circulated));
     }
 
-    function setStateOfFile(address body, uint state) public onlyRegistered(body) onlyKeeper {
+    function establishFile(
+        address body
+    ) external onlyDirectKeeper {
+        _repo.establishFile(body);
+        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Established));
+    }
+
+    function proposeFile(
+        address body,
+        RulesParser.VotingRule memory vr
+    ) external onlyKeeper {
+        _repo.proposeFile(body, vr);
+        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Proposed));
+    }
+
+    function voteCountingForFile(
+        address body,
+        bool approved
+    ) external onlyKeeper {
+        _repo.voteCountingForFile(body, approved);
+        emit UpdateStateOfFile(body, approved ? 
+                uint8(FilesRepo.StateOfFile.Approved) : 
+                uint8(FilesRepo.StateOfFile.Rejected));
+    }
+
+    function execFile(
+        address body
+    ) public onlyDirectKeeper {
+        _repo.execFile(body);
+        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Executed));
+    }
+
+    function revokeFile(
+        address body
+    ) public onlyDirectKeeper {
+        _repo.revokeFile(body);
+        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Revoked));
+    }
+
+    function setStateOfFile(address body, uint state) public onlyKeeper {
+        _repo.setStateOfFile(body, state);
         emit UpdateStateOfFile(body, state);
-        _folder.files[body].head.state = uint8(state);
     }
 
     //##################
@@ -101,33 +88,33 @@ contract FilesFolder is IFilesFolder, AccessControl {
     //##################
 
     function isRegistered(address body) external view returns (bool) {
-        return _folder.filesList.contains(body);
+        return _repo.isRegistered(body);
     }
 
     function qtyOfFiles() external view returns (uint256) {
-        return _folder.filesList.length();
+        return _repo.qtyOfFiles();
     }
 
-    function filesList() external view returns (address[] memory) {
-        return _folder.filesList.values();
+    function getFilesList() external view returns (address[] memory) {
+        return _repo.getFilesList();
+    }
+
+    function getSNOfFile(address body)
+        external view returns (uint256)
+    {
+        return _repo.getSNOfFile(body);
     }
 
     function getHeadOfFile(address body)
-        public
-        view
-        onlyRegistered(body)
-        returns (Head memory head)
+        public view returns (FilesRepo.Head memory head)
     {
-        head = _folder.files[body].head;
+        head = _repo.getHeadOfFile(body);
     }
 
     function getRefOfFile(address body)
-        external
-        view
-        onlyRegistered(body)
-        returns (Ref memory ref) 
+        external view returns (FilesRepo.Ref memory ref) 
     {
-        ref = _folder.files[body].ref;
+        ref = _repo.getRefOfFile(body);
     }
 
 }

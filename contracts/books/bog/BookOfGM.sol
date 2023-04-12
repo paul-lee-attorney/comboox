@@ -19,8 +19,8 @@ contract BookOfGM is IBookOfGM, MeetingMinutes {
 
     // ==== Corp Register ====
 
-    function createCorpSeal() external onlyDirectKeeper {
-        _rc.regUser();
+    function createCorpSeal(uint info) external onlyDirectKeeper {
+        _rc.regUser(info);
     }
 
     function createBoardSeal(address board) external onlyDirectKeeper {

@@ -93,7 +93,8 @@ interface IMeetingMinutes {
 
     // ==== UpdateVoteResult ====
 
-    function voteCounting(uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) external;
+    function voteCounting(uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) 
+        external returns(uint8);
 
     // ==== ExecResolution ====
 

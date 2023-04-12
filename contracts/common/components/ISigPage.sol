@@ -13,14 +13,23 @@ import "../lib/SigsRepo.sol";
 
 interface ISigPage {
 
-    event SetSigDeadline (bool initPage, uint SigDeadline);
+    event CirculateDoc();
 
-    function setSigDeadline(bool initPage, uint sigDeadline) external;
+    event SetTiming (bool initPage, uint signingDays, uint closingDays);
+
+    //##################
+    //##   Write I/O  ##
+    //##################
+
+    function circulateDoc() external;
+
+    function setTiming(bool initPage, uint signingDays, uint closingDays) external;
 
     function addBlank(bool beBuyer, uint256 seqOfDeal, uint256 acct)
         external;
 
-    function signDoc(bool initPage, uint256 caller, bytes32 sigHash) external;    
+    function signDoc(bool initPage, uint256 caller, bytes32 sigHash) 
+        external returns(bool);    
 
     function regSig(uint256 seqOfDeal, uint256 signer, uint sigDate, bytes32 sigHash)
         external returns(bool flag);
@@ -32,8 +41,20 @@ interface ISigPage {
     function getParasOfPage(bool initPage) external view 
         returns (SigsRepo.Signature memory);
 
+    function circulated() external view returns(bool);
+
     function established() external view
         returns (bool flag);
+
+    function getCirculateDate() external view returns(uint48);
+
+    function getSigningDays() external view returns(uint16);
+
+    function getClosingDays() external view returns(uint16);
+
+    function getSigDeadline() external view returns(uint48);
+
+    function getClosingDeadline() external view returns(uint48);
 
     function isBuyer(bool initPage, uint256 acct)
         external view returns(bool flag);

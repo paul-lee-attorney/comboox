@@ -161,9 +161,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     // ==== UpdateVoteResult ====
 
     function voteCounting(uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) 
-        external onlyDirectKeeper 
+        external onlyDirectKeeper returns(uint8 result)
     {
-        uint8 result = _repo.voteCounting(seqOfMotion, base);
+        result = _repo.voteCounting(seqOfMotion, base);
         emit VoteCounting(seqOfMotion, result);            
     }
 

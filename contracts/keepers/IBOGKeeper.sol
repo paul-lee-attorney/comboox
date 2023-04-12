@@ -20,7 +20,7 @@ interface IBOGKeeper {
     // ##   CorpSetting   ##
     // #####################
 
-    function createCorpSeal() external;
+    function createCorpSeal(uint info) external;
 
     function createBoardSeal(address board) external;
 

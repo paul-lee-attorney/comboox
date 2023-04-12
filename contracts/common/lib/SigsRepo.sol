@@ -19,8 +19,9 @@ library SigsRepo {
         bool flag;
         uint16 para;
         uint16 arg;
+        uint16 seq;
+        uint16 attr;
         uint32 data;
-        uint32 ref;
     }
 
     struct Blank{
@@ -30,10 +31,12 @@ library SigsRepo {
     }
 
     // blanks[0].sig {
-    //     sigDate: sigDeadline;
+    //     sigDate: circulateDate;
     //     flag: established;
-    //     para: blankCounter;
-    //     arg: sigCounter;
+    //     para: counterOfBlanks;
+    //     arg: counterOfSigs;
+    //     seq: signingDays;
+    //     attr: closingDays;
     // }
 
     struct Page {
@@ -47,17 +50,20 @@ library SigsRepo {
     //##    设置接口    ##
     //###################
 
-    function setSigDeadline(
-        Page storage p,
-        uint deadline
+    function circulateDoc(
+        Page storage p
     ) public {
-        
-        require(deadline > block.timestamp, 
-                "SR.SD: not future time");
+        p.blanks[0].sig.sigDate = uint48(block.timestamp);
+    }
 
-        require(!established(p), "SR.SD: doc already established");
-
-        p.blanks[0].sig.sigDate = uint48(deadline);
+    function setTiming(
+        Page storage p,
+        uint signingDays,
+        uint closingDays
+    ) public {
+        // require(!circulated(p), "SR.SD: doc already circulated");
+        p.blanks[0].sig.seq = uint16(signingDays);
+        p.blanks[0].sig.attr = uint16(closingDays);
     }
 
     function addBlank(
@@ -101,7 +107,7 @@ library SigsRepo {
     function signDoc(Page storage p, uint256 acct, bytes32 sigHash) 
         public returns (bool flag)
     {
-        require(sigDeadline(p) >= block.timestamp,
+        require(block.timestamp <= getSigDeadline(p),
             "SR.SD: missed sigDeadline");
 
         require(!established(p),
@@ -110,16 +116,11 @@ library SigsRepo {
         if ((p.buyers.contains(acct) || p.sellers.contains(acct)) &&
             p.blanks[acct].sig.sigDate == 0) {
 
-            p.blanks[acct].sig = Signature({
-                signer: uint40(acct),
-                sigDate: uint48(block.timestamp),
-                blocknumber: uint64(block.number),
-                flag: false,
-                para: 0,
-                arg: 0,
-                data: 0,
-                ref: 0
-            });
+            Signature storage sig = p.blanks[acct].sig;
+
+            sig.signer = uint40(acct);
+            sig.sigDate = uint48(block.timestamp);
+            sig.blocknumber = uint64(block.number);
 
             p.blanks[acct].sigHash = sigHash;
 
@@ -135,7 +136,7 @@ library SigsRepo {
     function regSig(Page storage p, uint256 seqOfDeal, uint256 acct, uint sigDate, bytes32 sigHash)
         public returns (bool flag)
     {
-        require(sigDeadline(p) >= block.timestamp,
+        require(block.timestamp <= getSigDeadline(p),
             "SR.RS: missed sigDeadline");
 
         require(!established(p),
@@ -145,16 +146,12 @@ library SigsRepo {
             p.sellers.contains(acct)) && 
             p.blanks[acct].seqOfDeals.add(seqOfDeal))
         {
-            p.blanks[acct].sig = Signature({
-                signer: uint40(acct),
-                sigDate: uint48(sigDate),
-                blocknumber: uint64(block.number),
-                flag: false,
-                para: 0,
-                arg: 0,
-                data: 0,
-                ref: 0
-            });
+
+            Signature storage sig = p.blanks[acct].sig;
+
+            sig.signer = uint40(acct);
+            sig.sigDate = uint48(sigDate);
+            sig.blocknumber = uint64(block.number);
 
             p.blanks[acct].sigHash = sigHash;
 
@@ -184,8 +181,14 @@ library SigsRepo {
     //##    查询接口     ##
     //####################
 
-    function sigDeadline(Page storage p) public view returns(uint48) {
-        return p.blanks[0].sig.sigDate;
+    function circulated(Page storage p) public view returns (bool)
+    {
+        return p.blanks[0].sig.sigDate > 0;
+    }
+
+    function established(Page storage p) public view returns (bool)
+    {
+        return p.blanks[0].sig.flag;
     }
 
     function counterOfBlanks(Page storage p) public view returns(uint16) {
@@ -196,9 +199,24 @@ library SigsRepo {
         return p.blanks[0].sig.arg;
     }
 
-    function established(Page storage p) public view returns (bool)
-    {
-        return p.blanks[0].sig.flag;
+    function getCirculateDate(Page storage p) public view returns(uint48) {
+        return p.blanks[0].sig.sigDate;
+    }
+
+    function getSigningDays(Page storage p) public view returns(uint16) {
+        return p.blanks[0].sig.seq;
+    }
+
+    function getClosingDays(Page storage p) public view returns(uint16) {
+        return p.blanks[0].sig.attr;
+    }
+
+    function getSigDeadline(Page storage p) public view returns(uint48) {
+        return p.blanks[0].sig.sigDate + uint48(p.blanks[0].sig.seq) * 86400; 
+    }
+
+    function getClosingDeadline(Page storage p) public view returns(uint48) {
+        return p.blanks[0].sig.sigDate + uint48(p.blanks[0].sig.attr) * 86400; 
     }
 
     function isSigner(Page storage p, uint256 acct) 

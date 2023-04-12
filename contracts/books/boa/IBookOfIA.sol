@@ -37,7 +37,7 @@ interface IBookOfIA is IFilesFolder {
 
     // ======== BookOfIA ========
 
-    function circulateIA(address ia, bytes32 docUrl, bytes32 docHash) external;
+    // function circulateIA(address ia, bytes32 docUrl, bytes32 docHash) external;
 
     function execFirstRefusalRight(
         address ia,

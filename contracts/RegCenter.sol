@@ -18,63 +18,27 @@ contract RegCenter is IRegCenter {
     DocsRepo.Repo private _docs;
     
     constructor() {
-        _users.users[0].primeKey = msg.sender;
-    }
-
-    // #################
-    // ##   modifier  ##
-    // #################
-
-    modifier onlyOwner() {
-        require(
-            msg.sender == _users.users[0].primeKey,
-            "RC.mf.OO: not owner"
-        );
-        _;
-    }
-
-    modifier onlyKeeper() {
-        require(
-            msg.sender == _users.users[0].backupKey,
-            "RC.mf.OK: not keeper"
-        );
-        _;
-    }
-
-    modifier onlyPrimeKey() {
-        require(
-            msg.sender == _users.users[_users.userNo[msg.sender]].primeKey,
-            "RC.OP: not primeKey"
-        );
-        _;
-    }
-
-    modifier onlyEOA() {
-        require(
-            !_users.users[_users.userNo[msg.sender]].isCOA,
-            "RC.mf.OEOA: not EOA"
-        );
-        _;
+        _users.users[0].primeKey.pubKey = msg.sender;
     }
 
     // ########################
     // ##    Opts Setting    ##
     // ########################
 
-    function setReward(uint256 snOfReward) external onlyOwner {
-        _users.reward = snOfReward.rewardParser();
+    function setReward(uint256 snOfReward) external {
+        _users.setReward(snOfReward, msg.sender);
         emit SetReward(snOfReward);
     }
 
     // ==== Power transfer ====
 
-    function transferOwnership(address newOwner) external onlyOwner {
-        _users.users[0].primeKey = newOwner;
+    function transferOwnership(address newOwner) external {
+        _users.transferOwnership(newOwner, msg.sender);
         emit TransferOwnership(newOwner);
     }
 
-    function turnOverCenterKey(address newKeeper) external onlyKeeper {
-        _users.users[0].backupKey = newKeeper;
+    function turnOverCenterKey(address newKeeper) external {
+        _users.turnOverCenterKey(newKeeper, msg.sender);
         emit TurnOverCenterKey(newKeeper);
     }
 
@@ -82,71 +46,72 @@ contract RegCenter is IRegCenter {
     // ##    Points    ##
     // ##################
 
-    function mintPoints(uint256 to, uint amt) external onlyOwner {
-        _users.users[to].balance += uint216(amt);
-        emit TransferPoints(0, to, amt);
+    function mintPoints(uint256 to, uint amt) external {
+        _users.mintPoints(to, amt, msg.sender);
+        emit MintPoints(to, amt);
     }
 
-    function mintAndLockPoints(uint256 snOfLocker, uint amt) external onlyOwner {
-        if (_users.mintAndLockPoints(snOfLocker, amt))
+    function mintAndLockPoints(uint256 snOfLocker, uint amt) external {
+        if (_users.mintAndLockPoints(snOfLocker, amt, msg.sender))
             emit LockPoints(snOfLocker, amt);
     }
 
-    function transferPoints(uint256 to, uint amt)
-        external onlyPrimeKey onlyEOA
+    function transferPoints(uint256 to, uint amt) external
     {
         if (_users.transferPoints(msg.sender, to, amt))
             emit TransferPoints(_users.userNo[msg.sender], to, amt);
     }
 
     function lockPoints(uint256 snOfLocker, uint amt) 
-        external onlyPrimeKey onlyEOA 
+        external 
     {
-        if (_users.lockPoints(msg.sender, snOfLocker, amt))
+        if (_users.lockPoints(snOfLocker, amt, msg.sender))
             emit LockPoints(snOfLocker, amt);
     }
 
     function releasePoints(uint256 snOfLocker, string memory hashKey, uint salt)
-        external onlyPrimeKey onlyEOA
+        external
     {
-        uint256 value = _users.releasePoints(msg.sender, snOfLocker, hashKey, salt);
+        uint256 value = _users.releasePoints(snOfLocker, hashKey, salt, msg.sender);
 
         if (value > 0)
             emit ReleasePoints(snOfLocker, hashKey, salt, value);
     }
 
     function withdrawPoints(uint256 snOfLocker, string memory hashKey, uint salt)
-        external onlyPrimeKey onlyEOA
+        external
     {
-        uint256 value = _users.withdrawPoints(msg.sender, snOfLocker, hashKey, salt);
+        uint256 value = _users.withdrawPoints(snOfLocker, hashKey, salt, msg.sender);
 
         if (value > 0)
             emit WithdrawPoints(snOfLocker, hashKey, salt, value);
     }
 
-    function checkLocker(uint256 snOfLocker) external onlyPrimeKey onlyEOA
+    function checkLocker(uint256 snOfLocker) external
         view returns (uint256 value)
     {
-        value = _users.checkLocker(msg.sender, snOfLocker);
+        value = _users.checkLocker(snOfLocker, msg.sender);
     }
 
     // ################
     // ##    Users   ##
     // ################
 
-    function regUser() external {
-        _users.regUser(msg.sender);
+    function regUser(uint256 info) external {
+        _users.regUser(info, msg.sender);
     }
 
-    function setBackupKey(address bKey) external onlyPrimeKey {
-        _users.setBackupKey(msg.sender, bKey);
+    function setBackupKey(address bKey) external {
+        _users.setBackupKey(bKey, msg.sender);
     }
 
     // ###############
     // ##    Docs   ##
     // ###############
 
-    function initDocsRepo(address docKeeper) external onlyKeeper {
+    function initDocsRepo(address docKeeper) external {
+        require(msg.sender == _users.getBookeeper(),
+            "RC.IDR: not keeper");
         if (_docs.init(_users.userNo[docKeeper]))
             emit SetDocKeeper(docKeeper);
     }
@@ -164,20 +129,23 @@ contract RegCenter is IRegCenter {
     function createDoc(uint256 snOfDoc, address primeKeyOfOwner) public 
         returns(DocsRepo.Doc memory doc)
     {
-        uint40 owner = _users.getUserNo(msg.sender, primeKeyOfOwner);
+        uint40 owner = _users.getUserNo(primeKeyOfOwner, msg.sender);
         doc = _docs.createDoc(snOfDoc, owner);
+        emit CreateDoc(DocsRepo.codifyHead(doc.head), doc.body);
     }
 
     // ###############
     // ##    Comp   ##
     // ###############
 
-    function createComp(address primeKeyOfKeeper, address primeKeyOfOwner) external 
-        returns(DocsRepo.Doc[20] memory docs)
+    function createComp(address primeKeyOfKeeper) external 
     {
-        uint40 owner = _users.getUserNo(msg.sender, primeKeyOfOwner);
+        DocsRepo.Doc[20] memory docs;
 
-        docs[19] = _createDocAtLatestVersion(19, primeKeyOfOwner);
+        address primeKeyOfOwner = msg.sender;
+        uint40 owner = _users.getMyUserNo(primeKeyOfOwner);
+
+        docs[19] = _createDocAtLatestVersion(20, primeKeyOfOwner);
         IAccessControl(docs[19].body).init(
             owner,
             address(this),
@@ -185,41 +153,43 @@ contract RegCenter is IRegCenter {
             docs[19].body
         );
 
-        docs[9] = _createDocAtLatestVersion(9, primeKeyOfOwner);
+        docs[9] = _createDocAtLatestVersion(10, primeKeyOfOwner);
         IAccessControl(docs[9].body).init(
             owner,
             docs[19].body,
             address(this),
             docs[19].body
         );
-        IGeneralKeeper(docs[19].body).setBookeeper(9, docs[9].body);
+        IGeneralKeeper(docs[19].body).setBookeeper(10, docs[9].body);
 
         uint16 i;
         while (i < 9) {
-            docs[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
+            docs[i] = _createDocAtLatestVersion(i+1, primeKeyOfOwner);
             IAccessControl(docs[i].body).init(
                 owner,
                 docs[19].body,
                 address(this),
                 docs[19].body
             );
-            IGeneralKeeper(docs[19].body).setBookeeper(i, docs[i].body);
+            IGeneralKeeper(docs[19].body).setBookeeper(i+1, docs[i].body);
 
             uint16 j = i+10;
 
-            docs[j] = _createDocAtLatestVersion(j, primeKeyOfOwner);
+            docs[j] = _createDocAtLatestVersion(j+1, primeKeyOfOwner);
             IAccessControl(docs[j].body).init(
                 owner,
                 docs[i].body,
                 address(this),
                 docs[19].body
             );
-            IGeneralKeeper(docs[19].body).setBook(i, docs[j].body);
-                        
+            IGeneralKeeper(docs[19].body).setBook(i+1, docs[j].body);
+            
             i++;
         }
 
         IAccessControl(docs[19].body).setDirectKeeper(primeKeyOfKeeper); 
+
+        emit CreateComp(docs[19].body);
     }
 
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
@@ -237,40 +207,40 @@ contract RegCenter is IRegCenter {
     // ==== options ====
 
     function getOwner() external view returns (address) {
-        return _users.users[0].primeKey;
+        return _users.getOwner();
     }
 
     function getBookeeper() external view returns (address) {
-        return _users.users[0].backupKey;
+        return _users.getBookeeper();
     }
 
     function getRewardSetting() external view 
         returns (UsersRepo.Reward memory)
     {
-        return _users.reward;
+        return _users.getRewardSetting();
     }
 
     // ==== Users ====
 
     function isKey(address key) public view returns (bool) {
-        return _users.userNo[key] > 0;
+        return _users.isKey(key);
     }
 
-    function isCOA(uint256 acct) public view returns(bool) {
-        return _users.users[acct].isCOA;
+    function isCOA(uint256 acct) external view returns (bool) {
+        return _users.isCOA(acct);
     }
 
     function getUser() external view returns (UsersRepo.User memory)
     {
-        return _users.users[_users.userNo[msg.sender]];
+        return _users.getUser(msg.sender);
     }
 
     function getUserNo(address targetAddr) external returns (uint40) {
-        return _users.getUserNo(msg.sender, targetAddr);
+        return _users.getUserNo(targetAddr, msg.sender);
     }
 
     function getMyUserNo() public view returns(uint40) {
-        return _users.userNo[msg.sender];
+        return _users.getMyUserNo(msg.sender);
     }
 
     // ==== Docs ====

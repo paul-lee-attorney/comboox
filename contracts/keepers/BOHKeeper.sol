@@ -20,7 +20,7 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
 
     modifier notEstablished(address body) {
         require(_gk.getBOH().getHeadOfFile(body).state != 
-            uint8(IFilesFolder.StateOfFile.Established), 
+            uint8(FilesRepo.StateOfFile.Established), 
             "BOHK.mf.NE: Doc ALREADY Established");
         _;
     }
@@ -42,13 +42,8 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
     // ##   SHA   ##
     // #############
 
-    // function setTempOfBOH(address temp, uint8 typeOfDoc) external onlyDirectKeeper {
-    //     _gk.getBOH().setTemplate(temp, typeOfDoc);
-    // }
-
     function createSHA(uint version, address primeKeyOfCaller, uint caller) external onlyDirectKeeper {
         require(_gk.getROM().isMember(caller), "not MEMBER");
-        // address sha = _gk.getBOH().createDoc(uint8(IRegCenter.TypeOfDoc.ShareholdersAgreement), version, caller);
 
         uint256 snOfDoc = uint256(uint8(IRegCenter.TypeOfDoc.ShareholdersAgreement)) << 240 +
             version << 224; 
@@ -65,31 +60,26 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
         _gk.getBOH().regFile(DocsRepo.codifyHead(doc.head), doc.body);
     }
 
-    // function removeSHA(address sha, uint256 caller)
-    //     external
-    //     onlyDirectKeeper
-    //     onlyOwnerOf(sha, caller)
-    //     notEstablished(sha)
-    // {
-    //     _gk.getBOH().removeDoc(sha);
-    // }
-
     function circulateSHA(
         address sha,
-        uint256 seqOfRule,
         bytes32 docUrl,
         bytes32 docHash,
         uint256 caller
     ) external onlyDirectKeeper onlyPartyOf(sha, caller) {
-        // IShareholdersAgreement(sha).finalizeTerms();
-        // IAccessControl(sha).setOwner(0);
+        require(IAccessControl(sha).finalized(), 
+            "BOHK.CSHA: SHA not finalized");
 
-        require(IAccessControl(sha).finalized(), "BOHK.CSHA: SHA not finalized");
+        ISigPage(sha).circulateDoc();
+
+        uint16 signingDays = ISigPage(sha).getSigningDays();
+        uint16 closingDays = ISigPage(sha).getClosingDays();
 
         RulesParser.VotingRule memory vr = 
-            _gk.getSHA().getRule(seqOfRule).votingRuleParser();
+            _gk.getSHA().getRule(8).votingRuleParser();
+        
+        ISigPage(sha).setTiming(false, signingDays + vr.shaExecDays + vr.reviewDays, closingDays);
 
-        _gk.getBOH().circulateDoc(sha, vr, docUrl, docHash);
+        _gk.getBOH().circulateFile(sha, signingDays, closingDays, vr, docUrl, docHash);
     }
 
     // ======== Sign SHA ========
@@ -100,14 +90,15 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
         uint256 caller
     ) external onlyDirectKeeper onlyPartyOf(sha, caller) {
         require(
-            _gk.getBOH().getHeadOfFile(sha).state == uint8(IFilesFolder.StateOfFile.Circulated),
+            _gk.getBOH().getHeadOfFile(sha).state == uint8(FilesRepo.StateOfFile.Circulated),
             "SHA not in Circulated State"
         );
 
-        ISigPage(sha).signDoc(true, caller, sigHash);
-
-        if (ISigPage(sha).established()) 
-            _gk.getBOH().setStateOfFile(sha, uint8(IFilesFolder.StateOfFile.Established));
+        if (ISigPage(sha).signDoc(true, caller, sigHash) &&
+            ISigPage(sha).established())
+        {
+            _gk.getBOH().establishFile(sha);
+        }
     }
 
     function effectiveSHA(address sha, uint256 caller)
@@ -115,25 +106,30 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
         onlyDirectKeeper
         onlyPartyOf(sha, caller)
     {
-        require(
-            _gk.getBOH().getHeadOfFile(sha).state ==
-                uint8(IFilesFolder.StateOfFile.Established),
-            "BOHK.ES: SHA not executed yet"
-        );
+        // require(
+        //     _gk.getBOH().getHeadOfFile(sha).state ==
+        //         uint8(FilesRepo.StateOfFile.Approved),
+        //     "BOHK.ESHA: SHA not approved yet"
+        // );
 
-        require(_allMembersSigned(sha) || _reachedEffectiveThreshold(sha), 
-            "BOHK.ES: SHA effective conditions not reached");
+        // require(_allMembersSigned(sha) || _reachedEffectiveThreshold(sha), 
+        //     "BOHK.ESHA: SHA effective conditions not reached");
 
-        _gk.getBOH().changePointer(sha);
+        IBookOfSHA _boh = _gk.getBOH();
+
+        _boh.execFile(sha);
+
+        _boh.changePointer(sha);
 
         RulesParser.GovernanceRule memory gr = 
             IShareholdersAgreement(sha).getRule(0).governanceRuleParser();
 
-        _gk.getROM().setAmtBase(gr.basedOnPar);
+        IRegisterOfMembers _rom = _gk.getROM();
 
-        _gk.getROM().setVoteBase(gr.basedOnPar);
+        _rom.setAmtBase(gr.basedOnPar);
 
-        // _gk.getBOD().setMaxQtyOfDirectors(gr.maxNumOfDirectors);
+        _rom.setVoteBase(gr.basedOnPar);
+
 
         if (IShareholdersAgreement(sha).hasTitle(uint8(IRegCenter.TypeOfDoc.LockUp)))
             _lockUpShares(sha);
@@ -221,33 +217,33 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
         }        
     }
 
-    function _allMembersSigned(address sha) private view returns (bool) {
-        uint256[] memory members = _gk.getROM().membersList();
-        uint256 len = members.length;
-        while (len > 0) {            
-            if (!ISigPage(sha).isParty(members[len - 1]))
-                return false;
-            len--;
-        }
-        return true;
-    }
+    // function _allMembersSigned(address sha) private view returns (bool) {
+    //     uint256[] memory members = _gk.getROM().membersList();
+    //     uint256 len = members.length;
+    //     while (len > 0) {            
+    //         if (!ISigPage(sha).isParty(members[len - 1]))
+    //             return false;
+    //         len--;
+    //     }
+    //     return true;
+    // }
 
-    function _reachedEffectiveThreshold(address sha) private view returns (bool) {
-        uint256[] memory parties = ISigPage(sha).getParties();
-        uint256 len = parties.length;
+    // function _reachedEffectiveThreshold(address sha) private view returns (bool) {
+    //     uint256[] memory parties = ISigPage(sha).getParties();
+    //     uint256 len = parties.length;
         
-        RulesParser.GovernanceRule memory gr = _gk.getSHA().getRule(0).governanceRuleParser();
+    //     RulesParser.GovernanceRule memory gr = _gk.getSHA().getRule(0).governanceRuleParser();
 
-        uint64 threashold = uint64(gr.shaEffectiveRatio) * _gk.getROM().totalVotes() / 10000;
+    //     uint64 threashold = uint64(gr.shaEffectiveRatio) * _gk.getROM().totalVotes() / 10000;
         
-        uint64 supportWeight;        
-        while (len > 0) {
-            supportWeight += _gk.getROM().votesInHand(parties[len-1]);
-            if (supportWeight > threashold) return true;
-            len --;
-        }
-        return false;
-    }
+    //     uint64 supportWeight;        
+    //     while (len > 0) {
+    //         supportWeight += _gk.getROM().votesInHand(parties[len-1]);
+    //         if (supportWeight > threashold) return true;
+    //         len --;
+    //     }
+    //     return false;
+    // }
 
     function acceptSHA(bytes32 sigHash, uint256 caller) external onlyDirectKeeper {
         address sha = address(_gk.getSHA());

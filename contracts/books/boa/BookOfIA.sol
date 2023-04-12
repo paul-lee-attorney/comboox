@@ -31,16 +31,16 @@ contract BookOfIA is IBookOfIA, FilesFolder {
     //##  Write I/O  ##
     //#################
 
-    function circulateIA(
-        address ia, 
-        bytes32 docUrl, 
-        bytes32 docHash
-    ) external onlyDirectKeeper {
-        uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
-        RulesParser.VotingRule memory vr = 
-            _gk.getSHA().getRule(typeOfIA).votingRuleParser();
-        circulateDoc(ia, vr, docUrl, docHash);
-    }
+    // function circulateIA(
+    //     address ia, 
+    //     bytes32 docUrl, 
+    //     bytes32 docHash
+    // ) external onlyDirectKeeper {
+    //     uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
+    //     RulesParser.VotingRule memory vr = 
+    //         _gk.getSHA().getRule(typeOfIA).votingRuleParser();
+    //     circulateDoc(ia, vr, docUrl, docHash);
+    // }
 
     // ==== FirstRefusal ====
 
@@ -50,24 +50,23 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         uint256 caller,
         bytes32 sigHash
     ) external onlyKeeper returns (bool flag) {
-        Head memory headOfDoc = getHeadOfFile(ia);
-        require(headOfDoc.shaExecDeadline > block.timestamp, 
+        FilesRepo.Head memory headOfFile = getHeadOfFile(ia);
+        require(headOfFile.shaExecDeadline >= block.timestamp, 
             "BOA.EFRR: missed shaExecDeadline");
 
         if (_frClaims[ia].execFirstRefusalRight(seqOfDeal, caller, sigHash))
         {
             emit ExecFirstRefusalRight(ia, seqOfDeal, caller);
 
-            _resetDoc(ia, headOfDoc);
+            _resetDoc(ia, headOfFile);
 
             flag = true;
         }
     }
 
-    function _resetDoc(address ia, Head memory headOfDoc) private {
-        if (headOfDoc.state > uint8(StateOfFile.Circulated)) {
-            setStateOfFile(ia, uint8(StateOfFile.Circulated));
-            ISigPage(ia).setSigDeadline(false, headOfDoc.proposeDeadline);
+    function _resetDoc(address ia, FilesRepo.Head memory headOfFile) private {
+        if (headOfFile.state > uint8(FilesRepo.StateOfFile.Circulated)) {
+            setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Circulated));
         }
     }
 

@@ -26,8 +26,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     // ##   Corp Setting   ##
     // ######################
 
-    function createCorpSeal() external onlyDirectKeeper {
-        _gk.getBOG().createCorpSeal();
+    function createCorpSeal(uint info) external onlyDirectKeeper {
+        _gk.getBOG().createCorpSeal(info);
     }
 
     function createBoardSeal(address board) external onlyDirectKeeper {
@@ -96,10 +96,16 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         uint64 seqOfMotion = 
             _bog.proposeDoc(doc, seqOfVR, executor, proposer);
 
-        if (seqOfVR <= 7 && 
+        if (seqOfVR <= 8 && 
             ISigPage(doc).isSigner(proposer)
         ) { 
             _bog.proposeMotion(seqOfMotion, proposer);
+            RulesParser.VotingRule memory vr =
+                _gk.getSHA().getRule(seqOfVR).votingRuleParser();
+            
+            seqOfVR == 8 ?
+                _gk.getBOH().proposeFile(doc, vr) :
+                _gk.getBOA().proposeFile(doc, vr);
         }
     }
 
@@ -248,7 +254,13 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
             }
         }
 
-        _bog.voteCounting(seqOfMotion, base);
+        bool approved = _bog.voteCounting(seqOfMotion, base) == 
+            uint8(MotionsRepo.StateOfMotion.Passed);
+        address doc = address(uint160(motion.contents));
+
+        motion.head.seqOfVR == 8 ?
+            _gk.getBOH().voteCountingForFile(doc, approved) :
+            _gk.getBOA().voteCountingForFile(doc, approved);
     }
 
     // ==== execute ====

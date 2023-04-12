@@ -12,14 +12,19 @@ import "../lib/LockersRepo.sol";
 library UsersRepo {
     using LockersRepo for LockersRepo.Repo;
 
+    struct Key {
+        address pubKey;
+        uint16 seqOfKey;
+        uint32 dataOfKey;
+        uint48 dateOfKey;        
+    }
+
     struct User {
         bool isCOA;
         uint32 counterOfV;
         uint216 balance;
-        address primeKey;
-        uint96 attr;
-        address backupKey;
-        uint96 para;
+        Key primeKey;
+        Key backupKey;
     }
 
     struct Reward {
@@ -36,34 +41,36 @@ library UsersRepo {
         // userNo => User
         mapping(uint256 => User) users;
         // key => userNo
-        mapping(address => uint40) userNo;
+        mapping(address => uint) userNo;
         Reward reward;
         LockersRepo.Repo lockers;       
     }
 
-    // #################
-    // ##   modifier  ##
-    // #################
+    // ####################
+    // ##    Modifier    ##
+    // ####################
+
+    modifier onlyOwner(Repo storage repo, address msgSender) {
+        require(msgSender == getOwner(repo), 
+            "UR.mf.OO: not owner");
+        _;
+    }
+
+    modifier onlyKeeper(Repo storage repo, address msgSender) {
+        require(msgSender == getBookeeper(repo), 
+            "UR.mf.OK: not bookeeper");
+        _;
+    }
 
     modifier onlyPrimeKey(Repo storage repo, address msgSender) {
-        require(
-            msgSender == repo.users[repo.userNo[msgSender]].primeKey,
-            "UR.mf.OP: not primeKey"
-        );
+        require(msgSender == repo.users[repo.userNo[msgSender]].primeKey.pubKey, 
+            "UR.mf.OPK: not primeKey");
         _;
     }
 
-    modifier onlyEOA(Repo storage repo, address key) {
-        require(
-            !repo.users[repo.userNo[msg.sender]].isCOA,
-            "UR.mf.OE: not EOA"
-        );
-        _;
-    }
-
-    // ##################
-    // ##    Points    ##
-    // ##################
+    // ########################
+    // ##    Opts Setting    ##
+    // ########################
 
     function rewardParser(uint256 sn) public pure 
         returns(Reward memory reward) 
@@ -79,8 +86,36 @@ library UsersRepo {
         });
     }
 
-    function mintAndLockPoints(Repo storage repo, uint256 snOfLocker, uint amt) 
-        public returns (bool flag) 
+    function setReward(Repo storage repo, uint256 snOfReward, address msgSender) 
+        public onlyOwner(repo, msgSender) 
+    {
+        repo.reward = rewardParser(snOfReward);
+    }
+
+    function transferOwnership(Repo storage repo, address newOwner, address msgSender) 
+        public onlyOwner(repo, msgSender)
+    {
+        repo.users[0].primeKey.pubKey = newOwner;
+    }
+
+    function turnOverCenterKey(Repo storage repo, address newKeeper, address msgSender) 
+        public onlyKeeper(repo, msgSender) 
+    {
+        repo.users[0].backupKey.pubKey = newKeeper;
+    }
+
+    // ##################
+    // ##    Points    ##
+    // ##################
+
+    function mintPoints(Repo storage repo, uint256 to, uint amt, address msgSender) 
+        public onlyOwner(repo, msgSender) 
+    {
+        repo.users[to].balance += uint216(amt);
+    }
+
+    function mintAndLockPoints(Repo storage repo, uint256 snOfLocker, uint amt, address msgSender) 
+        public onlyOwner(repo, msgSender) returns (bool flag) 
     {
         flag = repo.lockers.lockValue(snOfLocker, amt, 0);
     }
@@ -90,9 +125,9 @@ library UsersRepo {
         address msgSender, 
         uint256 to, 
         uint amt
-    ) public returns (bool flag)
+    ) public onlyPrimeKey(repo, msgSender) returns (bool flag)
     {
-        uint40 from = repo.userNo[msgSender];
+        uint40 from = uint40(repo.userNo[msgSender]);
 
         if (repo.users[from].balance >= uint216(amt)) {
             repo.users[from].balance -= uint216(amt);
@@ -101,8 +136,8 @@ library UsersRepo {
         }
     }
 
-    function lockPoints(Repo storage repo, address msgSender, uint256 snOfLocker, uint amt) 
-        public returns (bool flag)
+    function lockPoints(Repo storage repo, uint256 snOfLocker, uint amt, address msgSender) 
+        public onlyPrimeKey(repo, msgSender) returns (bool flag)
     {
         uint caller = repo.userNo[msgSender];
         User storage user = repo.users[caller];
@@ -116,11 +151,12 @@ library UsersRepo {
 
     function releasePoints(
         Repo storage repo, 
-        address msgSender, 
         uint256 snOfLocker, 
-        string memory hashKey, 
-        uint salt
-    ) public returns (uint216 value) {
+        string memory hashKey,
+        uint salt,
+        address msgSender
+    ) public onlyPrimeKey(repo, msgSender) returns (uint216 value) 
+    {
         uint caller = repo.userNo[msgSender];
         value = uint216(repo.lockers.releaseValue(snOfLocker, hashKey, salt, caller));
         if (value > 0) {
@@ -130,11 +166,11 @@ library UsersRepo {
 
     function withdrawPoints(
         Repo storage repo, 
-        address msgSender, 
         uint256 snOfLocker, 
         string memory hashKey, 
-        uint salt
-    ) public returns (uint216 value) {
+        uint salt,
+        address msgSender
+    ) public onlyPrimeKey(repo, msgSender) returns (uint216 value) {
         uint caller = repo.userNo[msgSender];
         value = uint216(repo.lockers.withdrawValue(snOfLocker, hashKey, salt, caller));
         if (value > 0) {
@@ -144,9 +180,9 @@ library UsersRepo {
 
     function checkLocker(
         Repo storage repo,
-        address msgSender,
-        uint256 snOfLocker
-    ) public view returns (uint216 value) {
+        uint256 snOfLocker,
+        address msgSender
+    ) public onlyPrimeKey(repo, msgSender) view returns (uint216 value) {
         uint caller = repo.userNo[msgSender];
         value = uint216(repo.lockers.checkLocker(snOfLocker, caller));
     }
@@ -155,29 +191,51 @@ library UsersRepo {
     // ##    User & Members    ##
     // ##########################
 
+    function infoParser(uint256 info) public pure returns(User memory user) {
+        user = User({
+            isCOA: false,
+            counterOfV: 0,
+            balance: 0,
+            primeKey: Key({
+                pubKey: address(0),
+                seqOfKey: uint16(info >> 240),
+                dataOfKey: uint32(info >> 208),
+                dateOfKey: uint48(info >> 160)
+            }),
+            backupKey: Key({
+                pubKey: address(0),
+                seqOfKey: uint16(info >> 144),
+                dataOfKey: uint32(info >> 112),
+                dateOfKey: uint48(info >> 64)
+            })
+        });
+    }
+
     // ==== reg user ====
 
     function _increaseCounterOfUsers(Repo storage repo) private returns (uint40 seq) {
-        repo.users[0].attr++;
-        seq = uint40(repo.users[0].attr);
+        repo.users[0].primeKey.dateOfKey++;
+        seq = uint40(repo.users[0].primeKey.dateOfKey);
     }
 
-    function regUser(Repo storage repo, address msgSender) public {
+    function regUser(Repo storage repo, uint256 info, address msgSender) public {
 
         require(!isKey(repo, msgSender), "UR.RU: used key");
 
-        uint40 seqOfUser = _increaseCounterOfUsers(repo);
+        uint seqOfUser = _increaseCounterOfUsers(repo);
 
         repo.userNo[msgSender] = seqOfUser;
 
-        User storage user = repo.users[seqOfUser];
+        User memory user = infoParser(info);
 
-        user.primeKey = msgSender;
+        user.primeKey.pubKey = msgSender;
 
         if (_isContract(msgSender)) {
             user.isCOA = true;
             user.balance = repo.reward.coaRewards;
         } else user.balance = repo.reward.eoaRewards;
+
+        repo.users[seqOfUser] = user;
     }
 
     function _isContract(address acct) private view returns (bool) {
@@ -188,19 +246,19 @@ library UsersRepo {
         return size != 0;
     }
 
-    function setBackupKey(Repo storage repo, address msgSender, address bKey) 
-        public 
+    function setBackupKey(Repo storage repo, address bKey, address msgSender) 
+        public onlyPrimeKey(repo, msgSender)
     {
         require (!isKey(repo, bKey), "UR.SBK: used key");
 
-        uint40 caller = repo.userNo[msgSender];
+        uint caller = repo.userNo[msgSender];
 
         User storage user = repo.users[caller];
 
-        require(user.backupKey == address(0), 
+        require(user.backupKey.pubKey == address(0), 
             "UR.SBK: already set backupKey");
         
-        user.backupKey = bKey;
+        user.backupKey.pubKey = bKey;
 
         repo.userNo[bKey] = caller;
     }
@@ -212,15 +270,15 @@ library UsersRepo {
     // ==== options ====
 
     function counterOfUsers(Repo storage repo) public view returns (uint40) {
-        return uint40(repo.users[0].attr);
+        return uint40(repo.users[0].primeKey.dateOfKey);
     }
 
     function getOwner(Repo storage repo) public view returns (address) {
-        return repo.users[0].primeKey;
+        return repo.users[0].primeKey.pubKey;
     }
 
     function getBookeeper(Repo storage repo) public view returns (address) {
-        return repo.users[0].backupKey;
+        return repo.users[0].backupKey.pubKey;
     }
 
     function getRewardSetting(Repo storage repo) 
@@ -235,16 +293,20 @@ library UsersRepo {
         return repo.userNo[key] > 0;
     }
 
+    function isCOA(Repo storage repo, uint256 acct) external view returns (bool) {
+        return repo.users[acct].isCOA;
+    }
+
     function getUser(Repo storage repo, address msgSender) 
         public view returns (User memory)
     {
         return repo.users[repo.userNo[msgSender]];
     }
 
-    function getUserNo(Repo storage repo, address msgSender, address targetAddr) 
+    function getUserNo(Repo storage repo, address targetAddr, address msgSender) 
         public returns (uint40) 
     {
-        uint40 target = repo.userNo[targetAddr];
+        uint target = repo.userNo[targetAddr];
 
         if (msgSender != targetAddr) {
             uint64 fee = _chargeFee(repo, target);
@@ -253,13 +315,13 @@ library UsersRepo {
             else _awardBonus(repo, msgSender, fee);
         } else return getMyUserNo(repo, msgSender);
 
-        return target;
+        return uint40(target);
     }
 
     function getMyUserNo(Repo storage repo, address msgSender) 
         public view returns(uint40) 
     {
-        return repo.userNo[msgSender];
+        return uint40(repo.userNo[msgSender]);
     }
 
     function _awardBonus(Repo storage repo, address querySender, uint fee) 
@@ -284,6 +346,6 @@ library UsersRepo {
         if (u.balance >= fee) {
             u.balance -= fee;
             u.counterOfV++;
-        } else revert("RC.chargeFee: insufficient balance");
+        } else revert("RC.CF: insufficient balance");
     }
 }

@@ -19,9 +19,9 @@ contract BookOfSHA is IBookOfSHA, FilesFolder {
     //##    写接口    ##
     //##################
 
-    function changePointer(address body) external onlyDirectKeeper onlyRegistered(body) {
-        if (_pointer != address(0)) setStateOfFile(_pointer, uint8(StateOfFile.Revoked));
-        setStateOfFile(body, uint8(StateOfFile.Executed));
+    function changePointer(address body) external onlyDirectKeeper {
+        if (_pointer != address(0)) setStateOfFile(_pointer, uint8(FilesRepo.StateOfFile.Revoked));
+        // setStateOfFile(body, uint8(StateOfFile.Executed));
         _pointer = body;
         emit ChangePointer(body);
     }

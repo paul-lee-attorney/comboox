@@ -124,7 +124,7 @@ contract DragAlong is IAlongs, AccessControl {
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
         
-        if (_gk.getBOA().getHeadOfFile(ia).state != uint8(IFilesFolder.StateOfFile.Circulated))
+        if (_gk.getBOA().getHeadOfFile(ia).state != uint8(FilesRepo.StateOfFile.Circulated))
             return false;
 
         if (

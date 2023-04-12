@@ -52,10 +52,11 @@ library RulesParser {
         bool impliedConsent;
         bool partyAsConsent;
         bool againstShallBuy;
-        uint16 shaExecDays;
-        uint16 reviewDays;
-        uint16 votingDays;
-        uint16 execDaysForPutOpt;
+        uint8 shaExecDays;
+        uint8 reviewDays;
+        uint8 reconsiderDays;
+        uint8 votingDays;
+        uint8 execDaysForPutOpt;
         uint40[2] vetoers;
     }
 
@@ -71,11 +72,12 @@ library RulesParser {
             impliedConsent: uint8(sn >> 160) == 1,
             partyAsConsent: uint8(sn >> 152) == 1,
             againstShallBuy: uint8(sn >> 144) == 1,
-            shaExecDays: uint16(sn >> 128),
-            reviewDays: uint16(sn >> 112),
-            votingDays: uint16(sn >> 96),
-            execDaysForPutOpt: uint16(sn >> 80),
-            vetoers: [uint40(sn >> 40), uint40(sn)]
+            shaExecDays: uint8(sn >> 136),
+            reviewDays: uint8(sn >> 128),
+            reconsiderDays: uint8(sn >> 120),
+            votingDays: uint8(sn >> 112),
+            execDaysForPutOpt: uint8(sn >> 104),
+            vetoers: [uint40(sn >> 64), uint40(sn >> 24)]
         });
     }
 

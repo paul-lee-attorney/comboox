@@ -73,7 +73,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external {
-        IBOAKeeper(_keepers[0]).circulateIA(body, _msgSender(), docUrl, docHash);
+        IBOAKeeper(_keepers[0]).circulateIA(body, docUrl, docHash, _msgSender());
     }
 
     function signIA(address ia, bytes32 sigHash) external {
@@ -175,8 +175,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   BOGKeeper   ##
     // ###################
 
-    function createCorpSeal() external onlyDirectKeeper {
-        IBOGKeeper(_keepers[2]).createCorpSeal();
+    function createCorpSeal(uint info) external onlyDirectKeeper {
+        IBOGKeeper(_keepers[2]).createCorpSeal(info);
     }
 
     function createBoardSeal() external onlyDirectKeeper {
@@ -273,8 +273,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOHKeeper(_keepers[3]).createSHA(version, msg.sender, _msgSender());
     }
 
-    function circulateSHA(address body, uint256 seqOfVR, bytes32 docUrl, bytes32 docHash) external {
-        IBOHKeeper(_keepers[3]).circulateSHA(body, seqOfVR, docUrl, docHash, _msgSender());
+    function circulateSHA(address body, bytes32 docUrl, bytes32 docHash) external {
+        IBOHKeeper(_keepers[3]).circulateSHA(body, docUrl, docHash, _msgSender());
     }
 
     function signSHA(address sha, bytes32 sigHash) external  {

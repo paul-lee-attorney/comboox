@@ -17,33 +17,34 @@ import "./keepers/IGeneralKeeper.sol";
 interface IRegCenter {
 
     enum TypeOfDoc{
-        BOAKeeper,          // 0
-        BODKeeper,          // 1
-        BOGKeeper,          // 2
-        BOHKeeper,          // 3
-        BOOKeeper,          // 4
-        BOPKeeper,          // 5
-        BOSKeeper,          // 6
-        ROMKeeper,          // 7
-        ROSKeeper,          // 8
-        SHAKeeper,          // 9
-        BookOfIA,           // 10
-        BookOfDirectors,    // 11
-        BookOfGM,           // 12
-        BookOfSHA,          // 13
-        BookOfOptions,      // 14
-        BookOfPledges,      // 15
-        BookOfShares,       // 16
-        RegisterOfMembers,  // 17
-        RegisterOfSwaps,    // 18
-        GeneralKeeper,      // 19
-        InvestmentAgreement,// 20
-        ShareholdersAgreement,// 21
-        AntiDilution,       // 22
-        DragAlong,          // 23
-        LockUp,             // 24
-        Options,            // 25
-        TagAlong            // 26
+        ZeroPoint,
+        BOAKeeper,          // 1
+        BODKeeper,          // 2
+        BOGKeeper,          // 3
+        BOHKeeper,          // 4
+        BOOKeeper,          // 5
+        BOPKeeper,          // 6
+        BOSKeeper,          // 7
+        ROMKeeper,          // 8
+        ROSKeeper,          // 9
+        SHAKeeper,          // 10
+        BookOfIA,           // 11
+        BookOfDirectors,    // 12
+        BookOfGM,           // 13
+        BookOfSHA,          // 14
+        BookOfOptions,      // 15
+        BookOfPledges,      // 16
+        BookOfShares,       // 17
+        RegisterOfMembers,  // 18
+        RegisterOfSwaps,    // 19
+        GeneralKeeper,      // 20
+        InvestmentAgreement,// 21
+        ShareholdersAgreement,// 22
+        AntiDilution,       // 23
+        DragAlong,          // 24
+        LockUp,             // 25
+        Options,            // 26
+        TagAlong            // 27
     }
 
     // ##################
@@ -60,6 +61,8 @@ interface IRegCenter {
 
     // ==== Points ====
 
+    event MintPoints(uint256 indexed to, uint256 amt);
+
     event TransferPoints(uint256 indexed from, uint256 indexed to, uint256 amt);
 
     event LockPoints(uint256 indexed snOfLocker, uint256 value);
@@ -73,8 +76,9 @@ interface IRegCenter {
     
     event SetTemplate(uint256 indexed typeOfDoc, uint256 version, address indexed body);
 
-    // event CreateDoc(uint256 indexed snOfDoc, address indexed body);
+    event CreateDoc(uint256 indexed snOfDoc, address indexed body);
 
+    event CreateComp(address indexed generalKeeper);
 
     // ##################
     // ##    写端口    ##
@@ -108,7 +112,7 @@ interface IRegCenter {
 
     // ==== User ====
 
-    function regUser() external;
+    function regUser(uint256 info) external;
 
     function setBackupKey(address bKey) external;
 
@@ -125,8 +129,7 @@ interface IRegCenter {
 
     // ==== Comp ====
 
-    function createComp(address primeKeyOfKeeper, address primeKeyOfOwner) external 
-        returns(DocsRepo.Doc[20] memory docs);
+    function createComp(address primeKeyOfKeeper) external;
 
     // ##################
     // ##   查询端口   ##

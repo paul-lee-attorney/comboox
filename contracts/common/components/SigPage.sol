@@ -22,18 +22,19 @@ contract SigPage is ISigPage, AccessControl {
     //##    设置接口     ##
     //####################
 
-    function setSigDeadline(bool initPage, uint sigDeadline) external onlyAttorney
-    {
-        if (initPage) _sigPages[0].setSigDeadline(sigDeadline);
-        else _sigPages[1].setSigDeadline(sigDeadline);
-
-        emit SetSigDeadline(initPage, sigDeadline);
+    function circulateDoc() external onlyKeeper {
+        _sigPages[0].circulateDoc();
+        _sigPages[1].circulateDoc();
+        emit CirculateDoc();
     }
 
-    function regSig(uint256 seqOfDeal, uint256 signer, uint sigDate, bytes32 sigHash)
-        external onlyKeeper returns (bool flag)
+    function setTiming(bool initPage, uint signingDays, uint closingDays) 
+        external attorneyOrKeeper
     {
-        flag = _sigPages[1].regSig(seqOfDeal, signer, sigDate, sigHash);
+        initPage ? _sigPages[0].setTiming(signingDays, closingDays) :
+            _sigPages[1].setTiming(signingDays, closingDays);
+
+        emit SetTiming(initPage, signingDays, closingDays);
     }
 
     function addBlank(bool beBuyer, uint256 seqOfDeal, uint256 acct)
@@ -43,13 +44,19 @@ contract SigPage is ISigPage, AccessControl {
     }
 
     function signDoc(bool initPage, uint256 caller, bytes32 sigHash)
-        external onlyKeeper
+        external onlyKeeper returns(bool)
     {
         if (initPage) {
-            _sigPages[0].signDoc(caller, sigHash);
+            return _sigPages[0].signDoc(caller, sigHash);
         } else {
-            _sigPages[1].signDoc(caller, sigHash);
+            return _sigPages[1].signDoc(caller, sigHash);
         }
+    }
+
+    function regSig(uint256 seqOfDeal, uint256 signer, uint sigDate, bytes32 sigHash)
+        external onlyKeeper returns (bool flag)
+    {
+        flag = _sigPages[1].regSig(seqOfDeal, signer, sigDate, sigHash);
     }
 
     //##################
@@ -62,13 +69,37 @@ contract SigPage is ISigPage, AccessControl {
         return initPage ? _sigPages[0].blanks[0].sig :
             _sigPages[1].blanks[0].sig;
     }
-    
+
+    function circulated() external view returns(bool) {
+        return _sigPages[0].circulated();
+    }
+        
     function established() external view
         returns (bool flag) 
     {
         flag =  _sigPages[1].buyers.length() > 0 ?
                     _sigPages[1].established() && _sigPages[0].established() :
                     _sigPages[0].established();
+    }
+
+    function getCirculateDate() external view returns(uint48) {
+        return _sigPages[0].getCirculateDate();
+    }
+
+    function getSigningDays() external view returns(uint16) {
+        return _sigPages[0].getSigningDays();
+    }
+
+    function getClosingDays() external view returns(uint16) {
+        return _sigPages[0].getClosingDays();
+    }
+
+    function getSigDeadline() external view returns(uint48) {
+        return _sigPages[0].getSigDeadline();
+    }
+
+    function getClosingDeadline() external view returns(uint48) {
+        return _sigPages[0].getClosingDeadline();
     }
 
     function isBuyer(bool initPage, uint256 acct)
@@ -82,6 +113,13 @@ contract SigPage is ISigPage, AccessControl {
         public view returns(bool flag)
     {
         flag = initPage ? _sigPages[0].sellers.contains(acct) :
+            _sigPages[1].sellers.contains(acct);
+    }
+
+    function isParty(uint256 acct) external view returns (bool flag) {
+        flag = _sigPages[0].buyers.contains(acct) ||
+            _sigPages[0].sellers.contains(acct) ||
+            _sigPages[1].buyers.contains(acct) ||
             _sigPages[1].sellers.contains(acct);
     }
 
@@ -116,13 +154,6 @@ contract SigPage is ISigPage, AccessControl {
         sellers.merge(getSellers(false));
         
         parties = buyers.merge(sellers);
-    }
-
-    function isParty(uint256 acct) external view returns (bool flag) {
-        flag = _sigPages[0].buyers.contains(acct) ||
-            _sigPages[0].sellers.contains(acct) ||
-            _sigPages[1].buyers.contains(acct) ||
-            _sigPages[1].sellers.contains(acct);
     }
 
     function getSigOfParty(bool initPage, uint256 acct) 

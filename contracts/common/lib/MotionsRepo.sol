@@ -182,9 +182,9 @@ library MotionsRepo {
         body = Body({
             proposer: uint40(caller),
             proposeDate: timestamp,
-            shareRegDate: timestamp + uint48(vr.shaExecDays) * 86400,
-            voteStartDate: timestamp + uint48(vr.reviewDays) * 86400,
-            voteEndDate: timestamp + uint48(vr.votingDays) * 86400,
+            shareRegDate: timestamp + uint48(vr.reconsiderDays) * 86400,
+            voteStartDate: timestamp + uint48(vr.reconsiderDays) * 86400,
+            voteEndDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votingDays)) * 86400,
             para: 0,
             state: uint8(StateOfMotion.Proposed)
         });

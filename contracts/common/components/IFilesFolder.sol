@@ -7,63 +7,47 @@
 
 pragma solidity ^0.8.8;
 
-import "../lib/EnumerableSet.sol";
+
+// import "../lib/EnumerableSet.sol";
+import "../lib/FilesRepo.sol";
 // import "../lib/DocsRepo.sol";
 import "../lib/RulesParser.sol";
 
 interface IFilesFolder {
-    
-    enum StateOfFile {
-        ZeroPoint,  // 0
-        Created,    // 1
-        Circulated, // 2
-        Established,// 3
-        Proposed,   // 4
-        Voted,      // 5
-        Executed,   // 6
-        Revoked     // 7
-    }
 
-    struct Head {
-        uint256 snOfDoc;
-        uint48 shaExecDeadline;
-        uint48 proposeDeadline;
-        uint8 state;        
-    }
+    //#############
+    //##  Event  ##
+    //#############
 
-    struct Ref {
-        bytes32 docUrl;
-        bytes32 docHash;
-    }
+    event UpdateStateOfFile(address indexed body, uint indexed state);
 
-    struct File {
-        Head head;
-        Ref ref;
-    }
-
-    struct Folder {
-        mapping(address => File) files;
-        EnumerableSet.AddressSet filesList;
-    }
-
-    //##############
-    //##  Event   ##
-    //##############
-
-    event UpdateStateOfFile(address indexed body, uint state);
-
-    //##################
-    //##    写接口    ##
-    //##################
+    //#################
+    //##  Write I/O  ##
+    //#################
 
     function regFile(uint256 snOfDoc, address body) external;
 
-    function circulateDoc(
+    function circulateFile(
         address body,
-        RulesParser.VotingRule memory rule,
+        uint16 signingDays,
+        uint16 closingDays,
+        RulesParser.VotingRule memory vr,
         bytes32 docUrl,
         bytes32 docHash
     ) external;
+
+    function establishFile(address body) external;
+
+    function proposeFile(
+        address body,
+        RulesParser.VotingRule memory vr
+    ) external;
+
+    function voteCountingForFile(address body, bool approved) external;
+
+    function execFile(address body) external;
+
+    function revokeFile(address body) external;
 
     function setStateOfFile(address body, uint state) external;
 
@@ -71,16 +55,21 @@ interface IFilesFolder {
     //##   read I/O   ##
     //##################
 
-    function isRegistered(address body) external view returns (bool);
+    function isRegistered(address body) external view 
+        returns (bool);
 
-    function qtyOfFiles() external view returns (uint256);
+    function qtyOfFiles() external view 
+        returns (uint256);
 
-    function filesList() external view returns (address[] memory);
+    function getFilesList() external view 
+        returns (address[] memory);
 
-    function getHeadOfFile(address body) external view
-        returns (Head memory head);
+    function getSNOfFile(address body) external view 
+        returns (uint256);
 
-    function getRefOfFile(address body)
-        external view returns (Ref memory ref); 
+    function getHeadOfFile(address body) external view 
+        returns (FilesRepo.Head memory head);
 
+    function getRefOfFile(address body) external view 
+        returns (FilesRepo.Ref memory ref);
 }
