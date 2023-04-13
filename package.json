@@ -1,24 +1,5 @@
 {
   "name": "comboox",
-<<<<<<< HEAD
-  "version": "1.0.0",
-  "description": "company statutory books keeping system",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "github.com/paul-lee-attorny/comboox"
-  },
-  "keywords": [
-    "company",
-    "booking",
-    "system"
-  ],
-  "author": "Paul Lee @ Jingtian & Gongcheng",
-  "license": "UNLICENSED",
-=======
   "version": "2.0.0",
   "description": "company statutory books system",
   "main": "index.js",
@@ -41,7 +22,6 @@
     "url": "https://github.com/paul-lee-attorney/comboox/issues"
   },
   "homepage": "https://github.com/paul-lee-attorney/comboox#readme",
->>>>>>> 2d86bdb (update hardhat platform)
   "devDependencies": {
     "hardhat": "^2.13.1"
   }
