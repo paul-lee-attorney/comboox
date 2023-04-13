@@ -62,19 +62,19 @@ library DocsRepo {
             head.data;
     }
 
-    function init(Repo storage repo, uint caller) 
+    function init(Repo storage repo, address msgSender) 
         public returns(bool flag)
     {
-        if (getKeeper(repo) == 0) {
-            flag = _setKeeper(repo, caller);
+        if (getKeeper(repo) == address(0)) {
+            flag = _setKeeper(repo, msgSender);
         }
     }
 
-    function turnOverRepoKey(Repo storage repo, uint keeper, uint caller) 
+    function turnOverRepoKey(Repo storage repo, address keeper, address msgSender) 
         public returns (bool flag) 
     {
-        require(getKeeper(repo) == caller, "DR.TORK: not keeper");
-        if (caller != keeper) {
+        require(getKeeper(repo) == msgSender, "DR.TORK: not keeper");
+        if (msgSender != keeper) {
             flag = _setKeeper(repo, keeper);
         }
     } 
@@ -83,12 +83,13 @@ library DocsRepo {
         Repo storage repo,
         uint256 snOfDoc, 
         address body,
+        address msgSender,
         uint caller
     ) public returns (Doc memory doc) {
         doc.head = snParser(snOfDoc);
 
         require(doc.head.typeOfDoc > 0, "DR.ST: zero typeOfDoc");
-        require(caller == getKeeper(repo), "DR.ST: not keeper");
+        require(msgSender == getKeeper(repo), "DR.ST: not keeper");
 
         doc.head.creator = uint40(caller);
         doc.head.version = _increaseCounterOfVersions(repo, doc.head.typeOfDoc);
@@ -125,9 +126,9 @@ library DocsRepo {
         }
     }
 
-    function _setKeeper(Repo storage repo, uint keeper) private returns (bool flag) {
-        if (keeper > 0) {
-            repo.docs[0][0][0].head.creator = uint40(keeper);
+    function _setKeeper(Repo storage repo, address keeper) private returns (bool flag) {
+        if (keeper > address(0)) {
+            repo.docs[0][0][0].body = keeper;
             flag = true;
         }
     }
@@ -222,8 +223,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         seq = repo.docs[typeOfDoc][version][0].head.seqOfDoc;
     }
 
-    function getKeeper (Repo storage repo) public view returns(uint40 keeper) {
-        keeper = repo.docs[0][0][0].head.creator;
+    function getKeeper (Repo storage repo) public view returns(address keeper) {
+        keeper = repo.docs[0][0][0].body;
     }
 
     // ==== SingleCheck ====

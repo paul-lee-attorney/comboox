@@ -85,7 +85,8 @@ async function main() {
 		"UsersRepo": libUsersRepo.address
 	};
 	let rc = await deployTool(signers[0], "RegCenter", libraries);
-	await rc.coonect(signers[1]).regUser(0);
+	console.log("deployed RC with owner: ", await rc.getOwner());
+	console.log("creator of RC: ", signers[0].address, "\n");
 
 	// ==== Deploy Templates ====
 
@@ -250,7 +251,10 @@ async function main() {
 
 	// ==== SetTemplate ====
 	await rc.setBackupKey(signers[1].address);
-	console.log("set up bookeeper: ", signers[1].address, "\n");
+	console.log("set up bookeeper: ", await rc.getBookeeper(), "\n");
+
+	await rc.connect(signers[1]).initDocsRepo(signers[1].address);
+	console.log("initDocsRepo with keeper: ", await rc.getDocKeeper(), "\n");
 
 	await rc.connect(signers[1]).setTemplate(codifyHead("0001"), boaKeeper.address);
 	console.log("set template for BOAKeeper at address: ", boaKeeper.address, "\n");

@@ -160,7 +160,7 @@ interface IRegCenter {
 
     function counterOfDocs(uint256 typeOfDoc, uint256 version) external view returns(uint64 seq);
 
-    function getDocKeeper () external view returns(uint40 keeper);
+    function getDocKeeper () external view returns(address keeper);
 
     // ==== SingleCheck ====
 

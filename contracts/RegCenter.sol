@@ -113,17 +113,17 @@ contract RegCenter is IRegCenter {
     function initDocsRepo(address docKeeper) external {
         require(msg.sender == _users.getBookeeper(),
             "RC.IDR: not keeper");
-        if (_docs.init(_users.userNo[docKeeper]))
+        if (_docs.init(docKeeper))
             emit SetDocKeeper(docKeeper);
     }
 
     function turnOverKeyOfDocsRepo(address newKeeper) external {
-        if (_docs.turnOverRepoKey(_users.userNo[newKeeper], getMyUserNo()))
+        if (_docs.turnOverRepoKey(newKeeper, msg.sender))
             emit SetDocKeeper(newKeeper);
     }
 
     function setTemplate(uint256 snOfDoc, address body) external {
-        DocsRepo.Doc memory doc = _docs.setTemplate(snOfDoc, body, getMyUserNo());
+        DocsRepo.Doc memory doc = _docs.setTemplate(snOfDoc, body, msg.sender, getMyUserNo());
         emit SetTemplate(doc.head.typeOfDoc, doc.head.version, doc.body);
     }
 
@@ -254,7 +254,7 @@ contract RegCenter is IRegCenter {
         seq = _docs.counterOfDocs(typeOfDoc, version);
     }
 
-    function getDocKeeper () external view returns(uint40 keeper) {
+    function getDocKeeper () external view returns(address keeper) {
         keeper = _docs.getKeeper();
     }
 
