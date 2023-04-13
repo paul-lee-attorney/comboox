@@ -25,7 +25,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
     modifier onlyBOS() {
         require(
-            msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfShares)),
+            msg.sender == address(_gk.getBOS()),
             "ROM.mf.OBOS: msgSender is not BOS"
         );
         _;

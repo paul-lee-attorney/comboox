@@ -73,7 +73,7 @@ interface IGeneralKeeper {
 
     function isKeeper(address caller) external view returns (bool flag);
 
-    function getBook(uint256) external view returns(address book);
+    function getKeeper(uint256) external view returns(address keeper);
 
     function setBookeeper(uint256 title, address keeper) external;
 

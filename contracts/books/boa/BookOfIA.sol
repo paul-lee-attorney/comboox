@@ -15,7 +15,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
     using DTClaims for DTClaims.Claims;
     using EnumerableSet for EnumerableSet.UintSet;
     using FRClaims for FRClaims.Claims;
-    using RulesParser for uint256;
+    // using RulesParser for uint256;
     using TopChain for TopChain.Chain;
 
     // ia => frClaims

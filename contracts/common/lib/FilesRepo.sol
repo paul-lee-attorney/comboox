@@ -127,14 +127,9 @@ library FilesRepo {
             "FR.EF: Doc not circulated"
         );
 
-        uint48 timestamp = uint48(block.timestamp);
-
         File storage file = repo.files[body];
 
-        require(timestamp <= file.head.signingDeadline, "FR.SF: missed signingDeadline");
-
-        // file.head.shaExecDeadline = timestamp + uint48(vr.shaExecDays) * 86400;
-        // file.head.proposeDeadline = file.head.shaExecDeadline + uint48(vr.reviewDays) * 86400;
+        require(block.timestamp <= file.head.signingDeadline, "FR.SF: missed signingDeadline");
 
         file.head.state = uint8(StateOfFile.Established);
 

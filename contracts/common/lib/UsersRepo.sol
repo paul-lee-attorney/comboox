@@ -32,7 +32,7 @@ library UsersRepo {
         uint32 coaRewards;
         uint32 offAmt;
         uint16 discRate;
-        uint16 distRatio;
+        uint16 refundRatio;
         uint64 ceiling;
         uint64 floor;
     }
@@ -42,7 +42,6 @@ library UsersRepo {
         mapping(uint256 => User) users;
         // key => userNo
         mapping(address => uint) userNo;
-        Reward reward;
         LockersRepo.Repo lockers;       
     }
 
@@ -80,7 +79,7 @@ library UsersRepo {
             coaRewards: uint32(sn >> 192),
             offAmt: uint32(sn >> 160),
             discRate: uint16(sn >> 144),
-            distRatio: uint16(sn >> 128),
+            refundRatio: uint16(sn >> 128),
             ceiling: uint64(sn >> 64),
             floor: uint64(sn)
         });
@@ -89,7 +88,23 @@ library UsersRepo {
     function setReward(Repo storage repo, uint256 snOfReward, address msgSender) 
         public onlyOwner(repo, msgSender) 
     {
-        repo.reward = rewardParser(snOfReward);
+        Reward memory rw = rewardParser(snOfReward);
+                
+        User storage opt = repo.users[0];
+
+        opt.counterOfV = rw.offAmt;
+        opt.primeKey = Key({
+            pubKey : address(uint160(rw.ceiling)),
+            seqOfKey: rw.discRate,
+            dataOfKey: rw.eoaRewards,
+            dateOfKey: 0
+        }); 
+        opt.backupKey = Key({
+            pubKey : address(uint160(rw.floor)),
+            seqOfKey : rw.refundRatio,
+            dataOfKey : rw.coaRewards,
+            dateOfKey: 0
+        });
     }
 
     function transferOwnership(Repo storage repo, address newOwner, address msgSender) 
@@ -230,10 +245,12 @@ library UsersRepo {
 
         user.primeKey.pubKey = msgSender;
 
+        Reward memory rw = getRewardSetting(repo);
+
         if (_isContract(msgSender)) {
             user.isCOA = true;
-            user.balance = repo.reward.coaRewards;
-        } else user.balance = repo.reward.eoaRewards;
+            user.balance = rw.coaRewards;
+        } else user.balance = rw.eoaRewards;
 
         repo.users[seqOfUser] = user;
     }
@@ -274,17 +291,27 @@ library UsersRepo {
     }
 
     function getOwner(Repo storage repo) public view returns (address) {
-        return repo.users[0].primeKey.pubKey;
+        return repo.users[1].primeKey.pubKey;
     }
 
     function getBookeeper(Repo storage repo) public view returns (address) {
-        return repo.users[0].backupKey.pubKey;
+        return repo.users[2].primeKey.pubKey;
     }
 
     function getRewardSetting(Repo storage repo) 
-        public view returns (Reward memory)
+        public view returns (Reward memory rw)
     {
-        return repo.reward;
+        User memory opt = repo.users[0];
+
+        rw = Reward({
+            eoaRewards: opt.primeKey.dataOfKey,
+            coaRewards: opt.backupKey.dataOfKey,
+            offAmt: opt.counterOfV,
+            discRate: opt.primeKey.seqOfKey,
+            refundRatio: opt.backupKey.seqOfKey,
+            ceiling: uint64(uint160(opt.primeKey.pubKey)),
+            floor: uint64(uint160(opt.backupKey.pubKey)) 
+        });
     }
 
     // ==== register ====
@@ -308,6 +335,8 @@ library UsersRepo {
     {
         uint target = repo.userNo[targetAddr];
 
+        require(target > 0, "UR.GUN: not registered");
+
         if (msgSender != targetAddr) {
             uint64 fee = _chargeFee(repo, target);
 
@@ -327,9 +356,11 @@ library UsersRepo {
     function _awardBonus(Repo storage repo, address querySender, uint fee) 
         private 
     {
+        Reward memory rw = getRewardSetting(repo);
+
         uint sender = repo.userNo[querySender];
         if (sender > 0) {
-            repo.users[sender].balance += uint64(fee * repo.reward.distRatio / 10000);
+            repo.users[sender].balance += uint64(fee * rw.refundRatio / 10000);
         }
     }
 
@@ -338,10 +369,12 @@ library UsersRepo {
     {
         User storage u = repo.users[user];
 
-        uint32 coupon = u.counterOfV * repo.reward.discRate + repo.reward.offAmt;
-        fee = (coupon < (repo.reward.ceiling - repo.reward.floor)) ? 
-                    (repo.reward.ceiling - coupon) : 
-                    repo.reward.floor;
+        Reward memory rw = getRewardSetting(repo);
+        
+        uint32 coupon = u.counterOfV * rw.discRate + rw.offAmt;
+        fee = (coupon < (rw.ceiling - rw.floor)) ? 
+                    (rw.ceiling - coupon) : 
+                    rw.floor;
 
         if (u.balance >= fee) {
             u.balance -= fee;

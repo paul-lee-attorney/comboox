@@ -37,6 +37,7 @@ async function main() {
 	const libDealsRepo = await deployTool(signers[0], "DealsRepo", libraries);
 	const libDocsRepo = await deployTool(signers[0], "DocsRepo", libraries);
 	const libDTClaims = await deployTool(signers[0], "DTClaims", libraries);
+	const libFilesRepo = await deployTool(signers[0], "FilesRepo", libraries);
 	const libLockersRepo = await deployTool(signers[0], "LockersRepo", libraries);
 	const libOfficersRepo = await deployTool(signers[0], "OfficersRepo", libraries);
 	const libPledgesRepo = await deployTool(signers[0], "PledgesRepo", libraries);
@@ -182,8 +183,8 @@ async function main() {
 		"RolesRepo": libRolesRepo.address,
 		"DTClaims": libDTClaims.address,
 		"EnumerableSet": libEnumerableSet.address,
+		"FilesRepo": libFilesRepo.address,
 		"FRClaims": libFRClaims.address,
-		"RulesParser": libRulesParser.address,
 		"TopChain": libTopChain.address
 	}
 	let boa = await deployTool(signers[0], "BookOfIA", libraries);
@@ -205,7 +206,7 @@ async function main() {
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
-		"EnumerableSet": libEnumerableSet.address
+		"FilesRepo": libFilesRepo.address
 	}
 	let boh = await deployTool(signers[0], "BookOfSHA", libraries);
 
@@ -333,29 +334,29 @@ async function main() {
 
 	// ==== Reg Users ====
 
-	await rc.connect(signers[2]).regUser();
-	console.log("regUser: ", signers[2].address, " at No: ", parseInt( await rc.connect(signers[2]).getMyUserNo()));
+	await rc.connect(signers[2]).regUser(0);
+	console.log("regUser: ", signers[2].address, " with No: ", parseInt( await rc.connect(signers[2]).getMyUserNo()));
 
-	await rc.connect(signers[3]).regUser();
-	console.log("regUser: ", signers[3].address, " at No: ", parseInt( await rc.connect(signers[3]).getMyUserNo()));
+	await rc.connect(signers[3]).regUser(0);
+	console.log("regUser: ", signers[3].address, " with No: ", parseInt( await rc.connect(signers[3]).getMyUserNo()));
 
-	await rc.connect(signers[4]).regUser();
-	console.log("regUser: ", signers[4].address, " at No: ", parseInt( await rc.connect(signers[4]).getMyUserNo()));
+	await rc.connect(signers[4]).regUser(0);
+	console.log("regUser: ", signers[4].address, " with No: ", parseInt( await rc.connect(signers[4]).getMyUserNo()));
 
-	await rc.connect(signers[5]).regUser();
-	console.log("regUser: ", signers[5].address, " at No: ", parseInt( await rc.connect(signers[5]).getMyUserNo()));
+	await rc.connect(signers[5]).regUser(0);
+	console.log("regUser: ", signers[5].address, " with No: ", parseInt( await rc.connect(signers[5]).getMyUserNo()));
 	
-	await rc.connect(signers[6]).regUser();
-	console.log("regUser: ", signers[6].address, " at No: ", parseInt( await rc.connect(signers[6]).getMyUserNo()));
+	await rc.connect(signers[6]).regUser(0);
+	console.log("regUser: ", signers[6].address, " with No: ", parseInt( await rc.connect(signers[6]).getMyUserNo()));
 
-	await rc.connect(signers[7]).regUser();
-	console.log("regUser: ", signers[7].address, " at No: ", parseInt( await rc.connect(signers[7]).getMyUserNo()));
+	await rc.connect(signers[7]).regUser(0);
+	console.log("regUser: ", signers[7].address, " with No: ", parseInt( await rc.connect(signers[7]).getMyUserNo()));
 
-	await rc.connect(signers[8]).regUser();
-	console.log("regUser: ", signers[8].address, " at No: ", parseInt( await rc.connect(signers[8]).getMyUserNo()));
+	await rc.connect(signers[8]).regUser(0);
+	console.log("regUser: ", signers[8].address, " with No: ", parseInt( await rc.connect(signers[8]).getMyUserNo()));
 
-	await rc.connect(signers[9]).regUser();
-	console.log("regUser: ", signers[9].address, " at No: ", parseInt( await rc.connect(signers[9]).getMyUserNo()));
+	await rc.connect(signers[9]).regUser(0);
+	console.log("regUser: ", signers[9].address, " with No: ", parseInt( await rc.connect(signers[9]).getMyUserNo()));
 
 };
 

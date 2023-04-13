@@ -17,8 +17,9 @@ contract RegCenter is IRegCenter {
     UsersRepo.Repo private _users;
     DocsRepo.Repo private _docs;
     
-    constructor() {
-        _users.users[0].primeKey.pubKey = msg.sender;
+    constructor(uint256 info) {
+        // _users.users[0].primeKey.pubKey = msg.sender;
+        _users.regUser(info, msg.sender);
     }
 
     // ########################
@@ -138,67 +139,67 @@ contract RegCenter is IRegCenter {
     // ##    Comp   ##
     // ###############
 
-    function createComp(address primeKeyOfKeeper) external 
-    {
-        DocsRepo.Doc[20] memory docs;
+    // function createComp(address primeKeyOfKeeper) external 
+    // {
+    //     DocsRepo.Doc[20] memory docs;
 
-        address primeKeyOfOwner = msg.sender;
-        uint40 owner = _users.getMyUserNo(primeKeyOfOwner);
+    //     address primeKeyOfOwner = msg.sender;
+    //     uint40 owner = _users.getMyUserNo(primeKeyOfOwner);
 
-        docs[19] = _createDocAtLatestVersion(20, primeKeyOfOwner);
-        IAccessControl(docs[19].body).init(
-            owner,
-            address(this),
-            address(this),
-            docs[19].body
-        );
+    //     docs[19] = _createDocAtLatestVersion(20, primeKeyOfOwner);
+    //     IAccessControl(docs[19].body).init(
+    //         owner,
+    //         address(this),
+    //         address(this),
+    //         docs[19].body
+    //     );
 
-        docs[9] = _createDocAtLatestVersion(10, primeKeyOfOwner);
-        IAccessControl(docs[9].body).init(
-            owner,
-            docs[19].body,
-            address(this),
-            docs[19].body
-        );
-        IGeneralKeeper(docs[19].body).setBookeeper(10, docs[9].body);
+    //     docs[9] = _createDocAtLatestVersion(10, primeKeyOfOwner);
+    //     IAccessControl(docs[9].body).init(
+    //         owner,
+    //         docs[19].body,
+    //         address(this),
+    //         docs[19].body
+    //     );
+    //     IGeneralKeeper(docs[19].body).setBookeeper(10, docs[9].body);
 
-        uint16 i;
-        while (i < 9) {
-            docs[i] = _createDocAtLatestVersion(i+1, primeKeyOfOwner);
-            IAccessControl(docs[i].body).init(
-                owner,
-                docs[19].body,
-                address(this),
-                docs[19].body
-            );
-            IGeneralKeeper(docs[19].body).setBookeeper(i+1, docs[i].body);
+    //     uint16 i;
+    //     while (i < 9) {
+    //         docs[i] = _createDocAtLatestVersion(i+1, primeKeyOfOwner);
+    //         IAccessControl(docs[i].body).init(
+    //             owner,
+    //             docs[19].body,
+    //             address(this),
+    //             docs[19].body
+    //         );
+    //         IGeneralKeeper(docs[19].body).setBookeeper(i+1, docs[i].body);
 
-            uint16 j = i+10;
+    //         uint16 j = i+10;
 
-            docs[j] = _createDocAtLatestVersion(j+1, primeKeyOfOwner);
-            IAccessControl(docs[j].body).init(
-                owner,
-                docs[i].body,
-                address(this),
-                docs[19].body
-            );
-            IGeneralKeeper(docs[19].body).setBook(i+1, docs[j].body);
+    //         docs[j] = _createDocAtLatestVersion(j+1, primeKeyOfOwner);
+    //         IAccessControl(docs[j].body).init(
+    //             owner,
+    //             docs[i].body,
+    //             address(this),
+    //             docs[19].body
+    //         );
+    //         IGeneralKeeper(docs[19].body).setBook(i+1, docs[j].body);
             
-            i++;
-        }
+    //         i++;
+    //     }
 
-        IAccessControl(docs[19].body).setDirectKeeper(primeKeyOfKeeper); 
+    //     IAccessControl(docs[19].body).setDirectKeeper(primeKeyOfKeeper); 
 
-        emit CreateComp(docs[19].body);
-    }
+    //     emit CreateComp(docs[19].body);
+    // }
 
-    function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
-        returns(DocsRepo.Doc memory doc)
-    {
-        uint256 latest = counterOfVersions(typeOfDoc);
-        uint256 snOfDoc = (typeOfDoc << 240) + (latest << 224);
-        doc = createDoc(snOfDoc, primeKeyOfOwner);
-    }
+    // function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
+    //     returns(DocsRepo.Doc memory doc)
+    // {
+    //     uint256 latest = counterOfVersions(typeOfDoc);
+    //     uint256 snOfDoc = (typeOfDoc << 240) + (latest << 224);
+    //     doc = createDoc(snOfDoc, primeKeyOfOwner);
+    // }
 
     // ##################
     // ##   Read I/O   ##

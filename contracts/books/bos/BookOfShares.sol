@@ -157,8 +157,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function decreaseCleanPaid(uint256 seqOfShare, uint paid)
         external shareExist(seqOfShare) notFreezed(seqOfShare)
     {
-        require(msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfPledges)) ||
-        _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
+        require(msg.sender == address(_gk.getBOP()) ||
+        _gk.isKeeper(msg.sender), "BOS.DCP: neither keeper nor BOP");
 
         emit DecreaseCleanPaid(seqOfShare, paid);
         _repo.shares[seqOfShare].decreaseCleanPaid(paid);
@@ -167,7 +167,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function increaseCleanPaid(uint256 seqOfShare, uint paid)
         external shareExist(seqOfShare) notFreezed(seqOfShare)
     {
-        require(msg.sender == _gk.getBook(uint8(TitleOfBooks.BookOfPledges)) ||
+        require(msg.sender == address(_gk.getBOP()) ||
         _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
 
         emit IncreaseCleanPaid(seqOfShare, paid);

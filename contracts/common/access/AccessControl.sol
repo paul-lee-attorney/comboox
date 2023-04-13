@@ -15,7 +15,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
 
     bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
 
-    RolesRepo.Roles internal _roles;
+    RolesRepo.Roles private _roles;
     // ##################
     // ##   修饰器      ##
     // ##################
@@ -104,6 +104,11 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     function setDirectKeeper(address keeper) external {
         _roles.setBookeeper(keeper, msg.sender);
         emit SetDirectKeeper(keeper);
+    }
+
+    function removeDirectKeeper(address target) onlyDirectKeeper external {
+        IAccessControl(target).setDirectKeeper(msg.sender);
+        emit RemoveDirectKeeper(target);
     }
 
     function setGeneralCounsel(uint256 acct)

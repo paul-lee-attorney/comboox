@@ -24,6 +24,8 @@ interface IAccessControl {
 
     event SetDirectKeeper(address keeper);
 
+    event RemoveDirectKeeper(address target);
+
     event SetOwner(uint256 acct);
 
     event SetGeneralCounsel(uint256 acct);
@@ -42,6 +44,8 @@ interface IAccessControl {
     ) external;
 
     function setDirectKeeper(address keeper) external;
+
+    function removeDirectKeeper(address target) external;
 
     function setOwner(uint256 acct) external;
 
