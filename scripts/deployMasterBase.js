@@ -85,6 +85,7 @@ async function main() {
 		"UsersRepo": libUsersRepo.address
 	};
 	let rc = await deployTool(signers[0], "RegCenter", libraries);
+	await rc.coonect(signers[1]).regUser(0);
 
 	// ==== Deploy Templates ====
 

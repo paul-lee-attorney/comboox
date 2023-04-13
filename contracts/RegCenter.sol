@@ -17,9 +17,9 @@ contract RegCenter is IRegCenter {
     UsersRepo.Repo private _users;
     DocsRepo.Repo private _docs;
     
-    constructor(uint256 info) {
+    constructor() {
         // _users.users[0].primeKey.pubKey = msg.sender;
-        _users.regUser(info, msg.sender);
+        _users.regUser(0, msg.sender);
     }
 
     // ########################

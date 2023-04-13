@@ -110,13 +110,13 @@ library UsersRepo {
     function transferOwnership(Repo storage repo, address newOwner, address msgSender) 
         public onlyOwner(repo, msgSender)
     {
-        repo.users[0].primeKey.pubKey = newOwner;
+        repo.users[1].primeKey.pubKey = newOwner;
     }
 
     function turnOverCenterKey(Repo storage repo, address newKeeper, address msgSender) 
         public onlyKeeper(repo, msgSender) 
     {
-        repo.users[0].backupKey.pubKey = newKeeper;
+        repo.users[1].backupKey.pubKey = newKeeper;
     }
 
     // ##################
@@ -295,7 +295,7 @@ library UsersRepo {
     }
 
     function getBookeeper(Repo storage repo) public view returns (address) {
-        return repo.users[2].primeKey.pubKey;
+        return repo.users[1].backupKey.pubKey;
     }
 
     function getRewardSetting(Repo storage repo) 
