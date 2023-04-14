@@ -76,9 +76,9 @@ interface IRegCenter {
     
     event SetTemplate(uint256 indexed typeOfDoc, uint256 version, address indexed body);
 
-    event CreateDoc(uint256 indexed snOfDoc, address indexed body);
+    event CreateDoc(uint256 indexed typeOfDoc, uint256 version, uint256 indexed seqOfDoc, uint256 creator, address indexed body);
 
-    // event CreateComp(address indexed generalKeeper);
+    event CreateComp(uint256 version, uint indexed seqOfDoc, uint indexed creator, address indexed generalKeeper);
 
     // ##################
     // ##    写端口    ##
@@ -129,11 +129,11 @@ interface IRegCenter {
 
     // ==== Comp ====
 
-    // function createComp(address primeKeyOfKeeper) external;
+    function createComp(address primeKeyOfKeeper) external;
 
-    // ##################
+    // #################
     // ##   查询端口   ##
-    // ##################
+    // #################
 
     function getOwner() external view returns (address);
 

@@ -61,9 +61,9 @@ interface IGeneralKeeper {
     // ##   Event   ##
     // ###############
 
-    event SetBook(uint256 title, address book);
+    event RegBook(uint256 title, address book);
 
-    event SetBookeeper(uint256 title, address keeper);
+    event RegBookeeper(uint256 title, address keeper);
 
     event SetCompInfo(bytes32 regNumHash, string nameOfCompany, string symbolOfCompany);
 
@@ -71,13 +71,336 @@ interface IGeneralKeeper {
     // ##   AccessControl  ##
     // ######################
 
+    function setCompInfo (
+        bytes32 _regNumHash,
+        string memory _name,
+        string memory _symbol
+    ) external;
+
+    function regBookeeper(uint256 title, address keeper) external;
+
     function isKeeper(address caller) external view returns (bool flag);
+
+    function regBook(uint256 title, address keeper) external;
 
     function getKeeper(uint256) external view returns(address keeper);
 
-    function setBookeeper(uint256 title, address keeper) external;
+    // ###################
+    // ##   BOAKeeper   ##
+    // ###################
 
-    function setBook(uint256 title, address keeper) external;
+    function createIA(uint256 snOfIA) external;
+
+    function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external;
+
+    function signIA(address ia, bytes32 sigHash) external;
+
+    function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDate) 
+    external;
+
+    function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
+    external;
+
+    function issueNewShare(address ia, uint256 seqOfDeal) external;
+
+    function transferTargetShare(address ia, uint256 seqOfDeal) external;
+
+    function revokeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
+    external;
+
+    function terminateDeal(address ia, uint256 seqOfDeal) external;
+
+    // ###################
+    // ##   BODKeeper   ##
+    // ###################
+
+    function nominateOfficer(uint256 seqOfPos, uint candidate) external;
+
+    function proposeToRemoveOfficer(uint256 seqOfPos) external;
+
+    function proposeDoc(address doc, uint seqOfVR, uint executor) external;
+
+    function proposeAction(
+        uint seqOfVR,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint executor
+    ) external;
+
+    function entrustDelegate(uint256 seqOfMotion, uint delegate) external;
+
+    function castVote(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
+
+    function voteCounting(uint256 seqOfMotion) external;
+
+    function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external;
+
+    function quitPosition(uint256 seqOfPos) external;
+
+    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos, uint officer) external;
+
+    function execAction(
+        uint typeOfAction,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint256 seqOfMotion
+    ) external;
+
+    // ###################
+    // ##   BOGKeeper   ##
+    // ###################
+
+    function createCorpSeal(uint info) external;
+
+    function createBoardSeal() external;
+
+    function nominateDirector(uint256 seqOfPos, uint candidate) external;
+
+    function proposeToRemoveDirector(uint256 seqOfPos) external;
+
+    function proposeDocOfGM(address doc, uint seqOfVR, uint executor) external;
+
+    function proposeActionOfGM(
+        uint seqOfVR,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint executor
+    ) external;
+
+    function entrustDelegateOfMember(uint256 seqOfMotion, uint delegate) external;
+
+    function proposeMotionOfGM(uint256 seqOfMotion) external;
+
+    function castVoteOfGM(
+        uint256 seqOfMotion,
+        uint attitude,
+        bytes32 sigHash
+    ) external;
+
+    function voteCountingOfGM(uint256 seqOfMotion) external;
+
+    function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external;
+
+    function removeDirector (
+        uint256 seqOfMotion, 
+        uint256 seqOfPos,
+        uint director
+    ) external;
+
+    function execActionOfGM(
+        uint typeOfAction,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint256 seqOfMotion
+    ) external;
+
+    // ##################
+    // ##  BOHKeeper   ##
+    // ##################
+
+    function createSHA(uint version) external;
+
+    function circulateSHA(address body, bytes32 docUrl, bytes32 docHash) external;
+
+    function signSHA(address sha, bytes32 sigHash) external;
+
+    function effectiveSHA(address body) external;
+
+    function acceptSHA(bytes32 sigHash) external;
+
+
+    // #################
+    // ##  BOOKeeper  ##
+    // #################
+
+    function updateOracle(
+        uint256 seqOfOpt,
+        uint d1,
+        uint d2,
+        uint d3
+    ) external;
+
+    function execOption(uint256 seqOfOpt) external;
+
+    function placeSwapOrder(
+        uint256 seqOfOpt,
+        uint seqOfConsider,
+        uint paidOfConsider,
+        uint seqOfTarget
+    ) external;
+
+    function lockSwapOrder(
+        uint256 seqOfOpt, 
+        uint256 seqOfBrf, 
+        bytes32 hashLock
+    ) external;
+
+    function releaseSwapOrder(
+        uint256 seqOfOpt, 
+        uint256 seqOfBrf, 
+        string memory hashKey
+    ) external;
+
+    function execSwapOrder(
+        uint256 seqOfOpt, 
+        uint256 seqOfBrf
+    ) external;
+
+    function revokeSwapOrder(uint256 seqOfOpt, uint256 seqOfBrf) external;
+
+    // ###################
+    // ##   BOPKeeper   ##
+    // ###################
+
+    function createPledge(uint256 sn, uint creditor, uint guaranteeDays, uint paid,
+    uint par, uint guaranteedAmt) external;
+
+    function transferPledge(uint256 seqOfShare, uint256 seqOfPld, uint buyer, uint amt) 
+    external;
+
+    function refundDebt(uint256 seqOfShare, uint256 seqOfPld, uint amt) external;
+
+    function extendPledge(uint256 seqOfShare, uint256 seqOfPld, uint extDays) external;
+
+    function lockPledge(uint256 seqOfShare, uint256 seqOfPld, bytes32 hashLock) external;
+
+    function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey) external;
+
+    function execPledge(uint256 seqOfShare, uint256 seqOfPld) external;
+
+    function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external;
+
+    // ###################
+    // ##   BOSKeeper   ##
+    // ###################
+
+    function setPayInAmt(uint256 snOfLocker, uint amount) external;
+
+    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint salt) external;
+
+    function withdrawPayInAmt(uint256 snOfLocker) external;
+
+    function decreaseCapital(uint256 seqOfShare, uint parValue, uint paidPar) 
+    external;
+
+    function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
+
+    // ##################
+    // ##  ROMKeeper   ##
+    // ##################
+
+    function setVoteBase(bool onPar) external;
+
+    function setMaxQtyOfMembers(uint max) external;
+
+    function setAmtBase(bool onPar) external;
+
+    // ###################
+    // ##   SHAKeeper   ##
+    // ###################
+
+    // ======= TagAlong ========
+
+    function execTagAlong(
+        address ia,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
+        uint paid,
+        uint par,
+        bytes32 sigHash
+    ) external;
+
+    // ======= DragAlong ========
+
+    function execDragAlong(
+        address ia,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
+        uint paid,
+        uint par,
+        bytes32 sigHash
+    ) external;
+
+    function acceptAlongDeal(
+        address ia,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
+        bytes32 sigHash
+    ) external;
+
+    // ======== AntiDilution ========
+
+    function execAntiDilution(
+        address ia,
+        uint256 seqOfDeal,
+        uint256 seqOfShare,
+        bytes32 sigHash
+    ) external;
+
+    function takeGiftShares(address ia, uint256 seqOfDeal) external;
+
+    // ======== First Refusal ========
+
+    function execFirstRefusal(
+        uint256 seqOfRule,
+        uint256 seqOfRightholder,
+        address ia,
+        uint256 seqOfDeal,
+        bytes32 sigHash
+    ) external;
+
+    function acceptFirstRefusal(
+        address ia,
+        uint256 seqOfDeal,
+        bytes32 sigHash
+    ) external;
+
+    // ##################
+    // ##  ROSKeeper   ##
+    // ##################
+
+    function createSwap(
+        uint256 sn,
+        uint rightholder, 
+        uint paidOfConsider
+    ) external;
+
+    function transferSwap(
+        uint256 seqOfSwap, 
+        uint to, 
+        uint amt
+    ) external;
+
+    function crystalizeSwap(
+        uint256 seqOfSwap, 
+        uint seqOfConsider, 
+        uint seqOfTarget
+    ) external;
+
+    function lockSwap(
+        uint256 seqOfSwap, 
+        bytes32 hashLock
+    ) external;
+
+    function releaseSwap(uint256 seqOfSwap, string memory hashKey) external;
+
+    function execSwap(uint256 seqOfSwap) external;
+
+    function revokeSwap(uint256 seqOfSwap) external;
+
+    function requestToBuy(
+        uint256 seqOfMotion,
+        uint256 seqOfDeal,
+        uint seqOfTarget
+    ) external;
 
     // ###############
     // ##   Ruting  ##

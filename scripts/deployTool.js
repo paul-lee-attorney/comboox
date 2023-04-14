@@ -9,7 +9,8 @@ const hre = require("hardhat");
 const path = require("path");
 const fs = require("fs");
 
-const contractsDir = path.join(__dirname, "..", "client", "src", "contracts");
+const tempsDir = path.join(__dirname, "..", "server", "src", "contracts");
+const docsDir = path.join(__dirname, "..", "client", "src", "contracts");
 
 async function deployTool(signer, targetName, libraries) {
 
@@ -25,18 +26,14 @@ async function deployTool(signer, targetName, libraries) {
 
   console.log("Deployed ", targetName, "at address:", target.address);
 
-  saveFrontendFiles(targetName, target);
+  saveTempAddr(targetName, target);
 
   return target;
 };
 
-function saveFrontendFiles(targetName, target) {
+function saveTempAddr(targetName, target) {
 
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir);
-  }
-
-  const fileNameOfContractAddrList = path.join(contractsDir, "contract-address.json");
+  const fileNameOfContractAddrList = path.join(tempsDir, "contracts-address.json");
 
   const objContractAddrList = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
   objContractAddrList[targetName] = target.address;
@@ -46,27 +43,22 @@ function saveFrontendFiles(targetName, target) {
     JSON.stringify(objContractAddrList, undefined, 2)
   );
 
-  copyArtifactsOf(targetName);
 };
 
-async function copyArtifactsOf(targetName) {
+function saveGKAddr(seqOfDoc, targetAddr) {
 
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir);
-  }
+  const fileNameOfContractAddrList = path.join(docsDir, "gk-address.json");
 
-  const TargetArtifact = hre.artifacts.readArtifactSync(targetName);
-  const fileNameOfTargetArtifact = targetName + ".json";
+  const objContractAddrList = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
+  objContractAddrList[seqOfDoc] = targetAddr;
 
   fs.writeFileSync(
-    path.join(contractsDir, fileNameOfTargetArtifact),
-    JSON.stringify(TargetArtifact, null, 2)
+    fileNameOfContractAddrList,
+    JSON.stringify(objContractAddrList, undefined, 2)
   );
-
-  console.log("Copied ", targetName, "'s artifacts to file: ", fileNameOfTargetArtifact, "\n");
 };
 
 module.exports = {
   deployTool,
-  copyArtifactsOf
+  saveGKAddr
 };

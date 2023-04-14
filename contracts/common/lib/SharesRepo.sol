@@ -66,17 +66,24 @@ library SharesRepo {
         });
     }
 
-    function codifyHead(Head memory head) public pure returns (uint256 sn)
+    function codifyHead(Head memory head) public pure returns (uint sn)
     {
-        sn = uint256(head.seqOfShare) << 224 +
-            uint256(head.preSeq) << 192 +
-            uint256(head.class) << 176 + 
-            uint256(head.issueDate) << 128 +
-            uint256(head.shareholder) << 88 +
-            uint256(head.priceOfPaid) << 56 + 
-            uint256(head.priceOfPar) << 24 +
-            uint256(head.para) << 8 +
-            head.arg;
+        // sn = (uint256(head.seqOfShare) << 224) +
+        //     (uint256(head.preSeq) << 192) +
+        //     (uint256(head.class) << 176) + 
+        //     (uint256(head.issueDate) << 128) +
+        //     (uint256(head.shareholder) << 88) +
+        //     (uint256(head.priceOfPaid) << 56) + 
+        //     (uint256(head.priceOfPar) << 24) +
+        //     (uint256(head.para) << 8) +
+        //     head.arg;
+
+        bytes memory _sn = abi.encodePacked(head.seqOfShare, head.preSeq, head.class, head.issueDate, head.shareholder, head.priceOfPaid, head.priceOfPar, head.para, head.arg);
+
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
+
     }
 
     // ==== issue/regist share ====

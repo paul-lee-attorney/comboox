@@ -71,11 +71,11 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     function addMember(uint256 acct) external onlyBOS {
-        require(
-            _repo.chain.getNumOfMembers() < _repo.chain.maxQtyOfMembers() ||
-                _repo.chain.maxQtyOfMembers() == 0,
-            "ROM.addMember: Qty of Members overflow"
-        );
+        // require(
+        //     _repo.chain.getNumOfMembers() < _repo.chain.maxQtyOfMembers() ||
+        //         _repo.chain.maxQtyOfMembers() == 0,
+        //     "ROM.addMember: Qty of Members overflow"
+        // );
 
         if (_repo.chain.addNode(acct)) 
             emit AddMember(acct, _repo.chain.getNumOfMembers());

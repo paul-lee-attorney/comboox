@@ -54,7 +54,8 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     }
 
     modifier onlyKeeper {
-        require(_gk.isKeeper(msg.sender), "AC.ok: not Keeper");
+        require(_roles.isDirectKeeper(msg.sender) ||
+            _gk.isKeeper(msg.sender), "AC.ok: not Keeper");
         _;
     }
 

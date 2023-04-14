@@ -8,37 +8,34 @@
 
 const hre = require("hardhat");
 const path = require("path");
+const fs = require("fs");
 
-async function contractGetter(targetName) {
+async function contractGetter(targetName, addrOfTarget) {
 
-  const artOfTarget = getArtifactsOfContract(targetName);
+  const artOfTarget = hre.artifacts.readArtifactSync(targetName);
 
-  const target = await hre.ethers.getContractAt(artOfTarget.art.abi, artOfTarget.address);
+  const target = await hre.ethers.getContractAt(artOfTarget.abi, addrOfTarget);
 
-  console.log("getContract: ", targetName, "from address: ", artOfTarget.address);
+  console.log("getContract: ", targetName);
 
   return target;
 };
 
-function getArtifactsOfContract(targetName) {
-  const fs = require("fs");
-  const contractsDir = path.join(__dirname, "..", "client", "src", "contracts");
+function tempAddrGetter(tempName) {
+  const contractsDir = path.join(__dirname, "..", "server", "src", "contracts");
 
-  const fileNameOfTargetArtifacts = path.join(contractsDir, targetName + ".json");
-
-  const fileNameOfContractAddrList = path.join(contractsDir, "contract-address.json");
-
-  let artOfTarget = {};
+  const fileNameOfContractAddrList = path.join(contractsDir, "contracts-address.json");
 
   const objContractAddrList = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
 
-  artOfTarget.address = objContractAddrList[targetName];
+  const addr = objContractAddrList[tempName];
 
-  artOfTarget.art = JSON.parse(fs.readFileSync(fileNameOfTargetArtifacts,"utf-8"));
+  console.log("obtained template at addr: ", addr);
 
-  return artOfTarget;
-};
+  return addr;
+}
 
 module.exports = {
-  contractGetter
+  contractGetter,
+  tempAddrGetter
 };
