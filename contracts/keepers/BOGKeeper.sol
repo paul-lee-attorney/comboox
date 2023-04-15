@@ -14,7 +14,7 @@ import "../books/boa/IInvestmentAgreement.sol";
 import "../common/access/AccessControl.sol";
 
 contract BOGKeeper is IBOGKeeper, AccessControl {
-    using RulesParser for uint256;
+    using RulesParser for bytes32;
 
     modifier memberExist(uint256 acct) {
         require(_gk.getROM().isMember(acct), 
@@ -156,7 +156,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
         IBookOfGM _bog = _gk.getBOG();
 
-        uint16 threshold = _gk.getSHA().getRule(0).governanceRuleParser().proposeWeightRatioOfShares;
+        uint16 threshold = _gk.getSHA().getRule(0).governanceRuleParser().proposeWeightRatioOfGM;
 
         require (_bog.getVoterOfDelegateMap(seqOfMotion, caller).delegate == 0, 
             "BOGK.PM: has entrust delegate");

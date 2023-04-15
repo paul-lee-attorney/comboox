@@ -10,6 +10,7 @@ pragma solidity ^0.8.8;
 import "./EnumerableSet.sol";
 
 library OfficersRepo {
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
 
     enum TitleOfOfficers {
@@ -45,11 +46,11 @@ library OfficersRepo {
     struct Repo {
         // seqOfPos => Position
         mapping(uint256 => Position)  positions;
-        EnumerableSet.UintSet posList; // seqOfPosList
+        EnumerableSet.Bytes32Set snList; // snOfPos List
 
         // acct => seqOfPos
         mapping(uint256 => EnumerableSet.UintSet) posInHand;
-        EnumerableSet.UintSet officers; // acctList
+        EnumerableSet.UintSet officers; // acct List
 
         EnumerableSet.UintSet board;
     }
@@ -70,35 +71,33 @@ library OfficersRepo {
 
     // ==== snParser ====
 
-    function snParser(uint256 sn) public pure returns (Position memory position) {
-        position = Position({
-            title: uint16(sn >> 240),
-            seqOfPos: uint16(sn >> 224),
-            acct: uint40(sn >> 184),
-            nominator: uint40(sn >> 144),
-            startDate: uint48(sn >> 96),
-            endDate: uint48(sn >> 48),
-            seqOfVR: uint16(sn >> 32),
-            para: uint16(sn >> 16),
-            arg: uint16(sn)
-        });
+    function snParser(bytes32 sn) public pure returns (Position memory position) {
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))    
+        }        
+        position = abi.decode(_sn, (Position));        
     }
 
-    function codifyPosition(Position memory position) public pure returns (uint256 sn) {
-        sn = (uint256(position.title) << 240) +
-            (uint256(position.seqOfPos) << 224) +
-            (uint256(position.acct) << 184) +
-            (uint256(position.nominator) << 144) +
-            (uint256(position.startDate) << 96) +
-            (uint256(position.endDate) << 48) +
-            (uint256(position.seqOfVR) << 32) +
-            (uint256(position.para) << 16) +
-            position.arg;
+    function codifyPosition(Position memory position) public pure returns (bytes32 sn) {
+        bytes memory _sn = abi.encode(
+                            position.title,
+                            position.seqOfPos,
+                            position.acct,
+                            position.nominator,
+                            position.startDate,
+                            position.endDate,
+                            position.seqOfVR,
+                            position.para,
+                            position.arg);  
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }                
     }
 
     // ======== Setting ========
 
-    function createPosition (Repo storage repo, uint256 snOfPos) 
+    function createPosition (Repo storage repo, bytes32 snOfPos) 
         public 
     {
         Position memory pos = snParser(snOfPos);
@@ -121,13 +120,15 @@ library OfficersRepo {
             "OR.AP: remove pos for change title");
 
         repo.positions[pos.seqOfPos] = pos;
-        repo.posList.add(pos.seqOfPos);
+        repo.snList.add(codifyPosition(pos));
     }
 
     function removePosition(Repo storage repo, uint256 seqOfPos) 
         public isVacant(repo, seqOfPos) returns (bool flag)
     {
-        if (repo.posList.remove(seqOfPos)) {
+        Position memory pos = repo.positions[seqOfPos];
+
+        if (repo.snList.remove(codifyPosition(pos))) {
             delete repo.positions[seqOfPos];
             flag = true;
         }
@@ -137,7 +138,7 @@ library OfficersRepo {
         Repo storage repo,
         uint256 seqOfPos,
         uint acct
-    ) public returns (uint256 ) {
+    ) public returns (bytes32 ) {
         require (seqOfPos > 0, "OR.TP: zero seqOfPos");
         require (acct > 0, "OR.TP: zero acct");
         
@@ -164,6 +165,12 @@ library OfficersRepo {
     {
         Position memory pos = repo.positions[seqOfPos];
 
+        require(acct == pos.acct, 
+            "OR.QP: not the officer");
+
+        require (block.timestamp <= pos.endDate,
+            "OR.QP: tenure expired");
+
         if (repo.posInHand[acct].remove(seqOfPos)) {
             repo.positions[seqOfPos].acct = 0;
 
@@ -184,15 +191,15 @@ library OfficersRepo {
     // ==== Positions ====
 
     function posExist(Repo storage repo, uint256 seqOfPos) public view returns (bool flag) {
-        flag = repo.posList.contains(seqOfPos);
+        flag = repo.positions[seqOfPos].endDate > block.timestamp;
     } 
 
     function isOccupied(Repo storage repo, uint256 seqOfPos) public view returns (bool flag) {
         flag = repo.positions[seqOfPos].acct > 0;
     }
 
-    function getPosList(Repo storage repo) public view returns(uint256[] memory list) {
-        list = repo.posList.values();
+    function getPosList(Repo storage repo) public view returns(bytes32[] memory list) {
+        list = repo.snList.values();
     }
 
     function getPosition(Repo storage repo, uint256 seqOfPos) public view returns (Position memory pos) {
@@ -200,12 +207,14 @@ library OfficersRepo {
     }
 
     function getFullPosInfo(Repo storage repo) public view returns(Position[] memory) {
-        uint256[] memory pl = repo.posList.values();
+        bytes32[] memory pl = repo.snList.values();
         uint256 len = pl.length;
         Position[] memory ls = new Position[](len);
 
         while (len > 0) {
-            ls[len-1] = repo.positions[pl[len-1]];
+            Position memory pos = snParser(pl[len-1]);
+
+            ls[len-1] = repo.positions[pos.seqOfPos];
             len--;
         }
 
@@ -274,10 +283,10 @@ library OfficersRepo {
     function getBoardSeatsQuota(Repo storage repo, uint256 acct) public view 
         returns (uint256 quota)
     {
-        uint256[] memory pl = repo.posList.values();
+        bytes32[] memory pl = repo.snList.values();
         uint256 len = pl.length;
         while (len > 0) {
-            Position memory pos = repo.positions[pl[len-1]];
+            Position memory pos = snParser(pl[len-1]);
             if (pos.title <= uint8(TitleOfOfficers.Director) &&
                 pos.nominator == acct) 
             {

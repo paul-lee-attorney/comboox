@@ -57,7 +57,7 @@ interface IBookOfPledges {
     //##################
 
     function createPledge(
-        uint256 sn,
+        bytes32 snOfPld,
         uint creditor,
         uint guaranteeDays,
         uint paid,
@@ -131,6 +131,6 @@ interface IBookOfPledges {
         external view returns (PledgesRepo.Pledge[] memory);
 
     function getSNList() external view
-        returns(uint256[] memory list);
+        returns(bytes32[] memory list);
 
 }

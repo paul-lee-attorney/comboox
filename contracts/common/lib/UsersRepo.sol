@@ -71,21 +71,17 @@ library UsersRepo {
     // ##    Opts Setting    ##
     // ########################
 
-    function rewardParser(uint256 sn) public pure 
+    function rewardParser(bytes32 sn) public pure 
         returns(Reward memory reward) 
     {
-        reward = Reward({
-            eoaRewards: uint32(sn >> 224),
-            coaRewards: uint32(sn >> 192),
-            offAmt: uint32(sn >> 160),
-            discRate: uint16(sn >> 144),
-            refundRatio: uint16(sn >> 128),
-            ceiling: uint64(sn >> 64),
-            floor: uint64(sn)
-        });
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))    
+        }        
+        reward = abi.decode(_sn, (Reward));        
     }
 
-    function setReward(Repo storage repo, uint256 snOfReward, address msgSender) 
+    function setReward(Repo storage repo, bytes32 snOfReward, address msgSender) 
         public onlyOwner(repo, msgSender) 
     {
         Reward memory rw = rewardParser(snOfReward);
@@ -129,7 +125,7 @@ library UsersRepo {
         repo.users[to].balance += uint216(amt);
     }
 
-    function mintAndLockPoints(Repo storage repo, uint256 snOfLocker, uint amt, address msgSender) 
+    function mintAndLockPoints(Repo storage repo, bytes32 snOfLocker, uint amt, address msgSender) 
         public onlyOwner(repo, msgSender) returns (bool flag) 
     {
         flag = repo.lockers.lockValue(snOfLocker, amt, 0);
@@ -151,7 +147,7 @@ library UsersRepo {
         }
     }
 
-    function lockPoints(Repo storage repo, uint256 snOfLocker, uint amt, address msgSender) 
+    function lockPoints(Repo storage repo, bytes32 snOfLocker, uint amt, address msgSender) 
         public onlyPrimeKey(repo, msgSender) returns (bool flag)
     {
         uint caller = repo.userNo[msgSender];
@@ -166,7 +162,7 @@ library UsersRepo {
 
     function releasePoints(
         Repo storage repo, 
-        uint256 snOfLocker, 
+        bytes32 snOfLocker, 
         string memory hashKey,
         uint salt,
         address msgSender
@@ -181,7 +177,7 @@ library UsersRepo {
 
     function withdrawPoints(
         Repo storage repo, 
-        uint256 snOfLocker, 
+        bytes32 snOfLocker, 
         string memory hashKey, 
         uint salt,
         address msgSender
@@ -195,7 +191,7 @@ library UsersRepo {
 
     function checkLocker(
         Repo storage repo,
-        uint256 snOfLocker,
+        bytes32 snOfLocker,
         address msgSender
     ) public onlyPrimeKey(repo, msgSender) view returns (uint216 value) {
         uint caller = repo.userNo[msgSender];

@@ -8,20 +8,18 @@
 pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
-// import "../common/ruting/BOSSetting.sol";
-// import "../common/ruting/BOPSetting.sol";
 
 import "./IBOPKeeper.sol";
 
 contract BOPKeeper is IBOPKeeper, AccessControl {
-    using PledgesRepo for uint256;
+    using PledgesRepo for bytes32;
 
     // ###################
     // ##   BOPKeeper   ##
     // ###################
 
     function createPledge(
-        uint256 sn,
+        bytes32 snOfPld,
         uint creditor,
         uint guaranteeDays,
         uint paid,
@@ -30,14 +28,14 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint256 caller
     ) external onlyDirectKeeper {
 
-        PledgesRepo.Head memory head = sn.snParser();
+        PledgesRepo.Head memory head = snOfPld.snParser();
 
         require(_gk.getBOS().getShare(head.seqOfShare).head.shareholder == caller, 
             "BOPK.CP: NOT shareholder");
         require(head.pledgor == caller, "BOPK.CP: NOT pledgor");
 
         head = _gk.getBOP().createPledge(
-            sn,
+            snOfPld,
             creditor,
             guaranteeDays,
             paid,

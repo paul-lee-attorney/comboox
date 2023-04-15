@@ -26,7 +26,7 @@ contract RegCenter is IRegCenter {
     // ##    Opts Setting    ##
     // ########################
 
-    function setReward(uint256 snOfReward) external {
+    function setReward(bytes32 snOfReward) external {
         _users.setReward(snOfReward, msg.sender);
         emit SetReward(snOfReward);
     }
@@ -52,7 +52,7 @@ contract RegCenter is IRegCenter {
         emit MintPoints(to, amt);
     }
 
-    function mintAndLockPoints(uint256 snOfLocker, uint amt) external {
+    function mintAndLockPoints(bytes32 snOfLocker, uint amt) external {
         if (_users.mintAndLockPoints(snOfLocker, amt, msg.sender))
             emit LockPoints(snOfLocker, amt);
     }
@@ -63,14 +63,14 @@ contract RegCenter is IRegCenter {
             emit TransferPoints(_users.userNo[msg.sender], to, amt);
     }
 
-    function lockPoints(uint256 snOfLocker, uint amt) 
+    function lockPoints(bytes32 snOfLocker, uint amt) 
         external 
     {
         if (_users.lockPoints(snOfLocker, amt, msg.sender))
             emit LockPoints(snOfLocker, amt);
     }
 
-    function releasePoints(uint256 snOfLocker, string memory hashKey, uint salt)
+    function releasePoints(bytes32 snOfLocker, string memory hashKey, uint salt)
         external
     {
         uint256 value = _users.releasePoints(snOfLocker, hashKey, salt, msg.sender);
@@ -79,7 +79,7 @@ contract RegCenter is IRegCenter {
             emit ReleasePoints(snOfLocker, hashKey, salt, value);
     }
 
-    function withdrawPoints(uint256 snOfLocker, string memory hashKey, uint salt)
+    function withdrawPoints(bytes32 snOfLocker, string memory hashKey, uint salt)
         external
     {
         uint256 value = _users.withdrawPoints(snOfLocker, hashKey, salt, msg.sender);
@@ -88,7 +88,7 @@ contract RegCenter is IRegCenter {
             emit WithdrawPoints(snOfLocker, hashKey, salt, value);
     }
 
-    function checkLocker(uint256 snOfLocker) external
+    function checkLocker(bytes32 snOfLocker) external
         view returns (uint256 value)
     {
         value = _users.checkLocker(snOfLocker, msg.sender);
@@ -122,12 +122,12 @@ contract RegCenter is IRegCenter {
             emit SetDocKeeper(newKeeper);
     }
 
-    function setTemplate(uint256 snOfDoc, address body) external {
+    function setTemplate(bytes32 snOfDoc, address body) external {
         DocsRepo.Doc memory doc = _docs.setTemplate(snOfDoc, body, msg.sender, getMyUserNo());
         emit SetTemplate(doc.head.typeOfDoc, doc.head.version, doc.body);
     }
 
-    function createDoc(uint256 snOfDoc, address primeKeyOfOwner) public 
+    function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) public 
         returns(DocsRepo.Doc memory doc)
     {
         uint40 owner = _users.getUserNo(primeKeyOfOwner, msg.sender);
@@ -197,7 +197,7 @@ contract RegCenter is IRegCenter {
         returns(DocsRepo.Doc memory doc)
     {
         uint256 latest = counterOfVersions(typeOfDoc);
-        uint256 snOfDoc = (typeOfDoc << 240) + (latest << 224);
+        bytes32 snOfDoc = bytes32((typeOfDoc << 240) + (latest << 224));
         doc = createDoc(snOfDoc, primeKeyOfOwner);
     }
 
@@ -260,25 +260,25 @@ contract RegCenter is IRegCenter {
 
     // ==== SingleCheck ====
 
-    function getTemplate(uint256 snOfDoc) external view returns (DocsRepo.Doc memory doc) {
+    function getTemplate(bytes32 snOfDoc) external view returns (DocsRepo.Doc memory doc) {
         doc = _docs.getTemplate(snOfDoc);
     }
 
-    function docExist(uint256 snOfDoc) external view returns(bool) {
+    function docExist(bytes32 snOfDoc) external view returns(bool) {
         return _docs.docExist(snOfDoc);
     }
 
-    function getDoc(uint256 snOfDoc) external view returns(DocsRepo.Doc memory doc) {
+    function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc) {
         doc = _docs.getDoc(snOfDoc);
     }
 
-    function verifyDoc(uint256 snOfDoc) external view returns(bool flag) {
+    function verifyDoc(bytes32 snOfDoc) external view returns(bool flag) {
         flag = _docs.verifyDoc(snOfDoc);
     }
 
     // ==== BatchQuery ====
 
-    function getAllDocsSN() external view returns(uint256[] memory) {
+    function getAllDocsSN() external view returns(bytes32[] memory) {
         return _docs.getAllSN();
     }
 
@@ -286,7 +286,7 @@ contract RegCenter is IRegCenter {
         return _docs.getBodiesList(typeOfDoc, version);
     } 
 
-    function getSNList(uint256 typeOfDoc, uint256 version) external view returns(uint256[] memory) {
+    function getSNList(uint256 typeOfDoc, uint256 version) external view returns(bytes32[] memory) {
         return _docs.getSNList(typeOfDoc, version);
     } 
 

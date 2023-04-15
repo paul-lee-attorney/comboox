@@ -16,7 +16,7 @@ interface IROSKeeper {
     // ##################
 
     function createSwap(
-        uint256 sn,
+        bytes32 snOfSwap,
         uint rightholder, 
         uint paidOfConsider,
         uint caller

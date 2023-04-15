@@ -20,7 +20,7 @@ contract FilesFolder is IFilesFolder, AccessControl {
     //##    写接口     ##
     //##################
 
-    function regFile(uint256 snOfDoc, address body)
+    function regFile(bytes32 snOfDoc, address body)
         external onlyDirectKeeper
     {
         if (_repo.regFile(snOfDoc, body)) 
@@ -100,7 +100,7 @@ contract FilesFolder is IFilesFolder, AccessControl {
     }
 
     function getSNOfFile(address body)
-        external view returns (uint256)
+        external view returns (bytes32)
     {
         return _repo.getSNOfFile(body);
     }

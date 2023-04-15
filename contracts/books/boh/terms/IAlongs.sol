@@ -39,7 +39,7 @@ interface IAlongs {
     // ##   Write    ##
     // ################
 
-    function createLink(uint256 rule, uint256 drager) external;
+    function createLink(bytes32 rule, uint256 drager) external;
 
     function addFollower(uint256 drager, uint256 follower) external;
 

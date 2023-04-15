@@ -34,7 +34,7 @@ interface IInvestmentAgreement {
     // ======== InvestmentAgreement ========
 
     function createDeal(
-        uint256 sn,
+        bytes32 sn,
         uint buyer,
         uint groupOfBuyer,
         uint paid,
@@ -84,5 +84,5 @@ interface IInvestmentAgreement {
 
     function getDeal(uint256 seq) external view returns (DealsRepo.Deal memory);
 
-    function getSNList() external view returns (uint256[] memory);
+    function getSNList() external view returns (bytes32[] memory);
 }

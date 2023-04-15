@@ -21,7 +21,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
     //#################
 
     // ==== OptionSetting ====
-    function createPosition(uint256 snOfPos) external onlyKeeper { 
+    function createPosition(bytes32 snOfPos) external onlyKeeper { 
             _repo.createPosition(snOfPos);
         emit AddPosition(snOfPos);
     }
@@ -40,7 +40,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
 
     function takePosition (uint256 seqOfPos, uint caller) external onlyKeeper
     {
-        uint256 snOfPos = _repo.takePosition(seqOfPos, caller);
+        bytes32 snOfPos = _repo.takePosition(seqOfPos, caller);
         emit TakePosition(snOfPos);
     }
 
@@ -75,7 +75,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         flag = _repo.isOccupied(seqOfPos);
     } 
 
-    function getPosList() external view returns(uint256[] memory list) {
+    function getPosList() external view returns(bytes32[] memory list) {
         list = _repo.getPosList();
     }
 
@@ -150,8 +150,4 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
     {
         num = _repo.getBoardSeatsOccupied(acct);
     }
-
-
-    
-
 }

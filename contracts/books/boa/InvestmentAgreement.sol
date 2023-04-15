@@ -23,7 +23,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     //#################
 
     function createDeal(
-        uint256 sn,
+        bytes32 sn,
         uint buyer,
         uint groupOfBuyer,
         uint paid,
@@ -148,12 +148,12 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         return _repo.getHashLockOfDeal(seq);
     }
     
-    function getDeal(uint256 seq) external view returns (DealsRepo.Deal memory)
+    function getDeal(uint256 seqOfDeal) external view returns (DealsRepo.Deal memory)
     {
-        return _repo.getDeal(seq);
+        return _repo.getDeal(seqOfDeal);
     }
 
-    function getSNList() external view returns (uint256[] memory) {
+    function getSNList() external view returns (bytes32[] memory) {
         return _repo.getSNList();
     }
 }

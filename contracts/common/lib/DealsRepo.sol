@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./EnumerableSet.sol";
 
 library DealsRepo {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
     // _deals[0].head {
     //     seqOfDeal: counterOfClosedDeal;
@@ -60,6 +60,7 @@ library DealsRepo {
         uint32 priceOfPaid;
         uint32 priceOfPar;
         uint48 closingDate;
+        uint16 para;
     }
 
     struct Body {
@@ -68,6 +69,9 @@ library DealsRepo {
         uint64 paid;
         uint64 par;
         uint8 state;
+        uint16 para;
+        uint16 arg;
+        bool flag;
     }
 
     struct Deal {
@@ -78,7 +82,7 @@ library DealsRepo {
 
     struct Repo {
         mapping(uint256 => Deal) deals;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //##################
@@ -97,34 +101,34 @@ library DealsRepo {
     //##    写接口    ##
     //#################
 
-    function snParser(uint sn) public pure returns(Head memory head) {
-        return Head({
-            typeOfDeal: uint8(sn >> 248),
-            seqOfDeal: uint16(sn >> 232),
-            preSeq: uint16(sn >> 216),
-            classOfShare: uint16(sn >> 200),
-            seqOfShare: uint32(sn >> 168),
-            seller: uint40(sn >> 128),
-            priceOfPaid: uint32(sn >> 96),
-            priceOfPar: uint32(sn >> 64),
-            closingDate: uint48(sn >> 16)
-        });
+    function snParser(bytes32 sn) public pure returns(Head memory head) {
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))    
+        }        
+        head = abi.decode(_sn, (Head));
     } 
 
-    function codifyHead(Head memory head) public pure returns(uint sn) {
-        sn = uint(head.typeOfDeal) << 248 +
-            uint(head.seqOfDeal) << 232 +
-            uint(head.preSeq) << 216 +
-            uint(head.classOfShare) << 200 +
-            uint(head.seqOfShare) << 168 +
-            uint(head.seller) << 128 +
-            uint(head.priceOfPaid) << 96 +
-            uint(head.priceOfPar) << 64;
+    function codifyHead(Head memory head) public pure returns(bytes32 sn) {
+        bytes memory _sn = abi.encodePacked(
+                            head.typeOfDeal,
+                            head.seqOfDeal,
+                            head.preSeq,
+                            head.classOfShare,
+                            head.seqOfShare,
+                            head.seller,
+                            head.priceOfPaid,
+                            head.priceOfPaid,
+                            head.closingDate,
+                            head.para);        
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
     }
 
     function createDeal(
         Repo storage repo,
-        uint sn,
+        bytes32 sn,
         uint buyer,
         uint groupOfBuyer,
         uint paid,
@@ -135,13 +139,10 @@ library DealsRepo {
 
         deal.head = snParser(sn);
 
-        deal.body = Body({
-            buyer: uint40(buyer),
-            groupOfBuyer: uint40(groupOfBuyer),
-            paid: uint64(paid),
-            par: uint64(par),
-            state: 0
-        });
+        deal.body.buyer = uint40(buyer);
+        deal.body.groupOfBuyer = uint40(groupOfBuyer);
+        deal.body.paid = uint64(paid);
+        deal.body.par = uint64(par);
 
         seqOfDeal = regDeal(repo, deal);
     }
@@ -241,8 +242,8 @@ library DealsRepo {
         Deal storage deal = repo.deals[seqOfDeal];
 
         require(
-            deal.head.closingDate < block.timestamp,
-            "NOT reached closing date"
+            block.timestamp > deal.head.closingDate,
+            "DR.RD: NOT reached closing date"
         );
 
         require(
@@ -348,7 +349,7 @@ library DealsRepo {
         return repo.deals[seq];
     }
 
-    function getSNList(Repo storage repo) external view returns (uint256[] memory) {
+    function getSNList(Repo storage repo) external view returns (bytes32[] memory) {
         return repo.snList.values();
     }
 

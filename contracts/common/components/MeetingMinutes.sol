@@ -13,7 +13,7 @@ import "./IMeetingMinutes.sol";
 
 contract MeetingMinutes is IMeetingMinutes, AccessControl {
     using MotionsRepo for MotionsRepo.Repo;
-    using RulesParser for uint256;
+    using RulesParser for bytes32;
 
     MotionsRepo.Repo private _repo;
 

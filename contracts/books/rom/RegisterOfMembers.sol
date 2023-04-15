@@ -13,7 +13,7 @@ import "../../common/access/AccessControl.sol";
 
 contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using Checkpoints for Checkpoints.History;
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
 
@@ -92,7 +92,8 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, false);
 
         if (_repo.removeShareFromMember(share.head)) {
-            if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) _repo.delMember(share.head.shareholder);
+            if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) 
+                _repo.delMember(share.head.shareholder);
 
             emit RemoveShareFromMember(share.head.seqOfShare, share.head.shareholder);
         }
@@ -180,12 +181,12 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.chain.totalVotes();
     }
 
-    function sharesList() external view returns (uint256[] memory) {
+    function sharesList() external view returns (bytes32[] memory) {
         return _repo.members[0].sharesInHand.values();
     }
 
-    function isSeqOfShare(uint256 seqOfShare) external view returns (bool) {
-        return _repo.members[0].sharesInHand.contains(seqOfShare);
+    function isSNOfShare(bytes32 sharenumber) external view returns (bool) {
+        return _repo.members[0].sharesInHand.contains(sharenumber);
     }
 
     function isMember(uint256 acct) public view returns (bool) {
@@ -224,7 +225,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         external
         view
         memberExist(acct)
-        returns (uint256[] memory list)
+        returns (bytes32[] memory list)
     {
         list = _repo.members[acct].sharesInHand.values();
     }

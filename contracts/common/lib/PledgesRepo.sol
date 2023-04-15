@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./EnumerableSet.sol";
 
 library PledgesRepo {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
     enum StateOfPld {
         Pending,
@@ -50,38 +50,56 @@ library PledgesRepo {
     struct Repo{
         // seqOfShare => seqOfPld => Pledge
         mapping(uint256 => mapping(uint256 => Pledge)) pledges;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //##################
     //##    写接口    ##
     //##################
 
-    function snParser(uint256 sn) public pure returns (Head memory head) {
-        head = Head({
-            seqOfShare: uint32(sn >> 224),
-            seqOfPld: uint16(sn >> 208),
-            createDate: uint48(sn >> 160),
-            triggerDate: uint48(sn >> 112),
-            pledgor: uint40(sn >> 72),
-            debtor: uint40(sn >> 32),
-            data: uint32(sn)
-        });
+    function snParser(bytes32 sn) public pure returns (Head memory head) {
+        // head = Head({
+        //     seqOfShare: uint32(sn >> 224),
+        //     seqOfPld: uint16(sn >> 208),
+        //     createDate: uint48(sn >> 160),
+        //     triggerDate: uint48(sn >> 112),
+        //     pledgor: uint40(sn >> 72),
+        //     debtor: uint40(sn >> 32),
+        //     data: uint32(sn)
+        // });
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))    
+        }        
+        head = abi.decode(_sn, (Head));
     } 
 
-    function codifyHead(Head memory head) public pure returns (uint256 sn) {
-        sn = uint256(head.seqOfShare) << 224 +
-            uint256(head.seqOfPld) << 208 + 
-            uint256(head.createDate) << 160 +
-            uint256(head.triggerDate) << 112 +
-            uint256(head.pledgor) << 72 +
-            uint256(head.debtor) << 32 +
-            head.data;
+    function codifyHead(Head memory head) public pure returns (bytes32 sn) {
+        // sn = uint256(head.seqOfShare) << 224 +
+        //     uint256(head.seqOfPld) << 208 + 
+        //     uint256(head.createDate) << 160 +
+        //     uint256(head.triggerDate) << 112 +
+        //     uint256(head.pledgor) << 72 +
+        //     uint256(head.debtor) << 32 +
+        //     head.data;
+
+        bytes memory _sn = abi.encodePacked(
+                            head.seqOfShare,
+                            head.seqOfPld,
+                            head.createDate,
+                            head.triggerDate,
+                            head.pledgor,
+                            head.debtor,
+                            head.data);        
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
+
     } 
 
     function createPledge(
             Repo storage repo, 
-            uint256 sn, 
+            bytes32 snOfPld, 
             uint creditor,
             uint guaranteeDays, 
             uint paid,
@@ -89,7 +107,7 @@ library PledgesRepo {
             uint guaranteedAmt
     ) public returns (Head memory head) 
     {
-        head = snParser(sn);
+        head = snParser(snOfPld);
         head = issuePledge(repo, head, creditor, guaranteeDays, paid, par, guaranteedAmt);
     }
 
@@ -266,7 +284,7 @@ library PledgesRepo {
         return repo.pledges[seqOfShare][0].head.seqOfPld;
     }
 
-    function getSNList(Repo storage repo) public view returns (uint256[] memory list)
+    function getSNList(Repo storage repo) public view returns (bytes32[] memory list)
     {
         list = repo.snList.values();
     }

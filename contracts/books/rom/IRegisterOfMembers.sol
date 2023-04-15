@@ -100,9 +100,9 @@ interface IRegisterOfMembers {
 
     function totalVotes() external view returns (uint64);
 
-    function sharesList() external view returns (uint256[] memory);
+    function sharesList() external view returns (bytes32[] memory);
 
-    function isSeqOfShare(uint256 seqOfShare) external view returns (bool);
+    function isSNOfShare(bytes32 sharenumber) external view returns (bool);
 
     // ==== Member ====
 
@@ -116,7 +116,7 @@ interface IRegisterOfMembers {
     function votesAtDate(uint256 acct, uint date) external view
         returns (uint64);
 
-    function sharesInHand(uint256 acct) external view returns (uint256[] memory);
+    function sharesInHand(uint256 acct) external view returns (bytes32[] memory);
 
     function groupRep(uint256 acct) external view returns (uint40);
 

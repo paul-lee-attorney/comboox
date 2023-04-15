@@ -12,6 +12,8 @@ import "../../books/boa/IInvestmentAgreement.sol";
 import "./DealsRepo.sol";
 
 library TopChain {
+    using DealsRepo for bytes32;
+
     struct Node {
         uint40 prev;
         uint40 next;
@@ -591,12 +593,12 @@ library TopChain {
         Chain storage chain,
         IInvestmentAgreement _ia
     ) public {
-        uint256[] memory snList = _ia.getSNList();
+        bytes32[] memory snList = _ia.getSNList();
 
         uint256 len = snList.length;
 
         while (len > 0) {
-            DealsRepo.Deal memory deal = _ia.getDeal(snList[len-1]);
+            DealsRepo.Deal memory deal = _ia.getDeal(snList[len-1].snParser().seqOfDeal);
 
             uint64 amount = basedOnPar(chain) ? deal.body.par : deal.body.paid;
 

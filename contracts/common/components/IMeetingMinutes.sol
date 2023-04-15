@@ -16,7 +16,7 @@ interface IMeetingMinutes {
     //##    events    ##
     //##################
 
-    event CreateMotion(uint256 indexed snOfMotion, uint256 indexed contents);
+    event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
 
     event ProposeMotion(uint256 indexed seqOfMotion, uint256 indexed proposer);
 

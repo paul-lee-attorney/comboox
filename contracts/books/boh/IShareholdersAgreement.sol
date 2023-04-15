@@ -76,7 +76,7 @@ interface IShareholdersAgreement {
 
     struct RulesRepo {
         // seq => rule
-        mapping(uint256 => uint256) rules;
+        mapping(uint256 => bytes32) rules;
         EnumerableSet.UintSet seqList;
     }
 
@@ -89,7 +89,7 @@ interface IShareholdersAgreement {
     function removeTerm(uint typeOfDoc) external;
 
     // ==== Rules ====
-    function addRule(uint256 rule) external;
+    function addRule(bytes32 rule) external;
 
     function removeRule(uint256 seq) external;
 
@@ -127,5 +127,5 @@ interface IShareholdersAgreement {
 
     function rules() external view returns (uint256[] memory);
 
-    function getRule(uint256 seq) external view returns (uint256);
+    function getRule(uint256 seq) external view returns (bytes32);
 }

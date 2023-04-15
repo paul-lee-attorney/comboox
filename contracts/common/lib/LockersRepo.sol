@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./EnumerableSet.sol";
 
 library LockersRepo {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
     struct Locker {
         uint40 from;
@@ -21,26 +21,25 @@ library LockersRepo {
 
     struct Repo {
         // locker => value
-        mapping (uint256 => uint256) lockers;
-        EnumerableSet.UintSet snList;
+        mapping (bytes32 => uint256) lockers;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //#################
     //##    Write    ##
     //#################
 
-    function snParser(uint256 sn) public pure returns (Locker memory locker) {
-        locker = Locker({
-            from: uint40(sn >> 216),
-            to: uint40(sn >> 176),
-            expireDate: uint48(sn >> 128),
-            hashLock: uint128(sn)
-        });
+    function snParser(bytes32 sn) public pure returns (Locker memory locker) {
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))
+        }
+        locker = abi.decode(_sn, (Locker));
     }
 
     function lockValue(
         Repo storage repo,
-        uint256 sn,
+        bytes32 sn,
         uint256 value,
         uint256 caller
     ) public returns(bool flag) {
@@ -63,12 +62,12 @@ library LockersRepo {
 
     function releaseValue(
         Repo storage repo,
-        uint256 sn,
+        bytes32 snOfLocker,
         string memory hashKey,
         uint salt,
         uint256 caller
     ) public returns(uint256 value) {
-        Locker memory locker = snParser(sn);
+        Locker memory locker = snParser(snOfLocker);
 
         require(block.timestamp < locker.expireDate, 
             "LR.RV: locker expired");
@@ -77,20 +76,20 @@ library LockersRepo {
         require(locker.hashLock == uint128(uint256(keccak256(bytes(hashKey))) >> uint8(salt)),
             "LR.RV: wrong key");
 
-        if (repo.snList.remove(sn)) {
-            value = repo.lockers[sn];
-            delete repo.lockers[sn];
+        if (repo.snList.remove(snOfLocker)) {
+            value = repo.lockers[snOfLocker];
+            delete repo.lockers[snOfLocker];
         }
     }
 
     function withdrawValue(
         Repo storage repo,
-        uint256 sn,
+        bytes32 snOfLocker,
         string memory hashKey,
         uint salt,
         uint256 caller
     ) public returns(uint256 value) {
-        Locker memory locker = snParser(sn);
+        Locker memory locker = snParser(snOfLocker);
 
         require(block.timestamp >= locker.expireDate, 
             "LR.RL: locker not expired");
@@ -101,18 +100,18 @@ library LockersRepo {
         require(locker.hashLock == uint128(uint256(keccak256(bytes(hashKey))) >> uint8(salt)), 
             "LR.RL: wrong key");
         
-        if (repo.snList.remove(sn)){
-            value = repo.lockers[sn];
-            delete repo.lockers[sn];
+        if (repo.snList.remove(snOfLocker)){
+            value = repo.lockers[snOfLocker];
+            delete repo.lockers[snOfLocker];
         }
     }
 
     function burnLocker(
         Repo storage repo,
-        uint256 sn,
+        bytes32 snOfLocker,
         uint256 caller
     ) public returns(bool flag) {
-        Locker memory locker = snParser(sn);
+        Locker memory locker = snParser(snOfLocker);
 
         require(block.timestamp >= locker.expireDate, 
             "LR.RL: locker not expired");
@@ -120,8 +119,8 @@ library LockersRepo {
         require(locker.from == caller, 
             "LR.RL: not from");
 
-        if (repo.snList.remove(sn)) {
-            delete repo.lockers[sn];
+        if (repo.snList.remove(snOfLocker)) {
+            delete repo.lockers[snOfLocker];
             flag = true;
         }
     }
@@ -132,16 +131,16 @@ library LockersRepo {
 
     function checkLocker(
         Repo storage repo,
-        uint256 sn,
+        bytes32 snOfLocker,
         uint256 caller
     ) public view returns (uint256 value) {
-        Locker memory locker = snParser(sn);
+        Locker memory locker = snParser(snOfLocker);
 
         require(locker.from == caller || locker.to == caller, 
             "LR.CL: not interestedParty");
 
-        if (repo.snList.contains(sn)) {
-            value = repo.lockers[sn];            
+        if (repo.snList.contains(snOfLocker)) {
+            value = repo.lockers[snOfLocker];            
         }        
     }
 

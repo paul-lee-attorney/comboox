@@ -28,7 +28,7 @@ async function main() {
 	const libFRClaims = await deployTool(signers[0], "FRClaims", libraries);
 	const libRolesRepo = await deployTool(signers[0], "RolesRepo", libraries);
 	const libRulesParser = await deployTool(signers[0], "RulesParser", libraries);
-	const libTopChain = await deployTool(signers[0], "TopChain", libraries);
+
 
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address
@@ -43,6 +43,12 @@ async function main() {
 	const libPledgesRepo = await deployTool(signers[0], "PledgesRepo", libraries);
 	const libSigsRepo = await deployTool(signers[0], "SigsRepo", libraries);
 	const libSwapsRepo = await deployTool(signers[0], "SwapsRepo", libraries);
+
+
+	libraries = {
+		"DealsRepo": libDealsRepo.address
+	};
+	const libTopChain = await deployTool(signers[0], "TopChain", libraries);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,

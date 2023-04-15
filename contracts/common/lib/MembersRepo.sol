@@ -16,13 +16,13 @@ import "./TopChain.sol";
 library MembersRepo {
     using ArrayUtils for uint256[];
     using Checkpoints for Checkpoints.History;
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     using SharesRepo for SharesRepo.Head;
     using TopChain for TopChain.Chain;
 
     struct Member {
         Checkpoints.History votesInHand;
-        EnumerableSet.UintSet sharesInHand;
+        EnumerableSet.Bytes32Set sharesInHand;
     }
 
     /*
@@ -96,7 +96,7 @@ library MembersRepo {
         Repo storage gm,
         SharesRepo.Head memory head
     ) public returns (bool flag) {
-        uint256 shareNumber = head.codifyHead();
+        bytes32 shareNumber = head.codifyHead();
         if (addShareNumberToList(gm, shareNumber)) {
             flag = gm.members[head.shareholder].sharesInHand.add(shareNumber);
         }
@@ -106,7 +106,7 @@ library MembersRepo {
         Repo storage gm,
         SharesRepo.Head memory head
     ) public returns (bool flag) {
-        uint256 shareNumber = head.codifyHead();
+        bytes32 shareNumber = head.codifyHead();
         if (removeShareNumberFromList(gm, shareNumber)) {
             flag = gm.members[head.shareholder].sharesInHand.remove(shareNumber);
         }
@@ -158,14 +158,14 @@ library MembersRepo {
 
     function addShareNumberToList(
         Repo storage gm,
-        uint256 shareNumber
+        bytes32 shareNumber
     ) public returns (bool flag) {
         flag = gm.members[0].sharesInHand.add(shareNumber);
     }
 
     function removeShareNumberFromList(
         Repo storage gm,
-        uint256 shareNumber
+        bytes32 shareNumber
     ) public returns (bool flag) {
         flag = gm.members[0].sharesInHand.remove(shareNumber);
     }
@@ -195,10 +195,11 @@ library MembersRepo {
     function isClassMember(Repo storage gm, uint256 acct, uint class)
         public view returns (bool flag)
     {
-        uint256[] memory shares = gm.members[acct].sharesInHand.values();
+        bytes32[] memory shares = gm.members[acct].sharesInHand.values();
         uint256 len = shares.length;
         while (len > 0) {
-            if (uint16(shares[len-1] >> 176) == class) {
+            uint sharenumber = uint(shares[len-1]); 
+            if (uint16(sharenumber >> 176) == class) {
                 flag = true;
                 return flag;
             }
@@ -209,15 +210,16 @@ library MembersRepo {
     function getMembersOfClass(Repo storage gm, uint class)
         public view returns(uint256[] memory output)
     {
-        uint256[] memory shares = gm.members[0].sharesInHand.values();
+        bytes32[] memory shares = gm.members[0].sharesInHand.values();
         uint256 len = shares.length;
 
         uint256[] memory members = new uint256[](gm.chain.nodes[0].ptr);
 
         uint256 i;
         while (len > 0) {
-            if (uint16(shares[len-1] >> 176) == class) {
-                uint40 shareholder = uint40(shares[len-1] >> 40);
+            uint sharenumber = uint(shares[len-1]);
+            if (uint16(sharenumber >> 176) == class) {
+                uint40 shareholder = uint40(sharenumber >> 88);
 
                 uint256 j;
                 while (j<i) {

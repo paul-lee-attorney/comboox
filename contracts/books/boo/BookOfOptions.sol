@@ -34,8 +34,8 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     // ################
 
     function createOption(
-        uint256 sn,
-        uint256 snOfCond,
+        bytes32 sn,
+        bytes32 snOfCond,
         uint rightholder,
         uint paid,
         uint par

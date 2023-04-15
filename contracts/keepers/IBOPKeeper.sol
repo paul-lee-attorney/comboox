@@ -15,7 +15,7 @@ interface IBOPKeeper {
     // ##   BOPKeeper   ##
     // ###################
     function createPledge(
-        uint256 sn,
+        bytes32 snOfPld,
         uint creditor,
         uint guaranteeDays,
         uint paid,

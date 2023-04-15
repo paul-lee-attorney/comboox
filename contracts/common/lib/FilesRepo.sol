@@ -40,7 +40,7 @@ library FilesRepo {
     }
 
     struct File {
-        uint256 snOfDoc;
+        bytes32 snOfDoc;
         Head head;
         Ref ref;
     }
@@ -64,7 +64,7 @@ library FilesRepo {
     //##    写接口     ##
     //##################
 
-    function regFile(Repo storage repo, uint256 snOfDoc, address body) 
+    function regFile(Repo storage repo, bytes32 snOfDoc, address body) 
         public returns (bool flag)
     {
         if (repo.filesList.add(body)) {
@@ -246,7 +246,7 @@ library FilesRepo {
     }
 
     function getSNOfFile(Repo storage repo, address body)
-        public view onlyRegistered(repo, body) returns (uint256)
+        public view onlyRegistered(repo, body) returns (bytes32)
     {
         return repo.files[body].snOfDoc;
     }

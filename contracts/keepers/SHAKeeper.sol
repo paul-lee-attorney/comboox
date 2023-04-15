@@ -12,7 +12,7 @@ import "../common/access/AccessControl.sol";
 import "./ISHAKeeper.sol";
 
 contract SHAKeeper is ISHAKeeper, AccessControl {
-    using RulesParser for uint256;
+    using RulesParser for bytes32;
 
     // ##################
     // ##   Modifier   ##
@@ -164,8 +164,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             seller: share.head.shareholder,
             priceOfPaid: deal.head.priceOfPaid,
             priceOfPar: deal.head.priceOfPar,
-            closingDate: deal.head.closingDate
-            // state: uint8(DealsRepo.StateOfDeal.Locked)
+            closingDate: deal.head.closingDate,
+            para: 0
         });
 
         deal.body = DealsRepo.Body({
@@ -173,8 +173,10 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             groupOfBuyer: deal.body.groupOfBuyer,
             paid: claim.paid,
             par: claim.par,
-            // closingDate: deal.body.closingDate,
-            state: uint8(DealsRepo.StateOfDeal.Locked)
+            state: uint8(DealsRepo.StateOfDeal.Locked),
+            para: 0,
+            arg: 0,
+            flag: false
         });
 
         seqOfAlongDeal = IInvestmentAgreement(ia).regDeal(deal);
@@ -220,13 +222,13 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         bytes32 sigHash
     ) private {
         for (uint256 i = 0; i < obligors.length; i++) {
-            uint256[] memory sharesInHand = _gk.getROM().sharesInHand(obligors[i]);
+            bytes32[] memory sharesInHand = _gk.getROM().sharesInHand(obligors[i]);
 
             for (uint256 j = 0; j < sharesInHand.length; j++) {
                 (uint256 seqOfGiftDeal, uint64 result) = _createGift(
                     ia,
                     seqOfDeal,
-                    sharesInHand[j],
+                    uint(sharesInHand[j]),
                     giftPaid
                 );
 
@@ -261,27 +263,21 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
             lockAmount = (share.body.cleanPaid < giftPaid) ? share.body.cleanPaid : uint64(giftPaid);
 
-            DealsRepo.Deal memory giftDeal = DealsRepo.Deal({
-                head: DealsRepo.Head({
-                    typeOfDeal: uint8(DealsRepo.TypeOfDeal.FreeGift),
-                    seqOfDeal: 0,
-                    preSeq: uint16(seqOfDeal),
-                    classOfShare: share.head.class,
-                    seqOfShare: share.head.seqOfShare,
-                    seller: share.head.shareholder,
-                    priceOfPaid: 0,
-                    priceOfPar: 0,
-                    closingDate: deal.head.closingDate
-                }),
-                body: DealsRepo.Body({
-                    buyer: deal.body.buyer,
-                    groupOfBuyer: deal.body.groupOfBuyer,
-                    paid: lockAmount,
-                    par: lockAmount,
-                    state: uint8(DealsRepo.StateOfDeal.Locked)
-                }),
-                hashLock: bytes32(0)
-            });
+            DealsRepo.Deal memory giftDeal;
+
+            giftDeal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FreeGift);
+            giftDeal.head.preSeq = uint16(seqOfDeal);
+            giftDeal.head.classOfShare = share.head.class;
+
+            giftDeal.head.seqOfShare = share.head.seqOfShare;
+            giftDeal.head.seller = share.head.shareholder;
+            giftDeal.head.closingDate = deal.head.closingDate;
+
+            giftDeal.body.buyer = deal.body.buyer;
+            giftDeal.body.groupOfBuyer = deal.body.groupOfBuyer; 
+            giftDeal.body.paid = lockAmount;
+            giftDeal.body.par = lockAmount;
+            giftDeal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
             
             seqOfGiftDeal = IInvestmentAgreement(ia).regDeal(giftDeal);
 
@@ -375,13 +371,12 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         
         deal.head.preSeq = deal.head.seqOfDeal;
 
-        deal.body = DealsRepo.Body({
-            buyer: cl.rightholder,
-            groupOfBuyer: _gk.getROM().groupRep(cl.rightholder),
-            paid: (deal.body.paid * cl.ratio) / 10000,
-            par: (deal.body.par * cl.ratio) / 10000,
-            state: uint8(DealsRepo.StateOfDeal.Locked)
-        });
+        
+        deal.body.buyer = cl.rightholder;
+        deal.body.groupOfBuyer = _gk.getROM().groupRep(cl.rightholder);
+        deal.body.paid = (deal.body.paid * cl.ratio) / 10000;
+        deal.body.par = (deal.body.par * cl.ratio) / 10000;
+        deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
 
         IInvestmentAgreement(ia).lockDealSubject(IInvestmentAgreement(ia).regDeal(deal));
 

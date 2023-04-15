@@ -40,7 +40,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         // uint40 owner = getOwner();
         uint40 gc = getGeneralCounsel();
 
-        uint256 snOfDoc = (typeOfDoc << 240) + (version << 224);
+        bytes32 snOfDoc = bytes32((typeOfDoc << 240) + uint240(version << 224));
 
         DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, msg.sender);        
 
@@ -65,12 +65,12 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     // ==== Rules ====
     
-    function addRule(uint256 rule) external onlyAttorney {
+    function addRule(bytes32 rule) external onlyAttorney {
 
-        uint16 seq = uint16(rule >> 240);
+        uint seqOfRule = uint16(uint(rule) >> 240);
 
-        _rules.rules[seq] = rule;
-        _rules.seqList.add(seq);
+        _rules.rules[seqOfRule] = rule;
+        _rules.seqList.add(seqOfRule);
     }
 
     function removeRule(uint256 seq) external onlyAttorney {
@@ -133,7 +133,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         return _rules.seqList.values();
     }
 
-    function getRule(uint256 seq) external view returns (uint256) {
+    function getRule(uint256 seq) external view returns (bytes32) {
         return _rules.rules[seq];
     }
 }

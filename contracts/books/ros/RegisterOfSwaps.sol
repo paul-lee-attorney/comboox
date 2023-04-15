@@ -12,7 +12,7 @@ import "./IRegisterOfSwaps.sol";
 import "../../common/access/AccessControl.sol";
 
 contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     using SwapsRepo for SwapsRepo.Repo;
     using SwapsRepo for SwapsRepo.Swap;
     using SwapsRepo for uint256;
@@ -24,11 +24,11 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
     //#################
 
     function createSwap(
-        uint256 sn,
+        bytes32 snOfSwap,
         uint rightholder, 
         uint paidOfConsider
     ) external onlyKeeper {
-        SwapsRepo.Head memory head = _repo.createSwap(sn, rightholder, paidOfConsider, _gk);
+        SwapsRepo.Head memory head = _repo.createSwap(snOfSwap, rightholder, paidOfConsider, _gk);
         emit CreateSwap(head.seqOfSwap, rightholder, head.obligor, paidOfConsider, head.rateOfSwap);
     }
 
@@ -123,11 +123,11 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
 
     // ==== SNList ====
 
-    function isSwapSN(uint256 snOfSwap) external view returns(bool flag) {
+    function isSwapSN(bytes32 snOfSwap) external view returns(bool flag) {
         flag = _repo.snList.contains(snOfSwap);
     }
 
-    function getSNList() external view returns (uint256[] memory) {
+    function getSNList() external view returns (bytes32[] memory) {
         return _repo.snList.values();
     }
 }

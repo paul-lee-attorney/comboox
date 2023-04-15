@@ -53,7 +53,7 @@ interface IRegCenter {
 
     // ==== Options ====
 
-    event SetReward(uint256 indexed snOfReward);
+    event SetReward(bytes32 indexed snOfReward);
 
     event TransferOwnership(address indexed newOwner);
 
@@ -65,11 +65,11 @@ interface IRegCenter {
 
     event TransferPoints(uint256 indexed from, uint256 indexed to, uint256 amt);
 
-    event LockPoints(uint256 indexed snOfLocker, uint256 value);
+    event LockPoints(bytes32 indexed snOfLocker, uint256 value);
 
-    event ReleasePoints(uint256 indexed sn, string hashKey, uint salt, uint256 value);
+    event ReleasePoints(bytes32 indexed snOfLocker, string hashKey, uint salt, uint256 value);
 
-    event WithdrawPoints(uint256 indexed sn, string hashKey, uint salt, uint256 value);
+    event WithdrawPoints(bytes32 indexed snOfLocker, string hashKey, uint salt, uint256 value);
 
     // ==== Docs ====
     event SetDocKeeper(address indexed keeper);
@@ -86,7 +86,7 @@ interface IRegCenter {
 
     // ==== Opts Setting ====
 
-    function setReward(uint256 snOfReward) external;
+    function setReward(bytes32 snOfReward) external;
 
     // ==== Power transfer ====
 
@@ -98,17 +98,17 @@ interface IRegCenter {
 
     function mintPoints(uint256 to, uint amt) external;
 
-    function mintAndLockPoints(uint256 sn, uint amt) external;
+    function mintAndLockPoints(bytes32 snOfLocker, uint amt) external;
 
     function transferPoints(uint256 to, uint amt) external;
 
-    function lockPoints(uint256 sn, uint amt) external;
+    function lockPoints(bytes32 snOfLocker, uint amt) external;
 
-    function releasePoints(uint256 sn, string memory hashKey, uint salt) external;
+    function releasePoints(bytes32 snOfLocker, string memory hashKey, uint salt) external;
 
-    function withdrawPoints(uint256 sn, string memory hashKey, uint salt) external;
+    function withdrawPoints(bytes32 snOfLocker, string memory hashKey, uint salt) external;
 
-    function checkLocker(uint256 sn) external view returns (uint256 value);
+    function checkLocker(bytes32 snOfLocker) external view returns (uint256 value);
 
     // ==== User ====
 
@@ -122,9 +122,9 @@ interface IRegCenter {
 
     function turnOverKeyOfDocsRepo(address newKeeper) external;
 
-    function setTemplate(uint256 snOfDoc, address body) external;
+    function setTemplate(bytes32 snOfDoc, address body) external;
 
-    function createDoc(uint256 snOfDoc, address primeKeyOfOwner) external 
+    function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) external 
         returns(DocsRepo.Doc memory doc);
 
     // ==== Comp ====
@@ -164,21 +164,21 @@ interface IRegCenter {
 
     // ==== SingleCheck ====
 
-    function getTemplate(uint256 snOfDoc) external view returns (DocsRepo.Doc memory doc);
+    function getTemplate(bytes32 snOfDoc) external view returns (DocsRepo.Doc memory doc);
 
-    function docExist(uint256 snOfDoc) external view returns(bool);
+    function docExist(bytes32 snOfDoc) external view returns(bool);
 
-    function getDoc(uint256 snOfDoc) external view returns(DocsRepo.Doc memory doc);
+    function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc);
 
-    function verifyDoc(uint256 snOfDoc) external view returns(bool flag);
+    function verifyDoc(bytes32 snOfDoc) external view returns(bool flag);
 
     // ==== BatchQuery ====
 
-    function getAllDocsSN() external view returns(uint256[] memory);
+    function getAllDocsSN() external view returns(bytes32[] memory);
 
     function getBodiesList(uint256 typeOfDoc, uint256 version) external view returns(address[] memory);
 
-    function getSNList(uint256 typeOfDoc, uint256 version) external view returns(uint256[] memory);
+    function getSNList(uint256 typeOfDoc, uint256 version) external view returns(bytes32[] memory);
 
     function getDocsList(uint256 typeOfDoc, uint256 version) external view returns(DocsRepo.Doc[] memory);
 

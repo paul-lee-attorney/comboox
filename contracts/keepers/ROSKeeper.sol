@@ -36,14 +36,14 @@ contract ROSKeeper is IROSKeeper, AccessControl {
     // ##################
 
     function createSwap(
-        uint256 sn,
+        bytes32 snOfSwap,
         uint rightholder, 
         uint paidOfConsider,
         uint caller
     ) external onlyDirectKeeper {
-        require(caller == SwapsRepo.snParser(sn).obligor,
+        require(caller == SwapsRepo.snParser(snOfSwap).obligor,
             "ROSK.CS: not obligor");
-        _gk.getROS().createSwap(sn, rightholder, paidOfConsider);
+        _gk.getROS().createSwap(snOfSwap, rightholder, paidOfConsider);
     }
 
     function transferSwap(

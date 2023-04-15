@@ -33,7 +33,7 @@ interface IRegisterOfSwaps {
     //#################
 
     function createSwap(
-        uint256 sn,
+        bytes32 snOfSwap,
         uint rightholder, 
         uint paidOfConsider
     ) external;
@@ -75,7 +75,7 @@ interface IRegisterOfSwaps {
 
     // ==== SNList ====
 
-    function isSwapSN(uint256 snOfSwap) external view returns(bool flag);
+    function isSwapSN(bytes32 snOfSwap) external view returns(bool flag);
 
-    function getSNList() external view returns (uint256[] memory);
+    function getSNList() external view returns (bytes32[] memory);
 }

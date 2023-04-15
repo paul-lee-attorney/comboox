@@ -15,7 +15,7 @@ import "./RulesParser.sol";
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
     using DelegateMap for DelegateMap.Map;
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
     enum TypeOfMotion {
         ZeroPoint,
@@ -78,7 +78,7 @@ library MotionsRepo {
     struct Repo {
         mapping(uint256 => Motion) motions;
         mapping(uint256 => Record) records;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //##################
@@ -87,26 +87,26 @@ library MotionsRepo {
 
     // ==== snParser ====
 
-    function snParser (uint256 sn) public pure returns(Head memory head) {
-        head = Head({
-            typeOfMotion: uint16(sn >> 240),
-            seqOfMotion: uint64(sn >> 176),
-            seqOfVR: uint16(sn >> 160),
-            creator: uint40(sn >> 120),
-            executor: uint40(sn >> 80),
-            createDate: uint48(sn >> 32),
-            data: uint32(sn)
-        });
+    function snParser (bytes32 sn) public pure returns(Head memory head) {
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))
+        }
+        head = abi.decode(_sn, (Head));
     }
 
-    function codifyHead(Head memory head) public pure returns(uint256 sn) {
-        sn = (uint256(head.typeOfMotion) << 240) + 
-            (uint256(head.seqOfMotion) << 176) +
-            (uint256(head.seqOfVR) << 160) +
-            (uint256(head.creator) << 120) +
-            (uint256(head.executor) << 80) +
-            (uint256(head.createDate) << 32) + 
-            head.data;
+    function codifyHead(Head memory head) public pure returns(bytes32 sn) {
+        bytes memory _sn = abi.encode(
+                            head.typeOfMotion,
+                            head.seqOfMotion,
+                            head.seqOfVR,
+                            head.creator,
+                            head.executor,
+                            head.createDate,
+                            head.data);  
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
     } 
     
     // ==== create ====
@@ -124,7 +124,7 @@ library MotionsRepo {
         head.seqOfMotion = _increaseCounterOfMotion(repo);
         head.createDate = uint48(block.timestamp);
         
-        uint256 snOfMotion = codifyHead(head);
+        bytes32 snOfMotion = codifyHead(head);
         repo.snList.add(snOfMotion);
 
         Motion storage m = repo.motions[head.seqOfMotion];

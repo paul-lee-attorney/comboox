@@ -16,10 +16,11 @@ import "./SwapsRepo.sol";
 import "../../books/bos/IBookOfShares.sol";
 
 library OptionsRepo {
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
     using Checkpoints for Checkpoints.History;
     using CondsRepo for CondsRepo.Cond;
-    using CondsRepo for uint256;
+    using CondsRepo for bytes32;
 
     enum TypeOfOpt {
         CallPrice,          
@@ -87,7 +88,7 @@ library OptionsRepo {
     struct Repo {
         mapping(uint256 => Option) options;
         mapping(uint256 => Record) records;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     // ###############
@@ -96,47 +97,50 @@ library OptionsRepo {
 
     // ==== cofify / parser ====
 
-    function snParser(uint256 sn) public pure returns (Head memory head) {
-        head = Head({
-            seqOfOpt: uint32(sn >> 224),
-            typeOfOpt: uint8(sn >> 216),
-            classOfShare: uint16(sn >> 200),
-            rate: uint32(sn >> 168),
-            issueDate: uint48(sn >> 120),
-            triggerDate: uint48(sn >> 72),
-            execDays: uint16(sn >> 56),
-            closingDays: uint16(sn >> 40),
-            obligor: uint40(sn)
-        });
+    function snParser(bytes32 sn) public pure returns (Head memory head) {
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))
+        }
+        head = abi.decode(_sn, (Head));
     }
 
-    function codifyHead(Head memory head) public pure returns (uint256 sn) {
-        sn = (uint256(head.seqOfOpt) << 224) +
-            (uint256(head.typeOfOpt) << 216) +
-            (uint256(head.classOfShare) << 200) +
-            (uint256(head.rate) << 168) +
-            (uint256(head.issueDate) << 120) +
-            (uint256(head.triggerDate) << 72) +
-            (uint256(head.execDays) << 56) +
-            (uint256(head.closingDays) << 40) + 
-            head.obligor;
+    function codifyHead(Head memory head) public pure returns (bytes32 sn) {
+        bytes memory _sn = abi.encodePacked(
+                            head.seqOfOpt,
+                            head.typeOfOpt,
+                            head.classOfShare,
+                            head.rate,
+                            head.issueDate,
+                            head.triggerDate,
+                            head.execDays,
+                            head.closingDays,
+                            head.obligor);
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
     }
 
-    function codifyBrief(Brief memory brf) public pure returns (uint256 sn) {
-        sn = (uint256(brf.seqOfBrf) << 240) +
-            (uint256(brf.seqOfSwap) << 208) +
-            (uint256(brf.rateOfSwap) << 176) +
-            (uint256(brf.paidOfConsider) << 112) +
-            (uint256(brf.paidOfTarget) << 48) +
-            (uint256(brf.obligor) << 8);
+    function codifyBrief(Brief memory brf) public pure returns (bytes32 sn) {
+        bytes memory _sn = abi.encodePacked(
+                            brf.seqOfBrf,
+                            brf.seqOfSwap,
+                            brf.rateOfSwap,
+                            brf.paidOfConsider,
+                            brf.paidOfTarget,
+                            brf.obligor,
+                            brf.state);
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
     }
 
     // ==== Option ====
 
     function createOption(
         Repo storage repo,
-        uint256 snOfOpt,
-        uint256 snOfCond,
+        bytes32 snOfOpt,
+        bytes32 snOfCond,
         uint rightholder,
         uint paid,
         uint par
@@ -146,15 +150,11 @@ library OptionsRepo {
 
         opt.head = snParser(snOfOpt);
         opt.cond = snOfCond.snParser();
-        opt.body = Body({
-            closingDate: opt.head.triggerDate + (uint48(opt.head.execDays) + uint48(opt.head.closingDays)) * 86400,
-            rightholder: uint40(rightholder),
-            paid: uint64(paid),
-            par: uint64(par),
-            state: 0,
-            para: 0,
-            arg: 0
-        });
+
+        opt.body.closingDate = opt.head.triggerDate + (uint48(opt.head.execDays) + uint48(opt.head.closingDays)) * 86400;
+        opt.body.rightholder = uint40(rightholder);
+        opt.body.paid = uint64(paid);
+        opt.body.par = uint64(par);
 
         head = issueOption(repo, opt);
     }

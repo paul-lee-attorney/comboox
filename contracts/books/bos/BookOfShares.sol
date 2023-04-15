@@ -42,7 +42,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== IssueShare ====
 
-    function issueShare(uint256 shareNumber, uint payInDeadline, uint paid, uint par) 
+    function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) 
         external onlyKeeper
     {
 
@@ -50,37 +50,36 @@ contract BookOfShares is IBookOfShares, AccessControl {
             _repo.createShare(shareNumber, payInDeadline, paid, par);
 
         _gk.getROM().addMember(newShare.head.shareholder);
-
-        emit IssueShare(newShare.head.seqOfShare, paid, par);
-
         _gk.getROM().addShareToMember(newShare);
         _gk.getROM().capIncrease(paid, par);
+
+        emit IssueShare(newShare.head.seqOfShare, paid, par);
     }
 
     function regShare(SharesRepo.Share memory share) 
         public onlyKeeper returns(SharesRepo.Share memory newShare)
     {
         newShare = _repo.regShare(share);
-        emit IssueShare(newShare.head.seqOfShare, newShare.body.paid, newShare.body.par);
-
         _gk.getROM().addShareToMember(newShare);
+
+        emit IssueShare(newShare.head.seqOfShare, newShare.body.paid, newShare.body.par);
     }
 
     // ==== PayInCapital ====
 
-    function setPayInAmt(uint256 snOfLocker, uint amount) 
+    function setPayInAmt(bytes32 snOfLocker, uint amount) 
         external onlyDirectKeeper
     {
-        if (_lockers.lockValue(snOfLocker, amount, uint32(snOfLocker >> 216)))
+        if (_lockers.lockValue(snOfLocker, amount, uint32(uint(snOfLocker) >> 216)))
             emit SetPayInAmt(snOfLocker, amount);
     }
 
-    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint salt, uint256 caller)
+    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey, uint salt, uint256 caller)
         external onlyDirectKeeper
     {
         uint64 amount = uint64(_lockers.releaseValue(snOfLocker, hashKey, salt, caller));
         if (amount > 0) {
-            SharesRepo.Share storage share = _repo.shares[uint32(snOfLocker >> 216)];
+            SharesRepo.Share storage share = _repo.shares[uint32(uint(snOfLocker) >> 216)];
             require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
             share.payInCapital(amount);
@@ -89,8 +88,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
         }
     }
 
-    function withdrawPayInAmt(uint256 snOfLocker) external onlyDirectKeeper {
-        if (_lockers.burnLocker(snOfLocker, uint32(snOfLocker >> 216)))
+    function withdrawPayInAmt(bytes32 snOfLocker) external onlyDirectKeeper {
+        if (_lockers.burnLocker(snOfLocker, uint32(uint(snOfLocker) >> 216)))
             emit WithdrawPayInAmt(snOfLocker);
     }
 
@@ -160,8 +159,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
         require(msg.sender == address(_gk.getBOP()) ||
         _gk.isKeeper(msg.sender), "BOS.DCP: neither keeper nor BOP");
 
-        emit DecreaseCleanPaid(seqOfShare, paid);
         _repo.shares[seqOfShare].decreaseCleanPaid(paid);
+        emit DecreaseCleanPaid(seqOfShare, paid);
     }
 
     function increaseCleanPaid(uint256 seqOfShare, uint paid)
@@ -170,8 +169,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
         require(msg.sender == address(_gk.getBOP()) ||
         _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
 
-        emit IncreaseCleanPaid(seqOfShare, paid);
         _repo.shares[seqOfShare].increaseCleanPaid(paid);
+        emit IncreaseCleanPaid(seqOfShare, paid);
     }
 
     // ==== State & PaidInDeadline ====
@@ -186,8 +185,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function updatePaidInDeadline(uint256 seqOfShare, uint deadline)
         external onlyDirectKeeper shareExist(seqOfShare)
     {
-        emit UpdatePaidInDeadline(seqOfShare, deadline);
         _repo.shares[seqOfShare].updatePayInDeadline(deadline);
+        emit UpdatePaidInDeadline(seqOfShare, deadline);
     }
 
     // ==== private funcs ====
@@ -225,9 +224,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
         uint paid,
         uint par
     ) private {
-
-        emit SubAmountFromShare(share.head.seqOfShare, paid, par);
         share.subAmtFromShare(paid, par);
+        emit SubAmountFromShare(share.head.seqOfShare, paid, par);
      }
 
     // ##################
@@ -235,11 +233,11 @@ contract BookOfShares is IBookOfShares, AccessControl {
     // ##################
 
     function counterOfShares() public view returns (uint32) {
-        return _repo.shares[0].head.seqOfShare;
+        return _repo.counterOfShares();
     }
 
     function counterOfClasses() public view returns (uint16) {
-        return _repo.shares[0].head.class;
+        return _repo.counterOfClasses();
     }
 
     // ==== SharesRepo ====
@@ -268,7 +266,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== PayInCapital ====
 
-    function getLocker(uint256 snOfLocker) external view returns (uint64 amount) {
+    function getLocker(bytes32 snOfLocker) external view returns (uint64 amount) {
         amount = uint64(_lockers.lockers[snOfLocker]);
     }
 

@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "../lib/EnumerableSet.sol";
 
 library DocsRepo {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
      struct Head {
         uint16 typeOfDoc;
@@ -19,8 +19,9 @@ library DocsRepo {
         uint40 creator;
         uint48 createDate;
         uint16 para;
-        uint24 argu;
-        uint32 data;        
+        uint16 argu;
+        uint32 data;
+        uint8 state;        
     }
  
     struct Doc {
@@ -31,35 +32,35 @@ library DocsRepo {
     struct Repo {
         // typeOfDoc => version => seqOfDoc => Doc
         mapping(uint256 => mapping(uint256 => mapping(uint256 => Doc))) docs;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //##################
     //##    写接口     ##
     //##################
 
-    function snParser(uint256 sn) public pure returns(Head memory head) {
-        head = Head({
-            typeOfDoc: uint16(sn >> 240),
-            version: uint16(sn >> 224),
-            seqOfDoc: uint64(sn >> 160),
-            creator: uint40(sn >> 120),
-            createDate: uint48(sn >> 72),
-            para: uint16(sn >> 56),
-            argu: uint24(sn >> 32),
-            data: uint32(sn)
-        });
+    function snParser(bytes32 sn) public pure returns(Head memory head) {
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))
+        }
+        head = abi.decode(_sn, (Head));
     }
 
-    function codifyHead(Head memory head) public pure returns(uint256 sn) {
-        sn = (uint256(head.typeOfDoc) << 240) +
-            (uint256(head.version) << 224) +
-            (uint256(head.seqOfDoc) << 160) +
-            (uint256(head.creator) << 120) +
-            (uint256(head.createDate) << 72) +
-            (uint256(head.para) << 56) +
-            (uint256(head.argu) << 32) +
-            head.data;
+    function codifyHead(Head memory head) public pure returns(bytes32 sn) {
+        bytes memory _sn = abi.encode(
+                            head.typeOfDoc,
+                            head.version,
+                            head.seqOfDoc,
+                            head.creator,
+                            head.createDate,
+                            head.para,
+                            head.argu,
+                            head.data,
+                            head.state);  
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
     }
 
     function init(Repo storage repo, address msgSender) 
@@ -81,7 +82,7 @@ library DocsRepo {
 
     function setTemplate(
         Repo storage repo,
-        uint256 snOfDoc, 
+        bytes32 snOfDoc, 
         address body,
         address msgSender,
         uint caller
@@ -101,7 +102,7 @@ library DocsRepo {
         }
     }
 
-    function createDoc(Repo storage repo, uint256 snOfDoc, uint creator)
+    function createDoc(Repo storage repo, bytes32 snOfDoc, uint creator)
         public returns (Doc memory doc)
     {
         doc.head = snParser(snOfDoc);
@@ -229,21 +230,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // ==== SingleCheck ====
 
-    function getTemplate(Repo storage repo, uint256 snOfDoc) public view returns (Doc memory doc) {
+    function getTemplate(Repo storage repo, bytes32 snOfDoc) public view returns (Doc memory doc) {
         Head memory head = snParser(snOfDoc);
         doc = repo.docs[head.typeOfDoc][head.version][0];
     }
 
-    function docExist(Repo storage repo, uint256 snOfDoc) public view returns(bool) {
+    function docExist(Repo storage repo, bytes32 snOfDoc) public view returns(bool) {
         return repo.snList.contains(snOfDoc);
     }
 
-    function getDoc(Repo storage repo, uint256 snOfDoc) public view returns(Doc memory doc) {
+    function getDoc(Repo storage repo, bytes32 snOfDoc) public view returns(Doc memory doc) {
         Head memory head = snParser(snOfDoc);
         doc = repo.docs[head.typeOfDoc][head.version][head.seqOfDoc];
     }
 
-    function verifyDoc(Repo storage repo, uint256 snOfDoc) public view returns(bool flag) {
+    function verifyDoc(Repo storage repo, bytes32 snOfDoc) public view returns(bool flag) {
         address temp = getTemplate(repo, snOfDoc).body;
         address query = getDoc(repo, snOfDoc).body;
 
@@ -252,7 +253,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // ==== BatchQuery ====
 
-    function getAllSN(Repo storage repo) public view returns(uint256[] memory) {
+    function getAllSN(Repo storage repo) public view returns(bytes32[] memory) {
         return repo.snList.values();
     }
 
@@ -266,9 +267,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return output;
     } 
 
-    function getSNList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(uint256[] memory) {
+    function getSNList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(bytes32[] memory) {
         uint256 len = counterOfDocs(repo, typeOfDoc, version);
-        uint256[] memory output = new uint256[](len);
+        bytes32[] memory output = new bytes32[](len);
         while (len > 0) {
             output[len - 1]=codifyHead(repo.docs[typeOfDoc][version][len].head);
             len--; 

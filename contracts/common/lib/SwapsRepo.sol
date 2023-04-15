@@ -15,7 +15,7 @@ import "./EnumerableSet.sol";
 import "./SharesRepo.sol";
 
 library SwapsRepo {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
     enum StateOfSwap {
         Pending,
@@ -58,42 +58,40 @@ library SwapsRepo {
     struct Repo{
         // seqOfSwap => Swap
         mapping(uint256 => Swap) swaps;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //##################
     //##    写接口    ##
     //##################
 
-    function snParser(uint256 sn) public pure returns (Head memory head) {
-        head = Head({
-            seqOfSwap: uint32(sn >> 224),
-            classOfTarget: uint16(sn >> 208),
-            classOfConsider: uint16(sn >> 192),
-            createDate: uint48(sn >> 144),
-            triggerDate: uint48(sn >> 96),
-            closingDays: uint16(sn >> 80),
-            obligor: uint40(sn >> 40),
-            rateOfSwap: uint32(sn >> 8),
-            para: uint8(sn)
-        });
+    function snParser(bytes32 sn) public pure returns (Head memory head) {
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))
+        }
+        head = abi.decode(_sn, (Head));
     } 
 
-    function codifyHead(Head memory head) public pure returns (uint256 sn) {
-        sn = (uint256(head.seqOfSwap) << 224) +
-            (uint256(head.classOfTarget) << 208) +
-            (uint256(head.classOfConsider) << 192) +
-            (uint256(head.createDate) << 144) +
-            (uint256(head.triggerDate) << 96) +
-            (uint256(head.closingDays) << 80) +
-            (uint256(head.obligor) << 40) +
-            (uint256(head.rateOfSwap) << 8) +
-            head.para;
+    function codifyHead(Head memory head) public pure returns (bytes32 sn) {
+        bytes memory _sn = abi.encode(
+                            head.seqOfSwap,
+                            head.classOfTarget,
+                            head.classOfConsider,
+                            head.createDate,
+                            head.triggerDate,
+                            head.closingDays,
+                            head.obligor,
+                            head.rateOfSwap,
+                            head.para);  
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
     } 
 
     function createSwap(
             Repo storage repo, 
-            uint256 sn,
+            bytes32 sn,
             uint rightholder, 
             uint paidOfConsider,
             IGeneralKeeper _gk
@@ -109,7 +107,7 @@ library SwapsRepo {
         uint rightholder, 
         uint paidOfConsider,
         IGeneralKeeper _gk
-    ) public returns(Head memory newHead) {
+    ) public returns(Head memory ) {
         Swap memory swap;
 
         head.createDate = uint48(block.timestamp);
@@ -120,7 +118,7 @@ library SwapsRepo {
         swap.body.paidOfConsider = uint64(paidOfConsider);
         swap.body.state = uint8(StateOfSwap.Issued);
 
-        newHead = regSwap(repo, swap, _gk).head;
+        return regSwap(repo, swap, _gk).head;
     }
 
     function regSwap(
@@ -175,7 +173,7 @@ library SwapsRepo {
         uint buyer,
         uint amt,
         IGeneralKeeper _gk
-    ) public returns(Head memory head) {
+    ) public returns(Head memory) {
         Swap storage swap = repo.swaps[seqOfSwap];
 
         require(swap.body.state >= uint8(StateOfSwap.Issued), "SR.SS: wrong state");
@@ -190,7 +188,7 @@ library SwapsRepo {
         if (newSwap.body.state == uint8(StateOfSwap.Crystalized))
             newSwap.body.paidOfTarget = uint64(amt * newSwap.head.rateOfSwap) / 10000;
         
-        head = regSwap(repo, newSwap, _gk).head;
+        return regSwap(repo, newSwap, _gk).head;
     }
 
     function crystalizeSwap(
@@ -324,7 +322,7 @@ library SwapsRepo {
         return output;
     }
 
-    function getSNList(Repo storage repo) public view returns (uint256[] memory list)
+    function getSNList(Repo storage repo) public view returns (bytes32[] memory list)
     {
         list = repo.snList.values();
     }

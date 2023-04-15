@@ -17,11 +17,11 @@ interface IBookOfDirectors is IMeetingMinutes{
     //##    events    ##
     //##################
 
-    event AddPosition(uint256 indexed snOfPos);
+    event AddPosition(bytes32 indexed snOfPos);
 
     event RemovePosition(uint256 indexed seqOfPos);
 
-    event TakePosition(uint256 indexed snOfPos);
+    event TakePosition(bytes32 indexed snOfPos);
 
     event QuitPosition(uint256 indexed seqOfPos, uint256 indexed caller);
 
@@ -33,7 +33,7 @@ interface IBookOfDirectors is IMeetingMinutes{
     //##    写接口    ##
     //##################
 
-    function createPosition(uint256 snOfPos) external;
+    function createPosition(bytes32 snOfPos) external;
 
     function updatePosition(OfficersRepo.Position memory pos) external;
 
@@ -58,7 +58,7 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     function isOccupied(uint256 seqOfPos) external view returns (bool flag);
 
-    function getPosList() external view returns(uint256[] memory list);
+    function getPosList() external view returns(bytes32[] memory list);
 
     function getPosition(uint256 seqOfPos) external view 
         returns (OfficersRepo.Position memory pos);

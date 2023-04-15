@@ -11,7 +11,7 @@ import "./ArrayUtils.sol";
 import "./EnumerableSet.sol";
 
 library SharesRepo {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     using ArrayUtils for uint256[];
 
     struct Head {
@@ -44,41 +44,33 @@ library SharesRepo {
     struct Repo {
         // seqOfShare => Share
         mapping(uint256 => Share) shares;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //#################
     //##    Write    ##
     //#################
 
-    function snParser(uint256 sn) public pure returns(Head memory head)
+    function snParser(bytes32 sn) public pure returns(Head memory head)
     {
-        head = Head({
-            seqOfShare: uint32(sn >> 224),
-            preSeq: uint32(sn >> 192),
-            class: uint16(sn >> 176),
-            issueDate: uint48(sn >> 128),
-            shareholder: uint40(sn >> 88),
-            priceOfPaid: uint32(sn >> 56),
-            priceOfPar: uint32(sn >> 24),
-            para: uint16(sn >> 8),
-            arg: uint8(sn)
-        });
+        bytes memory _sn = new bytes(32);        
+        assembly {
+            _sn := mload(add(sn, 0x20))
+        }
+        head = abi.decode(_sn, (Head));
     }
 
-    function codifyHead(Head memory head) public pure returns (uint sn)
+    function codifyHead(Head memory head) public pure returns (bytes32 sn)
     {
-        // sn = (uint256(head.seqOfShare) << 224) +
-        //     (uint256(head.preSeq) << 192) +
-        //     (uint256(head.class) << 176) + 
-        //     (uint256(head.issueDate) << 128) +
-        //     (uint256(head.shareholder) << 88) +
-        //     (uint256(head.priceOfPaid) << 56) + 
-        //     (uint256(head.priceOfPar) << 24) +
-        //     (uint256(head.para) << 8) +
-        //     head.arg;
-
-        bytes memory _sn = abi.encodePacked(head.seqOfShare, head.preSeq, head.class, head.issueDate, head.shareholder, head.priceOfPaid, head.priceOfPar, head.para, head.arg);
+        bytes memory _sn = abi.encodePacked(
+                            head.seqOfShare, 
+                            head.preSeq, 
+                            head.class, 
+                            head.issueDate, 
+                            head.shareholder, 
+                            head.priceOfPaid, 
+                            head.priceOfPar, 
+                            head.para, head.arg);
 
         assembly {
             sn := mload(add(_sn, 0x20))
@@ -88,9 +80,13 @@ library SharesRepo {
 
     // ==== issue/regist share ====
 
-    function createShare(Repo storage repo, uint256 sharenumber, uint payInDeadline, uint paid, uint par)
-        public returns (Share memory newShare)
-    {
+    function createShare(
+        Repo storage repo, 
+        bytes32 sharenumber, 
+        uint payInDeadline, 
+        uint paid, 
+        uint par
+    ) public returns (Share memory newShare) {
 
         Share memory share;
         share.head = snParser(sharenumber);
@@ -129,11 +125,11 @@ library SharesRepo {
 
         require(share.head.class > 0, "SR.RS: zero class");
 
-        share.head.seqOfShare = increaseCounterOfShare(repo);
-        if (share.head.class > counterOfClass(repo)) 
-            share.head.class = increaseCounterOfClass(repo);
+        share.head.seqOfShare = _increaseCounterOfShare(repo);
+        if (share.head.class > counterOfClasses(repo)) 
+            share.head.class = _increaseCounterOfClass(repo);
 
-        uint256 sn = codifyHead(share.head);
+        bytes32 sn = codifyHead(share.head);
 
         if (repo.snList.add(sn)) {
             repo.shares[share.head.seqOfShare] = share;
@@ -143,7 +139,8 @@ library SharesRepo {
 
     // ==== deregist/delete share ====
 
-    function deregShare(Repo storage repo, uint256 seqOfShare) public returns(bool flag)
+    function deregShare(Repo storage repo, uint256 seqOfShare) 
+        public returns(bool flag)
     {
         if (repo.snList.remove(codifyHead(repo.shares[seqOfShare].head))) {
             delete repo.shares[seqOfShare];
@@ -153,13 +150,15 @@ library SharesRepo {
 
     // ==== counters ====
 
-    function increaseCounterOfShare(Repo storage repo) public returns(uint32 seqOfShare)
+    function _increaseCounterOfShare(Repo storage repo) 
+        private returns(uint32 seqOfShare)
     {
         repo.shares[0].head.seqOfShare++;
         seqOfShare = repo.shares[0].head.seqOfShare;
     }
 
-    function increaseCounterOfClass(Repo storage repo) public returns(uint16 seqOfShare)
+    function _increaseCounterOfClass(Repo storage repo) 
+        private returns(uint16 seqOfShare)
     {
         repo.shares[0].head.class++;
         seqOfShare = repo.shares[0].head.class;
@@ -171,7 +170,8 @@ library SharesRepo {
     {
         require(amt > 0, "SR.PIC: zero amount");
 
-        require(share.body.payInDeadline >= block.timestamp, "SR.PIC: missed deadline");
+        require(block.timestamp <= share.body.payInDeadline, 
+            "SR.PIC: missed deadline");
         require(share.body.paid + amt <= share.body.par, 
             "SR.PIC: payIn amount overflow");
 
@@ -194,22 +194,20 @@ library SharesRepo {
     {
         require(paid > 0, "SR.SAFS: zero amt");
 
-        // require(share.body.cleanPar + par <= share.body.par, "SR.SAFS: par overflow");
-        require(share.body.cleanPaid + paid <= share.body.paid, "SR.SAFS: paid overflow");
+        require(share.body.cleanPaid + paid <= share.body.paid, 
+            "SR.SAFS: paid overflow");
 
         share.body.cleanPaid += uint64(paid);
-        // share.body.cleanPar += par;
     }
 
     function decreaseCleanPaid(Share storage share, uint paid) public
     {
         require(paid > 0, "SR.SAFS: zero amt");
 
-        // require(share.body.cleanPar >= par, "SR.SAFS: insufficient cleanPar");
-        require(share.body.cleanPaid >= paid, "SR.SAFS: insufficient cleanPaid");
+        require(share.body.cleanPaid >= paid, 
+            "SR.SAFS: insufficient cleanPaid");
 
         share.body.cleanPaid -= uint64(paid);
-        // share.body.cleanPar -= par;
     }
 
     // ==== update head of Share ====
@@ -217,7 +215,8 @@ library SharesRepo {
     function updatePayInDeadline(Share storage share, uint deadline) public 
     {
         require (block.timestamp < deadline, "SR.UPID: passed deadline");
-        require (block.timestamp <= share.body.payInDeadline, "SR.UPID: missed original deadline");
+        require (block.timestamp <= share.body.payInDeadline, 
+            "SR.UPID: missed original deadline");
 
         share.body.payInDeadline = uint48(deadline);
     }
@@ -226,12 +225,12 @@ library SharesRepo {
     //##    查询接口     ##
     //####################
 
-    function counterOfShare(Repo storage repo) public view returns(uint32 seqOfShare)
+    function counterOfShares(Repo storage repo) public view returns(uint32 seqOfShare)
     {
         seqOfShare = repo.shares[0].head.seqOfShare;
     }
 
-    function counterOfClass(Repo storage repo) public view returns(uint32 seqOfShare)
+    function counterOfClasses(Repo storage repo) public view returns(uint16 seqOfShare)
     {
         seqOfShare = repo.shares[0].head.class;
     }
@@ -240,16 +239,16 @@ library SharesRepo {
         public view returns (uint256[] memory seqList)
     {
         require (class > 0, "SR.SOC: zero class");
-        require (class <= counterOfClass(repo), "SR.SOC: class overflow");
+        require (class <= counterOfClasses(repo), "SR.SOC: class overflow");
 
-        uint256[] memory snList = repo.snList.values();
+        bytes32[] memory snList = repo.snList.values();
 
         uint256 len = snList.length;
         uint256[] memory list = new uint256[](len);
  
         uint256 ptr;
         while (len > 0) {
-            uint256 sn = snList[len-1];
+            uint256 sn = uint256(snList[len-1]);
 
             if (uint16(sn >> 176) == class) {
                 list[ptr] = uint32(sn >> 224);

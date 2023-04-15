@@ -16,8 +16,8 @@ interface IOptions {
     // ################
 
     function createOption(
-        uint256 snOfOpt,
-        uint256 snOfCond,
+        bytes32 snOfOpt,
+        bytes32 snOfCond,
         uint rightholder,
         uint paid,
         uint par
@@ -60,6 +60,6 @@ interface IOptions {
         returns (uint256[] memory);
 
     // ==== snOfOpt ====
-    function getSNList() external view returns(uint256[] memory);
+    function getSNList() external view returns(bytes32[] memory);
 
 }

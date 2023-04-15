@@ -20,7 +20,7 @@ interface IBookOfOptions {
     // ##   Event    ##
     // ################
 
-    event CreateOpt(uint256 indexed seqOfOpt, uint256 codeOfOpt);
+    event CreateOpt(uint256 indexed seqOfOpt, bytes32 codeOfOpt);
 
     event AddObligorIntoOpt(uint256 indexed seqOfOpt, uint256 obligor);
 
@@ -30,7 +30,7 @@ interface IBookOfOptions {
 
     event ExecOpt(uint256 indexed seqOfOpt);
 
-    event RegSwapOrder(uint256 indexed seqOfOpt, uint256 codeOfBrf);
+    event RegSwapOrder(uint256 indexed seqOfOpt, bytes32 codeOfBrf);
 
     event UpdateStateOfBrief(uint256 indexed seqOfOpt, uint256 seqOfBrf, uint state);
 
@@ -39,8 +39,8 @@ interface IBookOfOptions {
     // ################
 
     function createOption(
-        uint256 sn,
-        uint256 snOfCond,
+        bytes32 sn,
+        bytes32 snOfCond,
         uint rightholder,
         uint paid,
         uint par

@@ -15,7 +15,8 @@ contract Options is IOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Repo;
     using OptionsRepo for OptionsRepo.Option;
     using OptionsRepo for OptionsRepo.Head;
-    using OptionsRepo for uint256;
+    using OptionsRepo for bytes32;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
 
     OptionsRepo.Repo private _repo;
@@ -25,8 +26,8 @@ contract Options is IOptions, AccessControl {
     // ################
 
     function createOption(
-        uint256 snOfOpt,
-        uint256 snOfCond,
+        bytes32 snOfOpt,
+        bytes32 snOfCond,
         uint rightholder,
         uint paid,
         uint par
@@ -101,7 +102,7 @@ contract Options is IOptions, AccessControl {
     }
 
     // ==== snOfOpt ====
-    function getSNList() external view returns(uint256[] memory) {
+    function getSNList() external view returns(bytes32[] memory) {
         return _repo.snList.values();
     }
 

@@ -23,7 +23,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     //##################
 
     function createPledge(
-        uint256 sn,
+        bytes32 snOfPld,
         uint creditor,
         uint guaranteeDays,
         uint paid,
@@ -31,7 +31,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         uint guaranteedAmt
     ) external onlyDirectKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
-            sn,
+            snOfPld,
             creditor,
             guaranteeDays,  
             paid,
@@ -203,7 +203,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         return _repo.getPledgesOfShare(seqOfShare);
     }
 
-    function getSNList() external view returns(uint256[] memory list)
+    function getSNList() external view returns(bytes32[] memory list)
     {
         list = _repo.getSNList();
     }

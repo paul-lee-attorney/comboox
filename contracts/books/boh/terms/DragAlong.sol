@@ -13,7 +13,7 @@ import "./IAlongs.sol";
 
 contract DragAlong is IAlongs, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
-    using RulesParser for uint256;
+    using RulesParser for bytes32;
 
     DraggersRepo internal _repo;
 
@@ -26,11 +26,11 @@ contract DragAlong is IAlongs, AccessControl {
         _;
     }
 
-    // ################
+    // ###############
     // ##   写接口   ##
-    // ################
+    // ###############
 
-    function createLink(uint256 rule, uint256 drager) external onlyAttorney {
+    function createLink(bytes32 rule, uint256 drager) external onlyAttorney {
         if (_repo.draggersList.add(drager)) {
             _repo.links[drager].linkRule = rule.linkRuleParser();
         }

@@ -25,7 +25,7 @@ interface IFilesFolder {
     //##  Write I/O  ##
     //#################
 
-    function regFile(uint256 snOfDoc, address body) external;
+    function regFile(bytes32 snOfDoc, address body) external;
 
     function circulateFile(
         address body,
@@ -65,7 +65,7 @@ interface IFilesFolder {
         returns (address[] memory);
 
     function getSNOfFile(address body) external view 
-        returns (uint256);
+        returns (bytes32);
 
     function getHeadOfFile(address body) external view 
         returns (FilesRepo.Head memory head);

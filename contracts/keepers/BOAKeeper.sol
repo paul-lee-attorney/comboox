@@ -12,7 +12,7 @@ import "./IBOAKeeper.sol";
 import "../common/access/AccessControl.sol";
 
 contract BOAKeeper is IBOAKeeper, AccessControl {
-    using RulesParser for uint256;
+    using RulesParser for bytes32;
 
     IRegCenter.TypeOfDoc[] private _termsForCapitalIncrease = [
         IRegCenter.TypeOfDoc.AntiDilution
@@ -40,8 +40,8 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
     function createIA(uint version, address primeKeyOfCaller, uint caller) external onlyDirectKeeper {
         require(_gk.getROM().isMember(caller), "caller not MEMBER");
         
-        uint256 snOfDoc = (uint256(uint8(IRegCenter.TypeOfDoc.InvestmentAgreement)) << 240) +
-            (version << 224); 
+        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.InvestmentAgreement)) << 240) +
+            (version << 224)); 
 
         DocsRepo.Doc memory doc = _rc.createDoc(
             snOfDoc,
@@ -104,10 +104,10 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
     }
 
     function _lockDealsOfParty(address ia, uint256 caller) private {
-        uint256[] memory list = IInvestmentAgreement(ia).getSNList();
+        bytes32[] memory list = IInvestmentAgreement(ia).getSNList();
         uint256 len = list.length;
         while (len > 0) {
-            uint256 seq = list[len - 1];
+            uint seq = DealsRepo.snParser(list[len - 1]).seqOfDeal;
             len--;
 
             DealsRepo.Deal memory deal = 

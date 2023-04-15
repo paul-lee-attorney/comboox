@@ -343,9 +343,9 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   BOPKeeper   ##
     // ###################
 
-    function createPledge(uint256 sn, uint creditor, uint guaranteeDays, uint paid,
+    function createPledge(bytes32 snOfPld, uint creditor, uint guaranteeDays, uint paid,
     uint par, uint guaranteedAmt) external {
-        IBOPKeeper(_keepers[6]).createPledge(sn, creditor, guaranteeDays, paid, par,
+        IBOPKeeper(_keepers[6]).createPledge(snOfPld, creditor, guaranteeDays, paid, par,
         guaranteedAmt, _msgSender());
     }
 
@@ -382,15 +382,15 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   BOSKeeper   ##
     // ###################
 
-    function setPayInAmt(uint256 snOfLocker, uint amount) external onlyDirectKeeper {
+    function setPayInAmt(bytes32 snOfLocker, uint amount) external onlyDirectKeeper {
         IBOSKeeper(_keepers[7]).setPayInAmt(snOfLocker, amount);
     }
 
-    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint salt) external {
+    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey, uint salt) external {
         IBOSKeeper(_keepers[7]).requestPaidInCapital(snOfLocker, hashKey, salt, _msgSender());
     }
 
-    function withdrawPayInAmt(uint256 snOfLocker) external onlyDirectKeeper {
+    function withdrawPayInAmt(bytes32 snOfLocker) external onlyDirectKeeper {
         IBOSKeeper(_keepers[7]).withdrawPayInAmt(snOfLocker);
     }
 
@@ -521,11 +521,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##################
 
     function createSwap(
-        uint256 sn,
+        bytes32 snOfSwap,
         uint rightholder, 
         uint paidOfConsider
     ) external  {
-        IROSKeeper(_keepers[10]).createSwap(sn, rightholder, paidOfConsider, _msgSender());
+        IROSKeeper(_keepers[10]).createSwap(snOfSwap, rightholder, paidOfConsider, _msgSender());
     }
 
     function transferSwap(

@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./EnumerableSet.sol";
 
 library CondsRepo {
-    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
     enum LogOps {
         ZeroPoint,
@@ -45,7 +45,7 @@ library CondsRepo {
     }
 
     struct Cond {
-        uint32 seq;
+        uint32 seqOfCond;
         uint8 logicOpr;    
         uint8 compOpr1;    
         uint64 para1;           
@@ -57,7 +57,7 @@ library CondsRepo {
 
     struct Repo {
         mapping(uint256 => Cond) conds;
-        EnumerableSet.UintSet snList;
+        EnumerableSet.Bytes32Set snList;
     }
 
     // ###############
@@ -66,57 +66,57 @@ library CondsRepo {
 
     // ==== codify / parser ====
 
-    function snParser(uint256 sn) public pure returns(Cond memory cond)
+    function snParser(bytes32 sn) public pure returns(Cond memory cond)
     {
-        cond = Cond({
-            seq: uint32(sn >> 224),
-            logicOpr: uint8(sn >> 216),
-            compOpr1: uint8(sn >> 208),
-            para1: uint64(sn >> 144),
-            compOpr2: uint8(sn >> 136),
-            para2: uint64(sn >> 72),
-            compOpr3: uint8(sn >> 64),
-            para3: uint64(sn)
-        });
+        bytes memory _sn = new bytes(32);
+        assembly {
+            _sn := mload(add(sn, 0x20))
+        }
+        cond = abi.decode(_sn, (Cond));
     }
 
-    function codifyCond(Cond memory cond) public pure returns(uint256 sn)
+    function codifyCond(Cond memory cond) public pure returns(bytes32 sn)
     {
-        sn = (uint256(cond.seq) << 224) +
-            (uint256(cond.logicOpr) << 216) +
-            (uint256(cond.compOpr1) << 208) +
-            (uint256(cond.para1) << 144) +
-            (uint256(cond.compOpr2) << 136) +
-            (uint256(cond.para2) << 72) +
-            (uint256(cond.compOpr3) << 64) +
-            (uint256(cond.para3));
+        bytes memory _sn = abi.encodePacked(
+                            cond.seqOfCond,
+                            cond.logicOpr,
+                            cond.compOpr1,
+                            cond.para1,
+                            cond.compOpr2,
+                            cond.para2,
+                            cond.compOpr3,
+                            cond.para3);
+
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }                
     }
 
     // ==== create / reg ====
-    function createCond(Repo storage repo, uint256 sn) public returns(uint32 seq)
+    function createCond(Repo storage repo, bytes32 sn) public returns(uint32 seqOfCond)
     {
-        seq = regCond(repo, snParser(sn));
+        seqOfCond = regCond(repo, snParser(sn));
     }
 
-    function regCond(Repo storage repo, Cond memory cond) public returns(uint32 seq)
+    function regCond(Repo storage repo, Cond memory cond) public returns(uint32 seqOfCond)
     {
-        cond.seq = _increaseCounterOfConds(repo);
-        repo.conds[cond.seq] = cond;
+        cond.seqOfCond = _increaseCounterOfConds(repo);
+        repo.conds[cond.seqOfCond] = cond;
         repo.snList.add(codifyCond(cond));
-        seq = cond.seq;
+        seqOfCond = cond.seqOfCond;
     }
 
-    function _increaseCounterOfConds(Repo storage repo) private returns(uint32 seq)
+    function _increaseCounterOfConds(Repo storage repo) private returns(uint32 seqOfCond)
     {
-        repo.conds[0].seq++;
-        seq = repo.conds[0].seq;
+        repo.conds[0].seqOfCond++;
+        seqOfCond = repo.conds[0].seqOfCond;
     }
 
-    function removeCond(Repo storage repo, uint256 seq) public returns(bool flag)
+    function removeCond(Repo storage repo, uint256 seqOfCond) public returns(bool flag)
     {
-        if (repo.snList.remove(codifyCond(repo.conds[seq])))
+        if (repo.snList.remove(codifyCond(repo.conds[seqOfCond])))
         {
-            delete repo.conds[seq];
+            delete repo.conds[seqOfCond];
             flag = true;
         }
     }
@@ -125,8 +125,8 @@ library CondsRepo {
     // ##   Read I/O   ##
     // ##################
 
-    function counterOfConds(Repo storage repo) public view returns(uint32 seq) {
-        seq = repo.conds[0].seq;
+    function counterOfConds(Repo storage repo) public view returns(uint32 seqOfCond) {
+        seqOfCond = repo.conds[0].seqOfCond;
     }
 
     function getConds(Repo storage repo) public view returns(Cond[] memory)

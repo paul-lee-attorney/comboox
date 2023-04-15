@@ -32,31 +32,6 @@ import "../books/ros/IRegisterOfSwaps.sol";
 
 interface IGeneralKeeper {
 
-    // enum TitleOfKeepers {
-    //     BOAKeeper, // 0
-    //     BODKeeper, // 1
-    //     BOGKeeper, // 2
-    //     BOHKeeper, // 3
-    //     BOOKeeper, // 4
-    //     BOPKeeper, // 5
-    //     BOSKeeper, // 6
-    //     ROMKeeper, // 7
-    //     SHAKeeper, // 8
-    //     ROSKeeper, // 9
-    // }
-
-    // enum TitleOfBooks {
-    //     BOA, // 0
-    //     BOD, // 1
-    //     BOG, // 2
-    //     BOH, // 3
-    //     BOO, // 4
-    //     BOP, // 5
-    //     BOS, // 6
-    //     ROM, // 7
-    //     ROS // 8
-    // }
-
     // ###############
     // ##   Event   ##
     // ###############
@@ -260,7 +235,7 @@ interface IGeneralKeeper {
     // ##   BOPKeeper   ##
     // ###################
 
-    function createPledge(uint256 sn, uint creditor, uint guaranteeDays, uint paid,
+    function createPledge(bytes32 snOfPld, uint creditor, uint guaranteeDays, uint paid,
     uint par, uint guaranteedAmt) external;
 
     function transferPledge(uint256 seqOfShare, uint256 seqOfPld, uint buyer, uint amt) 
@@ -282,11 +257,11 @@ interface IGeneralKeeper {
     // ##   BOSKeeper   ##
     // ###################
 
-    function setPayInAmt(uint256 snOfLocker, uint amount) external;
+    function setPayInAmt(bytes32 snOfLocker, uint amount) external;
 
-    function requestPaidInCapital(uint256 snOfLocker, string memory hashKey, uint salt) external;
+    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey, uint salt) external;
 
-    function withdrawPayInAmt(uint256 snOfLocker) external;
+    function withdrawPayInAmt(bytes32 snOfLocker) external;
 
     function decreaseCapital(uint256 seqOfShare, uint parValue, uint paidPar) 
     external;
@@ -368,7 +343,7 @@ interface IGeneralKeeper {
     // ##################
 
     function createSwap(
-        uint256 sn,
+        bytes32 snOfSwap,
         uint rightholder, 
         uint paidOfConsider
     ) external;
