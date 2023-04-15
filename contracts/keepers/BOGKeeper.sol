@@ -9,7 +9,7 @@ pragma solidity ^0.8.8;
 
 import "./IBOGKeeper.sol";
 
-import "../books/boa/IInvestmentAgreement.sol";
+// import "../books/boa/IInvestmentAgreement.sol";
 
 import "../common/access/AccessControl.sol";
 
@@ -50,8 +50,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         OfficersRepo.Position memory pos =
             _gk.getBOD().getPosition(seqOfPos);
 
-        require (pos.title <= uint8(OfficersRepo.TitleOfOfficers.Director),
-            "BOGK.ND: not a Director's position");
+        // require (pos.title <= uint8(OfficersRepo.TitleOfOfficers.Director),
+        //     "BOGK.ND: not a Director's position");
 
         require(pos.nominator == 0 || 
             pos.nominator == nominator, 
@@ -59,7 +59,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
         uint64 seqOfMotion = 
             _gk.getBOG().nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
-        if (pos.nominator > 0) _gk.getBOG().proposeMotion(seqOfMotion, nominator);
+        _gk.getBOG().proposeMotion(seqOfMotion, nominator);
     }
 
     function proposeToRemoveDirector(
@@ -70,8 +70,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         OfficersRepo.Position memory pos =
             _gk.getBOD().getPosition(seqOfPos);
 
-        require (pos.title <= uint8(OfficersRepo.TitleOfOfficers.Director),
-            "BOGK.PTRD: not a Director's position");
+        // require (pos.title <= uint8(OfficersRepo.TitleOfOfficers.Director),
+        //     "BOGK.PTRD: not a Director's position");
 
         require(pos.nominator == 0 || 
             pos.nominator == caller, 

@@ -10,9 +10,6 @@ typechain-types
 # Hardhat files
 cache
 artifacts
-<<<<<<< HEAD
 client/src/contracts
-=======
 client
->>>>>>> f99cf30 (reconnect)
 
