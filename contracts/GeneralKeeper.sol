@@ -35,7 +35,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         symbolOfCompany = _symbol;
     }
 
-    function createCorpSeal(bytes32 info) external onlyDirectKeeper {
+    function createCorpSeal(bytes32 info) external onlyOwner {
         _rc.regUser(info);
         uint corpNo = _rc.getMyUserNo();
         emit CreateCorpSeal(corpNo, info);
