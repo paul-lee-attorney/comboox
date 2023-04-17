@@ -40,7 +40,7 @@ library OfficersRepo {
         uint48 endDate;
         uint16 seqOfVR;
         uint16 para;
-        uint16 arg;
+        uint16 argu;
     }
 
     struct Repo {
@@ -72,11 +72,19 @@ library OfficersRepo {
     // ==== snParser ====
 
     function snParser(bytes32 sn) public pure returns (Position memory position) {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))    
-        }        
-        position = abi.decode(_sn, (Position));        
+        uint _sn = uint(sn);
+
+        position = Position({
+            title: uint16(_sn >> 240),
+            seqOfPos: uint16(_sn >> 224),
+            acct: uint40(_sn >> 184),
+            nominator: uint40(_sn >> 144),
+            startDate: uint48(_sn >> 96),
+            endDate: uint48(_sn >> 48),
+            seqOfVR: uint16(_sn >> 32),
+            para: uint16(_sn >> 16),
+            argu: uint16(_sn)
+        });
     }
 
     function codifyPosition(Position memory position) public pure returns (bytes32 sn) {
@@ -89,7 +97,7 @@ library OfficersRepo {
                             position.endDate,
                             position.seqOfVR,
                             position.para,
-                            position.arg);  
+                            position.argu);  
         assembly {
             sn := mload(add(_sn, 0x20))
         }                

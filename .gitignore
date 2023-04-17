@@ -12,4 +12,5 @@ cache
 artifacts
 client/src/contracts
 client
+server
 

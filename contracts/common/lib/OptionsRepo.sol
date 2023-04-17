@@ -98,11 +98,19 @@ library OptionsRepo {
     // ==== cofify / parser ====
 
     function snParser(bytes32 sn) public pure returns (Head memory head) {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))
-        }
-        head = abi.decode(_sn, (Head));
+        uint _sn = uint(sn);
+
+        head = Head({
+            seqOfOpt: uint32(_sn >> 224),
+            typeOfOpt: uint8(_sn >> 216),
+            classOfShare: uint16(_sn >> 200),
+            rate: uint32(_sn >> 168),
+            issueDate: uint48(_sn >> 120),
+            triggerDate: uint48(_sn >> 72),
+            execDays: uint16(_sn >> 56),
+            closingDays: uint16(_sn >> 40),
+            obligor: uint40(_sn)
+        });
     }
 
     function codifyHead(Head memory head) public pure returns (bytes32 sn) {

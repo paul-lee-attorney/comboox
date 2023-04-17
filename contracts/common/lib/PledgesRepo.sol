@@ -58,20 +58,17 @@ library PledgesRepo {
     //##################
 
     function snParser(bytes32 sn) public pure returns (Head memory head) {
-        // head = Head({
-        //     seqOfShare: uint32(sn >> 224),
-        //     seqOfPld: uint16(sn >> 208),
-        //     createDate: uint48(sn >> 160),
-        //     triggerDate: uint48(sn >> 112),
-        //     pledgor: uint40(sn >> 72),
-        //     debtor: uint40(sn >> 32),
-        //     data: uint32(sn)
-        // });
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))    
-        }        
-        head = abi.decode(_sn, (Head));
+        uint _sn = uint(sn);
+        
+        head = Head({
+            seqOfShare: uint32(_sn >> 224),
+            seqOfPld: uint16(_sn >> 208),
+            createDate: uint48(_sn >> 160),
+            triggerDate: uint48(_sn >> 112),
+            pledgor: uint40(_sn >> 72),
+            debtor: uint40(_sn >> 32),
+            data: uint32(_sn)
+        });
     } 
 
     function codifyHead(Head memory head) public pure returns (bytes32 sn) {

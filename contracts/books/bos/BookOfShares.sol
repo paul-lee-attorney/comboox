@@ -122,7 +122,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
             priceOfPaid: uint32(priceOfPaid),
             priceOfPar: uint32(priceOfPar),
             para: 0,
-            arg: 0
+            argu: 0
         });
 
         newShare.body = SharesRepo.Body({

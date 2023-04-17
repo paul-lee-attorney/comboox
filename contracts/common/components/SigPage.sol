@@ -123,6 +123,13 @@ contract SigPage is ISigPage, AccessControl {
             _sigPages[1].sellers.contains(acct);
     }
 
+    function isInitSigner(uint256 acct)
+        external view returns (bool flag) 
+    {
+        flag = _sigPages[0].isSigner(acct);
+    }
+
+
     function isSigner(uint256 acct)
         external view returns (bool flag) 
     {

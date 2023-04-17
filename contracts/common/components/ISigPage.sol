@@ -65,6 +65,10 @@ interface ISigPage {
     function isParty(uint256 acct)
         external view returns(bool flag);
 
+    function isInitSigner(uint256 acct)
+        external view returns (bool flag);
+
+
     function isSigner(uint256 acct)
         external view returns (bool flag);
 

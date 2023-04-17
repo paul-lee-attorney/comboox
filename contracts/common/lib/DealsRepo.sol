@@ -70,7 +70,7 @@ library DealsRepo {
         uint64 par;
         uint8 state;
         uint16 para;
-        uint16 arg;
+        uint16 argu;
         bool flag;
     }
 
@@ -102,11 +102,21 @@ library DealsRepo {
     //#################
 
     function snParser(bytes32 sn) public pure returns(Head memory head) {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))    
-        }        
-        head = abi.decode(_sn, (Head));
+        uint _sn = uint(sn);
+
+        head = Head({
+            typeOfDeal: uint8(_sn >> 248),
+            seqOfDeal: uint16(_sn >> 232),
+            preSeq: uint16(_sn >> 216),
+            classOfShare: uint16(_sn >> 200),
+            seqOfShare: uint32(_sn >> 168),
+            seller: uint40(_sn >> 128),
+            priceOfPaid: uint32(_sn >> 96),
+            priceOfPar: uint32(_sn >> 64),
+            closingDate: uint48(_sn >> 16),
+            para: uint16(_sn) 
+        });
+
     } 
 
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {

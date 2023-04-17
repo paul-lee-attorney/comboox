@@ -68,11 +68,18 @@ library CondsRepo {
 
     function snParser(bytes32 sn) public pure returns(Cond memory cond)
     {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))
-        }
-        cond = abi.decode(_sn, (Cond));
+        uint _sn = uint(sn);
+
+        cond = Cond({
+            seqOfCond: uint32(_sn >> 224),
+            logicOpr: uint8(_sn >> 216),
+            compOpr1: uint8(_sn >> 208),    
+            para1: uint64(_sn >> 144),          
+            compOpr2: uint8(_sn >> 136),    
+            para2: uint64(_sn >> 72),           
+            compOpr3: uint8(_sn >> 64),    
+            para3: uint64(_sn)                               
+        });
     }
 
     function codifyCond(Cond memory cond) public pure returns(bytes32 sn)

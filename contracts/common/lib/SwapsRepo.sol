@@ -66,11 +66,18 @@ library SwapsRepo {
     //##################
 
     function snParser(bytes32 sn) public pure returns (Head memory head) {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))
-        }
-        head = abi.decode(_sn, (Head));
+        uint _sn = uint(sn);
+        head = Head({
+            seqOfSwap: uint32(_sn >> 224),
+            classOfTarget: uint16(_sn >> 208),
+            classOfConsider: uint16(_sn >> 192),
+            createDate: uint48(_sn >> 144),
+            triggerDate: uint48(_sn >> 96),
+            closingDays: uint16(_sn >> 80),
+            obligor: uint40(_sn >> 40),
+            rateOfSwap: uint32(_sn >> 8),
+            para: uint8(_sn)
+        });
     } 
 
     function codifyHead(Head memory head) public pure returns (bytes32 sn) {

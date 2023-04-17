@@ -23,7 +23,7 @@ library SharesRepo {
         uint32 priceOfPaid; // 发行价格（实缴出资价）
         uint32 priceOfPar; // 发行价格（认缴出资价）
         uint16 para;
-        uint8 arg;
+        uint8 argu;
     }
 
     struct Body {
@@ -53,11 +53,19 @@ library SharesRepo {
 
     function snParser(bytes32 sn) public pure returns(Head memory head)
     {
-        bytes memory _sn = new bytes(32);        
-        assembly {
-            _sn := mload(add(sn, 0x20))
-        }
-        head = abi.decode(_sn, (Head));
+        uint _sn = uint(sn);
+        
+        head = Head({
+            seqOfShare: uint32(_sn >> 224),
+            preSeq: uint32(_sn >> 192),
+            class: uint16(_sn >> 176),
+            issueDate: uint48(_sn >> 128),
+            shareholder: uint40(_sn >> 88),
+            priceOfPaid: uint32(_sn >> 56),
+            priceOfPar: uint32(_sn >> 24),
+            para: uint16(_sn >> 8),
+            argu: uint8(_sn)
+        });
     }
 
     function codifyHead(Head memory head) public pure returns (bytes32 sn)
@@ -70,7 +78,7 @@ library SharesRepo {
                             head.shareholder, 
                             head.priceOfPaid, 
                             head.priceOfPar, 
-                            head.para, head.arg);
+                            head.para, head.argu);
 
         assembly {
             sn := mload(add(_sn, 0x20))

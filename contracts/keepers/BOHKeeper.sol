@@ -179,7 +179,7 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
                     endDate: rule.endDate,
                     seqOfVR: rule.seqOfVR,
                     para: rule.para,
-                    arg: rule.arg
+                    argu: rule.argu
                 });
                 
                 _bod.updatePosition(pos);

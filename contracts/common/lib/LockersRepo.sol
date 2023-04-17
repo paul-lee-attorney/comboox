@@ -30,11 +30,14 @@ library LockersRepo {
     //#################
 
     function snParser(bytes32 sn) public pure returns (Locker memory locker) {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))
-        }
-        locker = abi.decode(_sn, (Locker));
+        uint _sn = uint(sn);
+        
+        locker = Locker({
+            from: uint40(_sn >> 216),
+            to: uint40(_sn >> 176),
+            expireDate: uint48(_sn >> 128),
+            hashLock: uint128(_sn)
+        });
     }
 
     function lockValue(

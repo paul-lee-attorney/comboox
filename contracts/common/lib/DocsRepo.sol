@@ -12,7 +12,7 @@ import "../lib/EnumerableSet.sol";
 library DocsRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-     struct Head {
+    struct Head {
         uint16 typeOfDoc;
         uint16 version;
         uint64 seqOfDoc;
@@ -40,15 +40,23 @@ library DocsRepo {
     //##################
 
     function snParser(bytes32 sn) public pure returns(Head memory head) {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))
-        }
-        head = abi.decode(_sn, (Head));
+        uint _sn = uint(sn);
+
+        head = Head({
+            typeOfDoc: uint16(_sn >> 240),
+            version: uint16(_sn >> 224),
+            seqOfDoc: uint64(_sn >> 160),
+            creator: uint40(_sn >> 120),
+            createDate: uint48(_sn >> 72),
+            para: uint16(_sn >> 56),
+            argu: uint16(_sn >> 40),
+            data: uint32(_sn >> 8),
+            state: uint8(_sn)
+        });
     }
 
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
-        bytes memory _sn = abi.encode(
+        bytes memory _sn = abi.encodePacked(
                             head.typeOfDoc,
                             head.version,
                             head.seqOfDoc,

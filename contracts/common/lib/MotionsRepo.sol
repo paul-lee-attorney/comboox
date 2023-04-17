@@ -12,10 +12,13 @@ import "./DelegateMap.sol";
 import "./EnumerableSet.sol";
 import "./RulesParser.sol";
 
+import "../../books/boh/IShareholdersAgreement.sol";
+
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
     using DelegateMap for DelegateMap.Map;
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using RulesParser for bytes32;
 
     enum TypeOfMotion {
         ZeroPoint,
@@ -88,11 +91,17 @@ library MotionsRepo {
     // ==== snParser ====
 
     function snParser (bytes32 sn) public pure returns(Head memory head) {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))
-        }
-        head = abi.decode(_sn, (Head));
+        uint _sn = uint(sn);
+
+        head = Head({
+            typeOfMotion: uint16(_sn >> 240),
+            seqOfMotion: uint64(_sn >> 176),
+            seqOfVR: uint16(_sn >> 160),
+            creator: uint40(_sn >> 120),
+            executor: uint40(_sn >> 80),
+            createDate: uint48(_sn >> 32),
+            data: uint32(_sn)
+        });
     }
 
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
@@ -164,26 +173,29 @@ library MotionsRepo {
     function proposeMotion(
         Repo storage repo,
         uint256 seqOfMotion,
-        RulesParser.VotingRule memory vr,
+        IShareholdersAgreement _sha,
+        // RulesParser.VotingRule memory vr,
         uint caller 
-    ) public returns (Body memory body) {
+    ) public {
 
         // require(seqOfMotion > 0, "MR.PM: zero seqOfMotion");
         require(caller > 0, "MR.PM: zero caller");
 
         Motion storage m = repo.motions[seqOfMotion];
+        RulesParser.VotingRule memory vr = 
+            _sha.getRule(m.head.seqOfVR).votingRuleParser();
 
-        require(m.head.seqOfVR == vr.seqOfRule, "MR.PM: wrong seqOfVR");
+        // require(m.head.seqOfVR == vr.seqOfRule, "MR.PM: wrong seqOfVR");
         require(m.body.state == uint8(StateOfMotion.Created), 
             "MR.PM: wrong state");
 
         uint48 timestamp = uint48(block.timestamp);
 
-        body = Body({
+        Body memory body = Body({
             proposer: uint40(caller),
             proposeDate: timestamp,
             shareRegDate: timestamp + uint48(vr.reconsiderDays) * 86400,
-            voteStartDate: timestamp + uint48(vr.reconsiderDays) * 86400,
+            voteStartDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votePrepareDays)) * 86400,
             voteEndDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votingDays)) * 86400,
             para: 0,
             state: uint8(StateOfMotion.Proposed)

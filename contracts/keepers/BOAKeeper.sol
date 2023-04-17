@@ -241,7 +241,7 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
             priceOfPaid: deal.head.priceOfPaid,
             priceOfPar: deal.head.priceOfPar,
             para: 0,
-            arg: 0
+            argu: 0
         });
 
         share.body = SharesRepo.Body({

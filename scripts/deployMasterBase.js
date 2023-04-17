@@ -68,7 +68,8 @@ async function main() {
 	libraries = {
 		"BallotsBox": libBallotsBox.address,
 		"DelegateMap": libDelegateMap.address,
-		"EnumerableSet": libEnumerableSet.address
+		"EnumerableSet": libEnumerableSet.address,
+		"RulesParser": libRulesParser.address
 	};
 	const libMotionsRepo = await deployTool(signers[0], "MotionsRepo", libraries);
 
@@ -167,11 +168,18 @@ async function main() {
 	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries);
 
 	libraries = {
+		"DealsRepo": libDealsRepo.address,
 		"DocsRepo": libDocsRepo.address,
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
 	let boaKeeper = await deployTool(signers[0], "BOAKeeper", libraries);
+
+	libraries = {
+		"DocsRepo": libDocsRepo.address,
+		"RolesRepo": libRolesRepo.address,
+		"RulesParser": libRulesParser.address		
+	}
 	let bohKeeper = await deployTool(signers[0], "BOHKeeper", libraries);
 
 	libraries = {
@@ -200,15 +208,13 @@ async function main() {
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"MotionsRepo": libMotionsRepo.address,
-		"OfficersRepo": libOfficersRepo.address,
-		"RulesParser": libRulesParser.address
+		"OfficersRepo": libOfficersRepo.address
 	}
 	let bod = await deployTool(signers[0], "BookOfDirectors", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
-		"MotionsRepo": libMotionsRepo.address,
-		"RulesParser": libRulesParser.address
+		"MotionsRepo": libMotionsRepo.address
 	}
 	let bog = await deployTool(signers[0], "BookOfGM", libraries);
 
@@ -372,7 +378,10 @@ async function main() {
 };
 
 function codifyHead(typeOfDoc) {
-	return hre.ethers.BigNumber.from('0x' + typeOfDoc.padEnd(64, '0'));
+
+	let sn = '0x' + typeOfDoc.padEnd(64, '0');
+	console.log("snOfDoc: ", sn);
+	return sn;
 }
 
 main()

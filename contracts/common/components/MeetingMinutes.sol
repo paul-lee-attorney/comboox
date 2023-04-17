@@ -119,19 +119,16 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             );
     }
 
-
     function proposeMotion(
         uint256 seqOfMotion,
         uint proposer
     ) public onlyDirectKeeper {
-        MotionsRepo.Motion memory m = _repo.motions[seqOfMotion];
-        RulesParser.VotingRule memory rule = 
-            _gk.getSHA().getRule(m.head.seqOfVR).votingRuleParser();
-        m.body = _repo.proposeMotion(seqOfMotion, rule, proposer);
+        // MotionsRepo.Motion memory m = _repo.motions[seqOfMotion];
+        // RulesParser.VotingRule memory rule = 
+            // _gk.getSHA().getRule(m.head.seqOfVR).votingRuleParser();
+        _repo.proposeMotion(seqOfMotion, _gk.getSHA(), proposer);
         emit ProposeMotion(seqOfMotion, proposer);
     }
-
-
 
     // ==== delegate ====
 

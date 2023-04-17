@@ -20,7 +20,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier withinExecPeriod(address ia) {
         require(
-            _gk.getBOA().getHeadOfFile(ia).shaExecDeadline > block.timestamp,
+            block.timestamp <= _gk.getBOA().getHeadOfFile(ia).shaExecDeadline,
             "missed review period"
         );
         _;
@@ -28,7 +28,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier afterExecPeriod(address ia) {
         require(
-            _gk.getBOA().getHeadOfFile(ia).shaExecDeadline <= block.timestamp,
+            block.timestamp > _gk.getBOA().getHeadOfFile(ia).shaExecDeadline,
             "still within review period"
         );
         _;
@@ -36,20 +36,20 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier beforeProposeDeadline(address ia) {
         require(
-            _gk.getBOA().getHeadOfFile(ia).proposeDeadline >= block.timestamp,
-            "still within review period"
+            block.timestamp <= _gk.getBOA().getHeadOfFile(ia).proposeDeadline,
+            "SHAK.md.BPD: missed proposal deadline"
         );
         _;
     }
 
-    modifier onlyEstablished(address ia) {
-        require(
-            _gk.getBOA().getHeadOfFile(ia).state ==
-                uint8(FilesRepo.StateOfFile.Established),
-            "IA not established"
-        );
-        _;
-    }
+    // modifier onlyEstablished(address ia) {
+    //     require(
+    //         _gk.getBOA().getHeadOfFile(ia).state ==
+    //             uint8(FilesRepo.StateOfFile.Established),
+    //         "IA not established"
+    //     );
+    //     _;
+    // }
 
     // ####################
     // ##   SHA Rights   ##
@@ -102,22 +102,22 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
                 uint8(IRegCenter.TypeOfDoc.TagAlong)
             );
 
-        require(ITerm(term).isTriggered(ia, deal), "not triggered");
+        require(ITerm(term).isTriggered(ia, deal), "SHAK.CAD: not triggered");
 
         require(
             IAlongs(term).isLinked(deal.head.seller, share.head.shareholder),
-            "drager and target shareholder NOT linked"
+            "SHAK.CAD: NOT linked"
         );
 
         if (dragAlong) {
             require(caller == deal.head.seller, "SHAK.MAD: caller is not drager of DragAlong");
             require(IAlongs(term).priceCheck(ia, deal, share, caller),
-                    "SHAK.MAD: price NOT satisfied");
+                    "SHAK.CAD: price NOT satisfied");
         } else {
             require(caller == share.head.shareholder,
-                    "SHAK.MAD: caller is not shareholder of TagAlong");
+                    "SHAK.CAD: not shareholder of TagAlong");
             require(!ISigPage(ia).isBuyer(true, caller),
-                    "SHAK.MAD: caller is Buyer of Deal");
+                    "SHAK.CAD: is Buyer of Deal");
         }
     }
 
@@ -132,7 +132,6 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(caller == deal.body.buyer, "SHAK.AAD: not buyer");
-
 
         if (deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated))
         {
@@ -175,7 +174,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             par: claim.par,
             state: uint8(DealsRepo.StateOfDeal.Locked),
             para: 0,
-            arg: 0,
+            argu: 0,
             flag: false
         });
 
@@ -193,15 +192,15 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfShare,
         uint256 caller,
         bytes32 sigHash
-    ) external onlyDirectKeeper onlyEstablished(ia) withinExecPeriod(ia) {
+    ) external onlyDirectKeeper withinExecPeriod(ia) {
 
         SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
 
         require(caller == share.head.shareholder,
-                "SHAK.EAD: caller is not shareholder");
+                "SHAK.EAD: not shareholder");
 
-        require(!ISigPage(ia).isSigner(caller),
-                "SHAK.EAD: caller is an InitSigner");
+        require(!ISigPage(ia).isInitSigner(caller),
+                "SHAK.EAD: is InitSigner");
 
         address ad = _gk.getSHA().getTerm(
             uint8(IRegCenter.TypeOfDoc.AntiDilution)
@@ -228,7 +227,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
                 (uint256 seqOfGiftDeal, uint64 result) = _createGift(
                     ia,
                     seqOfDeal,
-                    uint(sharesInHand[j]),
+                    uint(sharesInHand[j]) >> 224,
                     giftPaid
                 );
 
@@ -244,7 +243,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             }
             if (giftPaid == 0) break;
         }
-        require(giftPaid == 0, "obligors have not enough parValue");
+        require(giftPaid == 0, "SHAK.CGD: insufficient paid amount");
     }
 
     function _createGift(

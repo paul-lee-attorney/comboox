@@ -74,11 +74,17 @@ library UsersRepo {
     function rewardParser(bytes32 sn) public pure 
         returns(Reward memory reward) 
     {
-        bytes memory _sn = new bytes(32);
-        assembly {
-            _sn := mload(add(sn, 0x20))    
-        }        
-        reward = abi.decode(_sn, (Reward));        
+        uint _sn = uint(sn);
+
+        reward = Reward({
+            eoaRewards: uint32(_sn >> 224),
+            coaRewards: uint32(_sn >> 192),
+            offAmt: uint32(_sn >> 160),
+            discRate: uint16(_sn >> 144),
+            refundRatio: uint16(_sn >> 128),
+            ceiling: uint64(_sn >> 64),
+            floor: uint64(_sn)
+        });
     }
 
     function setReward(Repo storage repo, bytes32 snOfReward, address msgSender) 
