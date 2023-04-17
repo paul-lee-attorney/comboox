@@ -11,7 +11,7 @@ async function main() {
 	);
 
 	// ==== Crate Comp ====
-	const addrOfGK = "0xb9A4957bF14053879C198C4b36532B322Ab2Bdec";
+	const addrOfGK = "0x5559244bedaB6b84b00B0bb9ebac8CAc37D806f1";
 
 	const addrOfRC = await tempAddrGetter("RegCenter");
 	const rc = await contractGetter("RegCenter", addrOfRC);
@@ -38,7 +38,9 @@ async function main() {
 	console.log("obtained gk at address:", gk.address);
 
 	const artOfBOSKeeper = hre.artifacts.readArtifactSync("BOSKeeper");
-	const addrOfBOSKeeper = await gk.getKeeper(7);  
+	const addrOfBOSKeeper = await gk.getKeeper(7);
+	console.log("address of bosKeeper: ", addrOfBOSKeeper);
+
 	const	bosKeeper = await hre.ethers.getContractAt(artOfBOSKeeper.abi, addrOfBOSKeeper);
 	console.log("obtained bosKeeper: ", bosKeeper.address);
 
@@ -54,11 +56,14 @@ async function main() {
 
 	let dk = await bos.getBookeeper();
 
+	// ==== getBack Bookeeper right to EOA of GK's bookeeper ====
 	if (dk == bosKeeper.address) {
 		await gk.connect(signers[3]).removeDirectKeeper(bosKeeper.address);
 		await bosKeeper.connect(signers[3]).removeDirectKeeper(addrOfBOS);
-		console.log("removed DK of BOS");	
+		console.log("get back keeper's authority from BOS");	
 	}
+
+	// ==== issue share1 ====
 
 	let objShareNumber = {
 		seqOfShare: 0,
@@ -71,7 +76,7 @@ async function main() {
 		para: 0,
 		arg:0
 	};
-	// console.log("ObjSn: ", objShareNumber);
+	console.log("ObjSn: ", objShareNumber);
 	
 	let sn = _codifyShareNumber(objShareNumber);
 	console.log("created sharenumber: ", sn);
@@ -83,26 +88,7 @@ async function main() {
 	}
 	console.log("created body of share: ", objShareBody);
 
-	await bos.connect(signers[3]).issueShare(sn, objShareBody.payInDeadline, objShareBody.paid, objShareBody.par);
-
-	let logs = await rom.queryFilter("AddMember", "latest");
-	console.log("AddMember: ", logs);
-
-	logs = await bos.queryFilter("IssueShare", "latest");
-	console.log("IssueShare: ", logs);
-
-	logs = await rom.queryFilter("AddShareToMember", "latest");
-	console.log("AddShareToMember: ", logs);
-
-	logs = await rom.queryFilter("CapIncrease", "latest");
-	console.log("CapIncrease: ", logs);
-
-	console.log("CounterOfShare: ", await bos.counterOfShares());
-	console.log("SharesList: ", await rom.sharesList());
-	console.log("GetSharesOfClass: ", await bos.getSharesOfClass(1));
-
-
-	// console.log("issued share: ", logs[0].args["seqOfShare"].toNumber(), "paid: ", logs[0].args["paid"].toNumber(), "par: ", logs[0].args["par"].toNumber());
+	await _issueShare(bos, rom, sn, objShareBody, signers[3]);
 
 	// ==== Share 2 ====
 
@@ -113,61 +99,36 @@ async function main() {
 	objShareBody.paid = 3000000;
 	objShareBody.par = 3000000;
 
-	await bos.connect(signers[3]).issueShare(sn, objShareBody.payInDeadline, objShareBody.paid, objShareBody.par);
+	await _issueShare(bos, rom, sn, objShareBody, signers[3]);
 
-	logs = await rom.queryFilter("AddMember", "latest");
-	console.log("AddMember: ", logs);
+	// ==== Share 3 ====
 
-	logs = await bos.queryFilter("IssueShare", "latest");
-	console.log("IssueShare: ", logs);
+	objShareNumber.shareholder = acct4;
+	sn = _codifyShareNumber(objShareNumber);
+	console.log("created sharenumber: ", sn);
 
-	logs = await rom.queryFilter("AddShareToMember", "latest");
-	console.log("AddShareToMember: ", logs);
+	objShareBody.paid = 1000000;
+	objShareBody.par = 2000000;
 
-	logs = await rom.queryFilter("CapIncrease", "latest");
-	console.log("CapIncrease: ", logs);
+	await _issueShare(bos, rom, sn, objShareBody, signers[3]);
 
-	console.log("CounterOfShare: ", await bos.counterOfShares());
-	console.log("SharesList: ", await rom.sharesList());
-	console.log("GetSharesOfClass: ", await bos.getSharesOfClass(1));
+	// ==== Share 4 ====
+
+	objShareNumber.shareholder = acct5;
+	sn = _codifyShareNumber(objShareNumber);
+	console.log("created sharenumber: ", sn);
+
+	objShareBody.paid = 1000000;
+	objShareBody.par = 1000000;
+
+	await _issueShare(bos, rom, sn, objShareBody, signers[3]);
 
 
-// 	// console.log("issued share: ", logs[0].args["seqOfShare"].toNumber(), "paid: ", logs[0].args["paid"].toNumber(), "par: ", logs[0].args["par"].toNumber());
-
-// 	// ==== Share 3 ====
-
-// 	objShareNumber.shareholder = acct4;
-// 	sn = _codifyShareNumber(objShareNumber);
-// 	console.log("created sharenumber: ", sn);
-
-// 	objShareBody.paid = 2000000;
-// 	objShareBody.par = 2000000;
-
-// 	await bos.connect(signers[3]).issueShare(sn, objShareBody.payInDeadline, objShareBody.paid, objShareBody.par);
-// 	logs = await bos.queryFilter("IssueShare", "latest");
-
-// 	console.log("issued share: ", logs);
-
-// 	// console.log("issued share: ", logs[0].args["seqOfShare"].toNumber(), "paid: ", logs[0].args["paid"].toNumber(), "par: ", logs[0].args["par"].toNumber());
-
-// 	// ==== Share 4 ====
-
-// 	objShareNumber.shareholder = acct5;
-// 	sn = _codifyShareNumber(objShareNumber);
-// 	console.log("created sharenumber: ", sn);
-
-// 	objShareBody.paid = 1000000;
-// 	objShareBody.par = 1000000;
-
-// 	await bos.connect(signers[3]).issueShare(sn, objShareBody.payInDeadline, objShareBody.paid, objShareBody.par);
-// 	logs = await bos.queryFilter("IssueShare", "latest");
-// 	console.log("issued share: ", logs[0].args["seqOfShare"].toNumber(), "paid: ", logs[0].args["paid"].toNumber(), "par: ", logs[0].args["par"].toNumber());
-
-// 	// ==== Recover Bookeeper ====
-// 	await bos.connect(signers[3]).setDirectKeeper(bosKeeper.address);
-// 	console.log("recovered bookeeper of BOS into: ", await bos.getBookeeper());
-// 	await bosKeeper.connect(signers[3]).setDirectKeeper(gk.address);
-// 	console.log("recovered bookeeper of BOSKeeper into: ", await bosKeeper.getBookeeper());
+	// ==== Recover Bookeeper ====
+	await bos.connect(signers[3]).setDirectKeeper(bosKeeper.address);
+	console.log("recovered bookeeper of BOS into: ", await bos.getBookeeper());
+	await bosKeeper.connect(signers[3]).setDirectKeeper(gk.address);
+	console.log("recovered bookeeper of BOSKeeper into: ", await bosKeeper.getBookeeper());
 
 };
 
@@ -182,6 +143,38 @@ function _codifyShareNumber(objSn) {
 		objSn.para.toString(16).padStart(4, "0") +
 		objSn.arg.toString(16).padStart(2, "0");	
 	return sn
+}
+
+async function _issueShare(bos, rom, sn, objShareBody, signer) {
+	await bos.connect(signer).issueShare(
+		sn, 
+		objShareBody.payInDeadline, 
+		objShareBody.paid, 
+		objShareBody.par
+	);
+
+	let logs = await rom.queryFilter("AddMember", "latest");
+
+	if (logs.length > 0) 
+		console.log("AddMember: ", logs[0].args["acct"].toNumber(), 
+			"resulting totalQtyOfMembers: ", 
+			logs[0].args["qtyOfMembers"].toNumber());
+
+	logs = await bos.queryFilter("IssueShare", "latest");
+	console.log("IssueShare: ", logs[0].args["seqOfShare"].toNumber(),
+		"paid: ", logs[0].args["paid"].toNumber(),
+		"par: ", logs[0].args["par"].toNumber());
+
+	logs = await rom.queryFilter("AddShareToMember", "latest");
+	console.log("add Share: ", logs[0].args["seqOfShare"].toNumber(),
+		"to Member: ", logs[0].args["acct"].toNumber());
+
+	logs = await rom.queryFilter("CapIncrease", "latest");
+	console.log("CapIncrease with paid: ", logs[0].args["paid"].toNumber(),
+		"par: ", logs[0].args["par"].toNumber());
+
+	console.log("CounterOfShare: ", await bos.counterOfShares());
+	console.log("SharesList: ", await rom.sharesList());
 }
 
 main()

@@ -8,22 +8,21 @@
 pragma solidity ^0.8.8;
 pragma experimental ABIEncoderV2;
 
-import "./IBookOfGM.sol";
 import "../../common/components/MeetingMinutes.sol";
 
-contract BookOfGM is IBookOfGM, MeetingMinutes {
+contract BookOfGM is MeetingMinutes {
 
     //#################
     //##    写接口    ##
     //#################
 
-    // ==== Corp Register ====
+    // // ==== Corp Register ====
 
-    function createCorpSeal(uint info) external onlyDirectKeeper {
-        _rc.regUser(info);
-    }
+    // function createCorpSeal(uint info) external onlyDirectKeeper {
+    //     _rc.regUser(info);
+    // }
 
-    function createBoardSeal(address board) external onlyDirectKeeper {
-        _rc.setBackupKey(board);
-    }
+    // function createBoardSeal(address board) external onlyDirectKeeper {
+    //     _rc.setBackupKey(board);
+    // }
 }

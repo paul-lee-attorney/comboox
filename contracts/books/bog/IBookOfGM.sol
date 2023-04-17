@@ -16,7 +16,7 @@ interface IBookOfGM is IMeetingMinutes {
     //##    写接口     ##
     //##################
 
-    function createCorpSeal(uint info) external;
+    // function createCorpSeal(uint info) external;
 
-    function createBoardSeal(address board) external;
+    // function createBoardSeal(address board) external;
 }

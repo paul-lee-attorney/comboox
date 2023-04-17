@@ -26,13 +26,13 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     // ##   Corp Setting   ##
     // ######################
 
-    function createCorpSeal(uint info) external onlyDirectKeeper {
-        _gk.getBOG().createCorpSeal(info);
-    }
+    // function createCorpSeal(uint info) external onlyDirectKeeper {
+    //     _gk.getBOG().createCorpSeal(info);
+    // }
 
-    function createBoardSeal(address board) external onlyDirectKeeper {
-        _gk.getBOG().createBoardSeal(board);
-    }
+    // function createBoardSeal(address board) external onlyDirectKeeper {
+    //     _gk.getBOG().createBoardSeal(board);
+    // }
 
     // ################
     // ##   Motion   ##
@@ -305,8 +305,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external {
-        _gk.getBOG().execAction(
+    ) external returns (uint){
+        return _gk.getBOG().execAction(
             typeOfAction,
             targets,
             values,

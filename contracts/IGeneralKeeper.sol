@@ -7,28 +7,28 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/lib/RolesRepo.sol";
+import "./common/lib/RolesRepo.sol";
 
-import "./IBOAKeeper.sol";
-import "./IBODKeeper.sol";
-import "./IBOHKeeper.sol";
-import "./IBOGKeeper.sol";
-import "./IBOOKeeper.sol";
-import "./IBOPKeeper.sol";
-import "./IBOSKeeper.sol";
-import "./IROMKeeper.sol";
-import "./ISHAKeeper.sol";
-import "./IROSKeeper.sol";
+import "./keepers/IBOAKeeper.sol";
+import "./keepers/IBODKeeper.sol";
+import "./keepers/IBOHKeeper.sol";
+import "./keepers/IBOGKeeper.sol";
+import "./keepers/IBOOKeeper.sol";
+import "./keepers/IBOPKeeper.sol";
+import "./keepers/IBOSKeeper.sol";
+import "./keepers/IROMKeeper.sol";
+import "./keepers/ISHAKeeper.sol";
+import "./keepers/IROSKeeper.sol";
 
-import "../books/boa/IBookOfIA.sol";
-import "../books/bod/IBookOfDirectors.sol";
-import "../books/bog/IBookOfGM.sol";
-import "../books/boh/IBookOfSHA.sol";
-import "../books/boo/IBookOfOptions.sol";
-import "../books/bop/IBookOfPledges.sol";
-import "../books/bos/IBookOfShares.sol";
-import "../books/rom/IRegisterOfMembers.sol";
-import "../books/ros/IRegisterOfSwaps.sol";
+import "./books/boa/IBookOfIA.sol";
+import "./books/bod/IBookOfDirectors.sol";
+import "./books/bog/IBookOfGM.sol";
+import "./books/boh/IBookOfSHA.sol";
+import "./books/boo/IBookOfOptions.sol";
+import "./books/bop/IBookOfPledges.sol";
+import "./books/bos/IBookOfShares.sol";
+import "./books/rom/IRegisterOfMembers.sol";
+import "./books/ros/IRegisterOfSwaps.sol";
 
 interface IGeneralKeeper {
 
@@ -36,11 +36,15 @@ interface IGeneralKeeper {
     // ##   Event   ##
     // ###############
 
-    event RegBook(uint256 title, address book);
+    event RegBook(uint256 indexed title, address indexed book);
 
-    event RegBookeeper(uint256 title, address keeper);
+    event RegBookeeper(uint256 indexed title, address indexed keeper);
 
-    event SetCompInfo(bytes32 regNumHash, string nameOfCompany, string symbolOfCompany);
+    event SetCompInfo(bytes32 indexed regNumHash, string indexed nameOfCompany, string indexed symbolOfCompany);
+
+    event CreateCorpSeal(uint256 indexed corpNo, bytes32 indexed info);
+
+    event ExecAction(uint256 indexed contents, bool indexed result);
 
     // ######################
     // ##   AccessControl  ##
@@ -129,9 +133,9 @@ interface IGeneralKeeper {
     // ##   BOGKeeper   ##
     // ###################
 
-    function createCorpSeal(uint info) external;
+    // function createCorpSeal(uint info) external;
 
-    function createBoardSeal() external;
+    // function createBoardSeal() external;
 
     function nominateDirector(uint256 seqOfPos, uint candidate) external;
 

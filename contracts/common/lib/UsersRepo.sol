@@ -208,22 +208,24 @@ library UsersRepo {
     // ##    User & Members    ##
     // ##########################
 
-    function infoParser(uint256 info) public pure returns(User memory user) {
+    function infoParser(bytes32 info) public pure returns(User memory user) {
+        uint _info = uint(info);
+
         user = User({
             isCOA: false,
             counterOfV: 0,
             balance: 0,
             primeKey: Key({
                 pubKey: address(0),
-                seqOfKey: uint16(info >> 240),
-                dataOfKey: uint32(info >> 208),
-                dateOfKey: uint48(info >> 160)
+                seqOfKey: uint16(_info >> 240),
+                dataOfKey: uint32(_info >> 208),
+                dateOfKey: uint48(_info >> 160)
             }),
             backupKey: Key({
                 pubKey: address(0),
-                seqOfKey: uint16(info >> 144),
-                dataOfKey: uint32(info >> 112),
-                dateOfKey: uint48(info >> 64)
+                seqOfKey: uint16(_info >> 144),
+                dataOfKey: uint32(_info >> 112),
+                dateOfKey: uint48(_info >> 64)
             })
         });
     }
@@ -235,7 +237,7 @@ library UsersRepo {
         seq = uint40(repo.users[0].primeKey.dateOfKey);
     }
 
-    function regUser(Repo storage repo, uint256 info, address msgSender) public {
+    function regUser(Repo storage repo, bytes32 info, address msgSender) public {
 
         require(!isKey(repo, msgSender), "UR.RU: used key");
 

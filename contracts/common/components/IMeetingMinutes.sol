@@ -28,7 +28,7 @@ interface IMeetingMinutes {
 
     event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
 
-    event ExecAction(uint256 indexed contents, bool result);
+    // event ExecAction(uint256 indexed contents, bool result);
 
     //#################
     //##    写接口    ##
@@ -109,7 +109,7 @@ interface IMeetingMinutes {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external;
+    ) external returns(uint contents);
 
     //################
     //##    Read    ##

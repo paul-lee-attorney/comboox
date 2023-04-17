@@ -28,11 +28,11 @@ interface IRegisterOfMembers {
 
     event SetAmtBase(bool basedOnPar);
 
-    event AddMember(uint256 indexed acct, uint32 qtyOfMembers);
+    event AddMember(uint256 indexed acct, uint indexed qtyOfMembers);
 
-    event AddShareToMember(uint32 indexed seqOfShare, uint40 indexed acct);
+    event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
 
-    event RemoveShareFromMember(uint32 indexed seqOfShare, uint40 indexed acct);
+    event RemoveShareFromMember(uint indexed seqOfShare, uint indexed acct);
 
     event ChangeAmtOfMember(
         uint indexed acct,

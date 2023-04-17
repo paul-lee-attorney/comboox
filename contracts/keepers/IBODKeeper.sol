@@ -91,5 +91,5 @@ interface IBODKeeper {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external;
+    ) external returns (uint);
 }

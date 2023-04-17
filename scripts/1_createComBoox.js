@@ -14,7 +14,11 @@ async function main() {
 	let rc = await contractGetter("RegCenter", await tempAddrGetter("RegCenter"));
 
 	const acct2 = await rc.connect(signers[2]).getMyUserNo();
-	console.log("userNo: ", acct2);
+	console.log("owner's userNo: ", acct2);
+
+	const acct3 = await rc.connect(signers[3]).getMyUserNo();
+	console.log("bookeeper's address: ", signers[3].address);
+	console.log("bookeeper's userNo: ", acct3);
 
 	// ==== Crate Comp ====
 

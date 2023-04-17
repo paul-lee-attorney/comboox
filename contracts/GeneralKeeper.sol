@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/AccessControl.sol";
+import "./common/access/AccessControl.sol";
 
 import "./IGeneralKeeper.sol";
 
@@ -33,6 +33,12 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         regNumHash = _regNumHash;
         nameOfCompany = _name;
         symbolOfCompany = _symbol;
+    }
+
+    function createCorpSeal(bytes32 info) external onlyDirectKeeper {
+        _rc.regUser(info);
+        uint corpNo = _rc.getMyUserNo();
+        emit CreateCorpSeal(corpNo, info);
     }
 
     function regBookeeper(uint256 title, address keeper) 
@@ -164,20 +170,27 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         bytes32 desHash,
         uint256 seqOfMotion
     ) external {
-        IBODKeeper(_keepers[2]).execAction(typeOfAction, targets, values, params, desHash, seqOfMotion, _msgSender());
+        uint contents = IBODKeeper(_keepers[2]).execAction(typeOfAction, targets, values, params, desHash, seqOfMotion, _msgSender());
+        if (_execute(targets, values, params)) {
+            emit ExecAction(contents, true);
+        } else emit ExecAction(contents, false);        
+    }
+
+    function _execute(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params
+    ) private returns (bool success) {
+        for (uint256 i = 0; i < targets.length; i++) {
+            (success, ) = targets[i].call{value: values[i]}(params[i]);
+            if (!success) return success;
+        }
     }
 
     // ###################
     // ##   BOGKeeper   ##
     // ###################
 
-    function createCorpSeal(uint info) external onlyDirectKeeper {
-        IBOGKeeper(_keepers[3]).createCorpSeal(info);
-    }
-
-    function createBoardSeal() external onlyDirectKeeper {
-        IBOGKeeper(_keepers[3]).createBoardSeal(_keepers[1]);
-    }
 
     function nominateDirector(uint256 seqOfPos, uint candidate) external {
         IBOGKeeper(_keepers[3]).nominateDirector(seqOfPos, candidate, _msgSender());
@@ -250,7 +263,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         bytes32 desHash,
         uint256 seqOfMotion
     ) external {
-        IBOGKeeper(_keepers[3]).execActionOfGM(
+        uint contents = IBOGKeeper(_keepers[3]).execActionOfGM(
             typeOfAction,
             targets,
             values,
@@ -259,6 +272,9 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
             seqOfMotion,
             _msgSender()
         );
+        if (_execute(targets, values, params)) {
+            emit ExecAction(contents, true);
+        } else emit ExecAction(contents, false);        
     }
 
     // ##################

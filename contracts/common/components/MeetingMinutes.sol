@@ -181,7 +181,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external onlyDirectKeeper {
+    ) external onlyDirectKeeper returns (uint contents) {
 
         MotionsRepo.Motion memory motion =  
             _repo.getMotion(seqOfMotion);
@@ -190,7 +190,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             uint8(MotionsRepo.TypeOfMotion.ApproveAction), 
             "MM.EA: wrong typeOfMotion");
 
-        uint256 contents = _hashAction(
+        contents = _hashAction(
             seqOfVR,
             targets,
             values,
@@ -200,21 +200,21 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
         execResolution(seqOfMotion, contents, caller);
 
-        if (_execute(targets, values, params)) {
-            emit ExecAction(contents, true);
-        } else emit ExecAction(contents, false);
+        // if (_execute(targets, values, params)) {
+        //     emit ExecAction(contents, true);
+        // } else emit ExecAction(contents, false);
     }
 
-    function _execute(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory params
-    ) private returns (bool success) {
-        for (uint256 i = 0; i < targets.length; i++) {
-            (success, ) = targets[i].call{value: values[i]}(params[i]);
-            if (!success) return success;
-        }
-    }
+    // function _execute(
+    //     address[] memory targets,
+    //     uint256[] memory values,
+    //     bytes[] memory params
+    // ) private returns (bool success) {
+    //     for (uint256 i = 0; i < targets.length; i++) {
+    //         (success, ) = targets[i].call{value: values[i]}(params[i]);
+    //         if (!success) return success;
+    //     }
+    // }
 
     //################
     //##    Read    ##

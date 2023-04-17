@@ -252,8 +252,8 @@ contract BODKeeper is IBODKeeper, AccessControl {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external directorExist(caller) {
-        _gk.getBOD().execAction(
+    ) external directorExist(caller) returns (uint) {
+        return _gk.getBOD().execAction(
             typeOfAction,
             targets,
             values,

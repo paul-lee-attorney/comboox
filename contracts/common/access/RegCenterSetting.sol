@@ -8,7 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "./../../IRegCenter.sol";
-import "../../keepers/IGeneralKeeper.sol";
+import "../../IGeneralKeeper.sol";
 
 contract RegCenterSetting {
 

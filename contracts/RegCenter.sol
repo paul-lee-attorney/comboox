@@ -18,7 +18,6 @@ contract RegCenter is IRegCenter {
     DocsRepo.Repo private _docs;
     
     constructor() {
-        // _users.users[0].primeKey.pubKey = msg.sender;
         _users.regUser(0, msg.sender);
     }
 
@@ -98,7 +97,7 @@ contract RegCenter is IRegCenter {
     // ##    Users   ##
     // ################
 
-    function regUser(uint256 info) external {
+    function regUser(bytes32 info) external {
         _users.regUser(info, msg.sender);
     }
 

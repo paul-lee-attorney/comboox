@@ -3,15 +3,20 @@ const { contractGetter, tempAddrGetter } = require("./contractGetter");
 
 async function main() {
 	const signers = await hre.ethers.getSigners();
+	const owner = signers[2];
+	const keeper = signers[3];
+	const gc = signers[4];
 	console.log(
-		"Initiate ComBoox with owner:",
-		signers[2].address,
-		" and keeper: ",
-		signers[3].address
+		"CraeteSHA with owner:",
+		owner.address, "\n",
+		"keeper: ",
+		keeper.address, "\n",
+		"generalCounsel: ",
+		gc.address, "\n"
 	);
 
 	// ==== Get GK & RC ====
-	const addrOfGK = "0x4703e9E523b0C23C849e333aF18e6985a3B60b6c";
+	const addrOfGK = "0x5559244bedaB6b84b00B0bb9ebac8CAc37D806f1";
 
 	const addrOfRC = await tempAddrGetter("RegCenter");
 	const rc = await contractGetter("RegCenter", addrOfRC);
@@ -19,34 +24,73 @@ async function main() {
 
 	// ==== Prepare Accts ====
 
-	const acct2 = await rc.connect(signers[2]).getMyUserNo();
-	console.log("Acct2 userNo: ", acct2);
+	const ownerNo = await rc.connect(signers[2]).getMyUserNo();
+	console.log("owner's UserNo: ", ownerNo);
 
-	const acct3 = await rc.connect(signers[3]).getMyUserNo();
-	console.log("Acct3 userNo: ", acct3);
+	const keeperNo = await rc.connect(signers[3]).getMyUserNo();
+	console.log("keeper's UserNo: ", keeperNo);
 
-	const acct4 = await rc.connect(signers[4]).getMyUserNo();
-	console.log("Acct4 userNo: ", acct4);
+	const gcNo = await rc.connect(signers[4]).getMyUserNo();
+	console.log("generalCounsel's UserNo: ", gcNo);
 
 	const acct5 = await rc.connect(signers[5]).getMyUserNo();
 	console.log("Acct5 userNo: ", acct5);
 
-	// ==== Create SHA ====
+	// ==== Get GK ====
 
 	const artOfGK = hre.artifacts.readArtifactSync("GeneralKeeper");
 	const gk = await hre.ethers.getContractAt(artOfGK.abi, addrOfGK);
 	console.log("obtained gk at address:", gk.address);
 
-	await gk.connect(signers[3]).createSHA(1);
-	console.log("created sha ");
+	// ==== Get BOHKeeper ====
+	const artOfBOHKeeper = hre.artifacts.readArtifactSync("BOHKeeper");
+	const addrOfBOHKeeper = await gk.getKeeper(4);
+	const bohKeeper = await hre.ethers.getContractAt(artOfBOHKeeper.abi, addrOfBOHKeeper);
+	console.log("obtained bohKeeper at address:", bohKeeper.address);
+
+	// ==== Get BOH ====
+	const artOfBOH = hre.artifacts.readArtifactSync("BookOfSHA");
+	const addrOfBOH = await gk.getBOH();
+	const boh = await hre.ethers.getContractAt(artOfBOH.abi, addrOfBOH);
+	console.log("obtained boh at address:", boh.address);
+
+	// ==== CreateSHA ====
+
+	await gk.connect(owner).createSHA(1);
+	console.log("created SHA");
 
 	let logs = await rc.queryFilter("CreateDoc", "latest");
-	console.log("CreateDoc of type: ", logs[0].args["typeOfDoc"], "created by: ", logs[0].args["creator"], "at address: ", logs[0].args["body"]);
+	console.log(
+		"typeOfDoc: ", logs[0].args["typeOfDoc"].toNumber(), "\n",
+		"creator: ", logs[0].args["creator"].toNumber(16), "\n",
+		"address: ", logs[0].args["body"]
+	);
 
 	const artOfSHA = hre.artifacts.readArtifactSync("ShareholdersAgreement");
 	const sha = await hre.ethers.getContractAt(artOfSHA.abi, logs[0].args["body"]);
 	console.log("obtained sha: ", sha.address);
 
+	logs = await sha.queryFilter("Init", "latest");
+	console.log("Init SHA with \n",
+		"owner: ", logs[0].args["owner"].toNumber(), "\n",
+		"directKeeper: ", logs[0].args["directKeeper"], "\n",
+		"regCenter: ", logs[0].args["regCenter"], "\n",
+		"generalKeeper: ", logs[0].args["generalKeeper"] , "\n"
+	);
+
+	logs = await boh.queryFilter("UpdateStateOfFile", "latest");
+	console.log("RegSHA with BOH",
+		"address: ", logs[0].args["body"], "\n",
+		"stateOfFile: ", logs[0].args["state"].toNumber(), "\n"
+	);
+
+	// ==== Set General Counsel ====
+	await sha.connect(owner).setGeneralCounsel(await rc.connect(gc).getMyUserNo());
+	logs = await sha.queryFilter("SetGeneralCounsel", "latest");
+	console.log("Set GeneralCounsel of SHA",
+		"counsel's userNo: ", logs[0].args["acct"].toNumber()
+	);
+	
 
 }
 

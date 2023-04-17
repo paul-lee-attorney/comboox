@@ -22,9 +22,9 @@ interface IBOGKeeper {
     // ##   CorpSetting   ##
     // #####################
 
-    function createCorpSeal(uint info) external;
+    // function createCorpSeal(uint info) external;
 
-    function createBoardSeal(address board) external;
+    // function createBoardSeal(address board) external;
 
     // ################
     // ##   Motion   ##
@@ -87,6 +87,6 @@ interface IBOGKeeper {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external;
+    ) external returns(uint);
 
 }

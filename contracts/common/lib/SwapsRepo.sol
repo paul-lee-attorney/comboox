@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../keepers/IGeneralKeeper.sol";
+import "../../IGeneralKeeper.sol";
 import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/bos/IBookOfShares.sol";
 

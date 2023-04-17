@@ -12,7 +12,7 @@ import "./common/lib/DocsRepo.sol";
 
 import "./common/access/IAccessControl.sol";
 
-import "./keepers/IGeneralKeeper.sol";
+import "./IGeneralKeeper.sol";
 
 interface IRegCenter {
 
@@ -112,7 +112,7 @@ interface IRegCenter {
 
     // ==== User ====
 
-    function regUser(uint256 info) external;
+    function regUser(bytes32 info) external;
 
     function setBackupKey(address bKey) external;
 
