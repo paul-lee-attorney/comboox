@@ -11,7 +11,7 @@ async function main() {
 	);
 
 	// ==== Crate Comp ====
-	const addrOfGK = "0x5559244bedaB6b84b00B0bb9ebac8CAc37D806f1";
+	const addrOfGK = "0x6687Da782e8b34d8f818f7BAA844Ca9217ce2bcD";
 
 	const addrOfRC = await tempAddrGetter("RegCenter");
 	const rc = await contractGetter("RegCenter", addrOfRC);

@@ -7,7 +7,7 @@ async function main() {
 	const keeper = signers[3];
 	const gc = signers[4];
 	console.log(
-		"CraeteSHA with owner:",
+		"owner:",
 		owner.address, "\n",
 		"keeper: ",
 		keeper.address, "\n",
@@ -16,7 +16,7 @@ async function main() {
 	);
 
 	// ==== Get GK & RC ====
-	const addrOfGK = "0x5559244bedaB6b84b00B0bb9ebac8CAc37D806f1";
+	const addrOfGK = "0x6687Da782e8b34d8f818f7BAA844Ca9217ce2bcD";
 
 	const addrOfRC = await tempAddrGetter("RegCenter");
 	const rc = await contractGetter("RegCenter", addrOfRC);
@@ -60,15 +60,28 @@ async function main() {
 	console.log("created SHA");
 
 	let logs = await rc.queryFilter("CreateDoc", "latest");
+	let doc = {};
+	let addOfSHA;
+
+	logs.map(v => {
+		doc.typeOfDoc = v.args["typeOfDoc"].toNumber();
+		doc.creator = v.args["creator"].toNumber();
+		doc.body = v.args["body"];
+
+		if (doc.typeOfDoc == 22 && 
+				doc.creator == ownerNo) 
+		{
+				addOfSHA = doc.body;
+		}
+	});
+
 	console.log(
-		"typeOfDoc: ", logs[0].args["typeOfDoc"].toNumber(), "\n",
-		"creator: ", logs[0].args["creator"].toNumber(16), "\n",
-		"address: ", logs[0].args["body"]
+		"get SHA's address: ", addOfSHA
 	);
 
 	const artOfSHA = hre.artifacts.readArtifactSync("ShareholdersAgreement");
-	const sha = await hre.ethers.getContractAt(artOfSHA.abi, logs[0].args["body"]);
-	console.log("obtained sha: ", sha.address);
+	const sha = await hre.ethers.getContractAt(artOfSHA.abi, addOfSHA);
+	console.log("obtained sha at: ", sha.address);
 
 	logs = await sha.queryFilter("Init", "latest");
 	console.log("Init SHA with \n",
@@ -91,7 +104,39 @@ async function main() {
 		"counsel's userNo: ", logs[0].args["acct"].toNumber()
 	);
 	
+	// ==== GovernanceRule ====
 
+	let gr = {};
+	gr.seqOfRule = "0000";
+	gr.qtyOfSubRule = "01";
+	gr.seqOfSubRule = "01";
+	gr.basedOnPar = "00";
+	gr.proposeWeightRatioOfGM = "03e8";
+	gr.proposeHeadNumOfMembers = "0000";
+	gr.proposeHeadNumOfDirectors = "0001";
+	gr.maxNumOfMembers = "00000032";
+	gr.quorumOfGM = "1388";
+	gr.maxNumOfDirectors = "0032";
+	gr.tenureMonOfBoard = "0024";
+	gr.quorumOfBoardMeeting = "1388";
+	
+	let rule = serializeObj(gr);
+	console.log("created GovernanceRule: ", rule);
+
+	await sha.connect(gc).addRule(rule);
+	console.log("added GovenanceRule into SHA: ", await sha.getRule(0));
+
+}
+
+function serializeObj (obj) {
+	let arr = Object.values(obj);
+	let rule = "0x";
+
+	arr.map(v => {
+		rule += v;
+	});
+
+	return rule.padEnd(66, "0");
 }
 
 main()

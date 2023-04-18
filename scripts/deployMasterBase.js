@@ -351,28 +351,28 @@ async function main() {
 
 	// ==== Reg Users ====
 
-	await rc.connect(signers[2]).regUser(0);
+	await rc.connect(signers[2]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[2].address, " with No: ", parseInt( await rc.connect(signers[2]).getMyUserNo()));
 
-	await rc.connect(signers[3]).regUser(0);
+	await rc.connect(signers[3]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[3].address, " with No: ", parseInt( await rc.connect(signers[3]).getMyUserNo()));
 
-	await rc.connect(signers[4]).regUser(0);
+	await rc.connect(signers[4]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[4].address, " with No: ", parseInt( await rc.connect(signers[4]).getMyUserNo()));
 
-	await rc.connect(signers[5]).regUser(0);
+	await rc.connect(signers[5]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[5].address, " with No: ", parseInt( await rc.connect(signers[5]).getMyUserNo()));
 	
-	await rc.connect(signers[6]).regUser(0);
+	await rc.connect(signers[6]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[6].address, " with No: ", parseInt( await rc.connect(signers[6]).getMyUserNo()));
 
-	await rc.connect(signers[7]).regUser(0);
+	await rc.connect(signers[7]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[7].address, " with No: ", parseInt( await rc.connect(signers[7]).getMyUserNo()));
 
-	await rc.connect(signers[8]).regUser(0);
+	await rc.connect(signers[8]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[8].address, " with No: ", parseInt( await rc.connect(signers[8]).getMyUserNo()));
 
-	await rc.connect(signers[9]).regUser(0);
+	await rc.connect(signers[9]).regUser("0x0".padEnd(66, "0"));
 	console.log("regUser: ", signers[9].address, " with No: ", parseInt( await rc.connect(signers[9]).getMyUserNo()));
 
 };
