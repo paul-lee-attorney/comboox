@@ -10,8 +10,8 @@ typechain-types
 # Hardhat files
 cache
 artifacts
-client/src/contracts
-client
+# client/src/contracts
+# client
 server
 server/src/contracts
 
