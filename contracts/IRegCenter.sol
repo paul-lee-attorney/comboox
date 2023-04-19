@@ -100,6 +100,8 @@ interface IRegCenter {
 
     function mintAndLockPoints(bytes32 snOfLocker, uint amt) external;
 
+    // ==== Points Trade ====
+
     function transferPoints(uint256 to, uint amt) external;
 
     function lockPoints(bytes32 snOfLocker, uint amt) external;
@@ -124,6 +126,8 @@ interface IRegCenter {
 
     function setTemplate(bytes32 snOfDoc, address body) external;
 
+    // ==== use Docs ====
+
     function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) external 
         returns(DocsRepo.Doc memory doc);
 
@@ -135,14 +139,20 @@ interface IRegCenter {
     // ##   查询端口   ##
     // #################
 
+    // ==== Options ====
+
     function getOwner() external view returns (address);
 
     function getBookeeper() external view returns (address);
+
+    // ---- Points ----
 
     function getRewardSetting()
         external
         view
         returns (UsersRepo.Reward memory);
+
+    // ==== Users ====
 
     function isKey(address key) external view returns (bool);
 
