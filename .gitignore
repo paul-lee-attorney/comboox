@@ -11,7 +11,7 @@ typechain-types
 cache
 artifacts
 # client/src/contracts
-# client
+client
 server
 server/src/contracts
 
