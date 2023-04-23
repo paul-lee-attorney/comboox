@@ -81,7 +81,7 @@ interface IRegCenter {
     event CreateComp(uint256 version, uint indexed seqOfDoc, uint indexed creator, address indexed generalKeeper);
 
     // ##################
-    // ##    写端口    ##
+    // ##    写端口     ##
     // ##################
 
     // ==== Opts Setting ====

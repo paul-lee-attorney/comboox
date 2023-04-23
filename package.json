@@ -1,0 +1,15 @@
+{
+  "name": "comboox",
+  "version": "0.2.0",
+  "description": "company statutory booking system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Li Li @ Jingtian & Gongcheng",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "hardhat": "^2.14.0"
+  }
+}
