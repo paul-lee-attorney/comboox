@@ -208,27 +208,27 @@ library UsersRepo {
     // ##    User & Members    ##
     // ##########################
 
-    function infoParser(bytes32 info) public pure returns(User memory user) {
-        uint _info = uint(info);
+    // function infoParser(bytes32 info) public pure returns(User memory user) {
+    //     uint _info = uint(info);
 
-        user = User({
-            isCOA: false,
-            counterOfV: 0,
-            balance: 0,
-            primeKey: Key({
-                pubKey: address(0),
-                seqOfKey: uint16(_info >> 240),
-                dataOfKey: uint32(_info >> 208),
-                dateOfKey: uint48(_info >> 160)
-            }),
-            backupKey: Key({
-                pubKey: address(0),
-                seqOfKey: uint16(_info >> 144),
-                dataOfKey: uint32(_info >> 112),
-                dateOfKey: uint48(_info >> 64)
-            })
-        });
-    }
+    //     user = User({
+    //         isCOA: false,
+    //         counterOfV: 0,
+    //         balance: 0,
+    //         primeKey: Key({
+    //             pubKey: address(0),
+    //             seqOfKey: uint16(_info >> 240),
+    //             dataOfKey: uint32(_info >> 208),
+    //             dateOfKey: uint48(_info >> 160)
+    //         }),
+    //         backupKey: Key({
+    //             pubKey: address(0),
+    //             seqOfKey: uint16(_info >> 144),
+    //             dataOfKey: uint32(_info >> 112),
+    //             dateOfKey: uint48(_info >> 64)
+    //         })
+    //     });
+    // }
 
     // ==== reg user ====
 
@@ -237,15 +237,16 @@ library UsersRepo {
         seq = uint40(repo.users[0].primeKey.dateOfKey);
     }
 
-    function regUser(Repo storage repo, bytes32 info, address msgSender) public {
+    function regUser(Repo storage repo, address msgSender) public {
 
-        require(!isKey(repo, msgSender), "UR.RU: used key");
+        require(!isKey(repo, msgSender), "UserRepo.RegUser: used key");
 
         uint seqOfUser = _increaseCounterOfUsers(repo);
 
         repo.userNo[msgSender] = seqOfUser;
 
-        User memory user = infoParser(info);
+        // User memory user = infoParser(info);
+        User memory user;
 
         user.primeKey.pubKey = msgSender;
 
@@ -265,6 +266,24 @@ library UsersRepo {
             size := extcodesize(acct)
         }
         return size != 0;
+    }
+
+    function updateUserInfo(Repo storage repo, bytes32 info, address msgSender) 
+        public onlyPrimeKey(repo, msgSender)
+    {
+        uint _info = uint(info);
+
+        uint caller = repo.userNo[msgSender];
+        User storage user = repo.users[caller];
+
+        user.primeKey.seqOfKey = uint16(_info >> 240);
+        user.primeKey.dataOfKey = uint32(_info >> 208);
+        user.primeKey.dateOfKey = uint48(_info >> 160);
+
+        user.backupKey.seqOfKey = uint16(_info >> 144);
+        user.backupKey.dataOfKey = uint32(_info >> 112);
+        user.backupKey.dateOfKey = uint48(_info >> 64);
+
     }
 
     function setBackupKey(Repo storage repo, address bKey, address msgSender) 

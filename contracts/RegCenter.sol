@@ -18,7 +18,7 @@ contract RegCenter is IRegCenter {
     DocsRepo.Repo private _docs;
     
     constructor() {
-        _users.regUser(0, msg.sender);
+        _users.regUser(msg.sender);
     }
 
     // ########################
@@ -97,8 +97,12 @@ contract RegCenter is IRegCenter {
     // ##    Users   ##
     // ################
 
-    function regUser(bytes32 info) external {
-        _users.regUser(info, msg.sender);
+    function regUser() external {
+        _users.regUser(msg.sender);
+    }
+
+    function updateUserInfo(bytes32 info) external {
+        _users.updateUserInfo(info, msg.sender);
     }
 
     function setBackupKey(address bKey) external {
@@ -160,7 +164,7 @@ contract RegCenter is IRegCenter {
             address(this),
             docs[19].body
         );
-        IGeneralKeeper(docs[19].body).regBookeeper(10, docs[9].body);
+        IGeneralKeeper(docs[19].body).regKeeper(10, docs[9].body);
 
         uint16 i;
         while (i < 9) {
@@ -171,7 +175,7 @@ contract RegCenter is IRegCenter {
                 address(this),
                 docs[19].body
             );
-            IGeneralKeeper(docs[19].body).regBookeeper(i+1, docs[i].body);
+            IGeneralKeeper(docs[19].body).regKeeper(i+1, docs[i].body);
 
             uint16 j = i+10;
 

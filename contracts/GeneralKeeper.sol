@@ -35,15 +35,17 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         symbolOfCompany = _symbol;
     }
 
-    function createCorpSeal(bytes32 info) external onlyOwner {
-        _rc.regUser(info);
+    function createCorpSeal() external onlyOwner {
+        _rc.regUser();
         uint corpNo = _rc.getMyUserNo();
-        emit CreateCorpSeal(corpNo, info);
+        emit CreateCorpSeal(corpNo);
     }
 
-    function regBookeeper(uint256 title, address keeper) 
+    // ---- Keepers ----
+
+    function regKeeper(uint256 title, address keeper) 
     external onlyDirectKeeper {
-        emit RegBookeeper(title, keeper);
+        emit RegKeeper(title, keeper);
         _keepers[title] = keeper;
     }
 
@@ -57,13 +59,19 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         return false;
     }
 
+    function getKeeper(uint256 title) external view returns (address) {
+        return _keepers[title];
+    }
+
+    // ---- Books ----
+
     function regBook(uint256 title, address book) external onlyDirectKeeper {
         emit RegBook(title, book);
         _books[title] = book;
     } 
 
-    function getKeeper(uint256 title) external view returns (address) {
-        return _keepers[title];
+    function getBook(uint256 title) external view returns (address) {
+        return _books[title];
     }
 
     // ###################
@@ -589,7 +597,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     // ###############
-    // ##  Ruting   ##
+    // ##  Routing  ##
     // ###############
 
     function getBOA() external view returns (IBookOfIA) {

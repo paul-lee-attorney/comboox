@@ -114,7 +114,9 @@ interface IRegCenter {
 
     // ==== User ====
 
-    function regUser(bytes32 info) external;
+    function regUser() external;
+
+    function updateUserInfo(bytes32 info) external;
 
     function setBackupKey(address bKey) external;
 

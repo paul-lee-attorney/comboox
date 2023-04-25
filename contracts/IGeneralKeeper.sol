@@ -38,11 +38,11 @@ interface IGeneralKeeper {
 
     event RegBook(uint256 indexed title, address indexed book);
 
-    event RegBookeeper(uint256 indexed title, address indexed keeper);
+    event RegKeeper(uint256 indexed title, address indexed keeper);
 
     event SetCompInfo(bytes32 indexed regNumHash, string indexed nameOfCompany, string indexed symbolOfCompany);
 
-    event CreateCorpSeal(uint256 indexed corpNo, bytes32 indexed info);
+    event CreateCorpSeal(uint256 indexed corpNo);
 
     event ExecAction(uint256 indexed contents, bool indexed result);
 
@@ -56,13 +56,15 @@ interface IGeneralKeeper {
         string memory _symbol
     ) external;
 
-    function regBookeeper(uint256 title, address keeper) external;
+    function regKeeper(uint256 title, address keeper) external;
 
     function isKeeper(address caller) external view returns (bool flag);
 
+    function getKeeper(uint256) external view returns(address keeper);
+
     function regBook(uint256 title, address keeper) external;
 
-    function getKeeper(uint256) external view returns(address keeper);
+    function getBook(uint256 title) external view returns (address);
 
     // ###################
     // ##   BOAKeeper   ##
@@ -133,7 +135,7 @@ interface IGeneralKeeper {
     // ##   BOGKeeper   ##
     // ###################
 
-    // function createCorpSeal(uint info) external;
+    function createCorpSeal() external;
 
     // function createBoardSeal() external;
 
@@ -382,7 +384,7 @@ interface IGeneralKeeper {
     ) external;
 
     // ###############
-    // ##   Ruting  ##
+    // ##  Routing  ##
     // ###############
 
     function getBOA() external view returns (IBookOfIA);
