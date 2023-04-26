@@ -22,14 +22,12 @@ interface IBookOfIA is IFilesFolder {
     //##    Event    ##
     //#################
 
-    event ExecFirstRefusalRight(address ia, uint256 seqOfDeal, uint256 caller);
+    event ExecFirstRefusalRight(address indexed ia, uint256 indexed seqOfDeal, uint256 indexed caller);
 
-    event ExecAlongRight(address ia, bool dragAlong, uint256 seqOfDeal, 
+    event ExecAlongRight(address indexed ia, bool indexed dragAlong, uint256 indexed seqOfDeal, 
     uint256 seqOfShare, uint paid, uint par, uint256 claimer, bytes32 sigHash);
 
-    event AcceptFirstRefusalClaims(address ia, uint256 seqOfDeal);
-
-    event AddAlongDeal(address ia, uint256 follower, uint256 seqOfShare, uint64 amount);
+    event AcceptFirstRefusalClaims(address indexed ia, uint256 indexed seqOfDeal);
 
     //#################
     //##    写接口    ##

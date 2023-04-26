@@ -20,19 +20,19 @@ interface IBookOfOptions {
     // ##   Event    ##
     // ################
 
-    event CreateOpt(uint256 indexed seqOfOpt, bytes32 codeOfOpt);
+    event CreateOpt(uint256 indexed seqOfOpt, bytes32 indexed codeOfOpt);
 
-    event AddObligorIntoOpt(uint256 indexed seqOfOpt, uint256 obligor);
+    event AddObligorIntoOpt(uint256 indexed seqOfOpt, uint256 indexed obligor);
 
-    event RemoveObligorFromOpt(uint256 indexed seqOfOpt, uint256 obligor);
+    event RemoveObligorFromOpt(uint256 indexed seqOfOpt, uint256 indexed obligor);
 
-    event UpdateOracle(uint256 indexed seqOfOpt, uint data1, uint data2, uint data3);
+    event UpdateOracle(uint256 indexed seqOfOpt, uint indexed data1, uint indexed data2, uint data3);
 
     event ExecOpt(uint256 indexed seqOfOpt);
 
-    event RegSwapOrder(uint256 indexed seqOfOpt, bytes32 codeOfBrf);
+    event RegSwapOrder(uint256 indexed seqOfOpt, bytes32 indexed codeOfBrf);
 
-    event UpdateStateOfBrief(uint256 indexed seqOfOpt, uint256 seqOfBrf, uint state);
+    event UpdateStateOfBrief(uint256 indexed seqOfOpt, uint256 indexed seqOfBrf, uint indexed state);
 
     // ################
     // ##   Write    ##

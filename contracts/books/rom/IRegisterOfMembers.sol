@@ -36,8 +36,8 @@ interface IRegisterOfMembers {
 
     event ChangeAmtOfMember(
         uint indexed acct,
-        uint paid,
-        uint par,
+        uint indexed paid,
+        uint indexed par,
         bool increase
     );
 

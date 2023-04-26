@@ -11,6 +11,7 @@ import "./IRegCenter.sol";
 
 contract RegCenter is IRegCenter {
     using DocsRepo for DocsRepo.Repo;
+    using DocsRepo for DocsRepo.Head;
     using UsersRepo for UsersRepo.Repo;
     using UsersRepo for uint256;
     
@@ -135,7 +136,7 @@ contract RegCenter is IRegCenter {
     {
         uint40 owner = _users.getUserNo(primeKeyOfOwner, msg.sender);
         doc = _docs.createDoc(snOfDoc, owner);
-        emit CreateDoc(doc.head.typeOfDoc, doc.head.version, doc.head.seqOfDoc, doc.head.creator, doc.body);
+        emit CreateDoc(doc.head.codifyHead(), doc.body);
     }
 
     // ###############
@@ -180,12 +181,23 @@ contract RegCenter is IRegCenter {
             uint16 j = i+10;
 
             docs[j] = _createDocAtLatestVersion(j+1, primeKeyOfOwner);
-            IAccessControl(docs[j].body).init(
-                owner,
-                docs[i].body,
-                address(this),
-                docs[19].body
-            );
+
+            if (j != 16) {
+                IAccessControl(docs[j].body).init(
+                    owner,
+                    docs[i].body,
+                    address(this),
+                    docs[19].body
+                );                
+            } else {
+                IAccessControl(docs[j].body).init(
+                    owner,
+                    primeKeyOfKeeper,
+                    address(this),
+                    docs[19].body
+                );
+            }
+            
             IGeneralKeeper(docs[19].body).regBook(i+1, docs[j].body);
             
             i++;

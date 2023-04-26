@@ -15,7 +15,7 @@ interface IBookOfSHA is IFilesFolder{
     //##  Event   ##
     //##############
 
-    event ChangePointer(address pointer);
+    event ChangePointer(address indexed pointer);
 
     //##################
     //##    写接口    ##

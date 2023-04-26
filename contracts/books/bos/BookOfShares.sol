@@ -53,7 +53,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
         _gk.getROM().addShareToMember(newShare);
         _gk.getROM().capIncrease(paid, par);
 
-        emit IssueShare(newShare.head.seqOfShare, paid, par);
+        emit IssueShare(newShare.head.codifyHead(), paid, par);
     }
 
     function regShare(SharesRepo.Share memory share) 
@@ -62,7 +62,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
         newShare = _repo.regShare(share);
         _gk.getROM().addShareToMember(newShare);
 
-        emit IssueShare(newShare.head.seqOfShare, newShare.body.paid, newShare.body.par);
+        emit IssueShare(newShare.head.codifyHead(), newShare.body.paid, newShare.body.par);
     }
 
     // ==== PayInCapital ====

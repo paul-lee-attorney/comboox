@@ -16,19 +16,19 @@ interface IAccessControl {
     // ##################
 
     event Init(
-        uint256 owner,
-        address directKeeper,
+        uint256 indexed owner,
+        address indexed directKeeper,
         address regCenter,
-        address generalKeeper
+        address indexed generalKeeper
     );
 
-    event SetDirectKeeper(address keeper);
+    event SetDirectKeeper(address indexed keeper);
 
-    event RemoveDirectKeeper(address target);
+    event RemoveDirectKeeper(address indexed target);
 
-    event SetOwner(uint256 acct);
+    event SetOwner(uint256 indexed acct);
 
-    event SetGeneralCounsel(uint256 acct);
+    event SetGeneralCounsel(uint256 indexed acct);
 
     event LockContents();
 

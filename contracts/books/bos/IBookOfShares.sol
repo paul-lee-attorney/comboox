@@ -16,23 +16,23 @@ interface IBookOfShares {
     //##    Event     ##
     //##################
 
-    event IssueShare(uint256 indexed seqOfShare, uint paid, uint par);
+    event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par);
 
-    event PayInCapital(uint256 indexed seqOfShare, uint amount);
+    event PayInCapital(uint256 indexed seqOfShare, uint indexed amount);
 
-    event SubAmountFromShare(uint256 indexed seqOfShare, uint paid, uint par);
+    event SubAmountFromShare(uint256 indexed seqOfShare, uint indexed paid, uint indexed par);
 
     event DeregisterShare(uint256 indexed seqOfShare);
 
-    event UpdateStateOfShare(uint256 indexed seqOfShare, uint state);
+    event UpdateStateOfShare(uint256 indexed seqOfShare, uint indexed state);
 
-    event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint paidInDeadline);
+    event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
 
-    event DecreaseCleanPaid(uint256 indexed seqOfShare, uint paid);
+    event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
 
-    event IncreaseCleanPaid(uint256 indexed seqOfShare, uint paid);
+    event IncreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
 
-    event SetPayInAmt(bytes32 indexed snOfLocker, uint amount);
+    event SetPayInAmt(bytes32 indexed snOfLocker, uint indexed amount);
 
     event WithdrawPayInAmt(bytes32 indexed snOfLocker);
 

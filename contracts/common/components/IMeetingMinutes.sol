@@ -20,7 +20,7 @@ interface IMeetingMinutes {
 
     event ProposeMotion(uint256 indexed seqOfMotion, uint256 indexed proposer);
 
-    event EntrustDelegate(uint256 indexed seqOfMotion, uint256 delegate, uint256 principal, uint weight);
+    event EntrustDelegate(uint256 indexed seqOfMotion, uint256 indexed delegate, uint256 indexed principal, uint weight);
 
     event CastVote(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);    
 

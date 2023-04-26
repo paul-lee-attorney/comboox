@@ -17,16 +17,16 @@ interface IBookOfPledges {
 
     event CreatePledge(
         uint256 indexed seqOfShare,
-        uint256 seqOfPld,
+        uint256 indexed seqOfPld,
         uint256 creditor,
-        uint256 paid,
+        uint256 indexed paid,
         uint256 par
     );
 
     event TransferPledge(
         uint256 indexed seqOfShare,
-        uint256 seqOfPld,
-        uint256 newSeqOfPld,
+        uint256 indexed seqOfPld,
+        uint256 indexed newSeqOfPld,
         uint256 buyer,
         uint256 paid,
         uint256 par
@@ -34,23 +34,23 @@ interface IBookOfPledges {
 
     event RefundDebt(
         uint256 indexed seqOfShare,
-        uint256 seqOfPld,
-        uint256 refundAmt
+        uint256 indexed seqOfPld,
+        uint256 indexed refundAmt
     );
 
     event ExtendPledge(
         uint256 indexed seqOfShare,
-        uint256 seqOfPld,
-        uint256 extDays
+        uint256 indexed seqOfPld,
+        uint256 indexed extDays
     );
 
-    event LockPledge(uint256 indexed seqOfShare, uint256 seqOfPld, bytes32 hashLock);
+    event LockPledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld, bytes32 indexed hashLock);
 
-    event ReleasePledge(uint256 indexed seqOfShare, uint256 seqOfPld, string hashKey);
+    event ReleasePledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld, string indexed hashKey);
 
-    event ExecPledge(uint256 indexed seqOfShare, uint256 seqOfPld);
+    event ExecPledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld);
 
-    event RevokePledge(uint256 indexed seqOfShare, uint256 seqOfPld);
+    event RevokePledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld);
 
     //##################
     //##    写接口    ##

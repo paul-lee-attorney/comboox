@@ -16,13 +16,19 @@ interface IRegisterOfSwaps {
     //##    Event     ##
     //##################
 
-    event CreateSwap(uint256 indexed seqOfSwap, uint rightholder, uint obligor, uint paidOfConsider, uint rateOfSwap);
+    event CreateSwap(
+        uint256 indexed seqOfSwap, 
+        uint rightholder, 
+        uint indexed obligor, 
+        uint indexed paidOfConsider, 
+        uint rateOfSwap
+    );
 
-    event CrystalizeSwap(uint256 indexed seqOfSwap, uint seqOfConsider, uint paidOfConsider, uint seqOfTarget, uint paidOfTarget);
+    event CrystalizeSwap(uint256 indexed seqOfSwap, uint indexed seqOfConsider, uint paidOfConsider, uint indexed seqOfTarget, uint paidOfTarget);
 
-    event LockSwap(uint256 indexed seqOfSwap, bytes32 hashLock);
+    event LockSwap(uint256 indexed seqOfSwap, bytes32 indexed hashLock);
 
-    event ReleaseSwap(uint256 indexed seqOfSwap, string hashKey);
+    event ReleaseSwap(uint256 indexed seqOfSwap, string indexed hashKey);
 
     event ExecSwap(uint256 indexed seqOfSwap);
 

@@ -17,13 +17,13 @@ interface IInvestmentAgreement {
 
     event ClearDealCP(
         uint256 indexed seq,
-        bytes32 hashLock,
-        uint closingDate
+        bytes32 indexed hashLock,
+        uint indexed closingDate
     );
 
-    event CloseDeal(uint256 indexed seq, string hashKey);
+    event CloseDeal(uint256 indexed seq, string indexed hashKey);
 
-    event RevokeDeal(uint256 indexed seq, string hashKey);
+    event RevokeDeal(uint256 indexed seq, string indexed hashKey);
 
     event TerminateDeal(uint256 indexed seq);
 

@@ -65,18 +65,18 @@ interface IRegCenter {
 
     event TransferPoints(uint256 indexed from, uint256 indexed to, uint256 amt);
 
-    event LockPoints(bytes32 indexed snOfLocker, uint256 value);
+    event LockPoints(bytes32 indexed snOfLocker, uint256 indexed value);
 
-    event ReleasePoints(bytes32 indexed snOfLocker, string hashKey, uint salt, uint256 value);
+    event ReleasePoints(bytes32 indexed snOfLocker, string indexed hashKey, uint salt, uint256 indexed value);
 
-    event WithdrawPoints(bytes32 indexed snOfLocker, string hashKey, uint salt, uint256 value);
+    event WithdrawPoints(bytes32 indexed snOfLocker, string indexed hashKey, uint salt, uint256 indexed value);
 
     // ==== Docs ====
     event SetDocKeeper(address indexed keeper);
     
-    event SetTemplate(uint256 indexed typeOfDoc, uint256 version, address indexed body);
+    event SetTemplate(uint256 indexed typeOfDoc, uint256 indexed version, address indexed body);
 
-    event CreateDoc(uint256 indexed typeOfDoc, uint256 version, uint256 indexed seqOfDoc, uint256 creator, address indexed body);
+    event CreateDoc(bytes32 indexed snOfDoc, address indexed body);
 
     event CreateComp(uint256 version, uint indexed seqOfDoc, uint indexed creator, address indexed generalKeeper);
 
