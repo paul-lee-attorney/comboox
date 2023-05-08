@@ -78,7 +78,8 @@ library SharesRepo {
                             head.shareholder, 
                             head.priceOfPaid, 
                             head.priceOfPar, 
-                            head.para, head.argu);
+                            head.para, 
+                            head.argu);
 
         assembly {
             sn := mload(add(_sn, 0x20))

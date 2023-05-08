@@ -78,7 +78,7 @@ interface IRegCenter {
 
     event CreateDoc(bytes32 indexed snOfDoc, address indexed body);
 
-    event CreateComp(uint256 version, uint indexed seqOfDoc, uint indexed creator, address indexed generalKeeper);
+    // event CreateComp(uint256 version, uint indexed seqOfDoc, uint indexed creator, address indexed generalKeeper);
 
     // ##################
     // ##    写端口     ##
@@ -135,7 +135,7 @@ interface IRegCenter {
 
     // ==== Comp ====
 
-    function createComp(address primeKeyOfKeeper) external;
+    function createComp() external;
 
     // #################
     // ##   查询端口   ##

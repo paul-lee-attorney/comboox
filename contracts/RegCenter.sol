@@ -143,7 +143,7 @@ contract RegCenter is IRegCenter {
     // ##    Comp   ##
     // ###############
 
-    function createComp(address primeKeyOfKeeper) external 
+    function createComp() external 
     {
         DocsRepo.Doc[20] memory docs;
 
@@ -182,7 +182,7 @@ contract RegCenter is IRegCenter {
 
             docs[j] = _createDocAtLatestVersion(j+1, primeKeyOfOwner);
 
-            if (j != 16) {
+            if (j != 16 && j!= 17) {
                 IAccessControl(docs[j].body).init(
                     owner,
                     docs[i].body,
@@ -192,7 +192,7 @@ contract RegCenter is IRegCenter {
             } else {
                 IAccessControl(docs[j].body).init(
                     owner,
-                    primeKeyOfKeeper,
+                    primeKeyOfOwner,
                     address(this),
                     docs[19].body
                 );
@@ -203,9 +203,7 @@ contract RegCenter is IRegCenter {
             i++;
         }
 
-        IAccessControl(docs[19].body).setDirectKeeper(primeKeyOfKeeper); 
-
-        emit CreateComp(docs[19].head.version, docs[19].head.seqOfDoc, docs[19].head.creator, docs[19].body);
+        IAccessControl(docs[19].body).setDirectKeeper(primeKeyOfOwner);
     }
 
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal

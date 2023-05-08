@@ -18,15 +18,15 @@ interface IRegisterOfMembers {
     //##    Event     ##
     //##################
 
-    event SetVoteBase(bool basedOnPar);
+    event SetVoteBase(bool indexed basedOnPar);
 
-    event CapIncrease(uint paid, uint par);
+    event CapIncrease(uint indexed paid, uint indexed par);
 
-    event CapDecrease(uint paid, uint par);
+    event CapDecrease(uint indexed paid, uint indexed par);
 
-    event SetMaxQtyOfMembers(uint max);
+    event SetMaxQtyOfMembers(uint indexed max);
 
-    event SetAmtBase(bool basedOnPar);
+    event SetAmtBase(bool indexed basedOnPar);
 
     event AddMember(uint256 indexed acct, uint indexed qtyOfMembers);
 
