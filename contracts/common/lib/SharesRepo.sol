@@ -123,7 +123,7 @@ library SharesRepo {
     function regShare(Repo storage repo, Share memory share)
         public returns(Share memory newShare)
     {
-        require(share.body.paid > 0, "SR.RS: zero paid");
+        // require(share.body.paid > 0, "SR.RS: zero paid");
         require(share.body.par > 0, "SR.RS: zero par");
         require(share.body.par >= share.body.paid, "SR.RS: paid overflow");
 
