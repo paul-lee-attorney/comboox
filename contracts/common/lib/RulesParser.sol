@@ -17,15 +17,15 @@ library RulesParser {
         uint8 seqOfSubRule;
         bool basedOnPar;
         uint16 proposeWeightRatioOfGM; 
-        uint16 proposeHeadNumOfMembers; 
+        uint16 proposeHeadRatioOfMembers; 
         uint16 proposeHeadNumOfDirectors;
-        uint16 maxNumOfMembers;
+        uint16 maxQtyOfMembers;
         uint16 quorumOfGM;  
         uint16 maxNumOfDirectors;
         uint16 tenureMonOfBoard;
         uint16 quorumOfBoardMeeting;
         uint48 establishedDate;    
-        uint16 businessTerm;
+        uint16 businessTermInYears;
         uint8 typeOfComp;
         uint8 argu; 
         bool flag; 
@@ -40,15 +40,15 @@ library RulesParser {
             seqOfSubRule: uint8(_sn >> 224),
             basedOnPar: uint8(_sn >> 216) == 1,
             proposeWeightRatioOfGM: uint16(_sn >> 200),
-            proposeHeadNumOfMembers: uint16(_sn >> 184),
+            proposeHeadRatioOfMembers: uint16(_sn >> 184),
             proposeHeadNumOfDirectors: uint16(_sn >> 168),
-            maxNumOfMembers: uint16(_sn >> 152),
+            maxQtyOfMembers: uint16(_sn >> 152),
             quorumOfGM: uint16(_sn >> 136),
             maxNumOfDirectors: uint16(_sn >> 120),
             tenureMonOfBoard: uint16(_sn >> 104),
             quorumOfBoardMeeting: uint16(_sn >> 88),
             establishedDate: uint48(_sn >> 40),
-            businessTerm: uint16(_sn >> 24),
+            businessTermInYears: uint16(_sn >> 24),
             typeOfComp: uint8(_sn >> 16),
             argu: uint8(_sn >> 8),
             flag: uint8(_sn) == 1
@@ -146,7 +146,6 @@ library RulesParser {
             argu: uint16(_sn >> 32),
             data: uint32(_sn)
         });
-
 
     }
 

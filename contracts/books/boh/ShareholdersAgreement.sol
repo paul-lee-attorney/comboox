@@ -35,7 +35,6 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     function createTerm(uint typeOfDoc, uint version)
         external
         onlyGeneralCounsel
-        returns (address body)
     {
         // uint40 owner = getOwner();
         uint40 gc = getGeneralCounsel();
@@ -51,9 +50,9 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
             address(_gk)
         );
 
-        // IAccessControl(body).setGeneralCounsel(gc);
+        IAccessControl(doc.body).setGeneralCounsel(gc);
 
-        _terms.terms[typeOfDoc] = body;
+        _terms.terms[typeOfDoc] = doc.body;
         _terms.seqList.add(typeOfDoc);
     }
 

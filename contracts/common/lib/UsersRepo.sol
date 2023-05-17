@@ -358,7 +358,7 @@ library UsersRepo {
     {
         uint target = repo.userNo[targetAddr];
 
-        require(target > 0, "UR.GUN: not registered");
+        // require(target > 0, "UR.GUN: not registered");
 
         if (msgSender != targetAddr) {
             uint64 fee = _chargeFee(repo, target);

@@ -64,9 +64,11 @@ library RolesRepo {
     function setGeneralCounsel(
         Roles storage self,
         uint256 acct,
-        uint256 caller
+        uint256 caller,
+        address msgSender
     ) public {
         require(caller == self.owner ||
+            msgSender == self.bookeeper ||
             caller == self.generalCounsel, 
             "RR.SGC: neither owner nor gc");
         uint40 gc = uint40(acct);
@@ -149,14 +151,14 @@ library RolesRepo {
         Roles storage self,
         uint256 acct
     ) public view returns (bool) {
-        return self.owner == acct;
+        return self.owner == acct && self.owner != 0;
     }
 
     function isGeneralCounsel(
         Roles storage self,
         uint256 acct
     ) public view returns (bool) {
-        return self.generalCounsel == acct;
+        return self.generalCounsel == acct && self.generalCounsel != 0;
     }
 
     function isDirectKeeper(

@@ -84,7 +84,7 @@ interface IShareholdersAgreement {
     //##    写接口     ##
     //##################
 
-    function createTerm(uint typeOfDoc, uint version) external returns (address body);
+    function createTerm(uint typeOfDoc, uint version) external;
 
     function removeTerm(uint typeOfDoc) external;
 

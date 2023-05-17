@@ -115,7 +115,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
     function setGeneralCounsel(uint256 acct)
         external ownerOrDirectBookeeper
     {
-        _roles.setGeneralCounsel(acct, _msgSender());
+        _roles.setGeneralCounsel(acct, _msgSender(), msg.sender);
         emit SetGeneralCounsel(acct);
     }
 
@@ -143,7 +143,7 @@ contract AccessControl is IAccessControl, RegCenterSetting {
         require(_roles.state == 1, "AC.LC: Doc is finalized");
 
         _roles.abandonRole(_ATTORNEYS, _msgSender());
-        _roles.setGeneralCounsel(0, _msgSender());
+        _roles.setGeneralCounsel(0, _msgSender(), msg.sender);
         _roles.setOwner(0, _msgSender());
 
         _roles.state = 2;

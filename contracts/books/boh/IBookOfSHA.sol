@@ -21,11 +21,6 @@ interface IBookOfSHA is IFilesFolder{
     //##    写接口    ##
     //##################
 
-    // function setTermTemplate(
-    //     uint8 title,
-    //     address add
-    // ) external;
-
     function changePointer(address body) external;
 
     //##################
@@ -33,8 +28,4 @@ interface IBookOfSHA is IFilesFolder{
     //##################
 
     function pointer() external view returns (address);
-
-    // function hasTemplate(uint8 title) external view returns (bool);
-
-    // function getTermTemplate(uint8 title) external view returns (address);
 }
