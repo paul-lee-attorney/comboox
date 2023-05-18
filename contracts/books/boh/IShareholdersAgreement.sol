@@ -60,12 +60,6 @@ interface IShareholdersAgreement {
     |  768  | GroupUpdateOrder  |  GroupUpdate | Grouping Members as per their relationship |
     ...
 
-    |  1024  | LinkRule  |  DragAlong/TagAlong | Dragging Rules for DragAlong / TagAlong right |
-    ...
-
-    |  1280  | AntiDilution  |  PriceBenchMarks | Price benchmarks for specific class with AntiDilution rights|
-    ...
-
 */
 
     struct TermsRepo {

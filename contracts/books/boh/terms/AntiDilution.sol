@@ -69,7 +69,6 @@ contract AntiDilution is IAntiDilution, AccessControl {
     function getFloorPriceOfClass(uint256 class)
         public
         view
-        onlyMarked(class)
         returns (uint32 price)
     {
         price = _ruler.marks[class].floorPrice;
@@ -83,7 +82,6 @@ contract AntiDilution is IAntiDilution, AccessControl {
     function getObligorsOfAD(uint256 class)
         external
         view
-        onlyMarked(class)
         returns (uint256[] memory)
     {
         return _ruler.marks[class].obligors.values();
