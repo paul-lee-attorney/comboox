@@ -74,8 +74,12 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
         uint16 signingDays = ISigPage(sha).getSigningDays();
         uint16 closingDays = ISigPage(sha).getClosingDays();
 
+        IShareholdersAgreement _sha = _gk.getSHA();
+
         RulesParser.VotingRule memory vr = 
-            _gk.getSHA().getRule(8).votingRuleParser();
+            address(_sha) == address(0) ?
+                RulesParser.SHA_INIT_VR.votingRuleParser() :
+                _gk.getSHA().getRule(8).votingRuleParser();
         
         ISigPage(sha).setTiming(false, signingDays + vr.shaExecDays + vr.reviewDays, closingDays);
 
@@ -247,7 +251,7 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
 
     function acceptSHA(bytes32 sigHash, uint256 caller) external onlyDirectKeeper {
         address sha = address(_gk.getSHA());
-        ISigPage(sha).addBlank(false, 0, caller);
+        ISigPage(sha).addBlank(false, true, 1, caller);
         ISigPage(sha).signDoc(false, caller, sigHash);
     }
 }

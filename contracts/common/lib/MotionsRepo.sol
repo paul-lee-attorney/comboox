@@ -183,7 +183,9 @@ library MotionsRepo {
 
         Motion storage m = repo.motions[seqOfMotion];
         RulesParser.VotingRule memory vr = 
-            _sha.getRule(m.head.seqOfVR).votingRuleParser();
+            address(_sha) == address(0) 
+            ? RulesParser.SHA_INIT_VR.votingRuleParser()
+            : _sha.getRule(m.head.seqOfVR).votingRuleParser();
 
         // require(m.head.seqOfVR == vr.seqOfRule, "MR.PM: wrong seqOfVR");
         require(m.body.state == uint8(StateOfMotion.Created), 
@@ -268,7 +270,7 @@ library MotionsRepo {
                 ? base.totalHead > 0
                     ? ((r.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
                         .sumOfHead + base.supportHead) * 10000) /
-                        base.totalHead >=
+                        base.totalHead >
                         m.votingRule.headRatio
                     : false
                 : true;
@@ -277,7 +279,7 @@ library MotionsRepo {
                 ? base.totalWeight > 0
                     ? ((r.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
                         .sumOfWeight + base.supportWeight) * 10000) /
-                        base.totalWeight >=
+                        base.totalWeight >
                         m.votingRule.amountRatio
                     : false
                 : true;

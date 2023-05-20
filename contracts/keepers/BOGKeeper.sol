@@ -100,8 +100,11 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
             ISigPage(doc).isSigner(proposer)
         ) { 
             _bog.proposeMotion(seqOfMotion, proposer);
+            IShareholdersAgreement _sha = _gk.getSHA();
             RulesParser.VotingRule memory vr =
-                _gk.getSHA().getRule(seqOfVR).votingRuleParser();
+                address(_sha) == address(0)
+                ? RulesParser.SHA_INIT_VR.votingRuleParser()
+                : _sha.getRule(seqOfVR).votingRuleParser();
             
             seqOfVR == 8 ?
                 _gk.getBOH().proposeFile(doc, vr) :

@@ -34,13 +34,21 @@ contract SigPage is ISigPage, AccessControl {
         initPage ? _sigPages[0].setTiming(signingDays, closingDays) :
             _sigPages[1].setTiming(signingDays, closingDays);
 
-        emit SetTiming(initPage, signingDays, closingDays);
+        // emit SetTiming(initPage, signingDays, closingDays);
     }
 
-    function addBlank(bool beBuyer, uint256 seqOfDeal, uint256 acct)
-        external onlyKeeper
+    function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)
+        external attorneyOrKeeper
     {
-        _sigPages[1].addBlank(beBuyer, seqOfDeal, acct);
+        initPage ? _sigPages[0].addBlank(beBuyer, seqOfDeal, acct) :
+            _sigPages[1].addBlank(beBuyer, seqOfDeal, acct);
+    }
+
+    function removeBlank(bool initPage, uint256 seqOfDeal, uint256 acct)
+        external attorneyOrKeeper
+    {
+        initPage ? _sigPages[0].removeBlank(seqOfDeal, acct) :
+            _sigPages[1].removeBlank(seqOfDeal, acct);
     }
 
     function signDoc(bool initPage, uint256 caller, bytes32 sigHash)

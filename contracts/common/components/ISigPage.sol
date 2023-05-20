@@ -15,7 +15,7 @@ interface ISigPage {
 
     event CirculateDoc();
 
-    event SetTiming (bool indexed initPage, uint indexed signingDays, uint indexed closingDays);
+    // event SetTiming (bool indexed initPage, uint indexed signingDays, uint indexed closingDays);
 
     //##################
     //##   Write I/O  ##
@@ -25,7 +25,10 @@ interface ISigPage {
 
     function setTiming(bool initPage, uint signingDays, uint closingDays) external;
 
-    function addBlank(bool beBuyer, uint256 seqOfDeal, uint256 acct)
+    function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)
+        external;
+
+    function removeBlank(bool initPage, uint256 seqOfDeal, uint256 acct)
         external;
 
     function signDoc(bool initPage, uint256 caller, bytes32 sigHash) 
