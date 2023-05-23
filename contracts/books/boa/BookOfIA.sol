@@ -15,6 +15,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
     using DTClaims for DTClaims.Claims;
     using EnumerableSet for EnumerableSet.UintSet;
     using FRClaims for FRClaims.Claims;
+    using FilesRepo for FilesRepo.Repo;
     // using RulesParser for bytes32;
     using TopChain for TopChain.Chain;
 
@@ -51,7 +52,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         bytes32 sigHash
     ) external onlyKeeper returns (bool flag) {
         FilesRepo.Head memory headOfFile = getHeadOfFile(ia);
-        require(headOfFile.shaExecDeadline >= block.timestamp, 
+        require(_repo.shaExecDeadline(ia) >= block.timestamp, 
             "BOA.EFRR: missed shaExecDeadline");
 
         if (_frClaims[ia].execFirstRefusalRight(seqOfDeal, caller, sigHash))

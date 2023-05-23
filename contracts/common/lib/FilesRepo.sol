@@ -26,13 +26,29 @@ library FilesRepo {
     }
 
     struct Head {
-        uint48 signingDeadline;
-        uint48 shaExecDeadline;
-        uint48 proposeDeadline;
-        uint48 votingDeadline;
-        uint48 closingDeadline;
-        uint8 state;        
+        uint48 circulateDate;
+        uint8 signingDays;
+        uint16 closingDays;
+        uint16 seqOfVR;
+        uint8 shaExecDays;
+        uint8 reviewDays;
+        uint48 proposeDate;
+        uint8 reconsiderDays;
+        uint8 votePrepareDays;
+        uint8 votingDays;
+        uint8 execDaysForPutOpt;
+        uint64 seqOfMotion;
+        uint8 state;
     }
+
+    // struct Head {
+    //     uint48 signingDeadline;
+    //     uint48 shaExecDeadline;
+    //     uint48 proposeDeadline;
+    //     uint48 votingDeadline;
+    //     uint48 closingDeadline;
+    //     uint8 state;        
+    // }
 
     struct Ref {
         bytes32 docUrl;
@@ -98,17 +114,34 @@ library FilesRepo {
                 vr.reconsiderDays + vr.votingDays,
             "FR.CF: insufficient closingDays");
 
-        uint48 timestamp = uint48(block.timestamp);
-
         File storage file = repo.files[body];
 
-        file.head.signingDeadline = timestamp + uint48(signingDays) * 86400;
-        file.head.closingDeadline = timestamp + uint48(closingDays) * 86400;
+        file.head = Head({
+            circulateDate: uint48(block.timestamp),
+            signingDays: uint8(signingDays),
+            closingDays: closingDays,
+            seqOfVR: vr.seqOfRule,
+            shaExecDays: vr.shaExecDays,
+            reviewDays: vr.reviewDays,
+            proposeDate: 0,
+            reconsiderDays: vr.reconsiderDays,
+            votePrepareDays: vr.votePrepareDays,
+            votingDays: vr.votingDays,
+            execDaysForPutOpt: vr.execDaysForPutOpt,
+            seqOfMotion: 0,
+            state: uint8(StateOfFile.Circulated)
+        });
 
-        file.head.shaExecDeadline = file.head.signingDeadline + uint48(vr.shaExecDays) * 86400;
-        file.head.proposeDeadline = file.head.shaExecDeadline + uint48(vr.reviewDays) * 86400;
+        // file.head.circulateDate = uint48(block.timestamp);
+        
 
-        file.head.state = uint8(StateOfFile.Circulated);
+        // file.head.signingDeadline = timestamp + uint48(signingDays) * 86400;
+        // file.head.closingDeadline = timestamp + uint48(closingDays) * 86400;
+
+        // file.head.shaExecDeadline = file.head.signingDeadline + uint48(vr.shaExecDays) * 86400;
+        // file.head.proposeDeadline = file.head.shaExecDeadline + uint48(vr.reviewDays) * 86400;
+
+        // file.head.state = uint8(StateOfFile.Circulated);
 
         if (docUrl != bytes32(0) || docHash != bytes32(0)){
             file.ref.docUrl = docUrl;
@@ -129,7 +162,8 @@ library FilesRepo {
 
         File storage file = repo.files[body];
 
-        require(block.timestamp <= file.head.signingDeadline, "FR.SF: missed signingDeadline");
+        require(block.timestamp <= signingDeadline(repo, body) , 
+            "FR.SF: missed signingDeadline");
 
         file.head.state = uint8(StateOfFile.Established);
 
@@ -139,7 +173,7 @@ library FilesRepo {
     function proposeFile(
         Repo storage repo,
         address body,
-        RulesParser.VotingRule memory vr
+        uint64 seqOfMotion
     ) public onlyRegistered(repo, body) returns(Head memory){
 
         require(
@@ -151,10 +185,16 @@ library FilesRepo {
 
         File storage file = repo.files[body];
 
-        require(timestamp > file.head.shaExecDeadline, "FR.PF: still in shaExecPeriod");
-        require(timestamp <= file.head.proposeDeadline, "FR.PF: missed proposeDeadline");
+        require(timestamp > shaExecDeadline(repo, body), 
+            "FR.PF: still in shaExecPeriod");
 
-        file.head.votingDeadline = timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votingDays)) * 86400;
+        require(timestamp <= proposeDeadline(repo, body), 
+            "FR.PF: missed proposeDeadline");
+
+        file.head.proposeDate = timestamp;
+        file.head.seqOfMotion = seqOfMotion;
+
+        // file.head.votingDeadline = timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votingDays)) * 86400;
 
         file.head.state = uint8(StateOfFile.Proposed);
 
@@ -176,8 +216,8 @@ library FilesRepo {
 
         File storage file = repo.files[body];
 
-        require(timestamp > file.head.votingDeadline, "FR.VCFF: still in votingPeriod");
-        require(timestamp <= file.head.closingDeadline, "FR.VCFF: missed closingDeadline");
+        require(timestamp > votingDeadline(repo, body), "FR.VCFF: still in votingPeriod");
+        require(timestamp <= closingDeadline(repo, body), "FR.VCFF: missed closingDeadline");
 
         file.head.state = approved ? 
             uint8(StateOfFile.Approved) : uint8(StateOfFile.Rejected);
@@ -199,7 +239,7 @@ library FilesRepo {
 
         File storage file = repo.files[body];
 
-        require(timestamp <= file.head.closingDeadline, 
+        require(timestamp <= closingDeadline(repo, body), 
             "FR.EF: missed closingDeadline");
 
         file.head.state = uint8(StateOfFile.Executed);
@@ -217,7 +257,7 @@ library FilesRepo {
 
         File storage file = repo.files[body];
 
-        require(block.timestamp > file.head.closingDeadline, 
+        require(block.timestamp > closingDeadline(repo, body), 
             "FR.RF: still in execPeriod");
 
         file.head.state = uint8(StateOfFile.Revoked);
@@ -232,6 +272,49 @@ library FilesRepo {
     //##################
     //##   read I/O   ##
     //##################
+
+    function signingDeadline(Repo storage repo, address body) 
+        public view returns (uint48) {
+        
+        File storage file = repo.files[body];
+        
+        return file.head.circulateDate + uint48(file.head.signingDays) * 86400;
+    }
+
+    function closingDeadline(Repo storage repo, address body) 
+        public view returns (uint48) {
+        
+        File storage file = repo.files[body];
+        
+        return file.head.circulateDate + uint48(file.head.closingDays) * 86400;
+    }
+
+    function shaExecDeadline(Repo storage repo, address body) 
+        public view returns (uint48) {
+        
+        File storage file = repo.files[body];
+        
+        return file.head.circulateDate + (uint48(file.head.signingDays) + 
+            uint48(file.head.shaExecDays)) * 86400;
+    }
+
+    function proposeDeadline(Repo storage repo, address body) 
+        public view returns (uint48) {
+        
+        File storage file = repo.files[body];
+        
+        return file.head.circulateDate + (uint48(file.head.signingDays) + 
+            uint48(file.head.shaExecDays) + uint48(file.head.reviewDays)) * 86400;
+    }
+
+    function votingDeadline(Repo storage repo, address body) 
+        public view returns (uint48) {
+        
+        File storage file = repo.files[body];
+        
+        return file.head.proposeDate + (uint48(file.head.reconsiderDays) + 
+            uint48(file.head.votingDays)) * 86400;
+    }    
 
     function isRegistered(Repo storage repo, address body) public view returns (bool) {
         return repo.filesList.contains(body);

@@ -14,7 +14,7 @@ import "../access/AccessControl.sol";
 contract FilesFolder is IFilesFolder, AccessControl {
     using FilesRepo for FilesRepo.Repo;
 
-    FilesRepo.Repo private _repo;
+    FilesRepo.Repo internal _repo;
 
     //##################
     //##    写接口     ##
@@ -48,9 +48,9 @@ contract FilesFolder is IFilesFolder, AccessControl {
 
     function proposeFile(
         address body,
-        RulesParser.VotingRule memory vr
+        uint64 seqOfMotion
     ) external onlyKeeper {
-        _repo.proposeFile(body, vr);
+        _repo.proposeFile(body, seqOfMotion);
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Proposed));
     }
 
@@ -86,6 +86,26 @@ contract FilesFolder is IFilesFolder, AccessControl {
     //##################
     //##   read I/O   ##
     //##################
+
+    function signingDeadline(address body) external view returns (uint48) {
+        return _repo.signingDeadline(body);
+    }
+
+    function closingDeadline(address body) external view returns (uint48) {                
+        return _repo.closingDeadline(body);
+    }
+
+    function shaExecDeadline(address body) external view returns (uint48) {
+        return _repo.shaExecDeadline(body);
+    }
+
+    function proposeDeadline(address body) external view returns (uint48) {
+        return _repo.proposeDeadline(body);
+    }
+
+    function votingDeadline(address body) external view returns (uint48) {
+        return _repo.votingDeadline(body);
+    }    
 
     function isRegistered(address body) external view returns (bool) {
         return _repo.isRegistered(body);

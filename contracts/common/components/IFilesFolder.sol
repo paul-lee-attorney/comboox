@@ -38,10 +38,7 @@ interface IFilesFolder {
 
     function establishFile(address body) external;
 
-    function proposeFile(
-        address body,
-        RulesParser.VotingRule memory vr
-    ) external;
+    function proposeFile(address body, uint64 seqOfMotion) external;
 
     function voteCountingForFile(address body, bool approved) external;
 
@@ -54,6 +51,16 @@ interface IFilesFolder {
     //##################
     //##   read I/O   ##
     //##################
+
+    function signingDeadline(address body) external view returns (uint48);
+
+    function closingDeadline(address body) external view returns (uint48);
+
+    function shaExecDeadline(address body) external view returns (uint48);
+
+    function proposeDeadline(address body) external view returns (uint48);
+
+    function votingDeadline(address body) external view returns (uint48);
 
     function isRegistered(address body) external view 
         returns (bool);

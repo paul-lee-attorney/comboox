@@ -20,7 +20,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier withinExecPeriod(address ia) {
         require(
-            block.timestamp <= _gk.getBOA().getHeadOfFile(ia).shaExecDeadline,
+            block.timestamp <= _gk.getBOA().shaExecDeadline(ia),
             "missed review period"
         );
         _;
@@ -28,7 +28,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier afterExecPeriod(address ia) {
         require(
-            block.timestamp > _gk.getBOA().getHeadOfFile(ia).shaExecDeadline,
+            block.timestamp > _gk.getBOA().shaExecDeadline(ia),
             "still within review period"
         );
         _;
@@ -36,7 +36,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier beforeProposeDeadline(address ia) {
         require(
-            block.timestamp <= _gk.getBOA().getHeadOfFile(ia).proposeDeadline,
+            block.timestamp <= _gk.getBOA().proposeDeadline(ia),
             "SHAK.md.BPD: missed proposal deadline"
         );
         _;
