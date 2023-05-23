@@ -343,7 +343,7 @@ library MotionsRepo {
         public view returns (bool)
     {
         return isProposed(repo, seqOfMotion) && 
-            repo.motions[seqOfMotion].body.voteEndDate <= block.timestamp;
+            repo.motions[seqOfMotion].body.voteEndDate < block.timestamp;
     }
 
     // ==== Delegate ====

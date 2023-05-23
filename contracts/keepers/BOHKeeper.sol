@@ -105,7 +105,7 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
         }
     }
 
-    function effectiveSHA(address sha, uint256 caller)
+    function activateSHA(address sha, uint256 caller)
         external
         onlyDirectKeeper
         onlyPartyOf(sha, caller)

@@ -40,7 +40,7 @@ interface IBOHKeeper {
         uint256 caller
     ) external;
 
-    function effectiveSHA(address sha, uint256 caller) external;
+    function activateSHA(address sha, uint256 caller) external;
 
     function acceptSHA(bytes32 sigHash, uint256 caller) external;
 }

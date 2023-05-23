@@ -13,7 +13,7 @@ import "./IGeneralKeeper.sol";
 
 contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
-    bytes32 public regNumHash;
+    uint public regNumOfCompany;
     string public nameOfCompany;
     string public symbolOfCompany;
 
@@ -25,28 +25,27 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ######################
 
     function setCompInfo (
-        bytes32 _regNumHash,
+        // bytes32 _regNumHash,
         string memory _name,
         string memory _symbol
     ) external onlyOwner {
-        emit SetCompInfo(_regNumHash, _name, _symbol);
-        regNumHash = _regNumHash;
+        // regNumHash = _regNumHash;
         nameOfCompany = _name;
         symbolOfCompany = _symbol;
+        // emit SetCompInfo(_name, _symbol);
     }
 
     function createCorpSeal() external onlyOwner {
         _rc.regUser();
-        uint corpNo = _rc.getMyUserNo();
-        emit CreateCorpSeal(corpNo);
+        regNumOfCompany = _rc.getMyUserNo();
     }
 
     // ---- Keepers ----
 
     function regKeeper(uint256 title, address keeper) 
     external onlyDirectKeeper {
-        emit RegKeeper(title, keeper);
         _keepers[title] = keeper;
+        // emit RegKeeper(title, keeper);
     }
 
     function isKeeper(address caller) external view returns (bool) {   
@@ -66,8 +65,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ---- Books ----
 
     function regBook(uint256 title, address book) external onlyDirectKeeper {
-        emit RegBook(title, book);
         _books[title] = book;
+        // emit RegBook(title, book);
     } 
 
     function getBook(uint256 title) external view returns (address) {
@@ -301,8 +300,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOHKeeper(_keepers[4]).signSHA(sha, sigHash, _msgSender());
     }
 
-    function effectiveSHA(address body) external {
-        IBOHKeeper(_keepers[4]).effectiveSHA(body, _msgSender());
+    function activateSHA(address body) external {
+        IBOHKeeper(_keepers[4]).activateSHA(body, _msgSender());
     }
 
     function acceptSHA(bytes32 sigHash) external {

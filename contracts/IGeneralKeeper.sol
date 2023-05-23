@@ -36,13 +36,13 @@ interface IGeneralKeeper {
     // ##   Event   ##
     // ###############
 
-    event RegBook(uint256 indexed title, address indexed book);
+    // event RegBook(uint256 indexed title, address indexed book);
 
-    event RegKeeper(uint256 indexed title, address indexed keeper);
+    // event RegKeeper(uint256 indexed title, address indexed keeper);
 
-    event SetCompInfo(bytes32 indexed regNumHash, string indexed nameOfCompany, string indexed symbolOfCompany);
+    // event SetCompInfo(string indexed nameOfCompany, string indexed symbolOfCompany);
 
-    event CreateCorpSeal(uint256 indexed corpNo);
+    // event CreateCorpSeal(uint256 indexed corpNo);
 
     event ExecAction(uint256 indexed contents, bool indexed result);
 
@@ -51,10 +51,12 @@ interface IGeneralKeeper {
     // ######################
 
     function setCompInfo (
-        bytes32 _regNumHash,
+        // bytes32 _regNumHash,
         string memory _name,
         string memory _symbol
     ) external;
+
+    function createCorpSeal() external;
 
     function regKeeper(uint256 title, address keeper) external;
 
@@ -135,10 +137,6 @@ interface IGeneralKeeper {
     // ##   BOGKeeper   ##
     // ###################
 
-    function createCorpSeal() external;
-
-    // function createBoardSeal() external;
-
     function nominateDirector(uint256 seqOfPos, uint candidate) external;
 
     function proposeToRemoveDirector(uint256 seqOfPos) external;
@@ -193,7 +191,7 @@ interface IGeneralKeeper {
 
     function signSHA(address sha, bytes32 sigHash) external;
 
-    function effectiveSHA(address body) external;
+    function activateSHA(address body) external;
 
     function acceptSHA(bytes32 sigHash) external;
 
