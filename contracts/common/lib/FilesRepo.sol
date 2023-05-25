@@ -328,6 +328,10 @@ library FilesRepo {
         return repo.filesList.values();
     }
 
+    function getFile(Repo storage repo, address body) public view returns (File memory) {
+        return repo.files[body];
+    }
+
     function getSNOfFile(Repo storage repo, address body)
         public view onlyRegistered(repo, body) returns (bytes32)
     {
@@ -345,5 +349,4 @@ library FilesRepo {
     {
         return repo.files[body].ref;
     }
-
 }

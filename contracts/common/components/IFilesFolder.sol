@@ -71,6 +71,9 @@ interface IFilesFolder {
     function getFilesList() external view 
         returns (address[] memory);
 
+    function getFile(address body) external view 
+        returns (FilesRepo.File memory);
+
     function getSNOfFile(address body) external view 
         returns (bytes32);
 

@@ -119,6 +119,10 @@ contract FilesFolder is IFilesFolder, AccessControl {
         return _repo.getFilesList();
     }
 
+    function getFile(address body) external view returns (FilesRepo.File memory) {
+        return _repo.getFile(body);
+    } 
+
     function getSNOfFile(address body)
         external view returns (bytes32)
     {
