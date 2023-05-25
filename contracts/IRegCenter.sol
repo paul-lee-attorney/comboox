@@ -133,6 +133,8 @@ interface IRegCenter {
     function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) external 
         returns(DocsRepo.Doc memory doc);
 
+    function setDocSnOfUser() external;
+
     // ==== Comp ====
 
     function createComp() external;
@@ -181,6 +183,8 @@ interface IRegCenter {
     function docExist(bytes32 snOfDoc) external view returns(bool);
 
     function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc);
+
+    function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc);
 
     function verifyDoc(bytes32 snOfDoc) external view returns(bool flag);
 

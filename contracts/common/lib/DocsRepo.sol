@@ -32,6 +32,7 @@ library DocsRepo {
     struct Repo {
         // typeOfDoc => version => seqOfDoc => Doc
         mapping(uint256 => mapping(uint256 => mapping(uint256 => Doc))) docs;
+        mapping(address => bytes32) snOfDoc;
         EnumerableSet.Bytes32Set snList;
     }
 
@@ -130,8 +131,10 @@ library DocsRepo {
         doc.head.seqOfDoc = _increaseCounterOfDocs(repo, doc.head.typeOfDoc, doc.head.version);
         doc.head.createDate = uint48(block.timestamp);
 
-        if (repo.snList.add(codifyHead(doc.head))) {
+        bytes32 sn = codifyHead(doc.head);
+        if (repo.snList.add(sn)) {
             repo.docs[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc] = doc;
+            repo.snOfDoc[doc.body] = sn;
         }
     }
 
@@ -250,6 +253,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     function getDoc(Repo storage repo, bytes32 snOfDoc) public view returns(Doc memory doc) {
         Head memory head = snParser(snOfDoc);
         doc = repo.docs[head.typeOfDoc][head.version][head.seqOfDoc];
+    }
+
+    function getSN(Repo storage repo, address body) public view returns(bytes32 sn) {
+        sn = repo.snOfDoc[body];
     }
 
     function verifyDoc(Repo storage repo, bytes32 snOfDoc) public view returns(bool flag) {

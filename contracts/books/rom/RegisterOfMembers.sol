@@ -133,7 +133,8 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         external
         onlyKeeper
     {
-        if (_repo.chain.top2Sub(acct, root)) emit AddMemberToGroup(acct, root);
+        if (_repo.chain.top2Sub(acct, root)) 
+            emit AddMemberToGroup(acct, root);
     }
 
     function removeMemberFromGroup(uint256 acct, uint256 root)

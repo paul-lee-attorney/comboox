@@ -35,9 +35,10 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         // emit SetCompInfo(_name, _symbol);
     }
 
-    function createCorpSeal() external onlyOwner {
+    function createCorpSeal() external onlyKeeper {
         _rc.regUser();
         regNumOfCompany = _rc.getMyUserNo();
+        _rc.setDocSnOfUser();
     }
 
     // ---- Keepers ----

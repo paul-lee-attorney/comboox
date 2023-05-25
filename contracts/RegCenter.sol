@@ -17,6 +17,9 @@ contract RegCenter is IRegCenter {
     
     UsersRepo.Repo private _users;
     DocsRepo.Repo private _docs;
+
+    // userNo => snOfDoc
+    mapping(uint => bytes32) private _docSnOfUser;
     
     constructor() {
         _users.regUser(msg.sender);
@@ -139,6 +142,10 @@ contract RegCenter is IRegCenter {
         emit CreateDoc(doc.head.codifyHead(), doc.body);
     }
 
+    function setDocSnOfUser() external {
+        _docSnOfUser[_users.getMyUserNo(msg.sender)] = _docs.getSN(msg.sender);
+    }
+
     // ###############
     // ##    Comp   ##
     // ###############
@@ -157,6 +164,8 @@ contract RegCenter is IRegCenter {
             address(this),
             docs[19].body
         );
+
+        IGeneralKeeper(docs[19].body).createCorpSeal();
 
         docs[9] = _createDocAtLatestVersion(10, primeKeyOfOwner);
         IAccessControl(docs[9].body).init(
@@ -283,6 +292,10 @@ contract RegCenter is IRegCenter {
 
     function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc) {
         doc = _docs.getDoc(snOfDoc);
+    }
+
+    function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc) {
+        doc = _docs.getDoc(_docSnOfUser[acct]);
     }
 
     function verifyDoc(bytes32 snOfDoc) external view returns(bool flag) {
