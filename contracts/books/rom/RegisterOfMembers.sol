@@ -45,7 +45,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     //##    写接口    ##
     //##################
 
-    function setMaxQtyOfMembers(uint max) external onlyDirectKeeper {
+    function setMaxQtyOfMembers(uint max) external onlyKeeper {
         _repo.chain.setMaxQtyOfMembers(max);
         emit SetMaxQtyOfMembers(max);
     }
@@ -71,25 +71,19 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     function addMember(uint256 acct) external onlyBOS {
-        // require(
-        //     _repo.chain.getNumOfMembers() < _repo.chain.maxQtyOfMembers() ||
-        //         _repo.chain.maxQtyOfMembers() == 0,
-        //     "ROM.addMember: Qty of Members overflow"
-        // );
-
         if (_repo.chain.addNode(acct)) 
             emit AddMember(acct, _repo.chain.getNumOfMembers());
     }
 
     function addShareToMember(SharesRepo.Share memory share) external onlyBOS {
         if (_repo.addShareToMember(share.head)) {
-            _repo.changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, true);
+            _repo.changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, share.body.cleanPaid, true);
             emit AddShareToMember(share.head.seqOfShare, share.head.shareholder);
         }
     }
 
     function removeShareFromMember(SharesRepo.Share memory share) external onlyBOS {
-        changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, false);
+        changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, share.body.cleanPaid, false);
 
         if (_repo.removeShareFromMember(share.head)) {
             if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) 
@@ -103,14 +97,16 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         uint acct,
         uint deltaPaid,
         uint deltaPar,
+        uint deltaClean,
         bool increase
     ) public onlyBOS {
         if (!increase) {
             Checkpoints.Checkpoint memory clip = _repo.members[acct].votesInHand.latest();
             require(
                 clip.paid >= deltaPaid &&
-                clip.par >= deltaPar,
-                "ROM.CAOM: paid or par not enough"
+                clip.par >= deltaPar &&
+                clip.cleanPaid >= deltaClean,
+                "ROM.CAOM: insufficient amount"
             );
         }
 
@@ -118,6 +114,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
             acct,
             deltaPaid,
             deltaPar,
+            deltaClean,
             increase
         );
 
@@ -125,6 +122,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
             acct,
             deltaPaid,
             deltaPar,
+            deltaClean,
             increase
         );
     }
@@ -155,7 +153,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     // ##################
-    // ##   查询接口   ##
+    // ##   查询接口    ##
     // ##################
 
     function basedOnPar() external view returns (bool) {

@@ -9,10 +9,10 @@ pragma solidity ^0.8.8;
 
 import "../../books/boa/IInvestmentAgreement.sol";
 
-import "./DealsRepo.sol";
+// import "./DealsRepo.sol";
 
 library TopChain {
-    using DealsRepo for bytes32;
+    // using DealsRepo for bytes32;
 
     struct Node {
         uint40 prev;
@@ -593,12 +593,12 @@ library TopChain {
         Chain storage chain,
         IInvestmentAgreement _ia
     ) public {
-        bytes32[] memory snList = _ia.getSNList();
+        uint[] memory seqList = _ia.getSeqList();
 
-        uint256 len = snList.length;
+        uint256 len = seqList.length;
 
         while (len > 0) {
-            DealsRepo.Deal memory deal = _ia.getDeal(snList[len-1].snParser().seqOfDeal);
+            DealsRepo.Deal memory deal = _ia.getDeal(seqList[len-1]);
 
             uint64 amount = basedOnPar(chain) ? deal.body.par : deal.body.paid;
 

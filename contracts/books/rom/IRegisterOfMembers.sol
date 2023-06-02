@@ -38,6 +38,7 @@ interface IRegisterOfMembers {
         uint indexed acct,
         uint indexed paid,
         uint indexed par,
+        uint clean,
         bool increase
     );
 
@@ -78,6 +79,7 @@ interface IRegisterOfMembers {
         uint acct,
         uint deltaPaid,
         uint deltaPar,
+        uint deltaClean,
         bool decrease
     ) external;
 

@@ -138,7 +138,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
     }
 
     //#################
-    //##    读接口    ##
+    //##   Read I/O  ##
     //#################
 
     function isFRClaimer(address ia, uint256 acct) external view returns (bool)

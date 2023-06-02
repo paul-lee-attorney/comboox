@@ -104,10 +104,10 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
     }
 
     function _lockDealsOfParty(address ia, uint256 caller) private {
-        bytes32[] memory list = IInvestmentAgreement(ia).getSNList();
+        uint[] memory list = IInvestmentAgreement(ia).getSeqList();
         uint256 len = list.length;
         while (len > 0) {
-            uint seq = DealsRepo.snParser(list[len - 1]).seqOfDeal;
+            uint seq = list[len - 1];
             len--;
 
             DealsRepo.Deal memory deal = 

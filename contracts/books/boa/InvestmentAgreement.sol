@@ -22,14 +22,15 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     //##    写接口    ##
     //#################
 
-    function createDeal(
+    function addDeal(
         bytes32 sn,
         uint buyer,
         uint groupOfBuyer,
         uint paid,
         uint par
-    ) external attorneyOrKeeper returns (uint16 seqOfDeal) {
-        seqOfDeal = _repo.createDeal(sn, buyer, groupOfBuyer, paid, par);
+    ) external attorneyOrKeeper {
+        uint seqOfDeal = _repo.addDeal(sn, buyer, groupOfBuyer, paid, par);
+        emit AddDeal(seqOfDeal);
     }
 
     function regDeal(DealsRepo.Deal memory deal) 
@@ -73,8 +74,8 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         bytes32 hashLock,
         uint closingDate
     ) external onlyDirectKeeper {
-        emit ClearDealCP(seq, hashLock, closingDate);
         _repo.clearDealCP(seq, hashLock, closingDate);
+        emit ClearDealCP(seq, hashLock, closingDate);
     }
 
     function closeDeal(uint256 seq, string memory hashKey)
@@ -82,8 +83,8 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         onlyDirectKeeper
         returns (bool flag)
     {        
-        emit CloseDeal(seq, hashKey);
         flag = _repo.closeDeal(seq, hashKey);
+        emit CloseDeal(seq, hashKey);
     }
 
     function revokeDeal(uint256 seq, string memory hashKey)
@@ -91,22 +92,22 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         onlyDirectKeeper
         returns (bool flag)
     {
-        emit RevokeDeal(seq, hashKey);
         flag = _repo.revokeDeal(seq, hashKey);
+        emit RevokeDeal(seq, hashKey);
     }
 
     function terminateDeal(uint256 seqOfDeal) 
         external onlyKeeper returns(bool flag)
     {
-        emit TerminateDeal(seqOfDeal);
         flag = _repo.terminateDeal(seqOfDeal);
+        emit TerminateDeal(seqOfDeal);
     }
 
     function takeGift(uint256 seq)
         external onlyKeeper returns (bool flag)
     {
-        emit CloseDeal(seq, "0");
         flag = _repo.takeGift(seq);
+        emit CloseDeal(seq, "0");
     }
 
     function setTypeOfIA(uint t) external onlyAttorney {
@@ -153,7 +154,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         return _repo.getDeal(seqOfDeal);
     }
 
-    function getSNList() external view returns (bytes32[] memory) {
-        return _repo.getSNList();
+    function getSeqList() external view returns (uint[] memory) {
+        return _repo.getSeqList();
     }
 }

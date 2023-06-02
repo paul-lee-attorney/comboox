@@ -10,7 +10,7 @@ pragma solidity ^0.8.8;
 import "./EnumerableSet.sol";
 
 library DealsRepo {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     // _deals[0].head {
     //     seqOfDeal: counterOfClosedDeal;
@@ -82,7 +82,7 @@ library DealsRepo {
 
     struct Repo {
         mapping(uint256 => Deal) deals;
-        EnumerableSet.Bytes32Set snList;
+        EnumerableSet.UintSet seqList;
     }
 
     //##################
@@ -136,7 +136,7 @@ library DealsRepo {
         }
     }
 
-    function createDeal(
+    function addDeal(
         Repo storage repo,
         bytes32 sn,
         uint buyer,
@@ -160,19 +160,19 @@ library DealsRepo {
     function regDeal(Repo storage repo, Deal memory deal) 
         public returns(uint16 seqOfDeal) 
     {
-        require(deal.body.par != 0, "DR.RD: zero par");
+        require(deal.body.par > 0, "DR.RD: zero par");
         require(deal.body.par >= deal.body.paid, "DR.RD: paid overflow");
 
-        deal.head.seqOfDeal = _increaseCounterOfDeal(repo);
-
-        if (repo.snList.add(codifyHead(deal.head))) {
-            repo.deals[deal.head.seqOfDeal] = Deal({
-                head: deal.head,
-                body: deal.body,
-                hashLock: bytes32(0)
-            });
-            seqOfDeal = deal.head.seqOfDeal;
+        if (!repo.seqList.contains(deal.head.seqOfDeal)) {
+            deal.head.seqOfDeal = _increaseCounterOfDeal(repo);
+            repo.seqList.add(deal.head.seqOfDeal);
         }
+        repo.deals[deal.head.seqOfDeal] = Deal({
+            head: deal.head,
+            body: deal.body,
+            hashLock: bytes32(0)
+        });
+        seqOfDeal = deal.head.seqOfDeal;
     }
 
     function _increaseCounterOfDeal(Repo storage repo) private returns(uint16 seqOfDeal){
@@ -181,7 +181,7 @@ library DealsRepo {
     }
 
     function delDeal(Repo storage repo, uint256 seqOfDeal) public returns (bool flag) {
-        if (repo.snList.remove(codifyHead(repo.deals[seqOfDeal].head))) {
+        if (repo.seqList.remove(seqOfDeal)) {
             delete repo.deals[seqOfDeal];
             repo.deals[0].head.preSeq--;
             flag = true;
@@ -197,7 +197,9 @@ library DealsRepo {
 
     function releaseDealSubject(Repo storage repo, uint256 seqOfDeal) public returns (bool flag)
     {
-        if (repo.deals[seqOfDeal].body.state >= uint8(StateOfDeal.Locked)) {
+        if (repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Locked) ||
+            repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Cleared) ) {
+
             repo.deals[seqOfDeal].body.state = uint8(StateOfDeal.Drafting);
             flag = true;
         }
@@ -359,8 +361,8 @@ library DealsRepo {
         return repo.deals[seq];
     }
 
-    function getSNList(Repo storage repo) external view returns (bytes32[] memory) {
-        return repo.snList.values();
+    function getSeqList(Repo storage repo) external view returns (uint[] memory) {
+        return repo.seqList.values();
     }
-
+    
 }

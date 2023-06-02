@@ -15,6 +15,8 @@ interface IInvestmentAgreement {
     //##    Event     ##
     //##################
 
+    event AddDeal(uint indexed seqOfDeal);
+
     event ClearDealCP(
         uint256 indexed seq,
         bytes32 indexed hashLock,
@@ -33,13 +35,13 @@ interface IInvestmentAgreement {
 
     // ======== InvestmentAgreement ========
 
-    function createDeal(
+    function addDeal(
         bytes32 sn,
         uint buyer,
         uint groupOfBuyer,
         uint paid,
         uint par
-    ) external returns(uint16 seqOfDeal);
+    ) external;
 
     function regDeal(DealsRepo.Deal memory deal) external returns(uint16 seqOfDeal);
 
@@ -84,5 +86,5 @@ interface IInvestmentAgreement {
 
     function getDeal(uint256 seq) external view returns (DealsRepo.Deal memory);
 
-    function getSNList() external view returns (bytes32[] memory);
+    function getSeqList() external view returns (uint[] memory);
 }

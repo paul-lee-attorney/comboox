@@ -83,7 +83,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
             require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
             share.payInCapital(amount);
-            _gk.getROM().changeAmtOfMember(share.head.shareholder, amount, 0, true);
+            _gk.getROM().changeAmtOfMember(share.head.shareholder, amount, 0, amount, true);
             _gk.getROM().capIncrease(amount, 0);
         }
     }
@@ -159,7 +159,10 @@ contract BookOfShares is IBookOfShares, AccessControl {
         require(msg.sender == address(_gk.getBOP()) ||
         _gk.isKeeper(msg.sender), "BOS.DCP: neither keeper nor BOP");
 
-        _repo.shares[seqOfShare].decreaseCleanPaid(paid);
+        SharesRepo.Share storage share = _repo.shares[seqOfShare];
+
+        share.decreaseCleanPaid(paid);
+        _gk.getROM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, false);
         emit DecreaseCleanPaid(seqOfShare, paid);
     }
 
@@ -169,7 +172,10 @@ contract BookOfShares is IBookOfShares, AccessControl {
         require(msg.sender == address(_gk.getBOP()) ||
         _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
 
-        _repo.shares[seqOfShare].increaseCleanPaid(paid);
+        SharesRepo.Share storage share = _repo.shares[seqOfShare];
+
+        share.increaseCleanPaid(paid);
+        _gk.getROM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, true);
         emit IncreaseCleanPaid(seqOfShare, paid);
     }
 
@@ -214,6 +220,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
                 share.head.shareholder,
                 paid,
                 par,
+                paid,
                 false
             );
         }

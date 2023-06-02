@@ -117,19 +117,25 @@ library MembersRepo {
         uint acct,
         uint deltaPaid,
         uint deltaPar,
+        uint deltaClean,
         bool increase
     ) public {
-        uint deltaAmt = (gm.chain.basedOnPar()) ? deltaPar : deltaPaid;
-        gm.chain.changeAmt(acct, deltaAmt, increase);
+
+        if (deltaPaid > 0 || deltaPar > 0 ) {
+            uint deltaAmt = (gm.chain.basedOnPar()) ? deltaPar : deltaPaid;
+            gm.chain.changeAmt(acct, deltaAmt, increase);
+        }
 
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.latest();
 
         if (increase) {
             cp.paid += uint64(deltaPaid);
             cp.par += uint64(deltaPar);
+            cp.cleanPaid += uint64(deltaClean);
         } else {
             cp.paid -= uint64(deltaPaid);
             cp.par -= uint64(deltaPar);
+            cp.cleanPaid -= uint64(deltaClean);
         }
 
         gm.members[acct].votesInHand.push(cp.paid, cp.par, cp.cleanPaid);

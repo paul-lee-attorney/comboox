@@ -110,15 +110,6 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
         onlyDirectKeeper
         onlyPartyOf(sha, caller)
     {
-        // require(
-        //     _gk.getBOH().getHeadOfFile(sha).state ==
-        //         uint8(FilesRepo.StateOfFile.Approved),
-        //     "BOHK.ESHA: SHA not approved yet"
-        // );
-
-        // require(_allMembersSigned(sha) || _reachedEffectiveThreshold(sha), 
-        //     "BOHK.ESHA: SHA effective conditions not reached");
-
         IBookOfSHA _boh = _gk.getBOH();
 
         _boh.execFile(sha);
@@ -129,6 +120,9 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
             IShareholdersAgreement(sha).getRule(0).governanceRuleParser();
 
         IRegisterOfMembers _rom = _gk.getROM();
+
+        if (_rom.maxQtyOfMembers() != gr.maxQtyOfMembers)
+            _rom.setMaxQtyOfMembers(gr.maxQtyOfMembers);
 
         _rom.setAmtBase(gr.basedOnPar);
 
