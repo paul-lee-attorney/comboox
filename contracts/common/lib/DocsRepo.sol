@@ -251,8 +251,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
 
     function getDoc(Repo storage repo, bytes32 snOfDoc) public view returns(Doc memory doc) {
-        Head memory head = snParser(snOfDoc);
-        doc = repo.docs[head.typeOfDoc][head.version][head.seqOfDoc];
+        if (docExist(repo, snOfDoc)) {
+            Head memory head = snParser(snOfDoc);
+            doc = repo.docs[head.typeOfDoc][head.version][head.seqOfDoc];
+        }
     }
 
     function getSN(Repo storage repo, address body) public view returns(bytes32 sn) {

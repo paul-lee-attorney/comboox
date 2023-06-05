@@ -128,7 +128,7 @@ library SharesRepo {
         require(share.body.par >= share.body.paid, "SR.RS: paid overflow");
 
         require(share.head.issueDate <= block.timestamp, "SR.RS: future issueDate");
-        require(share.head.issueDate <= share.body.payInDeadline, "SR.RS: issueDate later than payInDeadline");
+        // require(share.head.issueDate <= share.body.payInDeadline, "SR.RS: issueDate later than payInDeadline");
 
         require(share.head.shareholder > 0, "SR.RS: zero shareholder");
 

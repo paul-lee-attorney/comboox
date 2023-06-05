@@ -143,7 +143,13 @@ contract RegCenter is IRegCenter {
     }
 
     function setDocSnOfUser() external {
-        _docSnOfUser[_users.getMyUserNo(msg.sender)] = _docs.getSN(msg.sender);
+
+        uint myNo = _users.getMyUserNo(msg.sender);
+
+        if (myNo > 0) {
+            _docSnOfUser[myNo] = _docs.getSN(msg.sender);
+        }
+
     }
 
     // ###############

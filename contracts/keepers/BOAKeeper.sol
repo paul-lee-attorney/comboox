@@ -157,17 +157,19 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
 
         RulesParser.VotingRule memory vr = _gk.getSHA().getRule(typeOfIA).votingRuleParser();
 
+        uint seqOfMotion = _gk.getBOA().getHeadOfFile(ia).seqOfMotion;
+
         if (vr.amountRatio > 0 || vr.headRatio > 0) {
             if (vr.authority == 1)
-                require(_gk.getBOG().isPassed(uint256(uint160(ia))), 
-                    "BOAK.PTC:  Motion NOT passed");
+                require(_gk.getBOG().isPassed(seqOfMotion), 
+                    "BOAK.PTC:  Motion NOT passed in GM");
             else if (vr.authority == 2)
-                require(_gk.getBOD().isPassed(uint256(uint160(ia))), 
-                    "BOAK.PTC:  Motion NOT passed");
+                require(_gk.getBOD().isPassed(seqOfMotion), 
+                    "BOAK.PTC:  Motion NOT passed in Board");
             else if (vr.authority == 3)
-                require(_gk.getBOG().isPassed(uint256(uint160(ia))) && 
-                    _gk.getBOD().isPassed(uint256(uint160(ia))), 
-                    "BOAK.PTC: motion not passed");
+                require(_gk.getBOG().isPassed(seqOfMotion) && 
+                    _gk.getBOD().isPassed(seqOfMotion), 
+                    "BOAK.PTC: motion not passed in GM or Board");
             else revert("BOAK.PTC: authority overflow");
         }
 

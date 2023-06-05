@@ -48,6 +48,9 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
         SharesRepo.Share memory newShare = 
             _repo.createShare(shareNumber, payInDeadline, paid, par);
+        
+        require ( newShare.head.issueDate <= newShare.body.payInDeadline, 
+            "BOS.issueShare: issueDate later than payInDeadline");
 
         _gk.getROM().addMember(newShare.head.shareholder);
         _gk.getROM().addShareToMember(newShare);
