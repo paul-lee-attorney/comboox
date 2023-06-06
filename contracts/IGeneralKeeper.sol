@@ -263,7 +263,7 @@ interface IGeneralKeeper {
 
     function setPayInAmt(bytes32 snOfLocker, uint amount) external;
 
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey, uint salt) external;
+    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey) external;
 
     function withdrawPayInAmt(bytes32 snOfLocker) external;
 

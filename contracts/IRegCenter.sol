@@ -67,9 +67,9 @@ interface IRegCenter {
 
     event LockPoints(bytes32 indexed snOfLocker, uint256 indexed value);
 
-    event ReleasePoints(bytes32 indexed snOfLocker, string indexed hashKey, uint salt, uint256 indexed value);
+    event ReleasePoints(bytes32 indexed snOfLocker, string indexed hashKey, uint256 indexed value);
 
-    event WithdrawPoints(bytes32 indexed snOfLocker, string indexed hashKey, uint salt, uint256 indexed value);
+    event WithdrawPoints(bytes32 indexed snOfLocker, string indexed hashKey, uint256 indexed value);
 
     // ==== Docs ====
     event SetDocKeeper(address indexed keeper);
@@ -106,9 +106,9 @@ interface IRegCenter {
 
     function lockPoints(bytes32 snOfLocker, uint amt) external;
 
-    function releasePoints(bytes32 snOfLocker, string memory hashKey, uint salt) external;
+    function releasePoints(bytes32 snOfLocker, string memory hashKey) external;
 
-    function withdrawPoints(bytes32 snOfLocker, string memory hashKey, uint salt) external;
+    function withdrawPoints(bytes32 snOfLocker, string memory hashKey) external;
 
     function checkLocker(bytes32 snOfLocker) external view returns (uint256 value);
 

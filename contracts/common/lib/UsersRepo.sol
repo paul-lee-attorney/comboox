@@ -170,12 +170,11 @@ library UsersRepo {
         Repo storage repo, 
         bytes32 snOfLocker, 
         string memory hashKey,
-        uint salt,
         address msgSender
     ) public onlyPrimeKey(repo, msgSender) returns (uint216 value) 
     {
         uint caller = repo.userNo[msgSender];
-        value = uint216(repo.lockers.releaseValue(snOfLocker, hashKey, salt, caller));
+        value = uint216(repo.lockers.releaseValue(snOfLocker, hashKey, caller));
         if (value > 0) {
             repo.users[caller].balance += value;
         }
@@ -185,11 +184,10 @@ library UsersRepo {
         Repo storage repo, 
         bytes32 snOfLocker, 
         string memory hashKey, 
-        uint salt,
         address msgSender
     ) public onlyPrimeKey(repo, msgSender) returns (uint216 value) {
         uint caller = repo.userNo[msgSender];
-        value = uint216(repo.lockers.withdrawValue(snOfLocker, hashKey, salt, caller));
+        value = uint216(repo.lockers.withdrawValue(snOfLocker, hashKey, caller));
         if (value > 0) {
             repo.users[caller].balance += value;
         }

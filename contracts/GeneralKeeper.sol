@@ -410,8 +410,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOSKeeper(_keepers[7]).setPayInAmt(snOfLocker, amount);
     }
 
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey, uint salt) external {
-        IBOSKeeper(_keepers[7]).requestPaidInCapital(snOfLocker, hashKey, salt, _msgSender());
+    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey) external {
+        IBOSKeeper(_keepers[7]).requestPaidInCapital(snOfLocker, hashKey, _msgSender());
     }
 
     function withdrawPayInAmt(bytes32 snOfLocker) external onlyDirectKeeper {

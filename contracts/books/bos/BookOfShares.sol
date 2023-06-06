@@ -77,15 +77,15 @@ contract BookOfShares is IBookOfShares, AccessControl {
             emit SetPayInAmt(snOfLocker, amount);
     }
 
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey, uint salt, uint256 caller)
+    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey, uint256 caller)
         external onlyDirectKeeper
     {
-        uint64 amount = uint64(_lockers.releaseValue(snOfLocker, hashKey, salt, caller));
+        uint64 amount = uint64(_lockers.releaseValue(snOfLocker, hashKey, caller));
         if (amount > 0) {
             SharesRepo.Share storage share = _repo.shares[uint32(uint(snOfLocker) >> 216)];
             require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
-            share.payInCapital(amount);
+            _payInCapital(share, amount);
             _gk.getROM().changeAmtOfMember(share.head.shareholder, amount, 0, amount, true);
             _gk.getROM().capIncrease(amount, 0);
         }
@@ -207,8 +207,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     function _payInCapital(SharesRepo.Share storage share, uint amount) private 
     {
-        emit PayInCapital(share.head.seqOfShare, amount);
         share.payInCapital(amount);
+        emit PayInCapital(share.head.seqOfShare, amount);
     }
 
     function _decreaseShareAmt(SharesRepo.Share storage share, uint paid, uint par) 

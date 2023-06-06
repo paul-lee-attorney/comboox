@@ -67,7 +67,6 @@ library LockersRepo {
         Repo storage repo,
         bytes32 snOfLocker,
         string memory hashKey,
-        uint salt,
         uint256 caller
     ) public returns(uint256 value) {
         Locker memory locker = snParser(snOfLocker);
@@ -76,7 +75,7 @@ library LockersRepo {
             "LR.RV: locker expired");
         require(locker.to == caller, 
             "LR.RV: not to");
-        require(locker.hashLock == uint128(uint256(keccak256(bytes(hashKey))) >> uint8(salt)),
+        require(locker.hashLock == uint128(uint256(keccak256(bytes(hashKey)))),
             "LR.RV: wrong key");
 
         if (repo.snList.remove(snOfLocker)) {
@@ -89,7 +88,6 @@ library LockersRepo {
         Repo storage repo,
         bytes32 snOfLocker,
         string memory hashKey,
-        uint salt,
         uint256 caller
     ) public returns(uint256 value) {
         Locker memory locker = snParser(snOfLocker);
@@ -100,7 +98,7 @@ library LockersRepo {
         require(locker.from == caller, 
             "LR.RL: not from");
 
-        require(locker.hashLock == uint128(uint256(keccak256(bytes(hashKey))) >> uint8(salt)), 
+        require(locker.hashLock == uint128(uint256(keccak256(bytes(hashKey)))), 
             "LR.RL: wrong key");
         
         if (repo.snList.remove(snOfLocker)){

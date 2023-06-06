@@ -73,22 +73,22 @@ contract RegCenter is IRegCenter {
             emit LockPoints(snOfLocker, amt);
     }
 
-    function releasePoints(bytes32 snOfLocker, string memory hashKey, uint salt)
+    function releasePoints(bytes32 snOfLocker, string memory hashKey)
         external
     {
-        uint256 value = _users.releasePoints(snOfLocker, hashKey, salt, msg.sender);
+        uint256 value = _users.releasePoints(snOfLocker, hashKey, msg.sender);
 
         if (value > 0)
-            emit ReleasePoints(snOfLocker, hashKey, salt, value);
+            emit ReleasePoints(snOfLocker, hashKey, value);
     }
 
-    function withdrawPoints(bytes32 snOfLocker, string memory hashKey, uint salt)
+    function withdrawPoints(bytes32 snOfLocker, string memory hashKey)
         external
     {
-        uint256 value = _users.withdrawPoints(snOfLocker, hashKey, salt, msg.sender);
+        uint256 value = _users.withdrawPoints(snOfLocker, hashKey, msg.sender);
 
         if (value > 0)
-            emit WithdrawPoints(snOfLocker, hashKey, salt, value);
+            emit WithdrawPoints(snOfLocker, hashKey, value);
     }
 
     function checkLocker(bytes32 snOfLocker) external

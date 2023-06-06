@@ -179,8 +179,10 @@ library SharesRepo {
     {
         require(amt > 0, "SR.PIC: zero amount");
 
-        require(block.timestamp <= share.body.payInDeadline, 
-            "SR.PIC: missed deadline");
+        // require(block.timestamp <= share.body.payInDeadline, 
+        //     "SR.PIC: missed deadline");
+
+
         require(share.body.paid + amt <= share.body.par, 
             "SR.PIC: payIn amount overflow");
 

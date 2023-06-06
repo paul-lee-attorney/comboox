@@ -27,8 +27,7 @@ library RulesParser {
         uint48 establishedDate;    
         uint16 businessTermInYears;
         uint8 typeOfComp;
-        uint8 argu; 
-        bool flag; 
+        uint16 annualPenaltyRateForLatePayInCap; 
     }
 
     function governanceRuleParser(bytes32 sn) public pure returns (GovernanceRule memory rule) {
@@ -50,8 +49,7 @@ library RulesParser {
             establishedDate: uint48(_sn >> 40),
             businessTermInYears: uint16(_sn >> 24),
             typeOfComp: uint8(_sn >> 16),
-            argu: uint8(_sn >> 8),
-            flag: uint8(_sn) == 1
+            annualPenaltyRateForLatePayInCap: uint16(_sn)
         });
     }
 
