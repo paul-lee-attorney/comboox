@@ -21,7 +21,7 @@ library FilesRepo {
         Proposed,   // 4
         Approved,   // 5
         Rejected,   // 6
-        Executed,   // 7
+        Closed,     // 7
         Revoked     // 8
     }
 
@@ -242,23 +242,23 @@ library FilesRepo {
         require(timestamp <= closingDeadline(repo, body), 
             "FR.EF: missed closingDeadline");
 
-        file.head.state = uint8(StateOfFile.Executed);
+        file.head.state = uint8(StateOfFile.Closed);
     }
 
-    function revokeFile(
+    function terminateFile(
         Repo storage repo,
         address body
     ) public onlyRegistered(repo, body) {
 
         require(
-            repo.files[body].head.state != uint8(StateOfFile.Executed),
+            repo.files[body].head.state != uint8(StateOfFile.Closed),
             "FR.RF: Doc is executed"
         );
 
         File storage file = repo.files[body];
 
-        require(block.timestamp > closingDeadline(repo, body), 
-            "FR.RF: still in execPeriod");
+        // require(block.timestamp > closingDeadline(repo, body), 
+        //     "FR.RF: still in execPeriod");
 
         file.head.state = uint8(StateOfFile.Revoked);
     }

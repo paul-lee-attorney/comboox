@@ -68,13 +68,13 @@ contract FilesFolder is IFilesFolder, AccessControl {
         address body
     ) public onlyDirectKeeper {
         _repo.execFile(body);
-        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Executed));
+        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Closed));
     }
 
-    function revokeFile(
+    function terminateFile(
         address body
     ) public onlyDirectKeeper {
-        _repo.revokeFile(body);
+        _repo.terminateFile(body);
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Revoked));
     }
 

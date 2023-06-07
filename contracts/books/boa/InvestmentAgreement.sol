@@ -87,6 +87,15 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         emit CloseDeal(seq, hashKey);
     }
 
+    function directCloseDeal(uint256 seq)
+        external
+        onlyDirectKeeper
+        returns (bool flag)
+    {        
+        flag = _repo.directCloseDeal(seq);
+        emit CloseDeal(seq, '');
+    }
+
     function revokeDeal(uint256 seq, string memory hashKey)
         external
         onlyDirectKeeper

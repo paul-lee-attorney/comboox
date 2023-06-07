@@ -229,12 +229,28 @@ library DealsRepo {
     function closeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
         public onlyCleared(repo, seqOfDeal) returns (bool flag)
     {
-        Deal storage deal = repo.deals[seqOfDeal];
-
         require(
-            deal.hashLock == keccak256(bytes(hashKey)),
+            repo.deals[seqOfDeal].hashLock == keccak256(bytes(hashKey)),
             "IA.closeDeal: hashKey NOT correct"
         );
+
+        return _closeDeal(repo, seqOfDeal);
+    }
+
+    function directCloseDeal(Repo storage repo, uint seqOfDeal) 
+        public returns (bool flag) 
+    {
+        require(repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Locked), 
+            "IA.directCloseDeal: wrong state of deal");
+        
+        return _closeDeal(repo, seqOfDeal);
+    }
+
+    function _closeDeal(Repo storage repo, uint seqOfDeal)
+        private returns(bool flag) 
+    {
+    
+        Deal storage deal = repo.deals[seqOfDeal];
 
         require(
             block.timestamp <= deal.head.closingDate,

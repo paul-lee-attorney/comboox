@@ -44,7 +44,7 @@ interface IFilesFolder {
 
     function execFile(address body) external;
 
-    function revokeFile(address body) external;
+    function terminateFile(address body) external;
 
     function setStateOfFile(address body, uint state) external;
 

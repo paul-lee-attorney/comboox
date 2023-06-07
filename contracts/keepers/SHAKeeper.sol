@@ -295,7 +295,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         require(caller == deal.body.buyer, "caller is not buyer");
 
         if (IInvestmentAgreement(ia).takeGift(seqOfDeal))
-            _gk.getBOA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Executed));
+            _gk.getBOA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
 
         _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _gk.getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0, 0);

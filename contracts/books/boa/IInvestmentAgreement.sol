@@ -54,7 +54,9 @@ interface IInvestmentAgreement {
     function clearDealCP( uint256 seq, bytes32 hashLock, uint closingDate) external;
 
     function closeDeal(uint256 seq, string memory hashKey)
-        external returns (bool);
+        external returns (bool flag);
+
+    function directCloseDeal(uint256 seq) external returns (bool flag);
 
     function revokeDeal(uint256 seq, string memory hashKey)
         external returns (bool);
