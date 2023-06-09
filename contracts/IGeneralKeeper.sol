@@ -270,7 +270,7 @@ interface IGeneralKeeper {
     function decreaseCapital(uint256 seqOfShare, uint parValue, uint paidPar) 
     external;
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
+    // function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
 
     // ##################
     // ##  ROMKeeper   ##

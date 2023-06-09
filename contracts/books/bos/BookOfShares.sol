@@ -47,7 +47,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
     {
 
         SharesRepo.Share memory newShare = 
-            _repo.createShare(shareNumber, payInDeadline, paid, par);
+            _repo.addShare(shareNumber, payInDeadline, paid, par);
         
         require ( newShare.head.issueDate <= newShare.body.payInDeadline, 
             "BOS.issueShare: issueDate later than payInDeadline");
@@ -191,12 +191,12 @@ contract BookOfShares is IBookOfShares, AccessControl {
         _repo.shares[seqOfShare].body.state = uint8(state);
     }
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint deadline)
-        external onlyDirectKeeper shareExist(seqOfShare)
-    {
-        _repo.shares[seqOfShare].updatePayInDeadline(deadline);
-        emit UpdatePaidInDeadline(seqOfShare, deadline);
-    }
+    // function updatePaidInDeadline(uint256 seqOfShare, uint deadline)
+    //     external onlyDirectKeeper shareExist(seqOfShare)
+    // {
+    //     _repo.shares[seqOfShare].updatePayInDeadline(deadline);
+    //     emit UpdatePaidInDeadline(seqOfShare, deadline);
+    // }
 
     // ==== private funcs ====
 

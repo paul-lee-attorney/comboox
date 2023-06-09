@@ -11,7 +11,7 @@ import "./ArrayUtils.sol";
 import "./EnumerableSet.sol";
 
 library SharesRepo {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.UintSet;
     using ArrayUtils for uint256[];
 
     struct Head {
@@ -44,7 +44,7 @@ library SharesRepo {
     struct Repo {
         // seqOfShare => Share
         mapping(uint256 => Share) shares;
-        EnumerableSet.Bytes32Set snList;
+        EnumerableSet.UintSet seqList;
     }
 
     //#################
@@ -89,7 +89,7 @@ library SharesRepo {
 
     // ==== issue/regist share ====
 
-    function createShare(
+    function addShare(
         Repo storage repo, 
         bytes32 sharenumber, 
         uint payInDeadline, 
@@ -114,7 +114,8 @@ library SharesRepo {
     function issueShare(Repo storage repo, Share memory share)
         public returns (Share memory newShare)
     {
-        if (share.head.issueDate == 0) 
+        if (!repo.seqList.contains(share.head.seqOfShare) &&
+            share.head.issueDate == 0) 
             share.head.issueDate = uint48(block.timestamp);
 
         newShare = regShare(repo, share);
@@ -134,16 +135,17 @@ library SharesRepo {
 
         require(share.head.class > 0, "SR.RS: zero class");
 
-        share.head.seqOfShare = _increaseCounterOfShare(repo);
-        if (share.head.class > counterOfClasses(repo)) 
-            share.head.class = _increaseCounterOfClass(repo);
-
-        bytes32 sn = codifyHead(share.head);
-
-        if (repo.snList.add(sn)) {
-            repo.shares[share.head.seqOfShare] = share;
-            newShare = share;
+        if (!repo.seqList.contains(share.head.seqOfShare)){
+            share.head.seqOfShare = _increaseCounterOfShare(repo);
+            if (share.head.class > counterOfClasses(repo)) 
+                share.head.class = _increaseCounterOfClass(repo);
+            repo.seqList.add(share.head.seqOfShare);
         }
+
+        // bytes32 sn = codifyHead(share.head);
+
+        repo.shares[share.head.seqOfShare] = share;
+        newShare = share;
     }
 
     // ==== deregist/delete share ====
@@ -151,7 +153,7 @@ library SharesRepo {
     function deregShare(Repo storage repo, uint256 seqOfShare) 
         public returns(bool flag)
     {
-        if (repo.snList.remove(codifyHead(repo.shares[seqOfShare].head))) {
+        if (repo.seqList.remove(seqOfShare)) {
             delete repo.shares[seqOfShare];
             flag = true;
         }
@@ -252,23 +254,23 @@ library SharesRepo {
         require (class > 0, "SR.SOC: zero class");
         require (class <= counterOfClasses(repo), "SR.SOC: class overflow");
 
-        bytes32[] memory snList = repo.snList.values();
+        uint[] memory list = repo.seqList.values();
 
-        uint256 len = snList.length;
-        uint256[] memory list = new uint256[](len);
+        uint256 len = list.length;
+        uint256[] memory output = new uint256[](len);
  
         uint256 ptr;
         while (len > 0) {
-            uint256 sn = uint256(snList[len-1]);
+            uint256 classOfItem = repo.shares[list[len-1]].head.class;
 
-            if (uint16(sn >> 176) == class) {
-                list[ptr] = uint32(sn >> 224);
+            if (classOfItem == class) {
+                output[ptr] = list[len-1];
                 ptr++;
             }
 
             len--;
         }
 
-        seqList = list.resize(ptr);
+        seqList = output.resize(ptr);
     }
 }

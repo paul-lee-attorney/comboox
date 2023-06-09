@@ -26,5 +26,5 @@ interface IBOSKeeper {
         uint par
     ) external;
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
+    // function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
 }

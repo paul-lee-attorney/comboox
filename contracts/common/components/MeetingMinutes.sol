@@ -21,11 +21,11 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     //##    Write     ##
     //##################
 
-    function createMotion(
+    function addMotion(
         MotionsRepo.Head memory head,
         uint256 contents
     ) public onlyDirectKeeper returns (uint64) {
-        head = _repo.createMotion(head, contents);
+        head = _repo.addMotion(head, contents);
         emit CreateMotion(MotionsRepo.codifyHead(head), contents);
         return head.seqOfMotion;
     }
@@ -43,7 +43,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         head.creator = uint40(nominator);
         head.executor = uint40(candidate);
 
-        return createMotion(head, seqOfPos);
+        return addMotion(head, seqOfPos);
     }
 
     function proposeToRemoveOfficer(
@@ -58,7 +58,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         head.creator = uint40(nominator);
         head.executor = uint40(nominator);
 
-        return createMotion(head, seqOfPos);
+        return addMotion(head, seqOfPos);
     }
 
     function proposeDoc(
@@ -74,7 +74,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         head.creator = uint40(proposer);
         head.executor = uint40(executor);
 
-        return createMotion(head, uint256(uint160(doc)));
+        return addMotion(head, uint256(uint160(doc)));
     }
 
     function proposeAction(
@@ -101,7 +101,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             desHash
         );
 
-        return createMotion(head, contents);
+        return addMotion(head, contents);
     }
 
     function _hashAction(
@@ -296,4 +296,11 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function isPassed(uint256 seqOfMotion) external view returns (bool) {
         return _repo.isPassed(seqOfMotion);
     }
+
+    // ==== SnList ====
+
+    function getSeqList() external view returns (uint[] memory) {
+        return _repo.getSeqList();
+    }
+    
 }

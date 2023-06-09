@@ -17,7 +17,7 @@ import "../../books/boh/IShareholdersAgreement.sol";
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
     using DelegateMap for DelegateMap.Map;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.UintSet;
     using RulesParser for bytes32;
 
     enum TypeOfMotion {
@@ -81,7 +81,7 @@ library MotionsRepo {
     struct Repo {
         mapping(uint256 => Motion) motions;
         mapping(uint256 => Record) records;
-        EnumerableSet.Bytes32Set snList;
+        EnumerableSet.UintSet seqList;
     }
 
     //##################
@@ -118,9 +118,9 @@ library MotionsRepo {
         }
     } 
     
-    // ==== create ====
+    // ==== addMotion ====
 
-    function createMotion(
+    function addMotion(
         Repo storage repo,
         Head memory head,
         uint256 contents
@@ -130,12 +130,12 @@ library MotionsRepo {
         require(head.seqOfVR > 0, "MR.CM: zero seqOfVR");
         require(head.creator > 0, "MR.CM: zero caller");
 
-        head.seqOfMotion = _increaseCounterOfMotion(repo);
-        head.createDate = uint48(block.timestamp);
-        
-        bytes32 snOfMotion = codifyHead(head);
-        repo.snList.add(snOfMotion);
-
+        if (!repo.seqList.contains(head.seqOfMotion)) {
+            head.seqOfMotion = _increaseCounterOfMotion(repo);
+            head.createDate = uint48(block.timestamp);
+            repo.seqList.add(head.seqOfMotion);
+        }
+    
         Motion storage m = repo.motions[head.seqOfMotion];
 
         m.head = head;
@@ -410,6 +410,12 @@ library MotionsRepo {
 
     function isPassed(Repo storage repo, uint256 seqOfMotion) public view returns (bool) {
         return repo.motions[seqOfMotion].body.state == uint8(MotionsRepo.StateOfMotion.Passed);
+    }
+
+    // ==== snList ====
+
+    function getSeqList(Repo storage repo) public view returns (uint[] memory) {
+        return repo.seqList.values();
     }
 
 }

@@ -423,9 +423,9 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOSKeeper(_keepers[7]).decreaseCapital(seqOfShare, parValue, paidPar);
     }
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint line) external onlyDirectKeeper {
-        IBOSKeeper(_keepers[7]).updatePaidInDeadline(seqOfShare, line);
-    }
+    // function updatePaidInDeadline(uint256 seqOfShare, uint line) external onlyDirectKeeper {
+    //     IBOSKeeper(_keepers[7]).updatePaidInDeadline(seqOfShare, line);
+    // }
 
     // ##################
     // ##  ROMKeeper   ##

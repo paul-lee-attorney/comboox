@@ -34,7 +34,7 @@ interface IMeetingMinutes {
     //##    写接口    ##
     //#################
 
-    function createMotion(
+    function addMotion(
         MotionsRepo.Head memory head,
         uint256 contents
     ) external returns (uint64);
@@ -161,5 +161,7 @@ interface IMeetingMinutes {
         external view returns (BallotsBox.Ballot memory);
 
     function isPassed(uint256 seqOfMotion) external view returns (bool);
+
+    function getSeqList() external view returns (uint[] memory);
 
 }

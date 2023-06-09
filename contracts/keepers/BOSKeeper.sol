@@ -38,8 +38,8 @@ contract BOSKeeper is IBOSKeeper, AccessControl {
         _gk.getBOS().decreaseCapital(seqOfShare, paid, par);
     }
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint line) 
-    external onlyDirectKeeper {
-        _gk.getBOS().updatePaidInDeadline(seqOfShare, line);
-    }
+    // function updatePaidInDeadline(uint256 seqOfShare, uint line) 
+    // external onlyDirectKeeper {
+    //     _gk.getBOS().updatePaidInDeadline(seqOfShare, line);
+    // }
 }

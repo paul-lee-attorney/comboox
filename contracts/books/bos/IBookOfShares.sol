@@ -26,7 +26,7 @@ interface IBookOfShares {
 
     event UpdateStateOfShare(uint256 indexed seqOfShare, uint indexed state);
 
-    event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
+    // event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
 
     event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
 
@@ -71,7 +71,7 @@ interface IBookOfShares {
 
     function updateStateOfShare(uint256 seqOfShare, uint state) external;
 
-    function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
+    // function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
 
     // ##################
     // ##   查询接口   ##
