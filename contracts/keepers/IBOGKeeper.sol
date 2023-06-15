@@ -36,14 +36,14 @@ interface IBOGKeeper {
         uint nominator
     ) external;
 
-    function proposeToRemoveDirector(
+    function createMotionToRemoveDirector(
         uint256 seqOfPos,
         uint caller
     ) external;
 
     function proposeDocOfGM(address doc, uint seqOfVR, uint executor,  uint proposer) external;
 
-    function proposeActionOfGM(
+    function createActionOfGM(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -55,7 +55,7 @@ interface IBOGKeeper {
 
     function entrustDelegateOfMember(uint256 motionId, uint delegate, uint caller) external;
 
-    function proposeMotionOfGM(uint256 seqOfMotion,uint caller) external;
+    function proposeMotionToGM(uint256 seqOfMotion,uint caller) external;
 
     function castVoteOfGM(
         uint256 seqOfMotion,

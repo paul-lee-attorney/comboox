@@ -99,11 +99,11 @@ interface IGeneralKeeper {
 
     function nominateOfficer(uint256 seqOfPos, uint candidate) external;
 
-    function proposeToRemoveOfficer(uint256 seqOfPos) external;
+    function createMotionToRemoveOfficer(uint256 seqOfPos) external;
 
     function proposeDoc(address doc, uint seqOfVR, uint executor) external;
 
-    function proposeAction(
+    function createAction(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -113,6 +113,8 @@ interface IGeneralKeeper {
     ) external;
 
     function entrustDelegate(uint256 seqOfMotion, uint delegate) external;
+
+    function proposeMotionToBoard (uint seqOfMotion) external;
 
     function castVote(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
 
@@ -139,11 +141,11 @@ interface IGeneralKeeper {
 
     function nominateDirector(uint256 seqOfPos, uint candidate) external;
 
-    function proposeToRemoveDirector(uint256 seqOfPos) external;
+    function createMotionToRemoveDirector(uint256 seqOfPos) external;
 
     function proposeDocOfGM(address doc, uint seqOfVR, uint executor) external;
 
-    function proposeActionOfGM(
+    function createActionOfGM(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -154,7 +156,7 @@ interface IGeneralKeeper {
 
     function entrustDelegateOfMember(uint256 seqOfMotion, uint delegate) external;
 
-    function proposeMotionOfGM(uint256 seqOfMotion) external;
+    function proposeMotionToGM(uint256 seqOfMotion) external;
 
     function castVoteOfGM(
         uint256 seqOfMotion,

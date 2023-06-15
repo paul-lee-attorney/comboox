@@ -11,6 +11,9 @@ library RulesParser {
 
     // ======== GovernanceRule ========
 
+    bytes32 public constant SHA_INIT_GR = 
+        bytes32(uint(0x0000000000000000010000000000000000000000000000000000000000000000));
+
     struct GovernanceRule {
         uint16 seqOfRule; 
         uint8 qtyOfSubRule;
@@ -18,14 +21,15 @@ library RulesParser {
         bool basedOnPar;
         uint16 proposeWeightRatioOfGM; 
         uint16 proposeHeadRatioOfMembers; 
-        uint16 proposeHeadNumOfDirectors;
+        uint16 proposeHeadRatioOfDirectorsInGM;
+        uint16 proposeHeadRatioOfDirectorsInBoard;
         uint16 maxQtyOfMembers;
         uint16 quorumOfGM;  
-        uint16 maxNumOfDirectors;
+        uint8 maxNumOfDirectors;
         uint16 tenureMonOfBoard;
         uint16 quorumOfBoardMeeting;
         uint48 establishedDate;    
-        uint16 businessTermInYears;
+        uint8 businessTermInYears;
         uint8 typeOfComp;
         uint16 annualPenaltyRateForLatePayInCap; 
     }
@@ -40,14 +44,15 @@ library RulesParser {
             basedOnPar: uint8(_sn >> 216) == 1,
             proposeWeightRatioOfGM: uint16(_sn >> 200),
             proposeHeadRatioOfMembers: uint16(_sn >> 184),
-            proposeHeadNumOfDirectors: uint16(_sn >> 168),
-            maxQtyOfMembers: uint16(_sn >> 152),
-            quorumOfGM: uint16(_sn >> 136),
-            maxNumOfDirectors: uint16(_sn >> 120),
-            tenureMonOfBoard: uint16(_sn >> 104),
-            quorumOfBoardMeeting: uint16(_sn >> 88),
-            establishedDate: uint48(_sn >> 40),
-            businessTermInYears: uint16(_sn >> 24),
+            proposeHeadRatioOfDirectorsInGM: uint16(_sn >> 168),
+            proposeHeadRatioOfDirectorsInBoard: uint16(_sn >> 152),
+            maxQtyOfMembers: uint16(_sn >> 136),
+            quorumOfGM: uint16(_sn >> 120),
+            maxNumOfDirectors: uint8(_sn >> 112),
+            tenureMonOfBoard: uint16(_sn >> 96),
+            quorumOfBoardMeeting: uint16(_sn >> 80),
+            establishedDate: uint48(_sn >> 32),
+            businessTermInYears: uint8(_sn >> 24),
             typeOfComp: uint8(_sn >> 16),
             annualPenaltyRateForLatePayInCap: uint16(_sn)
         });
@@ -70,7 +75,7 @@ library RulesParser {
         bool partyAsConsent;
         bool againstShallBuy;
         uint8 shaExecDays;
-        uint8 reviewDays;
+        uint8 shaConfirmDays;
         uint8 reconsiderDays;
         uint8 votePrepareDays;
         uint8 votingDays;
@@ -94,7 +99,7 @@ library RulesParser {
             partyAsConsent: uint8(_sn >> 152) == 1,
             againstShallBuy: uint8(_sn >> 144) == 1,
             shaExecDays: uint8(_sn >> 136),
-            reviewDays: uint8(_sn >> 128),
+            shaConfirmDays: uint8(_sn >> 128),
             reconsiderDays: uint8(_sn >> 120),
             votePrepareDays: uint8(_sn >> 112),
             votingDays: uint8(_sn >> 104),

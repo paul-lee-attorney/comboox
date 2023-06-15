@@ -45,17 +45,15 @@ contract BODKeeper is IBODKeeper, AccessControl {
         require(pos.nominator == 0 || 
             pos.nominator == nominator, 
             "BODK.NO: has no nominationRight");
-
-        uint64 seqOfMotion = 
-            _bod.nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
-        _bod.proposeMotion(seqOfMotion, nominator);
+         
+        _bod.nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
+        // _bod.proposeMotion(seqOfMotion, nominator);
     }
 
-    function proposeToRemoveOfficer(
+    function createMotionToRemoveOfficer(
         uint256 seqOfPos,
         uint nominator
     ) external onlyDirectKeeper directorExist(nominator) {
-
         IBookOfDirectors _bod = _gk.getBOD();
 
         OfficersRepo.Position memory pos =
@@ -65,8 +63,8 @@ contract BODKeeper is IBODKeeper, AccessControl {
             pos.nominator == nominator, 
             "BODK.NO: has no nominationRight");
 
-        uint64 seqOfMotion = _bod.proposeToRemoveOfficer(seqOfPos, pos.seqOfVR, nominator);
-        _bod.proposeMotion(seqOfMotion, nominator);
+        _bod.createMotionToRemoveOfficer(seqOfPos, pos.seqOfVR, nominator);
+        // _bod.proposeMotion(seqOfMotion, nominator);
     }
 
     // ---- Docs ----
@@ -77,16 +75,13 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDirectKeeper directorExist(proposer) {
-
-        IBookOfDirectors _bod = _gk.getBOD();
-
-        uint64 seqOfMotion = _bod.proposeDoc(doc, seqOfVR, executor, proposer);
-        _bod.proposeMotion(seqOfMotion, proposer);
+        _gk.getBOD().proposeDoc(doc, seqOfVR, executor, proposer);
+        // _bod.proposeMotion(seqOfMotion, proposer);
     }
 
     // ---- Actions ----
 
-    function proposeAction(
+    function createAction(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -95,8 +90,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDirectKeeper directorExist(proposer){
-        IBookOfDirectors _bod = _gk.getBOD();
-        uint64 seqOfMotion = _bod.proposeAction(
+        _gk.getBOD().createAction(
             seqOfVR,
             targets,
             values,
@@ -105,7 +99,6 @@ contract BODKeeper is IBODKeeper, AccessControl {
             executor,
             proposer
         );
-        _bod.proposeMotion(seqOfMotion, proposer);
     }
 
     // ==== Cast Vote ====
@@ -114,9 +107,16 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint256 seqOfMotion,
         uint delegate,
         uint caller
-    ) external onlyDirectKeeper directorExist(caller) directorExist(delegate) {
+    ) external onlyDirectKeeper {
         _avoidanceCheck(seqOfMotion, caller);
-        _gk.getBOD().entrustDelegate(seqOfMotion, delegate, caller, 0);
+        _gk.getBOD().entrustDelegate(seqOfMotion, delegate, caller);
+    }
+
+    function proposeMotionToBoard (
+        uint seqOfMotion,
+        uint caller
+    ) external onlyDirectKeeper directorExist(caller) {
+        _gk.getBOD().proposeMotionToBoard(seqOfMotion, caller);
     }
 
     function castVote(

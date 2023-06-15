@@ -9,8 +9,6 @@ pragma solidity ^0.8.8;
 
 import "./IBOGKeeper.sol";
 
-// import "../books/boa/IInvestmentAgreement.sol";
-
 import "../common/access/AccessControl.sol";
 
 contract BOGKeeper is IBOGKeeper, AccessControl {
@@ -18,21 +16,16 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     modifier memberExist(uint256 acct) {
         require(_gk.getROM().isMember(acct), 
-            "BOGK.mf.ME: NOT Member");
+            "BOGK.mf: NOT Member");
         _;
     }
 
-    // ######################
-    // ##   Corp Setting   ##
-    // ######################
-
-    // function createCorpSeal(uint info) external onlyDirectKeeper {
-    //     _gk.getBOG().createCorpSeal(info);
-    // }
-
-    // function createBoardSeal(address board) external onlyDirectKeeper {
-    //     _gk.getBOG().createBoardSeal(board);
-    // }
+    modifier memberOrDirector(uint256 acct) {
+        require(_gk.getROM().isMember(acct) ||
+            _gk.getBOD().isDirector(acct), 
+            "BOGK.mf: not Member or Director");
+        _;
+    }
 
     // ################
     // ##   Motion   ##
@@ -45,33 +38,24 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         uint256 seqOfPos,
         uint candidate,
         uint nominator
-    ) external onlyDirectKeeper memberExist(nominator) {
+    ) external onlyDirectKeeper memberOrDirector(nominator) {
 
         OfficersRepo.Position memory pos =
             _gk.getBOD().getPosition(seqOfPos);
-
-        // require (pos.title <= uint8(OfficersRepo.TitleOfOfficers.Director),
-        //     "BOGK.ND: not a Director's position");
 
         require(pos.nominator == 0 || 
             pos.nominator == nominator, 
             "BOGK.ND: has no nominationRight");
 
-        uint64 seqOfMotion = 
-            _gk.getBOG().nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
-        _gk.getBOG().proposeMotion(seqOfMotion, nominator);
+        _gk.getBOG().nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
     }
 
-    function proposeToRemoveDirector(
+    function createMotionToRemoveDirector(
         uint256 seqOfPos,
         uint caller
-    ) external onlyDirectKeeper memberExist(caller) {
-
+    ) external onlyDirectKeeper memberOrDirector(caller) {
         OfficersRepo.Position memory pos =
             _gk.getBOD().getPosition(seqOfPos);
-
-        // require (pos.title <= uint8(OfficersRepo.TitleOfOfficers.Director),
-        //     "BOGK.PTRD: not a Director's position");
 
         require(pos.nominator == 0 || 
             pos.nominator == caller, 
@@ -79,9 +63,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
         IBookOfGM _bog = _gk.getBOG();
 
-        uint64 seqOfMotion = 
-            _bog.proposeToRemoveOfficer(seqOfPos, pos.seqOfVR, caller);
-        if (pos.nominator > 0) _bog.proposeMotion(seqOfMotion, caller);       
+        _bog.createMotionToRemoveOfficer(seqOfPos, pos.seqOfVR, caller);
     }
 
     function proposeDocOfGM(
@@ -96,23 +78,17 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         uint64 seqOfMotion = 
             _bog.proposeDoc(doc, seqOfVR, executor, proposer);
 
-        if (seqOfVR <= 8 && 
+        if (seqOfVR < 9 && 
             ISigPage(doc).isSigner(proposer)
         ) { 
-            _bog.proposeMotion(seqOfMotion, proposer);
-            // IShareholdersAgreement _sha = _gk.getSHA();
-            // RulesParser.VotingRule memory vr =
-            //     address(_sha) == address(0)
-            //     ? RulesParser.SHA_INIT_VR.votingRuleParser()
-            //     : _sha.getRule(seqOfVR).votingRuleParser();
-            
+            _bog.proposeMotionToGM(seqOfMotion, proposer);            
             seqOfVR == 8 ?
                 _gk.getBOH().proposeFile(doc, seqOfMotion) :
                 _gk.getBOA().proposeFile(doc, seqOfMotion);
         }
     }
 
-    function proposeActionOfGM(
+    function createActionOfGM(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -120,8 +96,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         bytes32 desHash,
         uint executor,
         uint proposer
-    ) external onlyDirectKeeper memberExist(proposer) {
-        _gk.getBOG().proposeAction(
+    ) external onlyDirectKeeper memberOrDirector(proposer) {
+        _gk.getBOG().createAction(
             seqOfVR,
             targets,
             values,
@@ -138,42 +114,16 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         uint256 seqOfMotion,
         uint delegate,
         uint caller
-    ) external onlyDirectKeeper memberExist(caller) memberExist(delegate) {
+    ) external onlyDirectKeeper {
         _avoidanceCheck(seqOfMotion, caller);
-
-        IBookOfGM _bog = _gk.getBOG();
-
-        uint64 weight;
-        uint48 shareRegDate = _bog.getMotion(seqOfMotion).body.shareRegDate;
-
-        if (shareRegDate > 0)
-            weight = _gk.getROM().votesAtDate(caller, shareRegDate);
-
-        _bog.entrustDelegate(seqOfMotion, delegate, caller, weight);
+        _gk.getBOG().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
-    function proposeMotionOfGM(
+    function proposeMotionToGM(
         uint256 seqOfMotion,
         uint caller
-    ) external onlyKeeper memberExist(caller) {
-
-        IBookOfGM _bog = _gk.getBOG();
-
-        uint16 threshold = _gk.getSHA().getRule(0).governanceRuleParser().proposeWeightRatioOfGM;
-
-        require (_bog.getVoterOfDelegateMap(seqOfMotion, caller).delegate == 0, 
-            "BOGK.PM: has entrust delegate");
-
-        IRegisterOfMembers _rom = _gk.getROM();
-
-        uint64 totalVotes = _rom.totalVotes(); 
-        uint64 weightOfProposer = 
-            _bog.getLeavesWeightAtDate(seqOfMotion, caller, uint48(block.timestamp), _rom);
-
-        require(weightOfProposer / totalVotes >= threshold,
-            "BOGK.PM: not reached proposal threshold");
-
-        _bog.proposeMotion(seqOfMotion, caller);
+    ) external onlyKeeper {
+        _gk.getBOG().proposeMotionToGM(seqOfMotion, caller);
     }
 
     function castVoteOfGM(

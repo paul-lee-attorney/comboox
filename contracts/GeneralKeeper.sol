@@ -127,15 +127,15 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBODKeeper(_keepers[2]).nominateOfficer(seqOfPos, candidate, _msgSender());
     }
 
-    function proposeToRemoveOfficer(uint256 seqOfPos) external {
-        IBODKeeper(_keepers[2]).proposeToRemoveOfficer(seqOfPos, _msgSender());
+    function createMotionToRemoveOfficer(uint256 seqOfPos) external {
+        IBODKeeper(_keepers[2]).createMotionToRemoveOfficer(seqOfPos, _msgSender());
     }
 
     function proposeDoc(address doc, uint seqOfVR, uint executor) external {
         IBODKeeper(_keepers[2]).proposeDoc(doc, seqOfVR, executor, _msgSender());
     }
 
-    function proposeAction(
+    function createAction(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -143,11 +143,15 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         bytes32 desHash,
         uint executor
     ) external {
-        IBODKeeper(_keepers[2]).proposeAction(seqOfVR, targets, values, params, desHash, executor, _msgSender());
+        IBODKeeper(_keepers[2]).createAction(seqOfVR, targets, values, params, desHash, executor, _msgSender());
     }
 
     function entrustDelegate(uint256 seqOfMotion, uint delegate) external {
         IBODKeeper(_keepers[2]).entrustDelegate(seqOfMotion, delegate, _msgSender());
+    }
+
+    function proposeMotionToBoard (uint seqOfMotion) external {
+        IBODKeeper(_keepers[2]).proposeMotionToBoard(seqOfMotion, _msgSender());
     }
 
     function castVote(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external {
@@ -204,15 +208,15 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOGKeeper(_keepers[3]).nominateDirector(seqOfPos, candidate, _msgSender());
     }
 
-    function proposeToRemoveDirector(uint256 seqOfPos) external {
-        IBOGKeeper(_keepers[3]).proposeToRemoveDirector(seqOfPos, _msgSender());
+    function createMotionToRemoveDirector(uint256 seqOfPos) external {
+        IBOGKeeper(_keepers[3]).createMotionToRemoveDirector(seqOfPos, _msgSender());
     }
 
     function proposeDocOfGM(address doc, uint seqOfVR, uint executor) external {
         IBOGKeeper(_keepers[3]).proposeDocOfGM(doc, seqOfVR, executor, _msgSender());
     }
 
-    function proposeActionOfGM(
+    function createActionOfGM(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -220,7 +224,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         bytes32 desHash,
         uint executor
     ) external {
-        IBOGKeeper(_keepers[3]).proposeActionOfGM(
+        IBOGKeeper(_keepers[3]).createActionOfGM(
             seqOfVR,
             targets,
             values,
@@ -235,8 +239,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOGKeeper(_keepers[3]).entrustDelegateOfMember(seqOfMotion, delegate, _msgSender());
     }
 
-    function proposeMotionOfGM(uint256 seqOfMotion) external {
-        IBOGKeeper(_keepers[3]).proposeMotionOfGM(seqOfMotion, _msgSender());
+    function proposeMotionToGM(uint256 seqOfMotion) external {
+        IBOGKeeper(_keepers[3]).proposeMotionToGM(seqOfMotion, _msgSender());
     }
 
     function castVoteOfGM(

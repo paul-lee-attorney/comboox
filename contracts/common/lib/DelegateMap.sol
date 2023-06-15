@@ -8,8 +8,14 @@
 pragma solidity ^0.8.8;
 
 import "../../books/rom/IRegisterOfMembers.sol";
+import "../../books/bod/IBookOfDirectors.sol";
 
 library DelegateMap {
+
+    struct LeavesInfo {
+        uint64 weight;
+        uint32 emptyHead;
+    }
 
     struct Voter {
         uint40 delegate;
@@ -73,14 +79,32 @@ library DelegateMap {
     }
 
     function getLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IRegisterOfMembers _rom)
-        public view returns(uint64 weight)
+        public view returns(LeavesInfo memory info)
     {
         uint40[] memory leaves = map.voters[acct].principals;
         uint256 len = leaves.length;
         while (len > 0) {
-            weight += getLeavesWeightAtDate(map, leaves[len-1], baseDate, _rom);
+            LeavesInfo memory lv = getLeavesWeightAtDate(map, leaves[len-1], baseDate, _rom);
+            info.weight += lv.weight;
+            info.emptyHead += lv.emptyHead;
             len--;
         }
-        weight += _rom.votesAtDate(acct, baseDate);
+        
+        uint64 w = _rom.votesAtDate(acct, baseDate);
+        if (w > 0) info.weight += w;
+        else info.emptyHead ++;
+    }
+
+    function getLeavesHeadOfDirectors(Map storage map, uint256 acct, IBookOfDirectors _bod) 
+        public view returns (uint32 head) 
+    {
+        uint40[] memory leaves = map.voters[acct].principals;
+        uint256 len = leaves.length;
+        while (len > 0) {
+            head += getLeavesHeadOfDirectors(map, leaves[len-1], _bod);
+            len--;
+        }
+
+        if (_bod.isDirector(acct)) head++;
     }
 }

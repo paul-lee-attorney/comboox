@@ -31,7 +31,7 @@ library FilesRepo {
         uint16 closingDays;
         uint16 seqOfVR;
         uint8 shaExecDays;
-        uint8 reviewDays;
+        uint8 shaConfirmDays;
         uint48 proposeDate;
         uint8 reconsiderDays;
         uint8 votePrepareDays;
@@ -110,7 +110,7 @@ library FilesRepo {
 
         require(signingDays > 0, "FR.CF: zero signingDays");
 
-        require(closingDays >= signingDays + vr.shaExecDays + vr.reviewDays + 
+        require(closingDays >= signingDays + vr.shaExecDays + vr.shaConfirmDays + 
                 vr.reconsiderDays + vr.votingDays,
             "FR.CF: insufficient closingDays");
 
@@ -122,7 +122,7 @@ library FilesRepo {
             closingDays: closingDays,
             seqOfVR: vr.seqOfRule,
             shaExecDays: vr.shaExecDays,
-            reviewDays: vr.reviewDays,
+            shaConfirmDays: vr.shaConfirmDays,
             proposeDate: 0,
             reconsiderDays: vr.reconsiderDays,
             votePrepareDays: vr.votePrepareDays,
@@ -139,7 +139,7 @@ library FilesRepo {
         // file.head.closingDeadline = timestamp + uint48(closingDays) * 86400;
 
         // file.head.shaExecDeadline = file.head.signingDeadline + uint48(vr.shaExecDays) * 86400;
-        // file.head.proposeDeadline = file.head.shaExecDeadline + uint48(vr.reviewDays) * 86400;
+        // file.head.proposeDeadline = file.head.shaExecDeadline + uint48(vr.shaConfirmDays) * 86400;
 
         // file.head.state = uint8(StateOfFile.Circulated);
 
@@ -304,7 +304,7 @@ library FilesRepo {
         File storage file = repo.files[body];
         
         return file.head.circulateDate + (uint48(file.head.signingDays) + 
-            uint48(file.head.shaExecDays) + uint48(file.head.reviewDays)) * 86400;
+            uint48(file.head.shaExecDays) + uint48(file.head.shaConfirmDays)) * 86400;
     }
 
     function votingDeadline(Repo storage repo, address body) 

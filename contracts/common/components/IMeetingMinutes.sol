@@ -20,7 +20,9 @@ interface IMeetingMinutes {
 
     event ProposeMotion(uint256 indexed seqOfMotion, uint256 indexed proposer);
 
-    event EntrustDelegate(uint256 indexed seqOfMotion, uint256 indexed delegate, uint256 indexed principal, uint weight);
+    event ProposeMotionToBoard(uint256 indexed seqOfMotion, uint256 indexed proposer);
+
+    event EntrustDelegate(uint256 indexed seqOfMotion, uint256 indexed delegate, uint256 indexed principal);
 
     event CastVote(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);    
 
@@ -46,7 +48,7 @@ interface IMeetingMinutes {
         uint nominator
     ) external returns(uint64);
 
-    function proposeToRemoveOfficer(
+    function createMotionToRemoveOfficer(
         uint256 seqOfPos,
         uint seqOfVR,
         uint nominator    
@@ -59,7 +61,7 @@ interface IMeetingMinutes {
         uint proposer    
     ) external returns(uint64);
 
-    function proposeAction(
+    function createAction(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -69,16 +71,20 @@ interface IMeetingMinutes {
         uint proposer
     ) external returns(uint64);
 
-    function proposeMotion(
+    function proposeMotionToGM(
         uint256 seqOfMotion,
         uint proposer
+    ) external;
+
+    function proposeMotionToBoard (
+        uint seqOfMotion,
+        uint caller
     ) external;
 
     function entrustDelegate(
         uint256 seqOfMotion,
         uint delegate, 
-        uint principal,
-        uint weight
+        uint principal
     ) external;
 
     // ==== Vote ====
@@ -137,7 +143,13 @@ interface IMeetingMinutes {
         uint caller,
         uint baseDate, 
         IRegisterOfMembers _rom 
-    ) external view returns(uint64 weight);
+    ) external view returns(DelegateMap.LeavesInfo memory info);
+
+    function getLeavesHeadOfDirectors(
+        uint256 seqOfMotion, 
+        uint caller,
+        IBookOfDirectors _bod 
+    ) external view returns(uint32 head);
 
     // ==== motion ====
 

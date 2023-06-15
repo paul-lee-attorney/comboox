@@ -27,6 +27,8 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     event RemoveOfficer(uint256 indexed seqOfMotion, uint256 indexed seqOfPos, uint256 target, uint256 indexed caller);
 
+    // event ProposeMotionToBoard(uint256 indexed seqOfMotion, uint256 indexed caller);
+
     // event ExecAction(uint256 indexed contents, bool success);
 
     //##################

@@ -81,7 +81,7 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
                 RulesParser.SHA_INIT_VR.votingRuleParser() :
                 _gk.getSHA().getRule(8).votingRuleParser();
         
-        ISigPage(sha).setTiming(false, signingDays + vr.shaExecDays + vr.reviewDays, closingDays);
+        ISigPage(sha).setTiming(false, signingDays + vr.shaExecDays + vr.shaConfirmDays, closingDays);
 
         _gk.getBOH().circulateFile(sha, signingDays, closingDays, vr, docUrl, docHash);
     }
@@ -214,34 +214,6 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
             i++;
         }        
     }
-
-    // function _allMembersSigned(address sha) private view returns (bool) {
-    //     uint256[] memory members = _gk.getROM().membersList();
-    //     uint256 len = members.length;
-    //     while (len > 0) {            
-    //         if (!ISigPage(sha).isParty(members[len - 1]))
-    //             return false;
-    //         len--;
-    //     }
-    //     return true;
-    // }
-
-    // function _reachedEffectiveThreshold(address sha) private view returns (bool) {
-    //     uint256[] memory parties = ISigPage(sha).getParties();
-    //     uint256 len = parties.length;
-        
-    //     RulesParser.GovernanceRule memory gr = _gk.getSHA().getRule(0).governanceRuleParser();
-
-    //     uint64 threashold = uint64(gr.shaEffectiveRatio) * _gk.getROM().totalVotes() / 10000;
-        
-    //     uint64 supportWeight;        
-    //     while (len > 0) {
-    //         supportWeight += _gk.getROM().votesInHand(parties[len-1]);
-    //         if (supportWeight > threashold) return true;
-    //         len --;
-    //     }
-    //     return false;
-    // }
 
     function acceptSHA(bytes32 sigHash, uint256 caller) external onlyDirectKeeper {
         address sha = address(_gk.getSHA());

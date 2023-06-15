@@ -46,7 +46,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         return addMotion(head, seqOfPos);
     }
 
-    function proposeToRemoveOfficer(
+    function createMotionToRemoveOfficer(
         uint256 seqOfPos,
         uint seqOfVR,
         uint nominator    
@@ -77,7 +77,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         return addMotion(head, uint256(uint160(doc)));
     }
 
-    function proposeAction(
+    function createAction(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -119,15 +119,23 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             );
     }
 
-    function proposeMotion(
+    function proposeMotionToGM(
         uint256 seqOfMotion,
         uint proposer
     ) public onlyDirectKeeper {
         // MotionsRepo.Motion memory m = _repo.motions[seqOfMotion];
         // RulesParser.VotingRule memory rule = 
             // _gk.getSHA().getRule(m.head.seqOfVR).votingRuleParser();
-        _repo.proposeMotion(seqOfMotion, _gk.getSHA(), proposer);
+        _repo.proposeMotionToGM(seqOfMotion, _gk.getSHA(), _gk.getROM(), _gk.getBOD(), proposer);
         emit ProposeMotion(seqOfMotion, proposer);
+    }
+
+    function proposeMotionToBoard (
+        uint seqOfMotion,
+        uint caller
+    ) external onlyDirectKeeper {
+        _repo.proposeMotionToBoard(seqOfMotion, _gk.getSHA(), _gk.getBOD(), caller);
+        emit ProposeMotionToBoard(seqOfMotion, caller);
     }
 
     // ==== delegate ====
@@ -135,11 +143,10 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function entrustDelegate(
         uint256 seqOfMotion,
         uint delegate, 
-        uint principal,
-        uint weight
+        uint principal
     ) external onlyDirectKeeper {
-        _repo.entrustDelegate(seqOfMotion, delegate, principal, weight);
-        emit EntrustDelegate(seqOfMotion, delegate, principal, weight);
+        _repo.entrustDelegate(seqOfMotion, delegate, principal, _gk.getROM(), _gk.getBOD());
+        emit EntrustDelegate(seqOfMotion, delegate, principal);
     }
 
     // ==== Vote ====
@@ -151,8 +158,8 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         IRegisterOfMembers _rom,
         uint256 caller
     ) external onlyDirectKeeper {
-        if (_repo.castVote(seqOfMotion, caller, attitude, sigHash, _rom))
-            emit CastVote(seqOfMotion, caller, attitude, sigHash);    
+        _repo.castVote(seqOfMotion, caller, attitude, sigHash, _rom);
+        emit CastVote(seqOfMotion, caller, attitude, sigHash);    
     }
 
     // ==== UpdateVoteResult ====
@@ -253,9 +260,18 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller,
         uint baseDate, 
         IRegisterOfMembers _rom 
-    ) external view returns(uint64 weight)
+    ) external view returns(DelegateMap.LeavesInfo memory info)
     {
-        weight = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _rom);
+        info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _rom);
+    }
+
+    function getLeavesHeadOfDirectors(
+        uint256 seqOfMotion, 
+        uint caller,
+        IBookOfDirectors _bod 
+    ) external view returns(uint32 head)
+    {
+        head = _repo.getLeavesHeadOfDirectors(seqOfMotion, caller, _bod);
     }
 
     // ==== motion ====

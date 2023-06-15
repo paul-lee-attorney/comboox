@@ -20,7 +20,7 @@ interface IBODKeeper {
         uint nominator
     ) external;
 
-    function proposeToRemoveOfficer(
+    function createMotionToRemoveOfficer(
         uint256 seqOfPos,
         uint nominator
     ) external;
@@ -36,7 +36,7 @@ interface IBODKeeper {
 
     // ---- Actions ----
 
-    function proposeAction(
+    function createAction(
         uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
@@ -51,6 +51,11 @@ interface IBODKeeper {
     function entrustDelegate(
         uint256 seqOfMotion,
         uint delegate,
+        uint caller
+    ) external;
+
+    function proposeMotionToBoard (
+        uint seqOfMotion,
         uint caller
     ) external;
 

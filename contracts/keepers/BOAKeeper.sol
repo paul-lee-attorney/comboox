@@ -78,7 +78,7 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
         RulesParser.VotingRule memory vr = 
             _gk.getSHA().getRule(typeOfIA).votingRuleParser();
 
-        ISigPage(ia).setTiming(false, signingDays + vr.shaExecDays + vr.reviewDays, closingDays);
+        ISigPage(ia).setTiming(false, signingDays + vr.shaExecDays + vr.shaConfirmDays, closingDays);
 
         _gk.getBOA().circulateFile(ia, signingDays, closingDays, vr, docUrl, docHash);
     }
