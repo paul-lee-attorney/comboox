@@ -51,12 +51,14 @@ library DelegateMap {
 
             p.delegate = uint40(delegate);
             p.weight = uint64(weight);
-            p.repWeight += uint64(weight);
-            p.repHead ++;
+            // p.repWeight += uint64(weight);
+            // p.repHead ++;
 
-            d.repHead += p.repHead;
-            d.repWeight += p.repWeight;
-           
+            d.repHead += (p.repHead + 1);
+            d.repWeight += (p.repWeight + p.weight);
+            // d.repHead += p.repHead;
+            // d.repWeight += p.repWeight;
+
             d.principals.push(uint40(principal));
 
             flag = true;
@@ -81,7 +83,9 @@ library DelegateMap {
     function getLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IRegisterOfMembers _rom)
         public view returns(LeavesInfo memory info)
     {
-        uint40[] memory leaves = map.voters[acct].principals;
+        Voter memory voter = map.voters[acct];
+
+        uint40[] memory leaves = voter.principals;
         uint256 len = leaves.length;
         while (len > 0) {
             LeavesInfo memory lv = getLeavesWeightAtDate(map, leaves[len-1], baseDate, _rom);
@@ -90,18 +94,20 @@ library DelegateMap {
             len--;
         }
         
-        uint64 w = _rom.votesAtDate(acct, baseDate);
-        if (w > 0) info.weight += w;
-        else info.emptyHead ++;
+        if (voter.weight == 0) {
+            uint64 w = _rom.votesAtDate(acct, baseDate);
+            if (w > 0) info.weight += w;
+            else info.emptyHead ++;
+        }
     }
 
-    function getLeavesHeadOfDirectors(Map storage map, uint256 acct, IBookOfDirectors _bod) 
+    function getLeavesHeadcountOfDirectors(Map storage map, uint256 acct, IBookOfDirectors _bod) 
         public view returns (uint32 head) 
     {
         uint40[] memory leaves = map.voters[acct].principals;
         uint256 len = leaves.length;
         while (len > 0) {
-            head += getLeavesHeadOfDirectors(map, leaves[len-1], _bod);
+            head += getLeavesHeadcountOfDirectors(map, leaves[len-1], _bod);
             len--;
         }
 

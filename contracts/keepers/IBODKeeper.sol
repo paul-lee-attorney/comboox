@@ -27,7 +27,7 @@ interface IBODKeeper {
 
     // ---- Docs ----
 
-    function proposeDoc(
+    function createMotionToApproveDoc(
         address doc,
         uint seqOfVR,
         uint executor,
@@ -48,7 +48,7 @@ interface IBODKeeper {
 
     // ==== Cast Vote ====
 
-    function entrustDelegate(
+    function entrustDelegateForBoardMeeting(
         uint256 seqOfMotion,
         uint delegate,
         uint caller

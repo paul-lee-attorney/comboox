@@ -53,9 +53,9 @@ interface IBOGKeeper {
         uint proposer
     ) external;
 
-    function entrustDelegateOfMember(uint256 motionId, uint delegate, uint caller) external;
+    function entrustDelegateForGeneralMeeting(uint256 motionId, uint delegate, uint caller) external;
 
-    function proposeMotionToGM(uint256 seqOfMotion,uint caller) external;
+    function proposeMotionToGeneralMeeting(uint256 seqOfMotion,uint caller) external;
 
     function castVoteOfGM(
         uint256 seqOfMotion,

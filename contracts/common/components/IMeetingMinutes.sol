@@ -18,19 +18,19 @@ interface IMeetingMinutes {
 
     event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
 
-    event ProposeMotion(uint256 indexed seqOfMotion, uint256 indexed proposer);
+    event ProposeMotionToGeneralMeeting(uint256 indexed seqOfMotion, uint256 indexed proposer);
 
     event ProposeMotionToBoard(uint256 indexed seqOfMotion, uint256 indexed proposer);
 
     event EntrustDelegate(uint256 indexed seqOfMotion, uint256 indexed delegate, uint256 indexed principal);
 
-    event CastVote(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);    
+    event CastVoteInGeneralMeeting(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);    
+
+    event CastVoteInBoardMeeting(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);    
 
     event VoteCounting(uint256 indexed seqOfMotion, uint8 indexed result);            
 
     event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
-
-    // event ExecAction(uint256 indexed contents, bool result);
 
     //#################
     //##    写接口    ##
@@ -54,7 +54,7 @@ interface IMeetingMinutes {
         uint nominator    
     ) external returns(uint64);
 
-    function proposeDoc(
+    function createMotionToApproveDoc(
         address doc,
         uint seqOfVR,
         uint executor,
@@ -71,7 +71,7 @@ interface IMeetingMinutes {
         uint proposer
     ) external returns(uint64);
 
-    function proposeMotionToGM(
+    function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint proposer
     ) external;
@@ -89,11 +89,17 @@ interface IMeetingMinutes {
 
     // ==== Vote ====
 
-    function castVote(
+    function castVoteInGeneralMeeting(
         uint256 seqOfMotion,
         uint attitude,
         bytes32 sigHash,
-        IRegisterOfMembers _rom,
+        uint256 caller
+    ) external;
+
+    function castVoteInBoardMeeting(
+        uint256 seqOfMotion,
+        uint attitude,
+        bytes32 sigHash,
         uint256 caller
     ) external;
 
@@ -145,7 +151,7 @@ interface IMeetingMinutes {
         IRegisterOfMembers _rom 
     ) external view returns(DelegateMap.LeavesInfo memory info);
 
-    function getLeavesHeadOfDirectors(
+    function getLeavesHeadcountOfDirectors(
         uint256 seqOfMotion, 
         uint caller,
         IBookOfDirectors _bod 

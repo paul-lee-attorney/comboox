@@ -69,13 +69,13 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     // ---- Docs ----
 
-    function proposeDoc(
+    function createMotionToApproveDoc(
         address doc,
         uint seqOfVR,
         uint executor,
         uint proposer
     ) external onlyDirectKeeper directorExist(proposer) {
-        _gk.getBOD().proposeDoc(doc, seqOfVR, executor, proposer);
+        _gk.getBOD().createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
         // _bod.proposeMotion(seqOfMotion, proposer);
     }
 
@@ -103,7 +103,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     // ==== Cast Vote ====
 
-    function entrustDelegate(
+    function entrustDelegateForBoardMeeting(
         uint256 seqOfMotion,
         uint delegate,
         uint caller
@@ -124,9 +124,9 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint attitude,
         bytes32 sigHash,
         uint256 caller
-    ) external onlyDirectKeeper directorExist(caller) {
+    ) external onlyDirectKeeper {
         _avoidanceCheck(seqOfMotion, caller);
-        _gk.getBOD().castVote(seqOfMotion, attitude, sigHash, _gk.getROM(), caller);
+        _gk.getBOD().castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
     function _avoidanceCheck(uint256 seqOfMotion, uint256 caller) private view {

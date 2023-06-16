@@ -131,8 +131,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBODKeeper(_keepers[2]).createMotionToRemoveOfficer(seqOfPos, _msgSender());
     }
 
-    function proposeDoc(address doc, uint seqOfVR, uint executor) external {
-        IBODKeeper(_keepers[2]).proposeDoc(doc, seqOfVR, executor, _msgSender());
+    function createMotionToApproveDoc(address doc, uint seqOfVR, uint executor) external {
+        IBODKeeper(_keepers[2]).createMotionToApproveDoc(doc, seqOfVR, executor, _msgSender());
     }
 
     function createAction(
@@ -146,8 +146,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBODKeeper(_keepers[2]).createAction(seqOfVR, targets, values, params, desHash, executor, _msgSender());
     }
 
-    function entrustDelegate(uint256 seqOfMotion, uint delegate) external {
-        IBODKeeper(_keepers[2]).entrustDelegate(seqOfMotion, delegate, _msgSender());
+    function entrustDelegateForBoardMeeting(uint256 seqOfMotion, uint delegate) external {
+        IBODKeeper(_keepers[2]).entrustDelegateForBoardMeeting(seqOfMotion, delegate, _msgSender());
     }
 
     function proposeMotionToBoard (uint seqOfMotion) external {
@@ -235,12 +235,12 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         );
     }
 
-    function entrustDelegateOfMember(uint256 seqOfMotion, uint delegate) external {
-        IBOGKeeper(_keepers[3]).entrustDelegateOfMember(seqOfMotion, delegate, _msgSender());
+    function entrustDelegateForGeneralMeeting(uint256 seqOfMotion, uint delegate) external {
+        IBOGKeeper(_keepers[3]).entrustDelegateForGeneralMeeting(seqOfMotion, delegate, _msgSender());
     }
 
-    function proposeMotionToGM(uint256 seqOfMotion) external {
-        IBOGKeeper(_keepers[3]).proposeMotionToGM(seqOfMotion, _msgSender());
+    function proposeMotionToGeneralMeeting(uint256 seqOfMotion) external {
+        IBOGKeeper(_keepers[3]).proposeMotionToGeneralMeeting(seqOfMotion, _msgSender());
     }
 
     function castVoteOfGM(

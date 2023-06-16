@@ -76,12 +76,12 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         IBookOfGM _bog = _gk.getBOG();
 
         uint64 seqOfMotion = 
-            _bog.proposeDoc(doc, seqOfVR, executor, proposer);
+            _bog.createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
 
         if (seqOfVR < 9 && 
             ISigPage(doc).isSigner(proposer)
         ) { 
-            _bog.proposeMotionToGM(seqOfMotion, proposer);            
+            _bog.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
             seqOfVR == 8 ?
                 _gk.getBOH().proposeFile(doc, seqOfMotion) :
                 _gk.getBOA().proposeFile(doc, seqOfMotion);
@@ -110,7 +110,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     // ==== ProposeMotion ====
 
-    function entrustDelegateOfMember(
+    function entrustDelegateForGeneralMeeting(
         uint256 seqOfMotion,
         uint delegate,
         uint caller
@@ -119,11 +119,11 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         _gk.getBOG().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
-    function proposeMotionToGM(
+    function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint caller
     ) external onlyKeeper {
-        _gk.getBOG().proposeMotionToGM(seqOfMotion, caller);
+        _gk.getBOG().proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
 
     function castVoteOfGM(
@@ -131,9 +131,9 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         uint attitude,
         bytes32 sigHash,
         uint256 caller
-    ) external onlyDirectKeeper memberExist(caller) {
+    ) external onlyDirectKeeper {
         _avoidanceCheck(seqOfMotion, caller);
-        _gk.getBOG().castVote(seqOfMotion, attitude, sigHash, _gk.getROM(), caller);
+        _gk.getBOG().castVoteInGeneralMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
     function _avoidanceCheck(uint256 seqOfMotion, uint256 caller) private view {

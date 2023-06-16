@@ -173,12 +173,12 @@ library MotionsRepo {
             return repo.records[seqOfMotion].map.entrustDelegate(principal, delegate, weight);
         } else if (_bod.isDirector(delegate) && _bod.isDirector(principal)) {
             return repo.records[seqOfMotion].map.entrustDelegate(principal, delegate, 0);
-        } else revert ("MR.entrustDelegate: not Members or Directors");        
+        } else revert ("MR.entrustDelegate: not both Members or Directors");        
     }
 
     // ==== propose ====
 
-    function proposeMotionToGM(
+    function proposeMotionToGeneralMeeting(
         Repo storage repo,
         uint256 seqOfMotion,
         IShareholdersAgreement _sha,
@@ -197,7 +197,7 @@ library MotionsRepo {
             : _sha.getRule(0).governanceRuleParser();
 
         require(_memberProposalRightCheck(repo, seqOfMotion, gr, caller, _rom) ||
-            _directorProposalRightToGMCheck(repo, seqOfMotion, caller, gr, _bod),
+            _directorProposalRightCheck(repo, seqOfMotion, caller, gr.proposeHeadRatioOfDirectorsInGM, _bod),
             "MR.PMTGM: has no proposalRight");
 
         _proposeMotion(repo, seqOfMotion, _sha, caller);
@@ -267,20 +267,20 @@ library MotionsRepo {
         return false;
     }
 
-    function _directorProposalRightToGMCheck(
+    function _directorProposalRightCheck(
         Repo storage repo,
         uint seqOfMotion,
         uint caller,
-        RulesParser.GovernanceRule memory gr,
+        uint16 proposalThreshold,
         IBookOfDirectors _bod
     ) private view returns (bool) {
         if (!_bod.isDirector(caller)) return false;
 
         uint totalHead = _bod.getNumOfDirectors();
 
-        if (gr.proposeHeadRatioOfDirectorsInGM > 0 &&
-            repo.records[seqOfMotion].map.getLeavesHeadOfDirectors(caller, _bod) * 10000 / totalHead >=
-                gr.proposeHeadRatioOfDirectorsInGM)
+        if (proposalThreshold > 0 &&
+            repo.records[seqOfMotion].map.getLeavesHeadcountOfDirectors(caller, _bod) * 10000 / totalHead >=
+                proposalThreshold)
                     return true;
 
         return false;
@@ -306,35 +306,20 @@ library MotionsRepo {
         RulesParser.GovernanceRule memory gr = 
             _sha.getRule(0).governanceRuleParser();
 
-        require(_directorProposalRightToBoardCheck(repo, seqOfMotion, caller, gr, _bod),
+        require(
+            _directorProposalRightCheck(
+                repo, seqOfMotion, caller, 
+                gr.proposeHeadRatioOfDirectorsInBoard, 
+                _bod
+            ),
             "MR.PMTB: has no proposalRight");
 
         _proposeMotion(repo, seqOfMotion, _sha, caller);
     } 
 
-    function _directorProposalRightToBoardCheck(
-        Repo storage repo,
-        uint seqOfMotion,
-        uint caller,
-        RulesParser.GovernanceRule memory gr,
-        IBookOfDirectors _bod
-    ) private view returns (bool) {
-        if (!_bod.isDirector(caller)) return false;
-
-        uint totalHead = _bod.getNumOfDirectors();
-
-        if (gr.proposeHeadRatioOfDirectorsInBoard > 0 &&
-            repo.records[seqOfMotion].map.getLeavesHeadOfDirectors(caller, _bod) * 10000 / totalHead >=
-                gr.proposeHeadRatioOfDirectorsInBoard)
-                    return true;
-
-        return false;
-    } 
-
-
     // ==== vote ====
 
-    function castVote(
+    function castVoteInGeneralMeeting(
         Repo storage repo,
         uint256 seqOfMotion,
         uint256 acct,
@@ -343,32 +328,69 @@ library MotionsRepo {
         IRegisterOfMembers _rom
     ) public {
 
-        require(seqOfMotion > 0, "MR.CV: zero seqOfMotion");
-        require(acct > 0, "MR.CV: zero acct");
+        require(_rom.isMember(acct), "MR.castVoteInGM: not Member");
 
         Motion storage m = repo.motions[seqOfMotion];
         Record storage r = repo.records[seqOfMotion];
         DelegateMap.Voter storage voter = r.map.voters[acct];
 
-        require(voteStarted(repo, seqOfMotion), "MR.castVote: vote not started");
-        require(!voteEnded(repo, seqOfMotion), "MR.castVote: vote is Ended");
-        require(voter.delegate == 0, "MR.castVote: entrusted delegate");
+        uint32 headcount = 1;
+        uint64 weight = _rom.votesAtDate(acct, m.body.shareRegDate);
 
-        if (voter.repHead > 0)
-        {
-            DelegateMap.LeavesInfo memory info = r.map.getLeavesWeightAtDate(acct, m.body.shareRegDate, _rom);
-            voter.repWeight = info.weight;
-            voter.repHead++;
-            voter.repHead -= info.emptyHead;
-        } else {
-            voter.repWeight +=
-            _rom.votesAtDate(acct, m.body.shareRegDate);
-            voter.repHead++;
+        if (voter.repHead > 0) {
+            DelegateMap.LeavesInfo memory info = 
+                r.map.getLeavesWeightAtDate(acct, m.body.shareRegDate, _rom);
+
+            weight = voter.repWeight + info.weight;
+            headcount = voter.repHead + 1 - info.emptyHead;
         }
 
-        r.box.castVote(acct, attitude, voter.repHead, voter.repWeight, sigHash);
-
+        _castVote(repo, seqOfMotion, acct, attitude, headcount, weight, sigHash);
     }
+
+    function castVoteInBoardMeeting(
+        Repo storage repo,
+        uint256 seqOfMotion,
+        uint256 acct,
+        uint attitude,
+        bytes32 sigHash,
+        IBookOfDirectors _bod
+    ) public {
+        require(_bod.isDirector(acct), "MR.CVBM: not Director");
+
+        Record storage r = repo.records[seqOfMotion];
+
+        DelegateMap.Voter storage voter = r.map.voters[acct];
+
+        uint32 headCount = 1;
+        if (voter.repHead > 0) {
+            headCount = r.map.getLeavesHeadcountOfDirectors(acct, _bod);
+        }
+
+        r.box.castVote(acct, attitude, headCount, 0, sigHash);
+    }
+
+    function _castVote(
+        Repo storage repo,
+        uint256 seqOfMotion,
+        uint256 acct,
+        uint attitude,
+        uint headcount,
+        uint weight,
+        bytes32 sigHash
+    ) private {
+        require(seqOfMotion > 0, "MR.CV: zero seqOfMotion");
+        require(voteStarted(repo, seqOfMotion), "MR.CV: vote not started");
+        require(!voteEnded(repo, seqOfMotion), "MR.CV: vote is Ended");
+
+        Record storage r = repo.records[seqOfMotion];
+
+        require(r.map.voters[acct].delegate == 0, 
+            "MR.CV: entrusted delegate");
+
+        r.box.castVote(acct, attitude, headcount, weight, sigHash);
+    }
+
 
     // ==== counting ====
 
@@ -466,7 +488,7 @@ library MotionsRepo {
         public view returns (bool)
     {
         return isProposed(repo, seqOfMotion) && 
-            repo.motions[seqOfMotion].body.voteEndDate < block.timestamp;
+            repo.motions[seqOfMotion].body.voteEndDate <= block.timestamp;
     }
 
     // ==== Delegate ====
@@ -494,14 +516,14 @@ library MotionsRepo {
         info = repo.records[seqOfMotion].map.getLeavesWeightAtDate(acct, baseDate, _rom);
     }
 
-    function getLeavesHeadOfDirectors(
+    function getLeavesHeadcountOfDirectors(
         Repo storage repo, 
         uint256 seqOfMotion, 
         uint acct,
         IBookOfDirectors _bod
     ) public view returns(uint32 head)
     {
-        head = repo.records[seqOfMotion].map.getLeavesHeadOfDirectors(acct, _bod);
+        head = repo.records[seqOfMotion].map.getLeavesHeadcountOfDirectors(acct, _bod);
     }
 
 

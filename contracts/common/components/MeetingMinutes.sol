@@ -61,7 +61,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         return addMotion(head, seqOfPos);
     }
 
-    function proposeDoc(
+    function createMotionToApproveDoc(
         address doc,
         uint seqOfVR,
         uint executor,
@@ -119,15 +119,12 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             );
     }
 
-    function proposeMotionToGM(
+    function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint proposer
     ) public onlyDirectKeeper {
-        // MotionsRepo.Motion memory m = _repo.motions[seqOfMotion];
-        // RulesParser.VotingRule memory rule = 
-            // _gk.getSHA().getRule(m.head.seqOfVR).votingRuleParser();
-        _repo.proposeMotionToGM(seqOfMotion, _gk.getSHA(), _gk.getROM(), _gk.getBOD(), proposer);
-        emit ProposeMotion(seqOfMotion, proposer);
+        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _gk.getROM(), _gk.getBOD(), proposer);
+        emit ProposeMotionToGeneralMeeting(seqOfMotion, proposer);
     }
 
     function proposeMotionToBoard (
@@ -151,15 +148,24 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     // ==== Vote ====
 
-    function castVote(
+    function castVoteInGeneralMeeting(
         uint256 seqOfMotion,
         uint attitude,
         bytes32 sigHash,
-        IRegisterOfMembers _rom,
         uint256 caller
     ) external onlyDirectKeeper {
-        _repo.castVote(seqOfMotion, caller, attitude, sigHash, _rom);
-        emit CastVote(seqOfMotion, caller, attitude, sigHash);    
+        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROM());
+        emit CastVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash);
+    }
+
+    function castVoteInBoardMeeting(
+        uint256 seqOfMotion,
+        uint attitude,
+        bytes32 sigHash,
+        uint256 caller
+    ) external onlyDirectKeeper {
+        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getBOD());
+        emit CastVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
     // ==== UpdateVoteResult ====
@@ -265,13 +271,13 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _rom);
     }
 
-    function getLeavesHeadOfDirectors(
+    function getLeavesHeadcountOfDirectors(
         uint256 seqOfMotion, 
         uint caller,
         IBookOfDirectors _bod 
     ) external view returns(uint32 head)
     {
-        head = _repo.getLeavesHeadOfDirectors(seqOfMotion, caller, _bod);
+        head = _repo.getLeavesHeadcountOfDirectors(seqOfMotion, caller, _bod);
     }
 
     // ==== motion ====
