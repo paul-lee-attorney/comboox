@@ -319,7 +319,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         return _repo.isPassed(seqOfMotion);
     }
 
-    // ==== SnList ====
+    // ==== SeqList ====
 
     function getSeqList() external view returns (uint[] memory) {
         return _repo.getSeqList();

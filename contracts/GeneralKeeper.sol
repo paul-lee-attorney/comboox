@@ -146,8 +146,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBODKeeper(_keepers[2]).createAction(seqOfVR, targets, values, params, desHash, executor, _msgSender());
     }
 
-    function entrustDelegateForBoardMeeting(uint256 seqOfMotion, uint delegate) external {
-        IBODKeeper(_keepers[2]).entrustDelegateForBoardMeeting(seqOfMotion, delegate, _msgSender());
+    function entrustDelegaterForBoardMeeting(uint256 seqOfMotion, uint delegate) external {
+        IBODKeeper(_keepers[2]).entrustDelegaterForBoardMeeting(seqOfMotion, delegate, _msgSender());
     }
 
     function proposeMotionToBoard (uint seqOfMotion) external {
@@ -235,8 +235,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         );
     }
 
-    function entrustDelegateForGeneralMeeting(uint256 seqOfMotion, uint delegate) external {
-        IBOGKeeper(_keepers[3]).entrustDelegateForGeneralMeeting(seqOfMotion, delegate, _msgSender());
+    function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external {
+        IBOGKeeper(_keepers[3]).entrustDelegaterForGeneralMeeting(seqOfMotion, delegate, _msgSender());
     }
 
     function proposeMotionToGeneralMeeting(uint256 seqOfMotion) external {

@@ -85,9 +85,9 @@ contract SigPage is ISigPage, AccessControl {
     function established() external view
         returns (bool flag) 
     {
-        flag =  _sigPages[1].buyers.length() > 0 ?
-                    _sigPages[1].established() && _sigPages[0].established() :
-                    _sigPages[0].established();
+        flag =  _sigPages[1].buyers.length() > 0 
+                ? _sigPages[1].established() && _sigPages[0].established() 
+                : _sigPages[0].established();
     }
 
     function getCirculateDate() external view returns(uint48) {

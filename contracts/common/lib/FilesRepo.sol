@@ -41,15 +41,6 @@ library FilesRepo {
         uint8 state;
     }
 
-    // struct Head {
-    //     uint48 signingDeadline;
-    //     uint48 shaExecDeadline;
-    //     uint48 proposeDeadline;
-    //     uint48 votingDeadline;
-    //     uint48 closingDeadline;
-    //     uint8 state;        
-    // }
-
     struct Ref {
         bytes32 docUrl;
         bytes32 docHash;

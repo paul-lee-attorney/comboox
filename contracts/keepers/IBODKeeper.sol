@@ -48,7 +48,7 @@ interface IBODKeeper {
 
     // ==== Cast Vote ====
 
-    function entrustDelegateForBoardMeeting(
+    function entrustDelegaterForBoardMeeting(
         uint256 seqOfMotion,
         uint delegate,
         uint caller

@@ -10,21 +10,11 @@ pragma solidity ^0.8.8;
 import "../books/boa/IInvestmentAgreement.sol";
 
 import "../common/lib/MotionsRepo.sol";
-import "../common/lib/RulesParser.sol";
-import "../common/lib/SharesRepo.sol";
 import "../common/lib/OfficersRepo.sol";
 
-import "../common/components/IFilesFolder.sol";
 import "../common/components/ISigPage.sol";
 
 interface IBOGKeeper {
-    // #####################
-    // ##   CorpSetting   ##
-    // #####################
-
-    // function createCorpSeal(uint info) external;
-
-    // function createBoardSeal(address board) external;
 
     // ################
     // ##   Motion   ##
@@ -53,7 +43,7 @@ interface IBOGKeeper {
         uint proposer
     ) external;
 
-    function entrustDelegateForGeneralMeeting(uint256 motionId, uint delegate, uint caller) external;
+    function entrustDelegaterForGeneralMeeting(uint256 motionId, uint delegate, uint caller) external;
 
     function proposeMotionToGeneralMeeting(uint256 seqOfMotion,uint caller) external;
 

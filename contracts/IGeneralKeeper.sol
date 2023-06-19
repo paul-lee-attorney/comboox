@@ -112,7 +112,7 @@ interface IGeneralKeeper {
         uint executor
     ) external;
 
-    function entrustDelegateForBoardMeeting(uint256 seqOfMotion, uint delegate) external;
+    function entrustDelegaterForBoardMeeting(uint256 seqOfMotion, uint delegate) external;
 
     function proposeMotionToBoard (uint seqOfMotion) external;
 
@@ -154,7 +154,7 @@ interface IGeneralKeeper {
         uint executor
     ) external;
 
-    function entrustDelegateForGeneralMeeting(uint256 seqOfMotion, uint delegate) external;
+    function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external;
 
     function proposeMotionToGeneralMeeting(uint256 seqOfMotion) external;
 

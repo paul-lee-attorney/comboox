@@ -149,6 +149,7 @@ async function main() {
 	let booKeeper = await deployTool(signers[0], "BOOKeeper", libraries);
 	let bosKeeper = await deployTool(signers[0], "BOSKeeper", libraries);
 	let romKeeper = await deployTool(signers[0], "ROMKeeper", libraries);
+	let bogKeeper = await deployTool(signers[0], "BOGKeeper", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -160,7 +161,6 @@ async function main() {
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
-	let bogKeeper = await deployTool(signers[0], "BOGKeeper", libraries);
 	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries);
 
 	libraries = {

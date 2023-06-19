@@ -12,7 +12,6 @@ import "./IBOGKeeper.sol";
 import "../common/access/AccessControl.sol";
 
 contract BOGKeeper is IBOGKeeper, AccessControl {
-    using RulesParser for bytes32;
 
     modifier memberExist(uint256 acct) {
         require(_gk.getROM().isMember(acct), 
@@ -110,7 +109,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     // ==== ProposeMotion ====
 
-    function entrustDelegateForGeneralMeeting(
+    function entrustDelegaterForGeneralMeeting(
         uint256 seqOfMotion,
         uint delegate,
         uint caller
@@ -209,11 +208,15 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
         bool approved = _bog.voteCounting(seqOfMotion, base) == 
             uint8(MotionsRepo.StateOfMotion.Passed);
-        address doc = address(uint160(motion.contents));
 
-        motion.head.seqOfVR == 8 ?
-            _gk.getBOH().voteCountingForFile(doc, approved) :
-            _gk.getBOA().voteCountingForFile(doc, approved);
+        if (motion.head.seqOfVR < 9) {
+
+            address doc = address(uint160(motion.contents));
+
+            if (motion.head.seqOfVR == 8)
+                _gk.getBOH().voteCountingForFile(doc, approved);
+            else _gk.getBOA().voteCountingForFile(doc, approved);
+        }
     }
 
     // ==== execute ====

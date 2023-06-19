@@ -186,10 +186,6 @@ library MotionsRepo {
         IBookOfDirectors _bod,
         uint caller
     ) public {
-        require(caller > 0, "MR.PMTGM: zero caller");
-
-        require(repo.records[seqOfMotion].map.voters[caller].delegate == 0,
-            "MR.PM: entrused delegate");
 
         RulesParser.GovernanceRule memory gr =
             address(_sha) == address(0)
@@ -210,6 +206,11 @@ library MotionsRepo {
         uint caller
     ) private {
 
+        require(caller > 0, "MR.PM: zero caller");
+
+        require(repo.records[seqOfMotion].map.voters[caller].delegate == 0,
+            "MR.PM: entrused delegate");
+
         Motion storage m = repo.motions[seqOfMotion];
         require(m.body.state == uint8(StateOfMotion.Created), 
             "MR.PM: wrong state");
@@ -226,7 +227,7 @@ library MotionsRepo {
             proposeDate: timestamp,
             shareRegDate: timestamp + uint48(vr.reconsiderDays) * 86400,
             voteStartDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votePrepareDays)) * 86400,
-            voteEndDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votingDays)) * 86400,
+            voteEndDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votePrepareDays) + uint48(vr.votingDays)) * 86400,
             para: 0,
             state: uint8(StateOfMotion.Proposed)
         });
@@ -293,15 +294,6 @@ library MotionsRepo {
         IBookOfDirectors _bod,
         uint caller
     ) public {
-
-        require(caller > 0, "MR.PMTB: zero caller");
-
-        require(repo.records[seqOfMotion].map.voters[caller].delegate == 0,
-            "MR.PMTB: entrused delegate");
-
-        Motion storage m = repo.motions[seqOfMotion];
-        require(m.body.state == uint8(StateOfMotion.Created), 
-            "MR.PMTB: wrong state");
 
         RulesParser.GovernanceRule memory gr = 
             _sha.getRule(0).governanceRuleParser();
