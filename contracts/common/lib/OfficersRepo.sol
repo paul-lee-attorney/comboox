@@ -176,11 +176,21 @@ library OfficersRepo {
         require(acct == pos.acct, 
             "OR.QP: not the officer");
 
-        require (block.timestamp <= pos.endDate,
-            "OR.QP: tenure expired");
+        flag = vacatePosition(repo, seqOfPos);
+    }
+
+    function vacatePosition (
+        Repo storage repo,
+        uint seqOfPos
+    ) public returns (bool flag)
+    {
+        Position storage pos = repo.positions[seqOfPos];
+
+        uint acct = pos.acct;
+        require (acct > 0, "OR.vacatePosition: empty pos");
 
         if (repo.posInHand[acct].remove(seqOfPos)) {
-            repo.positions[seqOfPos].acct = 0;
+            pos.acct = 0;
 
             if (repo.posInHand[acct].length() == 0) 
                 repo.officers.remove(acct);
@@ -189,7 +199,7 @@ library OfficersRepo {
                 repo.board.remove(acct);
 
             flag = true;
-        }
+        }        
     }
 
     //##################

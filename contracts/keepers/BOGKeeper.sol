@@ -240,7 +240,6 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     function removeDirector (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint director,
         uint caller
     ) external onlyDirectKeeper {
         IBookOfGM _bog = _gk.getBOG();
@@ -250,7 +249,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
             "BOGK.RD: not a suitable motion");
 
         _bog.execResolution(seqOfMotion, seqOfPos, caller);
-        _gk.getBOD().removeOfficer(seqOfMotion, seqOfPos, director, caller);        
+        _gk.getBOD().removeOfficer(seqOfMotion, seqOfPos, caller);        
     }
 
     function execActionOfGM(

@@ -65,7 +65,6 @@ interface IBOGKeeper {
     function removeDirector (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint target,
         uint caller
     ) external;
 

@@ -84,7 +84,6 @@ interface IBODKeeper {
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint target,
         uint caller
     ) external;
 

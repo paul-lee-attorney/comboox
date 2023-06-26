@@ -231,7 +231,6 @@ contract BODKeeper is IBODKeeper, AccessControl {
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint target,
         uint caller
     ) external onlyDirectKeeper {
         IBookOfDirectors _bod = _gk.getBOD();
@@ -241,7 +240,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
             "BODK.TO: not a suitable motion");
 
         _bod.execResolution(seqOfMotion, seqOfPos, caller);
-        _bod.removeOfficer(seqOfMotion, seqOfPos, target, caller);        
+        _bod.removeOfficer(seqOfMotion, seqOfPos, caller);        
     }
 
     function execAction(

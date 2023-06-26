@@ -53,12 +53,12 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos, 
-        uint target, 
+        // uint target, 
         uint caller
     ) external onlyDirectKeeper
     {
-        if (_repo.quitPosition(seqOfPos, target))
-            emit RemoveOfficer(seqOfMotion, seqOfPos, target, caller);
+        if (_repo.vacatePosition(seqOfPos))
+            emit RemoveOfficer(seqOfMotion, seqOfPos, caller);
     }
 
     //##################

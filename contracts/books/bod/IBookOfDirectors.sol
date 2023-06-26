@@ -25,7 +25,7 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     event QuitPosition(uint256 indexed seqOfPos, uint256 indexed caller);
 
-    event RemoveOfficer(uint256 indexed seqOfMotion, uint256 indexed seqOfPos, uint256 target, uint256 indexed caller);
+    event RemoveOfficer(uint256 indexed seqOfMotion, uint256 indexed seqOfPos, uint256 indexed caller);
 
     // event ProposeMotionToBoard(uint256 indexed seqOfMotion, uint256 indexed caller);
 
@@ -48,7 +48,6 @@ interface IBookOfDirectors is IMeetingMinutes{
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos, 
-        uint target, 
         uint caller
     ) external;
 

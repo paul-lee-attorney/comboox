@@ -124,7 +124,7 @@ interface IGeneralKeeper {
 
     function quitPosition(uint256 seqOfPos) external;
 
-    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos, uint officer) external;
+    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external;
 
     function execAction(
         uint typeOfAction,
@@ -170,8 +170,7 @@ interface IGeneralKeeper {
 
     function removeDirector (
         uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        uint director
+        uint256 seqOfPos
     ) external;
 
     function execActionOfGM(

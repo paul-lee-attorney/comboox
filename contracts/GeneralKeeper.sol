@@ -170,8 +170,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBODKeeper(_keepers[2]).quitPosition(seqOfPos, _msgSender());
     }
 
-    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos, uint officer) external {
-        IBODKeeper(_keepers[2]).removeOfficer(seqOfMotion, seqOfPos, officer, _msgSender());
+    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external {
+        IBODKeeper(_keepers[2]).removeOfficer(seqOfMotion, seqOfPos, _msgSender());
     }
 
     function execAction(
@@ -261,10 +261,9 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function removeDirector (
         uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        uint director
+        uint256 seqOfPos
     ) external {
-        IBOGKeeper(_keepers[3]).removeDirector(seqOfMotion, seqOfPos, director, _msgSender());        
+        IBOGKeeper(_keepers[3]).removeDirector(seqOfMotion, seqOfPos, _msgSender());        
     }
 
     function execActionOfGM(
