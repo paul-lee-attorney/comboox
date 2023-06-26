@@ -36,10 +36,10 @@ interface IMeetingMinutes {
     //##    写接口    ##
     //#################
 
-    function addMotion(
-        MotionsRepo.Head memory head,
-        uint256 contents
-    ) external returns (uint64);
+    // function addMotion(
+    //     MotionsRepo.Head memory head,
+    //     uint256 contents
+    // ) external returns (uint64);
 
     function nominateOfficer(
         uint256 seqOfPos,
@@ -105,7 +105,7 @@ interface IMeetingMinutes {
 
     // ==== UpdateVoteResult ====
 
-    function voteCounting(uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) 
+    function voteCounting(bool flag0, uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) 
         external returns(uint8);
 
     // ==== ExecResolution ====

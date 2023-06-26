@@ -21,29 +21,39 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     //##    Write     ##
     //##################
 
-    function addMotion(
-        MotionsRepo.Head memory head,
-        uint256 contents
-    ) public onlyDirectKeeper returns (uint64) {
+    function _addMotion(
+        uint typeOfMotion,
+        uint seqOfVR,
+        uint creator,
+        uint executor,
+        uint contents
+    ) private returns (uint64) {
+        MotionsRepo.Head memory head; 
+
+        head.typeOfMotion = uint8(typeOfMotion);
+        head.seqOfVR = uint16(seqOfVR);
+        head.creator = uint40(creator);
+        head.executor = uint40(executor);
+
         head = _repo.addMotion(head, contents);
         emit CreateMotion(MotionsRepo.codifyHead(head), contents);
         return head.seqOfMotion;
     }
 
     function nominateOfficer(
-        uint256 seqOfPos,
+        uint seqOfPos,
         uint seqOfVR,
         uint candidate,
         uint nominator    
     ) external onlyDirectKeeper returns(uint64) {
-        MotionsRepo.Head memory head;
 
-        head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.ElectOfficer);
-        head.seqOfVR = uint16(seqOfVR);
-        head.creator = uint40(nominator);
-        head.executor = uint40(candidate);
-
-        return addMotion(head, seqOfPos);
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.ElectOfficer),
+            seqOfVR,
+            nominator,
+            candidate, 
+            seqOfPos
+        );
     }
 
     function createMotionToRemoveOfficer(
@@ -51,14 +61,14 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint seqOfVR,
         uint nominator    
     ) external onlyDirectKeeper returns(uint64) {
-        MotionsRepo.Head memory head;
 
-        head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.RemoveOfficer);
-        head.seqOfVR = uint16(seqOfVR);
-        head.creator = uint40(nominator);
-        head.executor = uint40(nominator);
-
-        return addMotion(head, seqOfPos);
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.RemoveOfficer),
+            seqOfVR,
+            nominator,
+            nominator,
+            seqOfPos
+        );
     }
 
     function createMotionToApproveDoc(
@@ -67,14 +77,14 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint executor,
         uint proposer    
     ) external onlyDirectKeeper returns(uint64) {
-        MotionsRepo.Head memory head;
 
-        head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.ApproveDoc);
-        head.seqOfVR = uint16(seqOfVR);
-        head.creator = uint40(proposer);
-        head.executor = uint40(executor);
-
-        return addMotion(head, uint256(uint160(doc)));
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.ApproveDoc),
+            seqOfVR,
+            proposer,
+            executor,
+            uint256(uint160(doc))
+        );
     }
 
     function createAction(
@@ -86,12 +96,6 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDirectKeeper returns (uint64){
-        MotionsRepo.Head memory head;
-
-        head.typeOfMotion = uint8(MotionsRepo.TypeOfMotion.ApproveAction);
-        head.seqOfVR = uint16(seqOfVR);
-        head.creator = uint40(proposer);
-        head.executor = uint40(executor);
 
         uint256 contents = _hashAction(
             seqOfVR,
@@ -101,7 +105,13 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             desHash
         );
 
-        return addMotion(head, contents);
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.ApproveAction),
+            seqOfVR,
+            proposer,
+            executor,
+            contents
+        );
     }
 
     function _hashAction(
@@ -170,10 +180,10 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     // ==== UpdateVoteResult ====
 
-    function voteCounting(uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) 
+    function voteCounting(bool flag0, uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) 
         external onlyDirectKeeper returns(uint8 result)
-    {
-        result = _repo.voteCounting(seqOfMotion, base);
+    {            
+        result = _repo.voteCounting(flag0, seqOfMotion, base);
         emit VoteCounting(seqOfMotion, result);            
     }
 
@@ -212,22 +222,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         );
 
         execResolution(seqOfMotion, contents, caller);
-
-        // if (_execute(targets, values, params)) {
-        //     emit ExecAction(contents, true);
-        // } else emit ExecAction(contents, false);
     }
-
-    // function _execute(
-    //     address[] memory targets,
-    //     uint256[] memory values,
-    //     bytes[] memory params
-    // ) private returns (bool success) {
-    //     for (uint256 i = 0; i < targets.length; i++) {
-    //         (success, ) = targets[i].call{value: values[i]}(params[i]);
-    //         if (!success) return success;
-    //     }
-    // }
 
     //################
     //##    Read    ##

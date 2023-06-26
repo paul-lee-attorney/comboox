@@ -53,7 +53,6 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos, 
-        // uint target, 
         uint caller
     ) external onlyDirectKeeper
     {
@@ -85,11 +84,11 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         pos = _repo.getPosition(seqOfPos);
     }
 
-    function getFullPosInfo() external view 
-        returns(OfficersRepo.Position[] memory list) 
-    {
-        list = _repo.getFullPosInfo();
-    }
+    // function getFullPosInfo() external view 
+    //     returns(OfficersRepo.Position[] memory list) 
+    // {
+    //     list = _repo.getFullPosInfo();
+    // }
 
     // ==== Officers ====
 
@@ -119,9 +118,9 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         ls = _repo.getOffList();
     }
 
-    function getNumOfOfficers() external view returns (uint256 num) {
-        num = _repo.getNumOfOfficers();
-    }
+    // function getNumOfOfficers() external view returns (uint256 num) {
+    //     num = _repo.getNumOfOfficers();
+    // }
 
     // ==== Directors ====
 

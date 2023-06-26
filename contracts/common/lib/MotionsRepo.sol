@@ -72,10 +72,15 @@ library MotionsRepo {
     }
 
     struct VoteCalBase {
-        uint64 totalHead;
+        uint32 totalHead;
         uint64 totalWeight;
-        uint64 supportHead;
-        uint64 supportWeight;            
+        uint32 supportHead;
+        uint64 supportWeight;
+        uint16 attendHeadRatio;
+        uint16 attendWeightRatio;
+        uint16 para;
+        uint8 state;            
+        bool unaniConsent;
     }
 
     struct Repo {
@@ -388,6 +393,7 @@ library MotionsRepo {
 
     function voteCounting(
         Repo storage repo,
+        bool flag0,
         uint256 seqOfMotion,
         VoteCalBase memory base
     ) public returns (uint8) {
@@ -401,7 +407,7 @@ library MotionsRepo {
         bool flag1;
         bool flag2;
 
-        if (!_isVetoed(r, m.votingRule.vetoers[0]) &&
+        if (flag0 && !_isVetoed(r, m.votingRule.vetoers[0]) &&
             !_isVetoed(r, m.votingRule.vetoers[1])) {
             flag1 = m.votingRule.headRatio > 0
                 ? base.totalHead > 0
@@ -409,7 +415,9 @@ library MotionsRepo {
                         .sumOfHead + base.supportHead) * 10000) /
                         base.totalHead >
                         m.votingRule.headRatio
-                    : false
+                    : base.unaniConsent 
+                        ? true
+                        : false
                 : true;
 
             flag2 = m.votingRule.amountRatio > 0
@@ -418,15 +426,17 @@ library MotionsRepo {
                         .sumOfWeight + base.supportWeight) * 10000) /
                         base.totalWeight >
                         m.votingRule.amountRatio
-                    : false
+                    : base.unaniConsent
+                        ? true
+                        : false
                 : true;
         }
 
-        m.body.state = (flag1 && flag2) ? 
-            uint8(MotionsRepo.StateOfMotion.Passed) : 
-            m.votingRule.againstShallBuy ?
-                uint8(MotionsRepo.StateOfMotion.Rejected_ToBuy) :
-                uint8(MotionsRepo.StateOfMotion.Rejected_NotToBuy);
+        m.body.state = (flag0 && flag1 && flag2) 
+            ? uint8(MotionsRepo.StateOfMotion.Passed) 
+            : m.votingRule.againstShallBuy 
+                ? uint8(MotionsRepo.StateOfMotion.Rejected_ToBuy)
+                : uint8(MotionsRepo.StateOfMotion.Rejected_NotToBuy);
 
         return m.body.state;
     }

@@ -12,6 +12,7 @@ import "../common/access/AccessControl.sol";
 import "./IBODKeeper.sol";
 
 contract BODKeeper is IBODKeeper, AccessControl {
+    using RulesParser for bytes32;
 
     //##################
     //##   Modifier   ##
@@ -164,12 +165,17 @@ contract BODKeeper is IBODKeeper, AccessControl {
         MotionsRepo.VoteCalBase memory base;
         BallotsBox.Case memory case0 = _bod.getCaseOfAttitude(seqOfMotion, 0);
 
+        uint32 numOfDirectors = uint32(_bod.getNumOfDirectors());
+        base.attendHeadRatio = uint16(case0.sumOfHead * 10000 / numOfDirectors);
+
         if (motion.votingRule.onlyAttendance) {
             base.totalHead = _bod.getCaseOfAttitude(seqOfMotion, 0).sumOfHead;
         } else {
-            base.totalHead = uint64(_bod.getNumOfDirectors());
+            base.totalHead = numOfDirectors;
             if (motion.votingRule.impliedConsent) {
-                base.supportHead = (base.totalHead - case0.sumOfHead);                
+                base.supportHead = (base.totalHead - case0.sumOfHead);
+
+                base.attendHeadRatio = 10000;                
             }
 
             if (motion.head.typeOfMotion == 
@@ -180,19 +186,26 @@ contract BODKeeper is IBODKeeper, AccessControl {
                 uint256 len = parties.length;
 
                 while (len > 0) {
-                    uint64 voteHead = 
-                        uint64(_bod.getBoardSeatsOccupied(uint40(parties[len - 1])));
+                    uint32 voteHead = 
+                        uint32(_bod.getBoardSeatsOccupied(uint40(parties[len - 1])));
 
                     if (voteHead > 0) {
                         if (motion.votingRule.partyAsConsent) {
                             if (!motion.votingRule.impliedConsent) {
                                 base.supportHead += voteHead;
+
+                                base.attendHeadRatio += uint16(voteHead * 10000 / numOfDirectors);
                             }
                         } else {
                             base.totalHead -= voteHead;
                             if (motion.votingRule.impliedConsent) {
                                 base.supportHead -= voteHead;
+                            } else {
+                                base.attendHeadRatio += uint16(voteHead * 10000 / numOfDirectors);
                             }
+
+                            if (base.totalHead == 0)
+                                base.unaniConsent = true;
                         }
                     }
 
@@ -201,7 +214,10 @@ contract BODKeeper is IBODKeeper, AccessControl {
             }
         }
 
-        _bod.voteCounting(seqOfMotion, base);
+        bool quorumFlag = base.attendHeadRatio >= 
+            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfBoardMeeting;
+
+        _bod.voteCounting(quorumFlag, seqOfMotion, base);
     }
 
     // ==== Exec Motion ====

@@ -12,6 +12,7 @@ import "./IBOGKeeper.sol";
 import "../common/access/AccessControl.sol";
 
 contract BOGKeeper is IBOGKeeper, AccessControl {
+    using RulesParser for bytes32;
 
     modifier memberExist(uint256 acct) {
         require(_gk.getROM().isMember(acct), 
@@ -161,17 +162,24 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         MotionsRepo.VoteCalBase memory base;
         BallotsBox.Case memory case0 = _bog.getCaseOfAttitude(seqOfMotion, 0);
 
+        uint64 votesOfMembers = _rom.basedOnPar() 
+            ? _rom.capAtDate(motion.body.shareRegDate).par
+            : _rom.capAtDate(motion.body.shareRegDate).paid;
+
+        base.attendWeightRatio = uint16(case0.sumOfWeight * 10000 / votesOfMembers);
+
+
         if (motion.votingRule.onlyAttendance) {
             base.totalHead = case0.sumOfHead;
             base.totalWeight = case0.sumOfWeight;
         } else {
             base.totalHead = _rom.getNumOfMembers();
-            base.totalWeight = _rom.basedOnPar() ?
-                _rom.capAtDate(motion.body.shareRegDate).par:
-                _rom.capAtDate(motion.body.shareRegDate).paid;
+            base.totalWeight = votesOfMembers; 
             if (motion.votingRule.impliedConsent) {
                 base.supportHead = (base.totalHead - case0.sumOfHead);
-                base.supportWeight = (base.totalWeight - case0.sumOfWeight);                
+                base.supportWeight = (base.totalWeight - case0.sumOfWeight);
+
+                base.attendWeightRatio = 10000;                
             }
 
             if (motion.head.typeOfMotion == 
@@ -190,6 +198,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
                             if (!motion.votingRule.impliedConsent) {
                                 base.supportHead ++;
                                 base.supportWeight += votesAtDate;
+
+                                base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
                             }
                         } else {
                             base.totalHead --;
@@ -197,7 +207,12 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
                             if (motion.votingRule.impliedConsent) {
                                 base.supportHead --;
                                 base.supportWeight -= votesAtDate;
+                            } else {
+                                base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
                             }
+
+                            if (base.totalHead == 0)
+                                base.unaniConsent = true;
                         }
                     }
 
@@ -206,7 +221,10 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
             }
         }
 
-        bool approved = _bog.voteCounting(seqOfMotion, base) == 
+        bool quorumFlag = base.attendWeightRatio >= 
+            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfGM;
+
+        bool approved = _bog.voteCounting(quorumFlag, seqOfMotion, base) == 
             uint8(MotionsRepo.StateOfMotion.Passed);
 
         if (motion.head.seqOfVR < 9) {

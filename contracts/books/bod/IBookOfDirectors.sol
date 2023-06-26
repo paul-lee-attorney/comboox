@@ -64,8 +64,8 @@ interface IBookOfDirectors is IMeetingMinutes{
     function getPosition(uint256 seqOfPos) external view 
         returns (OfficersRepo.Position memory pos);
 
-    function getFullPosInfo() external view 
-        returns(OfficersRepo.Position[] memory list);
+    // function getFullPosInfo() external view 
+    //     returns(OfficersRepo.Position[] memory list);
 
     function isOfficer(uint256 acct) external view returns (bool);
 
@@ -80,7 +80,7 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     function getOffList() external view returns (uint256[] memory ls);
 
-    function getNumOfOfficers() external view returns (uint256 num);
+    // function getNumOfOfficers() external view returns (uint256 num);
 
     function isDirector(uint256 acct) external view returns (bool flag);
 
