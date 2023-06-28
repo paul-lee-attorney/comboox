@@ -130,7 +130,7 @@ library FilesRepo {
         // file.head.closingDeadline = timestamp + uint48(closingDays) * 86400;
 
         // file.head.shaExecDeadline = file.head.signingDeadline + uint48(vr.shaExecDays) * 86400;
-        // file.head.proposeDeadline = file.head.shaExecDeadline + uint48(vr.shaConfirmDays) * 86400;
+        // file.head.terminateStartpoint = file.head.shaExecDeadline + uint48(vr.shaConfirmDays) * 86400;
 
         // file.head.state = uint8(StateOfFile.Circulated);
 
@@ -179,8 +179,8 @@ library FilesRepo {
         require(timestamp > shaExecDeadline(repo, body), 
             "FR.PF: still in shaExecPeriod");
 
-        require(timestamp <= proposeDeadline(repo, body), 
-            "FR.PF: missed proposeDeadline");
+        // require(timestamp <= terminateStartpoint(repo, body), 
+        //     "FR.PF: missed terminateStartpoint");
 
         file.head.proposeDate = timestamp;
         file.head.seqOfMotion = seqOfMotion;
@@ -289,7 +289,7 @@ library FilesRepo {
             uint48(file.head.shaExecDays)) * 86400;
     }
 
-    function proposeDeadline(Repo storage repo, address body) 
+    function terminateStartpoint(Repo storage repo, address body) 
         public view returns (uint48) {
         
         File storage file = repo.files[body];

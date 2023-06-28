@@ -329,7 +329,7 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
         uint8 state = _boa.getHeadOfFile(ia).state;
 
         if (((state < uint8(FilesRepo.StateOfFile.Proposed) &&
-            block.timestamp > _boa.proposeDeadline(ia)) || 
+            block.timestamp > _boa.terminateStartpoint(ia)) || 
             state == uint8(FilesRepo.StateOfFile.Rejected)))
         {
             if (IInvestmentAgreement(ia).terminateDeal(seqOfDeal))

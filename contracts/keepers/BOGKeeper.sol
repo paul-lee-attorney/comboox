@@ -168,7 +168,6 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
         base.attendWeightRatio = uint16(case0.sumOfWeight * 10000 / votesOfMembers);
 
-
         if (motion.votingRule.onlyAttendance) {
             base.totalHead = case0.sumOfHead;
             base.totalWeight = case0.sumOfWeight;
@@ -221,8 +220,9 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
             }
         }
 
-        bool quorumFlag = base.attendWeightRatio >= 
-            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfGM;
+        bool quorumFlag = (address(_gk.getSHA()) == address(0)|| 
+            base.attendWeightRatio >= 
+            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfGM);
 
         bool approved = _bog.voteCounting(quorumFlag, seqOfMotion, base) == 
             uint8(MotionsRepo.StateOfMotion.Passed);

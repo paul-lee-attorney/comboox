@@ -58,7 +58,7 @@ interface IFilesFolder {
 
     function shaExecDeadline(address body) external view returns (uint48);
 
-    function proposeDeadline(address body) external view returns (uint48);
+    function terminateStartpoint(address body) external view returns (uint48);
 
     function votingDeadline(address body) external view returns (uint48);
 

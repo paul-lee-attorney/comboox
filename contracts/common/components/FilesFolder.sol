@@ -99,8 +99,8 @@ contract FilesFolder is IFilesFolder, AccessControl {
         return _repo.shaExecDeadline(body);
     }
 
-    function proposeDeadline(address body) external view returns (uint48) {
-        return _repo.proposeDeadline(body);
+    function terminateStartpoint(address body) external view returns (uint48) {
+        return _repo.terminateStartpoint(body);
     }
 
     function votingDeadline(address body) external view returns (uint48) {

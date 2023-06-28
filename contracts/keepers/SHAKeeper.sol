@@ -36,7 +36,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier beforeProposeDeadline(address ia) {
         require(
-            block.timestamp <= _gk.getBOA().proposeDeadline(ia),
+            block.timestamp <= _gk.getBOA().terminateStartpoint(ia),
             "SHAK.md.BPD: missed proposal deadline"
         );
         _;
@@ -127,7 +127,12 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfShare,
         uint256 caller,
         bytes32 sigHash
-    ) external onlyDirectKeeper afterExecPeriod(ia) beforeProposeDeadline(ia) {
+    ) external onlyDirectKeeper afterExecPeriod(ia) {
+
+        require(
+            block.timestamp <= _gk.getBOA().terminateStartpoint(ia),
+            "SHAK.acceptAlongDeal: missed proposal deadline"
+        );
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 

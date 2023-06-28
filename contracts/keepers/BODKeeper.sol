@@ -214,8 +214,9 @@ contract BODKeeper is IBODKeeper, AccessControl {
             }
         }
 
-        bool quorumFlag = base.attendHeadRatio >= 
-            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfBoardMeeting;
+        bool quorumFlag = (address(_gk.getSHA()) == address(0)|| 
+            base.attendHeadRatio >= 
+            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfBoardMeeting);
 
         _bod.voteCounting(quorumFlag, seqOfMotion, base);
     }
