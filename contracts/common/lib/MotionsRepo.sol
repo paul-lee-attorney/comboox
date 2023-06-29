@@ -412,25 +412,23 @@ library MotionsRepo {
 
         if (!flag && flag0 && !_isVetoed(r, m.votingRule.vetoers[0]) &&
             !_isVetoed(r, m.votingRule.vetoers[1])) {
-            flag1 = !flag1 && 
-                base.totalHead > 0
-                    ? ((r.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
-                        .sumOfHead + base.supportHead) * 10000) /
-                        base.totalHead >
-                        m.votingRule.headRatio
-                    : base.unaniConsent 
-                        ? true
-                        : false;
+            flag1 = flag1 ? true : base.totalHead > 0
+                ? ((r.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
+                    .sumOfHead + base.supportHead) * 10000) /
+                    base.totalHead >
+                    m.votingRule.headRatio
+                : base.unaniConsent 
+                    ? true
+                    : false;
 
-            flag2 = !flag2 &&
-                base.totalWeight > 0
-                    ? ((r.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
-                        .sumOfWeight + base.supportWeight) * 10000) /
-                        base.totalWeight >
-                        m.votingRule.amountRatio
-                    : base.unaniConsent
-                        ? true
-                        : false;
+            flag2 = flag2 ? true : base.totalWeight > 0
+                ? ((r.box.cases[uint8(BallotsBox.AttitudeOfVote.Support)]
+                    .sumOfWeight + base.supportWeight) * 10000) /
+                    base.totalWeight >
+                    m.votingRule.amountRatio
+                : base.unaniConsent
+                    ? true
+                    : false;
         }
 
         m.body.state =  flag || (flag0 && flag1 && flag2) 
