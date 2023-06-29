@@ -173,7 +173,7 @@ library MotionsRepo {
 
         if (_rom.isMember(delegate) && _rom.isMember(principal)) {
             uint64 weight;
-            if (m.body.shareRegDate > 0) 
+            if (m.body.shareRegDate > 0 && block.timestamp >= m.body.shareRegDate) 
                 weight = _rom.votesAtDate(principal, m.body.shareRegDate);    
             return repo.records[seqOfMotion].map.entrustDelegate(principal, delegate, weight);
         } else if (_bod.isDirector(delegate) && _bod.isDirector(principal)) {
