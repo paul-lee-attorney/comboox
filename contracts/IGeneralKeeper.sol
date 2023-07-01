@@ -174,7 +174,7 @@ interface IGeneralKeeper {
     ) external;
 
     function execActionOfGM(
-        uint typeOfAction,
+        uint seqOfVr,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,

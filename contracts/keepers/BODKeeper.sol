@@ -139,7 +139,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
             address doc = address(uint160(motion.contents));
             
             OfficersRepo.Position[] memory poses = 
-                _gk.getBOD().getOfficer(caller);
+                _gk.getBOD().getFullPosInfoInHand(caller);
             uint256 len = poses.length;            
             while (len > 0) {
                 require (!ISigPage(doc).isSigner(poses[len-1].nominator), 
@@ -257,7 +257,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
             "BODK.TO: not a suitable motion");
 
         _bod.execResolution(seqOfMotion, seqOfPos, caller);
-        _bod.removeOfficer(seqOfMotion, seqOfPos, caller);        
+        _bod.removeOfficer(seqOfPos);        
     }
 
     function execAction(

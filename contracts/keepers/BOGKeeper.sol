@@ -267,7 +267,7 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
             "BOGK.RD: not a suitable motion");
 
         _bog.execResolution(seqOfMotion, seqOfPos, caller);
-        _gk.getBOD().removeOfficer(seqOfMotion, seqOfPos, caller);        
+        _gk.getBOD().removeOfficer(seqOfPos);
     }
 
     function execActionOfGM(

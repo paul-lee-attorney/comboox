@@ -21,11 +21,11 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     event RemovePosition(uint256 indexed seqOfPos);
 
-    event TakePosition(bytes32 indexed snOfPos);
+    event TakePosition(uint256 indexed seqOfPos, uint256 indexed caller);
 
     event QuitPosition(uint256 indexed seqOfPos, uint256 indexed caller);
 
-    event RemoveOfficer(uint256 indexed seqOfMotion, uint256 indexed seqOfPos, uint256 indexed caller);
+    event RemoveOfficer(uint256 indexed seqOfPos);
 
     // event ProposeMotionToBoard(uint256 indexed seqOfMotion, uint256 indexed caller);
 
@@ -45,42 +45,35 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     function quitPosition (uint256 seqOfPos, uint caller) external; 
 
-    function removeOfficer (
-        uint256 seqOfMotion, 
-        uint256 seqOfPos, 
-        uint caller
-    ) external;
+    function removeOfficer (uint256 seqOfPos) external;
 
     //##################
     //##    读接口    ##
     //##################
     
+    // ==== Positions ====
+
     function posExist(uint256 seqOfPos) external view returns (bool flag);
 
     function isOccupied(uint256 seqOfPos) external view returns (bool flag);
 
-    function getPosList() external view returns(bytes32[] memory list);
-
     function getPosition(uint256 seqOfPos) external view 
         returns (OfficersRepo.Position memory pos);
 
-    // function getFullPosInfo() external view 
-    //     returns(OfficersRepo.Position[] memory list);
+    // ==== Managers ====
 
-    function isOfficer(uint256 acct) external view returns (bool);
+    function isManager(uint256 acct) external view returns (bool);
 
-    function hasPosition(uint256 acct, uint256 seqOfPos)
-        external view returns(bool flag);
+    function getNumOfManagers() external view returns (uint256 num);    
 
-    function getPosInHand(uint256 acct) 
-        external view returns (uint256[] memory ls);
+    function getManagersList() external view returns (uint256[] memory ls);
 
-    function getOfficer(uint256 acct) external view 
-        returns(OfficersRepo.Position[] memory ls);
+    function getManagersPosList() external view returns(uint[] memory list);
 
-    function getOffList() external view returns (uint256[] memory ls);
+    function getManagersFullPosInfo() external view 
+        returns(OfficersRepo.Position[] memory output);
 
-    // function getNumOfOfficers() external view returns (uint256 num);
+    // ==== Directors ====
 
     function isDirector(uint256 acct) external view returns (bool flag);
 
@@ -88,6 +81,25 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     function getDirectorsList() external view 
         returns (uint256[] memory list);
+
+    function getDirectorsPosList() external view 
+        returns (uint256[] memory ls);
+
+    function getDirectorsFullPosInfo() external view 
+        returns(OfficersRepo.Position[] memory output);        
+
+    // ==== Executives ====
+    
+    function hasPosition(uint256 acct, uint256 seqOfPos)
+        external view returns(bool flag);
+
+    function getPosInHand(uint256 acct) 
+        external view returns (uint256[] memory ls);
+
+    function getFullPosInfoInHand(uint acct) 
+        external view returns (OfficersRepo.Position[] memory output);
+
+    // ==== seatsCalculator ====
 
     function getBoardSeatsQuota(uint256 acct) external view 
         returns(uint256 quota);

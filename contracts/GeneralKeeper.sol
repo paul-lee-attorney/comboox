@@ -267,7 +267,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function execActionOfGM(
-        uint typeOfAction,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
@@ -275,7 +275,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfMotion
     ) external {
         uint contents = IBOGKeeper(_keepers[3]).execActionOfGM(
-            typeOfAction,
+            seqOfVR,
             targets,
             values,
             params,

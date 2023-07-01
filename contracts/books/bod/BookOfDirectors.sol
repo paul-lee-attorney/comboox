@@ -40,8 +40,8 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
 
     function takePosition (uint256 seqOfPos, uint caller) external onlyKeeper
     {
-        bytes32 snOfPos = _repo.takePosition(seqOfPos, caller);
-        emit TakePosition(snOfPos);
+        if (_repo.takePosition(seqOfPos, caller)) 
+            emit TakePosition(seqOfPos, caller);
     }
 
     function quitPosition (uint256 seqOfPos, uint caller) external onlyDirectKeeper
@@ -50,14 +50,10 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
             emit QuitPosition(seqOfPos, caller);
     }
 
-    function removeOfficer (
-        uint256 seqOfMotion, 
-        uint256 seqOfPos, 
-        uint caller
-    ) external onlyDirectKeeper
+    function removeOfficer (uint256 seqOfPos) external onlyKeeper
     {
         if (_repo.vacatePosition(seqOfPos))
-            emit RemoveOfficer(seqOfMotion, seqOfPos, caller);
+            emit RemoveOfficer(seqOfPos);
     }
 
     //##################
@@ -74,53 +70,35 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         flag = _repo.isOccupied(seqOfPos);
     } 
 
-    function getPosList() external view returns(bytes32[] memory list) {
-        list = _repo.getPosList();
-    }
-
     function getPosition(uint256 seqOfPos) external view 
         returns (OfficersRepo.Position memory pos) 
     {
         pos = _repo.getPosition(seqOfPos);
     }
 
-    // function getFullPosInfo() external view 
-    //     returns(OfficersRepo.Position[] memory list) 
-    // {
-    //     list = _repo.getFullPosInfo();
-    // }
+    // ==== Managers ====
 
-    // ==== Officers ====
-
-    function isOfficer(uint256 acct) external view returns (bool) {
-        return _repo.isOfficer(acct);
+    function isManager(uint256 acct) external view returns (bool) {
+        return _repo.isManager(acct);
     }
 
-    function hasPosition(uint256 acct, uint256 seqOfPos)
-        external view returns(bool flag)
+    function getNumOfManagers() external view returns (uint256 num) {
+        num = _repo.getNumOfManagers();
+    }
+
+    function getManagersList() external view returns (uint256[] memory ls) {
+        ls = _repo.getManagersList();
+    }
+
+    function getManagersPosList() external view returns(uint[] memory list) {
+        list = _repo.getManagersPosList();
+    }
+
+    function getManagersFullPosInfo() public view 
+        returns(OfficersRepo.Position[] memory output) 
     {
-        flag = _repo.hasPosition(acct, seqOfPos);
+        output = _repo.getManagersFullPosInfo();
     }
-
-    function getPosInHand(uint256 acct) 
-        external view returns (uint256[] memory ls) 
-    {
-        ls = _repo.getPosInHand(acct);
-    }
-
-    function getOfficer(uint256 acct) external view 
-        returns(OfficersRepo.Position[] memory ls)
-    {
-        ls = _repo.getOfficer(acct);
-    }
-
-    function getOffList() external view returns (uint256[] memory ls) {
-        ls = _repo.getOffList();
-    }
-
-    // function getNumOfOfficers() external view returns (uint256 num) {
-    //     num = _repo.getNumOfOfficers();
-    // }
 
     // ==== Directors ====
 
@@ -137,6 +115,40 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
     {
         list = _repo.getDirectorsList();
     }
+
+    function getDirectorsPosList() external view 
+        returns (uint256[] memory ls) 
+    {
+        ls = _repo.getDirectorsPosList();
+    }
+
+    function getDirectorsFullPosInfo() external view 
+        returns(OfficersRepo.Position[] memory output) 
+    {
+        output = _repo.getDirectorsFullPosInfo();
+    }
+
+    // ==== Executives ====
+
+    function hasPosition(uint256 acct, uint256 seqOfPos)
+        external view returns(bool flag)
+    {
+        flag = _repo.hasPosition(acct, seqOfPos);
+    }
+
+    function getPosInHand(uint256 acct) 
+        external view returns (uint256[] memory ls) 
+    {
+        ls = _repo.getPosInHand(acct);
+    }
+
+    function getFullPosInfoInHand(uint acct) 
+        external view returns (OfficersRepo.Position[] memory output) 
+    {
+        output = _repo.getFullPosInfoInHand(acct);
+    }
+
+    // ==== seatsCalculator ====
 
     function getBoardSeatsQuota(uint256 acct) external view 
         returns(uint256 quota) 

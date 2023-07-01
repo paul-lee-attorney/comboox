@@ -43,16 +43,20 @@ library OfficersRepo {
         uint16 argu;
     }
 
+    struct Group {
+        // seqList
+        EnumerableSet.UintSet posList;
+        // acctList
+        EnumerableSet.UintSet acctList;
+    }
+
     struct Repo {
-        // seqOfPos => Position
-        mapping(uint256 => Position)  positions;
-        EnumerableSet.Bytes32Set snList; // snOfPos List
-
+        //seqOfPos => Position
+        mapping(uint => Position)  positions;
         // acct => seqOfPos
-        mapping(uint256 => EnumerableSet.UintSet) posInHand;
-        EnumerableSet.UintSet officers; // acct List
-
-        EnumerableSet.UintSet board;
+        mapping(uint => EnumerableSet.UintSet) posInHand;
+        Group directors;
+        Group managers;
     }
 
     //#################
@@ -116,27 +120,30 @@ library OfficersRepo {
         Repo storage repo,
         Position memory pos
     ) public {
-        require (pos.title > 0, "OR.RP: zero title");
-        require (pos.seqOfPos > 0, "OR.RP: zero seqOfPositions");
-        require (pos.nominator > 0, "OR.RP: zero nominator");
-        require (pos.endDate > pos.startDate, "OR.RP: endDate too small");
-        require (pos.endDate > uint48(block.timestamp), "OR.RP: endDate not future");
+        require (pos.title > 0, "OR.addPosition: zero title");
+        require (pos.seqOfPos > 0, "OR.addPosition: zero seqOfPos");
+        require (pos.nominator > 0, "OR.addPosition: zero nominator");
+        require (pos.endDate > pos.startDate, "OR.addPosition: endDate <= startDate");
+        require (pos.endDate > uint48(block.timestamp), "OR.addPosition: endDate not future");
 
         Position storage p = repo.positions[pos.seqOfPos];
         
-        require (p.title == 0 || p.title == pos.title,
-            "OR.AP: remove pos for change title");
+        if (p.title == 0) {
+            if (pos.title <= uint8(TitleOfOfficers.Director)) 
+                repo.directors.posList.add(pos.seqOfPos);
+            else repo.managers.posList.add(pos.seqOfPos); 
+        } else require (p.title == pos.title,
+            "OR.addPosition: remove pos first");
 
         repo.positions[pos.seqOfPos] = pos;
-        repo.snList.add(codifyPosition(pos));
     }
 
     function removePosition(Repo storage repo, uint256 seqOfPos) 
         public isVacant(repo, seqOfPos) returns (bool flag)
     {
-        Position memory pos = repo.positions[seqOfPos];
-
-        if (repo.snList.remove(codifyPosition(pos))) {
+        if (repo.directors.posList.remove(seqOfPos) ||
+            repo.managers.posList.remove(seqOfPos)) 
+        {
             delete repo.positions[seqOfPos];
             flag = true;
         }
@@ -146,23 +153,24 @@ library OfficersRepo {
         Repo storage repo,
         uint256 seqOfPos,
         uint acct
-    ) public returns (bytes32 ) {
-        require (seqOfPos > 0, "OR.TP: zero seqOfPos");
-        require (acct > 0, "OR.TP: zero acct");
+    ) public returns (bool flag) {
+        require (seqOfPos > 0, "OR.takePosition: zero seqOfPos");
+        require (acct > 0, "OR.takePosition: zero acct");
         
         Position storage pos = repo.positions[seqOfPos];
+
+        if (repo.directors.posList.contains(seqOfPos))
+            repo.directors.acctList.add(acct);
+        else if (repo.managers.posList.contains(seqOfPos))
+            repo.managers.acctList.add(acct);
+        else revert("OR.takePosition: pos not exist");
 
         pos.acct = uint40(acct);
         pos.startDate = uint48(block.timestamp);
 
-        repo.officers.add(acct);
-        repo.posInHand[pos.acct].add(pos.seqOfPos);
+        repo.posInHand[acct].add(seqOfPos);
 
-        if (pos.title <= uint8(TitleOfOfficers.Director)) {
-            repo.board.add(acct);
-        }
-
-        return codifyPosition(pos);
+        flag = true;
     }
 
     function quitPosition(
@@ -172,10 +180,8 @@ library OfficersRepo {
     ) public returns (bool flag)
     {
         Position memory pos = repo.positions[seqOfPos];
-
         require(acct == pos.acct, 
-            "OR.QP: not the officer");
-
+            "OR.quitPosition: not the officer");
         flag = vacatePosition(repo, seqOfPos);
     }
 
@@ -192,12 +198,12 @@ library OfficersRepo {
         if (repo.posInHand[acct].remove(seqOfPos)) {
             pos.acct = 0;
 
-            if (repo.posInHand[acct].length() == 0) 
-                repo.officers.remove(acct);
-
             if (pos.title <= uint8(TitleOfOfficers.Director))
-                repo.board.remove(acct);
-
+                repo.directors.acctList.remove(acct);
+            else if (repo.posInHand[acct].length() == 0) {
+                repo.managers.acctList.remove(acct);
+            }
+                
             flag = true;
         }        
     }
@@ -216,100 +222,113 @@ library OfficersRepo {
         flag = repo.positions[seqOfPos].acct > 0;
     }
 
-    function getPosList(Repo storage repo) public view returns(bytes32[] memory list) {
-        list = repo.snList.values();
-    }
-
     function getPosition(Repo storage repo, uint256 seqOfPos) public view returns (Position memory pos) {
         pos = repo.positions[seqOfPos];
     }
 
-    function getFullPosInfo(Repo storage repo) public view returns(Position[] memory) {
-        bytes32[] memory pl = repo.snList.values();
+    function getFullPosInfo(Repo storage repo, uint[] memory pl) 
+        public view returns(Position[] memory) 
+    {
         uint256 len = pl.length;
         Position[] memory ls = new Position[](len);
 
         while (len > 0) {
-            Position memory pos = snParser(pl[len-1]);
-
-            ls[len-1] = repo.positions[pos.seqOfPos];
+            ls[len-1] = repo.positions[pl[len-1]];
             len--;
         }
 
-        return ls;
+        return ls;        
     }
 
-    // ==== Officers ====
+    // ==== Managers ====
 
-    function isOfficer(Repo storage repo, uint256 acct) public view returns (bool flag) {
-        flag = repo.officers.contains(acct);
+    function isManager(Repo storage repo, uint256 acct) public view returns (bool flag) {
+        flag = repo.managers.acctList.contains(acct);
     }
 
-    function hasPosition(Repo storage repo, uint256 acct, uint256 seqOfPos) public view returns (bool flag) {
-        flag = repo.posInHand[acct].contains(seqOfPos);
+    function getNumOfManagers(Repo storage repo) public view returns (uint256 num) {
+        num = repo.managers.acctList.length();
     }
 
-    function getPosInHand(Repo storage repo, uint256 acct) public view returns (uint256[] memory ls) {
-        ls = repo.posInHand[acct].values();
+    function getManagersList(Repo storage repo) public view returns (uint256[] memory ls) {
+        ls = repo.managers.acctList.values();
     }
 
-    function getOfficer(Repo storage repo, uint256 acct)
-        public view returns(Position[] memory output)
+    function getManagersPosList(Repo storage repo) public view returns(uint[] memory list) {
+        list = repo.managers.posList.values();
+    }
+
+    function getManagersFullPosInfo(Repo storage repo) public view 
+        returns(Position[] memory output) 
     {
-        if (isOfficer(repo, acct)) {
-            uint256[] memory ls = repo.posInHand[acct].values();
-            uint256 len = ls.length;
-            output = new Position[](len);
-
-            while(len > 0) {
-                output[len - 1] = repo.positions[ls[len - 1]];
-                len--;
-            }
-        }
+        uint[] memory pl = repo.managers.posList.values();
+        output = getFullPosInfo(repo, pl);
     }
 
-    function getOffList(Repo storage repo) public view returns (uint256[] memory ls) {
-        ls = repo.officers.values();
-    }
-
-    function getNumOfOfficers(Repo storage repo) public view returns (uint256 num) {
-        num = repo.officers.length();
-    }
-
-    // ==== Director ====
+    // ==== Directors ====
 
     function isDirector(Repo storage repo, uint256 acct) 
         public view returns (bool flag) 
     {
-        flag = repo.board.contains(acct);
+        flag = repo.directors.acctList.contains(acct);
     }
 
     function getNumOfDirectors(Repo storage repo) public view 
         returns (uint256 num) 
     {
-        num = repo.board.length();
+        num = repo.directors.acctList.length();
     }
 
     function getDirectorsList(Repo storage repo) public view 
         returns (uint256[] memory ls) 
     {
-        ls = repo.board.values();
+        ls = repo.directors.acctList.values();
     }
 
-    // ==== seatsCalcuator ====
+    function getDirectorsPosList(Repo storage repo) public view 
+        returns (uint256[] memory ls) 
+    {
+        ls = repo.directors.posList.values();
+    }
+
+    function getDirectorsFullPosInfo(Repo storage repo) public view 
+        returns(Position[] memory output) 
+    {
+        uint[] memory pl = repo.directors.posList.values();
+        output = getFullPosInfo(repo, pl);
+    }
+
+    // ==== Executives ====
+
+    function hasPosition(Repo storage repo, uint256 acct, uint256 seqOfPos) 
+        public view returns (bool flag) 
+    {
+        flag = repo.posInHand[acct].contains(seqOfPos);
+    }
+
+    function getPosInHand(Repo storage repo, uint256 acct) 
+        public view returns (uint256[] memory ls) 
+    {
+        ls = repo.posInHand[acct].values();
+    }
+
+    function getFullPosInfoInHand(Repo storage repo, uint acct) 
+        public view returns (Position[] memory output) 
+    {
+        uint256[] memory pl = repo.posInHand[acct].values();
+        output = getFullPosInfo(repo, pl);
+    }
+
+    // ==== seatsCalculator ====
 
     function getBoardSeatsQuota(Repo storage repo, uint256 acct) public view 
         returns (uint256 quota)
     {
-        bytes32[] memory pl = repo.snList.values();
+        uint[] memory pl = repo.directors.posList.values();
         uint256 len = pl.length;
         while (len > 0) {
-            Position memory pos = snParser(pl[len-1]);
-            if (pos.title <= uint8(TitleOfOfficers.Director) &&
-                pos.nominator == acct) 
-            {
-                quota++;
-            }
+            Position memory pos = repo.positions[pl[len-1]];
+            if (pos.nominator == acct) quota++;
             len--;
         }       
     }
@@ -317,7 +336,7 @@ library OfficersRepo {
     function getBoardSeatsOccupied(Repo storage repo, uint acct) public view 
         returns (uint256 num)
     {
-        uint256[] memory dl = repo.board.values();
+        uint256[] memory dl = repo.directors.acctList.values();
         uint256 lenOfDL = dl.length;
 
         while (lenOfDL > 0) {
