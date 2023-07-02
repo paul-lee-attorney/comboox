@@ -99,6 +99,12 @@ interface IBookOfDirectors is IMeetingMinutes{
     function getFullPosInfoInHand(uint acct) 
         external view returns (OfficersRepo.Position[] memory output);
 
+    // function hasTitle(uint acct, uint title) 
+    //     external returns (bool flag);
+
+    function hasNominationRight(uint seqOfPos, uint acct) 
+        external view returns (bool flag);
+
     // ==== seatsCalculator ====
 
     function getBoardSeatsQuota(uint256 acct) external view 

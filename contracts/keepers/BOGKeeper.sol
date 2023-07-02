@@ -38,13 +38,14 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
         uint256 seqOfPos,
         uint candidate,
         uint nominator
-    ) external onlyDirectKeeper memberOrDirector(nominator) {
+    ) external onlyDirectKeeper {
+
+        IBookOfDirectors _bod = _gk.getBOD();
 
         OfficersRepo.Position memory pos =
-            _gk.getBOD().getPosition(seqOfPos);
+            _bod.getPosition(seqOfPos);
 
-        require(pos.nominator == 0 || 
-            pos.nominator == nominator, 
+        require(_bod.hasNominationRight(seqOfPos, nominator), 
             "BOGK.ND: has no nominationRight");
 
         _gk.getBOG().nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
@@ -53,17 +54,16 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
     function createMotionToRemoveDirector(
         uint256 seqOfPos,
         uint caller
-    ) external onlyDirectKeeper memberOrDirector(caller) {
+    ) external onlyDirectKeeper {
+        IBookOfDirectors _bod = _gk.getBOD();
+
         OfficersRepo.Position memory pos =
-            _gk.getBOD().getPosition(seqOfPos);
+            _bod.getPosition(seqOfPos);
 
-        require(pos.nominator == 0 || 
-            pos.nominator == caller, 
-            "BOGK.PTRD: has no nominationRight");
+        require(_bod.hasNominationRight(seqOfPos, caller), 
+            "BOGK.ND: has no nominationRight");
 
-        IBookOfGM _bog = _gk.getBOG();
-
-        _bog.createMotionToRemoveOfficer(seqOfPos, pos.seqOfVR, caller);
+        _gk.getBOG().createMotionToRemoveOfficer(seqOfPos, pos.seqOfVR, caller);
     }
 
     function proposeDocOfGM(

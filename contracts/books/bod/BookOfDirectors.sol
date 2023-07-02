@@ -148,6 +148,16 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         output = _repo.getFullPosInfoInHand(acct);
     }
 
+    // function hasTitle(uint acct, uint title) external view returns (bool flag)
+    // {
+    //     flag = _repo.hasTitle(acct, title);
+    // }
+
+    function hasNominationRight(uint seqOfPos, uint acct) external view returns (bool flag)
+    {
+        flag = _repo.hasNominationRight(seqOfPos, acct);
+    }
+
     // ==== seatsCalculator ====
 
     function getBoardSeatsQuota(uint256 acct) external view 

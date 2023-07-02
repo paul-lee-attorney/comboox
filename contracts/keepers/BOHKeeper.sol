@@ -176,7 +176,7 @@ contract BOHKeeper is IBOHKeeper, AccessControl {
                     startDate: pos.startDate,
                     endDate: rule.endDate,
                     seqOfVR: rule.seqOfVR,
-                    para: rule.para,
+                    titleOfNominator: rule.titleOfNominator,
                     argu: rule.argu
                 });
                 

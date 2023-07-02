@@ -39,7 +39,7 @@ library OfficersRepo {
         uint48 startDate;
         uint48 endDate;
         uint16 seqOfVR;
-        uint16 para;
+        uint16 titleOfNominator;
         uint16 argu;
     }
 
@@ -86,7 +86,7 @@ library OfficersRepo {
             startDate: uint48(_sn >> 96),
             endDate: uint48(_sn >> 48),
             seqOfVR: uint16(_sn >> 32),
-            para: uint16(_sn >> 16),
+            titleOfNominator: uint16(_sn >> 16),
             argu: uint16(_sn)
         });
     }
@@ -100,7 +100,7 @@ library OfficersRepo {
                             position.startDate,
                             position.endDate,
                             position.seqOfVR,
-                            position.para,
+                            position.titleOfNominator,
                             position.argu);  
         assembly {
             sn := mload(add(_sn, 0x20))
@@ -122,17 +122,17 @@ library OfficersRepo {
     ) public {
         require (pos.title > 0, "OR.addPosition: zero title");
         require (pos.seqOfPos > 0, "OR.addPosition: zero seqOfPos");
-        require (pos.nominator > 0, "OR.addPosition: zero nominator");
+        require (pos.titleOfNominator > 0, "OR.addPosition: zero titleOfNominator");
         require (pos.endDate > pos.startDate, "OR.addPosition: endDate <= startDate");
         require (pos.endDate > uint48(block.timestamp), "OR.addPosition: endDate not future");
 
         Position storage p = repo.positions[pos.seqOfPos];
         
-        if (p.title == 0) {
+        if (p.seqOfPos == 0) {
             if (pos.title <= uint8(TitleOfOfficers.Director)) 
                 repo.directors.posList.add(pos.seqOfPos);
             else repo.managers.posList.add(pos.seqOfPos); 
-        } else require (p.title == pos.title,
+        } else require (p.seqOfPos == pos.seqOfPos,
             "OR.addPosition: remove pos first");
 
         repo.positions[pos.seqOfPos] = pos;
@@ -317,6 +317,29 @@ library OfficersRepo {
     {
         uint256[] memory pl = repo.posInHand[acct].values();
         output = getFullPosInfo(repo, pl);
+    }
+
+    function hasTitle(Repo storage repo, uint acct, uint title)
+        public view returns (bool)
+    {
+        Position[] memory list = getFullPosInfoInHand(repo, acct);
+        uint len = list.length;
+        while (len > 0) {
+            if (list[len-1].title == uint16(title))
+                return true;
+            len --;
+        }
+        return false;
+    }
+
+    function hasNominationRight(Repo storage repo, uint seqOfPos, uint acct)
+        public view returns (bool)
+    {
+        Position memory pos = repo.positions[seqOfPos];
+        if (pos.endDate < block.timestamp) return false;
+        else if (pos.nominator == 0)
+            return hasTitle(repo, acct, pos.titleOfNominator);
+        else return (pos.nominator == acct);
     }
 
     // ==== seatsCalculator ====
