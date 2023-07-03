@@ -40,9 +40,6 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
         IBookOfDirectors _bod = _gk.getBOD();
 
-        OfficersRepo.Position memory pos =
-            _bod.getPosition(seqOfPos);
-
         require(_bod.hasNominationRight(seqOfPos, nominator),
             "BODKeeper.nominateOfficer: has no nominationRight");
 
@@ -51,8 +48,11 @@ contract BODKeeper is IBODKeeper, AccessControl {
         //     "BODK.nominateOfficer: has no nomination right");
         // else require( pos.nominator == nominator, 
         //     "BODK.nominateOfficer: has no nomination right");
-         
-        _bod.nominateOfficer(seqOfPos, pos.seqOfVR, candidate, nominator);
+
+        // OfficersRepo.Position memory pos =
+        //     _bod.getPosition(seqOfPos);
+     
+        _bod.nominateOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, candidate, nominator);
         // _bod.proposeMotion(seqOfMotion, nominator);
     }
 
@@ -62,8 +62,8 @@ contract BODKeeper is IBODKeeper, AccessControl {
     ) external onlyDirectKeeper directorExist(nominator) {
         IBookOfDirectors _bod = _gk.getBOD();
 
-        OfficersRepo.Position memory pos =
-            _bod.getPosition(seqOfPos);
+        // OfficersRepo.Position memory pos =
+        //     _bod.getPosition(seqOfPos);
 
         // if (pos.nominator == 0)
         require(_bod.hasNominationRight(seqOfPos, nominator),
@@ -71,7 +71,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
         // else require( pos.nominator == nominator, 
         //     "BODK.nominateOfficer: has no nomination right");
 
-        _bod.createMotionToRemoveOfficer(seqOfPos, pos.seqOfVR, nominator);
+        _bod.createMotionToRemoveOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, nominator);
         // _bod.proposeMotion(seqOfMotion, nominator);
     }
 

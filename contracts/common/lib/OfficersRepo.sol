@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "./EnumerableSet.sol";
+import "../../books/rom/IRegisterOfMembers.sol";
 
 library OfficersRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -15,6 +16,7 @@ library OfficersRepo {
 
     enum TitleOfOfficers {
         ZeroPoint,
+        Shareholder,
         Chairman,
         ViceChairman,
         ManagingDirector,
@@ -121,7 +123,7 @@ library OfficersRepo {
         Position memory pos
     ) public {
         require (pos.title > 0, "OR.addPosition: zero title");
-        require (pos.seqOfPos > 0, "OR.addPosition: zero seqOfPos");
+        require (pos.seqOfPos > uint8(TitleOfOfficers.Shareholder), "OR.addPosition: zero seqOfPos");
         require (pos.titleOfNominator > 0, "OR.addPosition: zero titleOfNominator");
         require (pos.endDate > pos.startDate, "OR.addPosition: endDate <= startDate");
         require (pos.endDate > uint48(block.timestamp), "OR.addPosition: endDate not future");
@@ -319,9 +321,12 @@ library OfficersRepo {
         output = getFullPosInfo(repo, pl);
     }
 
-    function hasTitle(Repo storage repo, uint acct, uint title)
+    function hasTitle(Repo storage repo, uint acct, uint title, IRegisterOfMembers _rom)
         public view returns (bool)
     {
+        if (title == uint8(TitleOfOfficers.Shareholder))
+            return _rom.isMember(acct);
+
         Position[] memory list = getFullPosInfoInHand(repo, acct);
         uint len = list.length;
         while (len > 0) {
@@ -332,13 +337,13 @@ library OfficersRepo {
         return false;
     }
 
-    function hasNominationRight(Repo storage repo, uint seqOfPos, uint acct)
+    function hasNominationRight(Repo storage repo, uint seqOfPos, uint acct, IRegisterOfMembers _rom)
         public view returns (bool)
     {
         Position memory pos = repo.positions[seqOfPos];
         if (pos.endDate < block.timestamp) return false;
         else if (pos.nominator == 0)
-            return hasTitle(repo, acct, pos.titleOfNominator);
+            return hasTitle(repo, acct, pos.titleOfNominator, _rom);
         else return (pos.nominator == acct);
     }
 

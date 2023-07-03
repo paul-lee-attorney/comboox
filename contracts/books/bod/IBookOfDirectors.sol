@@ -53,64 +53,64 @@ interface IBookOfDirectors is IMeetingMinutes{
     
     // ==== Positions ====
 
-    function posExist(uint256 seqOfPos) external view returns (bool flag);
+    function posExist(uint256 seqOfPos) external view returns (bool);
 
-    function isOccupied(uint256 seqOfPos) external view returns (bool flag);
+    function isOccupied(uint256 seqOfPos) external view returns (bool);
 
     function getPosition(uint256 seqOfPos) external view 
-        returns (OfficersRepo.Position memory pos);
+        returns (OfficersRepo.Position memory);
 
     // ==== Managers ====
 
     function isManager(uint256 acct) external view returns (bool);
 
-    function getNumOfManagers() external view returns (uint256 num);    
+    function getNumOfManagers() external view returns (uint256);    
 
-    function getManagersList() external view returns (uint256[] memory ls);
+    function getManagersList() external view returns (uint256[] memory);
 
-    function getManagersPosList() external view returns(uint[] memory list);
+    function getManagersPosList() external view returns(uint[] memory);
 
     function getManagersFullPosInfo() external view 
-        returns(OfficersRepo.Position[] memory output);
+        returns(OfficersRepo.Position[] memory);
 
     // ==== Directors ====
 
-    function isDirector(uint256 acct) external view returns (bool flag);
+    function isDirector(uint256 acct) external view returns (bool);
 
-    function getNumOfDirectors() external view returns (uint256 num);
+    function getNumOfDirectors() external view returns (uint256);
 
     function getDirectorsList() external view 
-        returns (uint256[] memory list);
+        returns (uint256[] memory);
 
     function getDirectorsPosList() external view 
-        returns (uint256[] memory ls);
+        returns (uint256[] memory);
 
     function getDirectorsFullPosInfo() external view 
-        returns(OfficersRepo.Position[] memory output);        
+        returns(OfficersRepo.Position[] memory);        
 
     // ==== Executives ====
     
     function hasPosition(uint256 acct, uint256 seqOfPos)
-        external view returns(bool flag);
+        external view returns(bool);
 
     function getPosInHand(uint256 acct) 
-        external view returns (uint256[] memory ls);
+        external view returns (uint256[] memory);
 
     function getFullPosInfoInHand(uint acct) 
-        external view returns (OfficersRepo.Position[] memory output);
+        external view returns (OfficersRepo.Position[] memory);
 
     // function hasTitle(uint acct, uint title) 
     //     external returns (bool flag);
 
     function hasNominationRight(uint seqOfPos, uint acct) 
-        external view returns (bool flag);
+        external view returns (bool);
 
     // ==== seatsCalculator ====
 
-    function getBoardSeatsQuota(uint256 acct) external view 
-        returns(uint256 quota);
+    // function getBoardSeatsQuota(uint256 acct) external view 
+    //     returns(uint256);
 
     function getBoardSeatsOccupied(uint acct) external view 
-        returns (uint256 num);
+        returns (uint256);
 
 }

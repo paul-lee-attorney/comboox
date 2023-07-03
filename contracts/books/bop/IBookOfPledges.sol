@@ -124,13 +124,14 @@ interface IBookOfPledges {
     function isPledge(uint256 seqOfShare, uint256 seqOfPld) 
         external view returns (bool);
 
+    function getSNList() external view
+        returns(bytes32[] memory);
+
     function getPledge(uint256 seqOfShare, uint256 seqOfPld)
-        external view returns (PledgesRepo.Pledge memory pld);
+        external view returns (PledgesRepo.Pledge memory);
 
     function getPledgesOfShare(uint256 seqOfShare) 
         external view returns (PledgesRepo.Pledge[] memory);
 
-    function getSNList() external view
-        returns(bytes32[] memory list);
 
 }

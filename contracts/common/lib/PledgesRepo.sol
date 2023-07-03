@@ -72,14 +72,6 @@ library PledgesRepo {
     } 
 
     function codifyHead(Head memory head) public pure returns (bytes32 sn) {
-        // sn = uint256(head.seqOfShare) << 224 +
-        //     uint256(head.seqOfPld) << 208 + 
-        //     uint256(head.createDate) << 160 +
-        //     uint256(head.triggerDate) << 112 +
-        //     uint256(head.pledgor) << 72 +
-        //     uint256(head.debtor) << 32 +
-        //     head.data;
-
         bytes memory _sn = abi.encodePacked(
                             head.seqOfShare,
                             head.seqOfPld,
@@ -275,10 +267,15 @@ library PledgesRepo {
     //#################
 
     function counterOfPld(Repo storage repo, uint256 seqOfShare) 
-        public view 
-        returns (uint16) 
+        public view returns (uint16) 
     {
         return repo.pledges[seqOfShare][0].head.seqOfPld;
+    }
+
+    function isPledge(Repo storage repo, uint seqOfShare, uint seqOfPledge) 
+        public view returns (bool)
+    {
+        return repo.pledges[seqOfShare][seqOfPledge].head.createDate > 0;
     }
 
     function getSNList(Repo storage repo) public view returns (bytes32[] memory list)

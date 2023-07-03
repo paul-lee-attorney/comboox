@@ -182,19 +182,24 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function counterOfPledges(uint256 seqOfShare) 
         external view returns (uint16) 
     {
-        return _repo.pledges[seqOfShare][0].head.seqOfPld;
+        return _repo.counterOfPld(seqOfShare);
     }
 
     function isPledge(uint256 seqOfShare, uint256 seqOfPledge) 
         external view returns (bool) 
     {
-        return _repo.pledges[seqOfShare][seqOfPledge].head.createDate > 0;
+        return _repo.isPledge(seqOfShare, seqOfPledge);
+    }
+
+    function getSNList() external view returns(bytes32[] memory)
+    {
+        return _repo.getSNList();
     }
 
     function getPledge(uint256 seqOfShare, uint256 seqOfPld)
-        external view returns (PledgesRepo.Pledge memory pld)
+        external view returns (PledgesRepo.Pledge memory)
     {
-        pld = _repo.pledges[seqOfShare][seqOfPld];
+        return _repo.getPledge(seqOfShare, seqOfPld);
     }
 
     function getPledgesOfShare(uint256 seqOfShare) 
@@ -203,8 +208,4 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         return _repo.getPledgesOfShare(seqOfShare);
     }
 
-    function getSNList() external view returns(bytes32[] memory list)
-    {
-        list = _repo.getSNList();
-    }
 }
