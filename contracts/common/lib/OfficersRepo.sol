@@ -122,8 +122,8 @@ library OfficersRepo {
         Repo storage repo,
         Position memory pos
     ) public {
-        require (pos.title > 0, "OR.addPosition: zero title");
-        require (pos.seqOfPos > uint8(TitleOfOfficers.Shareholder), "OR.addPosition: zero seqOfPos");
+        require (pos.title > uint8(TitleOfOfficers.Shareholder), "OR.addPosition: title overflow");
+        require (pos.seqOfPos > 0, "OR.addPosition: zero seqOfPos");
         require (pos.titleOfNominator > 0, "OR.addPosition: zero titleOfNominator");
         require (pos.endDate > pos.startDate, "OR.addPosition: endDate <= startDate");
         require (pos.endDate > uint48(block.timestamp), "OR.addPosition: endDate not future");
