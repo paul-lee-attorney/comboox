@@ -77,9 +77,8 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
     function releaseSwapOrder(
         uint256 seqOfOpt, 
         uint256 seqOfBrf, 
-        string memory hashKey, 
-        uint256 caller
-    ) external onlyKeeper onlyObligor(seqOfOpt, caller) {
+        string memory hashKey 
+    ) external onlyKeeper {
         OptionsRepo.Brief memory brf = _gk.getBOO().getBrief(seqOfOpt, seqOfBrf);
         _gk.getROS().releaseSwap(brf.seqOfSwap, hashKey);
     }

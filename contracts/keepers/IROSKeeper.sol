@@ -42,7 +42,7 @@ interface IROSKeeper {
         uint caller
     ) external;
 
-    function releaseSwap(uint256 seqOfSwap, string memory hashKey, uint caller)
+    function releaseSwap(uint256 seqOfSwap, string memory hashKey)
         external;
 
     function execSwap(uint256 seqOfSwap, uint caller) external;

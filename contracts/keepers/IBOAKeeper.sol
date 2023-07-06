@@ -53,8 +53,7 @@ interface IBOAKeeper {
     function closeDeal(
         address ia,
         uint256 seqOfDeal,
-        string memory hashKey,
-        uint256 caller
+        string memory hashKey
     ) external;
 
     function transferTargetShare(

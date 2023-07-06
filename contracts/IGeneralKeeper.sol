@@ -240,8 +240,7 @@ interface IGeneralKeeper {
     // ##   BOPKeeper   ##
     // ###################
 
-    function createPledge(bytes32 snOfPld, uint creditor, uint guaranteeDays, uint paid,
-    uint par, uint guaranteedAmt) external;
+    function createPledge(bytes32 snOfPld, uint paid, uint par, uint guaranteedAmt, uint execDays) external;
 
     function transferPledge(uint256 seqOfShare, uint256 seqOfPld, uint buyer, uint amt) 
     external;
@@ -254,7 +253,7 @@ interface IGeneralKeeper {
 
     function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey) external;
 
-    function execPledge(uint256 seqOfShare, uint256 seqOfPld) external;
+    function execPledge(bytes32 snOfDeal, uint256 seqOfPld, uint version, uint buyer, uint groupOfBuyer) external;
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external;
 

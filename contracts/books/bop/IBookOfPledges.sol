@@ -58,20 +58,18 @@ interface IBookOfPledges {
 
     function createPledge(
         bytes32 snOfPld,
-        uint creditor,
-        uint guaranteeDays,
         uint paid,
         uint par,
-        uint guaranteedAmt
+        uint guaranteedAmt,
+        uint execDays
     ) external returns(PledgesRepo.Head memory head);
 
     function issuePledge(
         PledgesRepo.Head memory head,
-        uint creditor,
-        uint guaranteeDays,
         uint paid,
         uint par,
-        uint guaranteedAmt
+        uint guaranteedAmt,
+        uint execDays
     ) external returns(PledgesRepo.Head memory regHead);
 
     function regPledge(
@@ -82,19 +80,22 @@ interface IBookOfPledges {
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint buyer,
-        uint amt
+        uint amt,
+        uint caller
     ) external returns (PledgesRepo.Pledge memory newPld);
 
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint amt
+        uint amt,
+        uint caller
     ) external returns (PledgesRepo.Pledge memory newPld);
 
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint extDays
+        uint extDays,
+        uint caller
     ) external;
 
     // ==== Lock/Release/Exec/Revoke ====
@@ -102,17 +103,21 @@ interface IBookOfPledges {
     function lockPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        bytes32 hashLock
-    ) external returns (bool flag);
+        bytes32 hashLock,
+        uint caller
+    ) external;
 
     function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey)
-        external returns (bool flag);
+        external returns (uint64);
 
-    function execPledge(uint256 seqOfShare, uint256 seqOfPld)
-        external returns (bool flag);
+    function execPledge(
+        uint seqOfShare, 
+        uint256 seqOfPld,
+        uint caller
+    ) external;
 
-    function revokePledge(uint256 seqOfShare, uint256 seqOfPld)
-        external returns (bool flag); 
+    function revokePledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
+        external; 
 
     //##################
     //##    读接口    ##
@@ -133,5 +138,7 @@ interface IBookOfPledges {
     function getPledgesOfShare(uint256 seqOfShare) 
         external view returns (PledgesRepo.Pledge[] memory);
 
+    function getAllPledges() external view 
+        returns (PledgesRepo.Pledge[] memory);
 
 }

@@ -94,11 +94,11 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         return _repo.getManagersPosList();
     }
 
-    function getManagersFullPosInfo() public view 
-        returns(OfficersRepo.Position[] memory) 
-    {
-        return _repo.getManagersFullPosInfo();
-    }
+    // function getManagersFullPosInfo() public view 
+    //     returns(OfficersRepo.Position[] memory) 
+    // {
+    //     return _repo.getManagersFullPosInfo();
+    // }
 
     // ==== Directors ====
 
@@ -122,11 +122,11 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         return _repo.getDirectorsPosList();
     }
 
-    function getDirectorsFullPosInfo() external view 
-        returns(OfficersRepo.Position[] memory) 
-    {
-        return _repo.getDirectorsFullPosInfo();
-    }
+    // function getDirectorsFullPosInfo() external view 
+    //     returns(OfficersRepo.Position[] memory) 
+    // {
+    //     return _repo.getDirectorsFullPosInfo();
+    // }
 
     // ==== Executives ====
 
@@ -148,10 +148,10 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
         return _repo.getFullPosInfoInHand(acct);
     }
 
-    // function hasTitle(uint acct, uint title) external view returns (bool flag)
-    // {
-    //     flag = _repo.hasTitle(acct, title);
-    // }
+    function hasTitle(uint acct, uint title) external view returns (bool flag)
+    {
+        flag = _repo.hasTitle(acct, title, _gk.getROM());
+    }
 
     function hasNominationRight(uint seqOfPos, uint acct) external view returns (bool)
     {

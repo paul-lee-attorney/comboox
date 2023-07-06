@@ -54,7 +54,7 @@ interface IBOGKeeper {
         uint256 caller
     ) external;
 
-    function voteCountingOfGM(uint256 seqOfMotion, uint256 caller) external;
+    function voteCountingOfGM(uint256 seqOfMotion) external;
 
     function takeSeat(
         uint256 seqOfMotion,

@@ -68,8 +68,7 @@ interface IBODKeeper {
 
     // ==== Vote Counting ====
 
-    function voteCounting(uint256 seqOfMotion, uint256 caller)
-        external;
+    function voteCounting(uint256 seqOfMotion) external;
 
     // ==== Exec Motion ====
 

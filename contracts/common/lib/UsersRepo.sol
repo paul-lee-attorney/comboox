@@ -174,7 +174,7 @@ library UsersRepo {
     ) public onlyPrimeKey(repo, msgSender) returns (uint216 value) 
     {
         uint caller = repo.userNo[msgSender];
-        value = uint216(repo.lockers.releaseValue(snOfLocker, hashKey, caller));
+        value = uint216(repo.lockers.releaseValue(snOfLocker, hashKey));
         if (value > 0) {
             repo.users[caller].balance += value;
         }

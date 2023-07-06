@@ -115,7 +115,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint256 seqOfMotion,
         uint delegate,
         uint caller
-    ) external onlyDirectKeeper {
+    ) external onlyDirectKeeper directorExist(caller) {
         _avoidanceCheck(seqOfMotion, caller);
         _gk.getBOD().entrustDelegate(seqOfMotion, delegate, caller);
     }
@@ -161,8 +161,8 @@ contract BODKeeper is IBODKeeper, AccessControl {
 
     // ==== Vote Counting ====
 
-    function voteCounting(uint256 seqOfMotion, uint256 caller)
-        external onlyDirectKeeper directorExist(caller)
+    function voteCounting(uint256 seqOfMotion)
+        external onlyDirectKeeper
     {
         IBookOfDirectors _bod = _gk.getBOD();
 

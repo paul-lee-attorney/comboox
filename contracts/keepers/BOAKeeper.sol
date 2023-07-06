@@ -204,17 +204,16 @@ contract BOAKeeper is IBOAKeeper, AccessControl {
     function closeDeal(
         address ia,
         uint256 seqOfDeal,
-        string memory hashKey,
-        uint256 caller
+        string memory hashKey
     ) external onlyDirectKeeper {
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         //交易发起人为买方;
-        require(
-            deal.body.buyer == caller,
-            "BOAKeeper.closeDeal: NOT buyer"
-        );
+        // require(
+        //     deal.body.buyer == caller,
+        //     "BOAKeeper.closeDeal: NOT buyer"
+        // );
 
         //验证hashKey, 执行Deal
         if (IInvestmentAgreement(ia).closeDeal(seqOfDeal, hashKey))

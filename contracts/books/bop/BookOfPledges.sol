@@ -24,25 +24,23 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
 
     function createPledge(
         bytes32 snOfPld,
-        uint creditor,
-        uint guaranteeDays,
         uint paid,
         uint par,
-        uint guaranteedAmt
+        uint guaranteedAmt,
+        uint execDays
     ) external onlyDirectKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
             snOfPld,
-            creditor,
-            guaranteeDays,  
             paid,
             par,
-            guaranteedAmt
+            guaranteedAmt,
+            execDays
         );
 
         emit CreatePledge(
             head.seqOfShare,
             head.seqOfPld,
-            creditor,
+            head.creditor,
             paid,
             par
         );
@@ -50,26 +48,24 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
 
     function issuePledge(
         PledgesRepo.Head memory head,
-        uint creditor,
-        uint guaranteeDays,
         uint paid,
         uint par,
-        uint guaranteedAmt
+        uint guaranteedAmt,
+        uint execDays
     ) external onlyKeeper returns(PledgesRepo.Head memory regHead)
     {
         regHead = _repo.issuePledge(
             head, 
-            creditor,
-            guaranteeDays,
             paid,
             par,
-            guaranteedAmt
+            guaranteedAmt,
+            execDays
         );
 
         emit CreatePledge(
             head.seqOfShare,
             head.seqOfPld,
-            creditor,
+            head.creditor,
             paid,
             par
         );
@@ -81,9 +77,9 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         head = _repo.regPledge(pld);
 
         emit CreatePledge(
-            head.seqOfShare, 
+            pld.head.seqOfShare, 
             head.seqOfPld, 
-            pld.body.creditor,
+            pld.head.creditor,
             pld.body.paid, 
             pld.body.par 
         );
@@ -95,18 +91,19 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint buyer,
-        uint amt
+        uint amt,
+        uint caller
     ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
     {
-        require(buyer > 0, "BOP.TP: zero buyer");
+        require(buyer > 0, "BOP.transferPld: zero buyer");
 
-        newPld = _repo.splitPledge(seqOfShare, seqOfPld, buyer, amt);
+        newPld = _repo.splitPledge(seqOfShare, seqOfPld, buyer, amt, caller);
 
         emit TransferPledge(
             newPld.head.seqOfShare, 
             seqOfPld,
             newPld.head.seqOfPld, 
-            newPld.body.creditor,
+            newPld.head.creditor,
             newPld.body.paid, 
             newPld.body.par 
         );
@@ -117,10 +114,11 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint amt
+        uint amt,
+        uint caller
     ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
     {
-        newPld = _repo.splitPledge(seqOfShare, seqOfPld, 0, amt);
+        newPld = _repo.splitPledge(seqOfShare, seqOfPld, 0, amt, caller);
 
         emit RefundDebt(seqOfShare, seqOfPld, amt);
     }
@@ -128,9 +126,10 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint extDays
+        uint extDays,
+        uint caller
     ) external onlyKeeper {
-        _repo.pledges[seqOfShare][seqOfPld].extendPledge(extDays);
+        _repo.pledges[seqOfShare][seqOfPld].extendPledge(extDays, caller);
         emit ExtendPledge(seqOfShare, seqOfPld, extDays);
     }
 
@@ -139,40 +138,35 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
     function lockPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        bytes32 hashLock
-    ) external onlyKeeper returns (bool flag) {
-        if (_repo.pledges[seqOfShare][seqOfPld].lockPledge(hashLock))
-        {
-            emit LockPledge(seqOfShare, seqOfPld, hashLock);
-            flag = true;
-        }
+        bytes32 hashLock,
+        uint caller
+    ) external onlyKeeper {
+        _repo.pledges[seqOfShare][seqOfPld].lockPledge(hashLock, caller);
+        emit LockPledge(seqOfShare, seqOfPld, hashLock);
     }
 
-    function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey)
-        external onlyKeeper returns (bool flag)
-    {
-        if (_repo.pledges[seqOfShare][seqOfPld].releasePledge(hashKey)){   
-            emit ReleasePledge(seqOfShare, seqOfPld, hashKey);
-            flag = true;
-        }
+    function releasePledge(
+        uint256 seqOfShare, 
+        uint256 seqOfPld, 
+        string memory hashKey
+    ) external onlyKeeper returns (uint64) {
+        PledgesRepo.Pledge storage pld = _repo.pledges[seqOfShare][seqOfPld];
+        pld.releasePledge(hashKey);   
+        emit ReleasePledge(seqOfShare, seqOfPld, hashKey);
+        return pld.body.paid;
     }
 
-    function execPledge(uint256 seqOfShare, uint256 seqOfPld)
-        external onlyKeeper returns (bool flag) 
+    function execPledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
+        external onlyKeeper 
     {
-        if (_repo.pledges[seqOfShare][seqOfPld].execPledge()) {
-            emit ExecPledge(seqOfShare, seqOfPld);
-            flag = true;
-        }
+        _repo.pledges[seqOfShare][seqOfPld].execPledge(caller);
+        emit ExecPledge(seqOfShare, seqOfPld);
     }
 
-    function revokePledge(uint256 seqOfShare, uint256 seqOfPld)
-        external onlyKeeper returns (bool flag) 
-    {
-        if (_repo.pledges[seqOfShare][seqOfPld].revokePledge()) {
-            emit RevokePledge(seqOfShare, seqOfPld);
-            flag = true;
-        }
+    function revokePledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
+        external onlyKeeper {
+        _repo.pledges[seqOfShare][seqOfPld].revokePledge(caller);
+        emit RevokePledge(seqOfShare, seqOfPld);
     }
 
     //##################
@@ -206,6 +200,12 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         external view returns (PledgesRepo.Pledge[] memory) 
     {
         return _repo.getPledgesOfShare(seqOfShare);
+    }
+
+    function getAllPledges() external view 
+        returns (PledgesRepo.Pledge[] memory)
+    {
+        return _repo.getAllPledges();
     }
 
 }

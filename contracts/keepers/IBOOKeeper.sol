@@ -43,8 +43,7 @@ interface IBOOKeeper {
     function releaseSwapOrder(
         uint256 seqOfOpt, 
         uint256 seqOfBrf, 
-        string memory hashKey, 
-        uint256 caller
+        string memory hashKey 
     ) external;
 
     function execSwapOrder(

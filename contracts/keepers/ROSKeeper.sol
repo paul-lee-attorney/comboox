@@ -72,8 +72,8 @@ contract ROSKeeper is IROSKeeper, AccessControl {
         _gk.getROS().lockSwap(seqOfSwap, hashLock);        
     }
 
-    function releaseSwap(uint256 seqOfSwap, string memory hashKey, uint caller)
-        external onlyDirectKeeper onlyObligor(seqOfSwap, caller)
+    function releaseSwap(uint256 seqOfSwap, string memory hashKey)
+        external onlyDirectKeeper
     {
         _gk.getROS().releaseSwap(seqOfSwap, hashKey);
     } 

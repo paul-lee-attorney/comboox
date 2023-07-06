@@ -99,7 +99,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
     external {
-        IBOAKeeper(_keepers[1]).closeDeal(ia, seqOfDeal, hashKey, _msgSender());
+        IBOAKeeper(_keepers[1]).closeDeal(ia, seqOfDeal, hashKey);
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal) external onlyDirectKeeper {
@@ -159,7 +159,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function voteCounting(uint256 seqOfMotion) external {
-        IBODKeeper(_keepers[2]).voteCounting(seqOfMotion, _msgSender());
+        IBODKeeper(_keepers[2]).voteCounting(seqOfMotion);
     }
 
     function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external {
@@ -252,7 +252,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function voteCountingOfGM(uint256 seqOfMotion) external {
-        IBOGKeeper(_keepers[3]).voteCountingOfGM(seqOfMotion, _msgSender());
+        IBOGKeeper(_keepers[3]).voteCountingOfGM(seqOfMotion);
     }
 
     function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external {
@@ -352,7 +352,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfBrf, 
         string memory hashKey
     ) external {
-        IBOOKeeper(_keepers[5]).releaseSwapOrder(seqOfOpt, seqOfBrf, hashKey, _msgSender());
+        IBOOKeeper(_keepers[5]).releaseSwapOrder(seqOfOpt, seqOfBrf, hashKey);
     }
 
     function execSwapOrder(
@@ -370,10 +370,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   BOPKeeper   ##
     // ###################
 
-    function createPledge(bytes32 snOfPld, uint creditor, uint guaranteeDays, uint paid,
-    uint par, uint guaranteedAmt) external {
-        IBOPKeeper(_keepers[6]).createPledge(snOfPld, creditor, guaranteeDays, paid, par,
-        guaranteedAmt, _msgSender());
+    function createPledge(bytes32 snOfPld, uint paid, uint par, uint guaranteedAmt, uint execDays) external {
+        IBOPKeeper(_keepers[6]).createPledge(snOfPld, paid, par, guaranteedAmt, execDays, _msgSender());
     }
 
     function transferPledge(uint256 seqOfShare, uint256 seqOfPld, uint buyer, uint amt) 
@@ -394,11 +392,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey) external {
-        IBOPKeeper(_keepers[6]).releasePledge(seqOfShare, seqOfPld, hashKey, _msgSender());
+        IBOPKeeper(_keepers[6]).releasePledge(seqOfShare, seqOfPld, hashKey);
     }
 
-    function execPledge(uint256 seqOfShare, uint256 seqOfPld) external {
-        IBOPKeeper(_keepers[6]).execPledge(seqOfShare, seqOfPld, _msgSender());
+    function execPledge(bytes32 snOfDeal, uint256 seqOfPld, uint version, uint buyer, uint groupOfBuyer) external {
+        IBOPKeeper(_keepers[6]).execPledge(snOfDeal, seqOfPld, version, msg.sender, buyer, groupOfBuyer, _msgSender());
     }
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external {
@@ -414,7 +412,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey) external {
-        IBOSKeeper(_keepers[7]).requestPaidInCapital(snOfLocker, hashKey, _msgSender());
+        IBOSKeeper(_keepers[7]).requestPaidInCapital(snOfLocker, hashKey);
     }
 
     function withdrawPayInAmt(bytes32 snOfLocker) external onlyDirectKeeper {
@@ -579,7 +577,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function releaseSwap(uint256 seqOfSwap, string memory hashKey) external {
-        IROSKeeper(_keepers[10]).releaseSwap(seqOfSwap, hashKey, _msgSender());
+        IROSKeeper(_keepers[10]).releaseSwap(seqOfSwap, hashKey);
     } 
 
     function execSwap(uint256 seqOfSwap) external {

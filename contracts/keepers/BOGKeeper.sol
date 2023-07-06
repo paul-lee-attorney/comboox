@@ -152,8 +152,8 @@ contract BOGKeeper is IBOGKeeper, AccessControl {
 
     // ==== VoteCounting ====
 
-    function voteCountingOfGM(uint256 seqOfMotion, uint256 caller)
-        external onlyDirectKeeper memberExist(caller)
+    function voteCountingOfGM(uint256 seqOfMotion)
+        external onlyDirectKeeper
     {
         IBookOfGM _bog = _gk.getBOG();
         IRegisterOfMembers _rom = _gk.getROM();

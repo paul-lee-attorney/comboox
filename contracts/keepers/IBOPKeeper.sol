@@ -16,11 +16,10 @@ interface IBOPKeeper {
     // ###################
     function createPledge(
         bytes32 snOfPld,
-        uint creditor,
-        uint guaranteeDays,
         uint paid,
         uint par,
         uint guaranteedAmt,
+        uint execDays,
         uint256 caller
     ) external;
 
@@ -56,13 +55,16 @@ interface IBOPKeeper {
     function releasePledge(
         uint256 seqOfShare, 
         uint256 seqOfPld, 
-        string memory hashKey,
-        uint256 caller
+        string memory hashKey
     ) external;
 
     function execPledge(
-        uint256 seqOfShare, 
+        bytes32 snOfDeal,
         uint256 seqOfPld,
+        uint version,
+        address primeKeyOfCaller,
+        uint buyer,
+        uint groupOfBuyer,
         uint256 caller
     ) external;
 

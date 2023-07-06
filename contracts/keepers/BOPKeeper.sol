@@ -20,27 +20,25 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
     function createPledge(
         bytes32 snOfPld,
-        uint creditor,
-        uint guaranteeDays,
         uint paid,
         uint par,
         uint guaranteedAmt,
+        uint execDays,
         uint256 caller
     ) external onlyDirectKeeper {
 
         PledgesRepo.Head memory head = snOfPld.snParser();
 
-        require(_gk.getBOS().getShare(head.seqOfShare).head.shareholder == caller, 
-            "BOPK.CP: NOT shareholder");
-        require(head.pledgor == caller, "BOPK.CP: NOT pledgor");
+        head.pledgor = _gk.getBOS().getShare(head.seqOfShare).head.shareholder;
+
+        require(head.pledgor == caller, "BOPK.createPld: NOT shareholder");
 
         head = _gk.getBOP().createPledge(
             snOfPld,
-            creditor,
-            guaranteeDays,
             paid,
             par,
-            guaranteedAmt
+            guaranteedAmt,
+            execDays
         );
 
         _gk.getBOS().decreaseCleanPaid(head.seqOfShare, paid);
@@ -51,11 +49,9 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint256 seqOfPld,
         uint buyer,
         uint amt,
-        uint256 caller        
+        uint256 caller
     ) external onlyDirectKeeper {
-        require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).body.creditor == caller,
-            "BOPK.TP: not creditor");
-        _gk.getBOP().transferPledge(seqOfShare, seqOfPld, buyer, amt);
+        _gk.getBOP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
     }
 
     function refundDebt(
@@ -64,11 +60,9 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint amt,
         uint256 caller
     ) external onlyDirectKeeper {
-        PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
+        PledgesRepo.Pledge memory pld = 
+            _gk.getBOP().refundDebt(seqOfShare, seqOfPld, amt, caller);
 
-        require(pld.body.creditor == caller, "BOPK.RD: not creditor");
-
-        pld = _gk.getBOP().refundDebt(seqOfShare, seqOfPld, amt);
         _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
     }
 
@@ -78,9 +72,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint extDays,
         uint256 caller
     ) external onlyDirectKeeper {
-        require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).head.pledgor == caller,
-            "BOPK.EP: not pledgor");
-        _gk.getBOP().extendPledge(seqOfShare, seqOfPld, extDays);    
+        _gk.getBOP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
     }
 
     function lockPledge(
@@ -88,42 +80,143 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint256 seqOfPld,
         bytes32 hashLock,
         uint256 caller
-    ) external onlyDirectKeeper {
-        require(_gk.getBOP().getPledge(seqOfShare, seqOfPld).body.creditor == caller,
-            "BOPK.LP: not creditor");
-        
-        _gk.getBOP().lockPledge(seqOfShare, seqOfPld, hashLock);    
+    ) external onlyDirectKeeper {        
+        _gk.getBOP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
     }
 
     function releasePledge(
         uint256 seqOfShare, 
         uint256 seqOfPld, 
-        string memory hashKey,
-        uint256 caller
-    ) external onlyDirectKeeper {
-        PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
-
-        require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
-        
-        _gk.getBOP().releasePledge(seqOfShare, seqOfPld, hashKey);
-        _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);       
+        string memory hashKey
+    ) external onlyDirectKeeper {        
+        uint64 paid = _gk.getBOP().releasePledge(seqOfShare, seqOfPld, hashKey);
+        _gk.getBOS().increaseCleanPaid(seqOfShare, paid);
     }
 
     function execPledge(
-        uint256 seqOfShare, 
+        bytes32 snOfDeal,
         uint256 seqOfPld,
-        uint256 caller
+        uint version,
+        address primeKeyOfCaller,
+        uint buyer,
+        uint groupOfBuyer,
+        uint caller
     ) external onlyDirectKeeper {
-        PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
+        DealsRepo.Deal memory deal;
+        deal.head = DealsRepo.snParser(snOfDeal);
+        IBookOfIA _boa = _gk.getBOA();
+        IBookOfGM _bog = _gk.getBOG();
 
-        require(pld.body.creditor == caller,
-            "BOPK.EP: not creditor");
+        IInvestmentAgreement _ia = IInvestmentAgreement(
+            _createIA(deal.head.seqOfShare, seqOfPld, version, primeKeyOfCaller, _boa, caller)
+        );
 
-        if (_gk.getBOP().execPledge(seqOfShare, seqOfPld)) {
-            _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
-            _gk.getBOS().transferShare(seqOfShare, pld.body.paid, pld.body.par, pld.body.creditor, uint32(pld.body.guaranteedAmt/pld.body.paid), 0);
-        }
+        PledgesRepo.Pledge memory pld = 
+            _gk.getBOP().getPledge(deal.head.seqOfShare, seqOfPld);
+
+        deal.body.buyer = uint40(buyer);
+        deal.body.groupOfBuyer = uint40(groupOfBuyer);
+        deal.body.paid = uint64(pld.body.paid);
+        deal.body.par = uint64(pld.body.par);
+
+        deal.head.typeOfDeal = _gk.getROM().isMember(buyer) ? 3 : 2;
+
+        deal = _circulateIA(deal, _ia, _boa);
+
+        _proposeIA(_bog, _boa, address(_ia), deal, pld, caller);
     }
+
+    function _createIA(
+        uint seqOfShare,
+        uint seqOfPld,
+        uint version,
+        address primeKeyOfCaller,
+        IBookOfIA _boa,
+        uint caller        
+    ) private returns(address) {
+        _gk.getBOP().execPledge(seqOfShare, seqOfPld, caller);
+
+        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.InvestmentAgreement)) << 240) +
+            (version << 224)); 
+
+        DocsRepo.Doc memory doc = _rc.createDoc(
+            snOfDoc,
+            primeKeyOfCaller
+        );
+
+        IAccessControl(doc.body).init(
+            caller,
+            address(this),
+            address(_rc),
+            address(_gk)
+        );
+
+        _boa.regFile(DocsRepo.codifyHead(doc.head), doc.body);
+
+        return doc.body;        
+    }
+
+    function _circulateIA(
+        DealsRepo.Deal memory deal,
+        IInvestmentAgreement _ia,
+        IBookOfIA _boa
+    ) private returns (DealsRepo.Deal memory) {
+        deal.head.seqOfDeal = _ia.regDeal(deal);
+
+        _ia.setTypeOfIA(deal.head.typeOfDeal);
+
+        RulesParser.VotingRule memory vr = 
+            RulesParser.votingRuleParser(_gk.getSHA().getRule(deal.head.typeOfDeal));
+
+        _boa.circulateFile(
+            address(_ia), 0, 
+            uint16((deal.head.closingDate - uint48(block.timestamp) + 43200)/86400), 
+            vr, bytes32(0), bytes32(0)
+        );
+
+        return deal;
+    }
+
+    function _signIA(
+        IInvestmentAgreement _ia,
+        DealsRepo.Deal memory deal,
+        PledgesRepo.Pledge memory pld,
+        IBookOfIA _boa
+    ) private {
+        _ia.lockDealSubject(deal.head.seqOfDeal);
+        
+        ISigPage(address(_ia)).regSig(
+            deal.head.seqOfDeal,
+            pld.head.pledgor,
+            uint48(block.timestamp),
+            bytes32(0)
+        );
+
+        ISigPage(address(_ia)).regSig(
+            deal.head.seqOfDeal,
+            deal.body.buyer,
+            uint48(block.timestamp),
+            bytes32(0)
+        );
+
+        _boa.establishFile(address(_ia));
+    }
+
+    function _proposeIA(
+        IBookOfGM _bog,
+        IBookOfIA _boa,
+        address ia,
+        DealsRepo.Deal memory deal,
+        PledgesRepo.Pledge memory pld,
+        uint caller
+    ) private {
+        uint64 seqOfMotion = 
+            _bog.createMotionToApproveDoc(ia, deal.head.typeOfDeal, caller, pld.head.pledgor);
+        
+        _bog.proposeMotionToGeneralMeeting(seqOfMotion, pld.head.pledgor);
+        _boa.proposeFile(ia, seqOfMotion);       
+    }
+
 
     function revokePledge(
         uint256 seqOfShare, 
@@ -131,10 +224,10 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint256 caller
     ) external onlyDirectKeeper {
         PledgesRepo.Pledge memory pld = _gk.getBOP().getPledge(seqOfShare, seqOfPld);
-
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
-        if (_gk.getBOP().revokePledge(seqOfShare, seqOfPld)) {
-            _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);   
-        }
+
+        _gk.getBOP().revokePledge(seqOfShare, seqOfPld, caller);
+        _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);   
+        
     }
 }

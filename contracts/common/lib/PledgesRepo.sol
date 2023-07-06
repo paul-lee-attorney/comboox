@@ -25,19 +25,22 @@ library PledgesRepo {
         uint32 seqOfShare;
         uint16 seqOfPld;
         uint48 createDate;
-        uint48 triggerDate;
-        uint40 pledgor;
+        uint16 daysToMaturity;
+        uint16 guaranteeDays;
+        uint40 creditor;
         uint40 debtor;
-        uint32 data;
+        uint40 pledgor;
+        uint8 state;
     }
 
     struct Body {
-        uint40 creditor; //质权人、债权人
-        uint16 guaranteeDays;
         uint64 paid;
         uint64 par;
         uint64 guaranteedAmt;
-        uint8 state;
+        uint16 preSeq;
+        uint16 execDays;
+        uint16 para;
+        uint16 argu;
     }
 
     //Pledge 质权
@@ -64,10 +67,12 @@ library PledgesRepo {
             seqOfShare: uint32(_sn >> 224),
             seqOfPld: uint16(_sn >> 208),
             createDate: uint48(_sn >> 160),
-            triggerDate: uint48(_sn >> 112),
-            pledgor: uint40(_sn >> 72),
-            debtor: uint40(_sn >> 32),
-            data: uint32(_sn)
+            daysToMaturity: uint16(_sn >> 144),
+            guaranteeDays: uint16(_sn >> 128),
+            creditor: uint40(_sn >> 88),
+            debtor: uint40(_sn >> 48),
+            pledgor: uint40(_sn >> 8),
+            state: uint8(_sn)
         });
     } 
 
@@ -76,10 +81,12 @@ library PledgesRepo {
                             head.seqOfShare,
                             head.seqOfPld,
                             head.createDate,
-                            head.triggerDate,
+                            head.daysToMaturity,
+                            head.guaranteeDays,
+                            head.creditor,
                             head.pledgor,
                             head.debtor,
-                            head.data);        
+                            head.state);        
         assembly {
             sn := mload(add(_sn, 0x20))
         }
@@ -89,39 +96,44 @@ library PledgesRepo {
     function createPledge(
             Repo storage repo, 
             bytes32 snOfPld, 
-            uint creditor,
-            uint guaranteeDays, 
             uint paid,
             uint par,
-            uint guaranteedAmt
+            uint guaranteedAmt,
+            uint execDays
     ) public returns (Head memory head) 
     {
         head = snParser(snOfPld);
-        head = issuePledge(repo, head, creditor, guaranteeDays, paid, par, guaranteedAmt);
+        head = issuePledge(repo, head, paid, par, guaranteedAmt, execDays);
     }
 
     function issuePledge(
         Repo storage repo,
         Head memory head,
-        uint creditor,
-        uint guaranteeDays,
         uint paid,
         uint par,
-        uint guaranteedAmt
+        uint guaranteedAmt,
+        uint execDays
     ) public returns(Head memory regHead) {
-        Pledge memory pld;
 
-        head.createDate = uint48(block.timestamp);
+        require (guaranteedAmt > 0, "PR.issuePld: zero guaranteedAmt");
+        require (par > 0, "PR.issuePld: zero par");
+        require (par >= paid, "PR.issuePld: paid overflow");
+
+        Pledge memory pld;
 
         pld.head = head;
 
+        pld.head.createDate = uint48(block.timestamp);
+        pld.head.state = uint8(StateOfPld.Issued);
+
         pld.body = Body({
-            creditor: uint40(creditor),
-            guaranteeDays: uint16(guaranteeDays),
             paid: uint64(paid),
             par: uint64(par),
             guaranteedAmt: uint64(guaranteedAmt),
-            state: uint8(StateOfPld.Issued)
+            preSeq:0,
+            execDays: uint16(execDays),
+            para:0,
+            argu:0
         });
 
         regHead = regPledge(repo, pld);
@@ -132,10 +144,7 @@ library PledgesRepo {
         Pledge memory pld
     ) public returns(Head memory){
 
-        uint64 expireDate = pld.head.triggerDate + uint48(pld.body.guaranteeDays) * 86400;
-
-        require(block.timestamp < expireDate, "PR.DAOP: pledge expired");
-        require(pld.body.state < uint8(StateOfPld.Locked), "PR.DAOP: wrong state");
+        require(pld.head.seqOfShare > 0,"PR.regPledge: zero seqOfShare");
     
         pld.head.seqOfPld = _increaseCounterOfPld(repo, pld.head.seqOfShare);
 
@@ -152,105 +161,108 @@ library PledgesRepo {
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint buyer,
-        uint amt
+        uint amt,
+        uint caller
     ) public returns(Pledge memory newPld) {
 
         Pledge storage pld = repo.pledges[seqOfShare][seqOfPld];
 
-        uint64 expireDate = pld.head.triggerDate + uint48(pld.body.guaranteeDays) * 86400;
+        require(caller == pld.head.creditor, "PR.splitPld: not creditor");
 
-        require(block.timestamp < expireDate, "PR.SP: pledge expired");
-        require(pld.body.state < uint8(StateOfPld.Released), "PR.SP: wrong state");
-        require(amt <= pld.body.guaranteedAmt, "PR.SP: insufficient guaranteedAmt");
-        require(amt > 0, "PR.SP: zero amt");
+        require(!isExpired(pld), "PR.splitPld: pledge expired");
+        require(pld.head.state == uint8(StateOfPld.Issued) ||
+            pld.head.state == uint8(StateOfPld.Locked), "PR.splitPld: wrong state");
+        require(amt > 0, "PR.splitPld: zero amt");
+        // require(amt <= pld.body.guaranteedAmt, "PR.splitPld: amt overflow");
 
         newPld = pld;
 
-        uint64 ratio = uint64(amt) * 10000 / newPld.body.guaranteedAmt;
+        if (amt < pld.body.guaranteedAmt) {
+            uint64 ratio = uint64(amt) * 10000 / newPld.body.guaranteedAmt;
 
-        newPld.body.paid = newPld.body.paid * ratio / 10000;
-        newPld.body.par = newPld.body.par * ratio / 10000;
-        newPld.body.guaranteedAmt = uint64(amt);
+            newPld.body.paid = pld.body.paid * ratio / 10000;
+            newPld.body.par = pld.body.par * ratio / 10000;
+            newPld.body.guaranteedAmt = uint64(amt);
 
-        if (buyer > 0) {
-            newPld.body.creditor = uint40(buyer);
-            newPld.head = regPledge(repo, newPld);
-        }
-
-        if (amt == pld.body.guaranteedAmt) {        
-            pld.body.paid = 0;
-            pld.body.par = 0;
-            pld.body.guaranteedAmt = 0;
-            pld.body.state = uint8(StateOfPld.Revoked);
-        } else if (amt < pld.body.guaranteedAmt){
             pld.body.paid -= newPld.body.paid;
             pld.body.par -= newPld.body.par;
             pld.body.guaranteedAmt -= newPld.body.guaranteedAmt;
+
+        } else if (amt == pld.body.guaranteedAmt) {
+
+            pld.head.state = uint8(StateOfPld.Released);
+
+        } else revert("PR.splitPld: amt overflow");
+
+        if (buyer > 0) {
+            newPld.body.preSeq = pld.head.seqOfPld;
+
+            newPld.head.creditor = uint40(buyer);
+            newPld.head = regPledge(repo, newPld);
         }
     }
 
     function extendPledge(
         Pledge storage pld,
-        uint extDays
+        uint extDays,
+        uint caller
     ) public {
-        require(pld.body.state < uint8(StateOfPld.Released), "PR.EP: wrong state");
-        require(block.timestamp < pld.head.triggerDate + uint48(pld.body.guaranteeDays) * 86400, 
-            "PR.UP: pledge expired");
-        pld.body.guaranteeDays += uint16(extDays);
+        require(caller == pld.head.pledgor, "PR.extendPld: not pledgor");
+        require(pld.head.state == uint8(StateOfPld.Issued) ||
+            pld.head.state == uint8(StateOfPld.Locked), "PR.EP: wrong state");
+        require(!isExpired(pld), "PR.UP: pledge expired");
+        pld.head.guaranteeDays += uint16(extDays);
     }
 
     // ==== Lock & Release ====
 
     function lockPledge(
         Pledge storage pld,
-        bytes32 hashLock
-    ) public returns (bool flag){
-        require (block.timestamp < pld.head.triggerDate + uint48(pld.body.guaranteeDays) * 86400, 
-            "PR.RP: pledge expired");
-        require (hashLock != bytes32(0), "PR.LP: zero hashLock");
+        bytes32 hashLock,
+        uint caller
+    ) public {
+        require(caller == pld.head.creditor, "PR.lockPld: not creditor");        
+        require (!isExpired(pld), "PR.lockPld: pledge expired");
+        require (hashLock != bytes32(0), "PR.lockPld: zero hashLock");
 
-        if (pld.body.state == uint8(StateOfPld.Issued)){
-            pld.body.state = uint8(StateOfPld.Locked);
+        if (pld.head.state == uint8(StateOfPld.Issued)){
+            pld.head.state = uint8(StateOfPld.Locked);
             pld.hashLock = hashLock;
-            flag = true;
-        }
+        } else revert ("PR.lockPld: wrong state");
     }
 
     function releasePledge(
         Pledge storage pld,
         string memory hashKey
-    ) public returns (bool flag){
-        require (pld.body.state == uint8(StateOfPld.Locked), "PR.RP: wrong state");
+    ) public {
+        require (pld.head.state == uint8(StateOfPld.Locked), "PR.RP: wrong state");
         if (pld.hashLock == keccak256(bytes(hashKey))) {
-            pld.body.state = uint8(StateOfPld.Released);
-            flag = true;
-        }
+            pld.head.state = uint8(StateOfPld.Released);
+        } else revert("PR.releasePld: wrong Key");
     }
 
-    function execPledge(Pledge storage pld) public returns(bool flag)
-    {
-        require(block.timestamp >= pld.head.triggerDate,"PR.EP: pledge not triggered");
-        require(block.timestamp < pld.head.triggerDate + uint48(pld.body.guaranteeDays) * 86400,
-            "PR.EP: pledge expired");
+    function execPledge(Pledge storage pld, uint caller) public {
 
-        if (pld.body.state == uint8(StateOfPld.Issued) ||
-            pld.body.state == uint8(StateOfPld.Locked))
+        require(caller == pld.head.creditor, "PR.execPld: not creditor");
+        require(isTriggerd(pld), "PR.execPld: pledge not triggered");
+        require(!isExpired(pld), "PR.execPld: pledge expired");
+
+        if (pld.head.state == uint8(StateOfPld.Issued) ||
+            pld.head.state == uint8(StateOfPld.Locked))
         {
-            pld.body.state = uint8(StateOfPld.Executed);
-            flag = true;
-        }        
+            pld.head.state = uint8(StateOfPld.Executed);
+        } else revert ("PR.execPld: wrong state");
     }
 
-    function revokePledge(Pledge storage pld) public returns(bool flag) {
-        require(block.timestamp > pld.head.triggerDate + uint48(pld.body.guaranteeDays) * 86400,
-            "PR.EP: pledge not expired");
+    function revokePledge(Pledge storage pld, uint caller) public {
+        require(caller == pld.head.pledgor, "PR.revokePld: not pledgor");
+        require(isExpired(pld), "PR.revokePld: pledge not expired");
 
-        if (pld.body.state == uint8(StateOfPld.Issued) || 
-            pld.body.state == uint8(StateOfPld.Locked)) 
+        if (pld.head.state == uint8(StateOfPld.Issued) || 
+            pld.head.state == uint8(StateOfPld.Locked)) 
         {
-            pld.body.state = uint8(StateOfPld.Revoked);
-            flag = true;
-        }
+            pld.head.state = uint8(StateOfPld.Revoked);
+        } else revert ("PR.revokePld: wrong state");
     }
 
     // ==== Counter ====
@@ -265,6 +277,16 @@ library PledgesRepo {
     //#################
     //##    读接口    ##
     //#################
+
+    function isTriggerd(Pledge storage pld) public view returns(bool) {
+        uint64 triggerDate = pld.head.createDate + uint48(pld.head.daysToMaturity) * 86400;
+        return block.timestamp >= triggerDate;
+    }
+
+    function isExpired(Pledge storage pld) public view returns(bool) {
+        uint64 expireDate = pld.head.createDate + uint48(pld.head.daysToMaturity + pld.head.guaranteeDays) * 86400;
+        return block.timestamp >= expireDate;
+    }
 
     function counterOfPld(Repo storage repo, uint256 seqOfShare) 
         public view returns (uint16) 
@@ -294,7 +316,7 @@ library PledgesRepo {
     {
         uint256 len = counterOfPld(repo, seqOfShare);
 
-        require(len > 0, "BOP.POS: no pledges found");
+        // require(len > 0, "PR.getPldsOfShare: no pledges found");
 
         Pledge[] memory output = new Pledge[](len);
 
@@ -304,5 +326,21 @@ library PledgesRepo {
         }
 
         return output;
+    }
+
+    function getAllPledges(Repo storage repo) 
+        public view returns (Pledge[] memory)
+    {
+        bytes32[] memory snList = getSNList(repo);
+        uint len = snList.length;
+        Pledge[] memory ls = new Pledge[](len);
+
+        while( len > 0 ) {
+            Head memory head = snParser(snList[len - 1]);
+            ls[len - 1] = repo.pledges[head.seqOfShare][head.seqOfPld];
+            len--;
+        }
+
+        return ls;
     }
 }

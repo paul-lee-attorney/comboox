@@ -25,7 +25,8 @@ library MotionsRepo {
         ElectOfficer,
         RemoveOfficer,
         ApproveDoc,
-        ApproveAction
+        ApproveAction,
+        ApproveSharePledge
     }
 
     enum StateOfMotion {
@@ -359,12 +360,12 @@ library MotionsRepo {
 
         DelegateMap.Voter storage voter = r.map.voters[acct];
 
-        uint32 headCount = 1;
+        uint32 headcount = 1;
         if (voter.repHead > 0) {
-            headCount = r.map.getLeavesHeadcountOfDirectors(acct, _bod);
+            headcount = r.map.getLeavesHeadcountOfDirectors(acct, _bod);
         }
 
-        r.box.castVote(acct, attitude, headCount, 0, sigHash);
+        _castVote(repo, seqOfMotion, acct, attitude, headcount, 0, sigHash);
     }
 
     function _castVote(

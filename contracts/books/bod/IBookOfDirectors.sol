@@ -70,8 +70,8 @@ interface IBookOfDirectors is IMeetingMinutes{
 
     function getManagersPosList() external view returns(uint[] memory);
 
-    function getManagersFullPosInfo() external view 
-        returns(OfficersRepo.Position[] memory);
+    // function getManagersFullPosInfo() external view 
+    //     returns(OfficersRepo.Position[] memory);
 
     // ==== Directors ====
 
@@ -85,8 +85,8 @@ interface IBookOfDirectors is IMeetingMinutes{
     function getDirectorsPosList() external view 
         returns (uint256[] memory);
 
-    function getDirectorsFullPosInfo() external view 
-        returns(OfficersRepo.Position[] memory);        
+    // function getDirectorsFullPosInfo() external view 
+    //     returns(OfficersRepo.Position[] memory);        
 
     // ==== Executives ====
     
@@ -99,8 +99,8 @@ interface IBookOfDirectors is IMeetingMinutes{
     function getFullPosInfoInHand(uint acct) 
         external view returns (OfficersRepo.Position[] memory);
 
-    // function hasTitle(uint acct, uint title) 
-    //     external returns (bool flag);
+    function hasTitle(uint acct, uint title) 
+        external returns (bool flag);
 
     function hasNominationRight(uint seqOfPos, uint acct) 
         external view returns (bool);

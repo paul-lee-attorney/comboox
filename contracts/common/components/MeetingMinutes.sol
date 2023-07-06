@@ -76,7 +76,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint seqOfVR,
         uint executor,
         uint proposer    
-    ) external onlyDirectKeeper returns(uint64) {
+    ) external onlyKeeper returns(uint64) {
 
         return _addMotion(
             uint8(MotionsRepo.TypeOfMotion.ApproveDoc),

@@ -66,15 +66,13 @@ library LockersRepo {
     function releaseValue(
         Repo storage repo,
         bytes32 snOfLocker,
-        string memory hashKey,
-        uint256 caller
+        string memory hashKey
     ) public returns(uint256 value) {
         Locker memory locker = snParser(snOfLocker);
 
         require(block.timestamp < locker.expireDate, 
             "LR.RV: locker expired");
-        require(locker.to == caller, 
-            "LR.RV: not to");
+
         require(locker.hashLock == uint128(uint256(keccak256(bytes(hashKey)))),
             "LR.RV: wrong key");
 
