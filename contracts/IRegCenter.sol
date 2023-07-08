@@ -18,33 +18,34 @@ interface IRegCenter {
 
     enum TypeOfDoc{
         ZeroPoint,
-        BOAKeeper,          // 1
+        BOCKeeper,          // 1
         BODKeeper,          // 2
-        BOGKeeper,          // 3
-        BOHKeeper,          // 4
-        BOOKeeper,          // 5
-        BOPKeeper,          // 6
-        BOSKeeper,          // 7
-        ROMKeeper,          // 8
+        BMMKeeper,          // 3
+        BOMKeeper,          // 4
+        GMMKeeper,          // 5
+        BOIKeeper,          // 6
+        BOOKeeper,          // 7
+        BOPKeeper,          // 8
         ROSKeeper,          // 9
         SHAKeeper,          // 10
-        BookOfIA,           // 11
-        BookOfDirectors,    // 12
-        BookOfGM,           // 13
-        BookOfSHA,          // 14
-        BookOfOptions,      // 15
-        BookOfPledges,      // 16
-        BookOfShares,       // 17
-        RegisterOfMembers,  // 18
-        RegisterOfSwaps,    // 19
-        GeneralKeeper,      // 20
-        InvestmentAgreement,// 21
-        ShareholdersAgreement,// 22
-        AntiDilution,       // 23
-        DragAlong,          // 24
-        LockUp,             // 25
-        Options,            // 26
-        TagAlong            // 27
+        BOC,                // 11
+        BOD,                // 12
+        BMM,                // 13
+        BOM,                // 14
+        GMM,                // 15
+        BOI,                // 16
+        BOO,                // 17
+        BOP,                // 18
+        ROS,                // 19
+        BOS,                // 20
+        GeneralKeeper,      // 21
+        IA,                 // 22
+        SHA,                // 23
+        AntiDilution,       // 24
+        DragAlong,          // 25
+        LockUp,             // 26
+        Options,            // 27
+        TagAlong            // 28
     }
 
     // ##################
@@ -164,7 +165,7 @@ interface IRegCenter {
 
     function getUser() external view returns (UsersRepo.User memory);
 
-    function getUserNo(address targetAddr) external returns (uint40);
+    function getUserNo(address targetAddr, uint fee) external returns (uint40);
 
     function getMyUserNo() external returns (uint40);
 

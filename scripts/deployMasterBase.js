@@ -207,7 +207,7 @@ async function main() {
 		"RolesRepo": libRolesRepo.address,
 		"MotionsRepo": libMotionsRepo.address
 	}
-	let bog = await deployTool(signers[0], "BookOfGM", libraries);
+	let bog = await deployTool(signers[0], "GeneralMeetingMinutes", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -296,7 +296,7 @@ async function main() {
 	console.log("set template for BOD at address: ", bod.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate(codifyHead("000d"), bog.address);
-	console.log("set template for BOG at address: ", bog.address, "\n");
+	console.log("set template for GMM at address: ", bog.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate(codifyHead("000e"), boh.address);
 	console.log("set template for BOH at address: ", boh.address, "\n");

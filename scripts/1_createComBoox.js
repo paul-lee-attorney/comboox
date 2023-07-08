@@ -43,7 +43,7 @@ async function main() {
 
 	console.log("BOA: ", await gk.getBOA());
 	console.log("BOD: ", await gk.getBOD());
-	console.log("BOG: ", await gk.getBOG());
+	console.log("GMM: ", await gk.getGMM());
 	console.log("BOH: ", await gk.getBOH());
 	console.log("SHA: ", await gk.getSHA());
 	console.log("BOO: ", await gk.getBOD());

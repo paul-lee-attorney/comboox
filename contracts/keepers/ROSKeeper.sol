@@ -97,10 +97,10 @@ contract ROSKeeper is IROSKeeper, AccessControl {
         uint256 caller
     ) external onlyDirectKeeper {
 
-        IBookOfGM _bog = _gk.getBOG();
+        IMeetingMinutes _gmm = _gk.getGMM();
 
         MotionsRepo.Motion memory motion = 
-            _bog.getMotion(seqOfMotion);
+            _gmm.getMotion(seqOfMotion);
 
         require(
             motion.body.state == uint8(MotionsRepo.StateOfMotion.Rejected_ToBuy),
@@ -114,7 +114,7 @@ contract ROSKeeper is IROSKeeper, AccessControl {
 
         SharesRepo.Share memory target = _gk.getBOS().getShare(seqOfTarget);
 
-        require(_bog.getBallot(seqOfMotion, _bog.getDelegateOf(seqOfMotion, target.head.shareholder)).attitude == 2,
+        require(_gmm.getBallot(seqOfMotion, _gmm.getDelegateOf(seqOfMotion, target.head.shareholder)).attitude == 2,
             "BOGK.RTB: not vetoer");
 
         require(block.timestamp < motion.body.voteEndDate + 

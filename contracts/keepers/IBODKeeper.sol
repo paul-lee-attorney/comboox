@@ -14,63 +14,22 @@ import "../books/bod/IBookOfDirectors.sol";
 import "../common/lib/RulesParser.sol";
 
 interface IBODKeeper {
-    function nominateOfficer(
-        uint256 seqOfPos,
-        uint candidate,
-        uint nominator
-    ) external;
 
-    function createMotionToRemoveOfficer(
-        uint256 seqOfPos,
-        uint nominator
-    ) external;
+    // ==== Directors ====
 
-    // ---- Docs ----
-
-    function createMotionToApproveDoc(
-        address doc,
-        uint seqOfVR,
-        uint executor,
-        uint proposer
-    ) external;
-
-    // ---- Actions ----
-
-    function createAction(
-        uint seqOfVR,
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory params,
-        bytes32 desHash,
-        uint executor,
-        uint proposer
-    ) external;
-
-    // ==== Cast Vote ====
-
-    function entrustDelegaterForBoardMeeting(
+    function takeSeat(
         uint256 seqOfMotion,
-        uint delegate,
+        uint256 seqOfPos,
+        uint caller 
+    ) external;
+
+    function removeDirector (
+        uint256 seqOfMotion, 
+        uint256 seqOfPos,
         uint caller
     ) external;
 
-    function proposeMotionToBoard (
-        uint seqOfMotion,
-        uint caller
-    ) external;
-
-    function castVote(
-        uint256 seqOfMotion,
-        uint attitude,
-        bytes32 sigHash,
-        uint256 caller
-    ) external;
-
-    // ==== Vote Counting ====
-
-    function voteCounting(uint256 seqOfMotion) external;
-
-    // ==== Exec Motion ====
+    // ==== Officers ====
 
     function takePosition(
         uint256 seqOfMotion,
@@ -78,21 +37,14 @@ interface IBODKeeper {
         uint caller 
     ) external;
 
-    function quitPosition(uint256 seqOfPos, uint caller) external;
-
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
         uint caller
     ) external;
 
-    function execAction(
-        uint typeOfAction,
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory params,
-        bytes32 desHash,
-        uint256 seqOfMotion,
-        uint caller
-    ) external returns (uint);
+    // ==== Quit ====
+
+    function quitPosition(uint256 seqOfPos, uint caller) external;
+
 }

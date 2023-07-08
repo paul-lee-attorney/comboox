@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/rom/IRegisterOfMembers.sol";
+import "../../books/bom/IBookOfMembers.sol";
 import "../../books/bod/IBookOfDirectors.sol";
 
 library DelegateMap {
@@ -80,7 +80,7 @@ library DelegateMap {
         }
     }
 
-    function getLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IRegisterOfMembers _rom)
+    function getLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IBookOfMembers _bom)
         public view returns(LeavesInfo memory info)
     {
         Voter memory voter = map.voters[acct];
@@ -88,14 +88,14 @@ library DelegateMap {
         uint40[] memory leaves = voter.principals;
         uint256 len = leaves.length;
         while (len > 0) {
-            LeavesInfo memory lv = getLeavesWeightAtDate(map, leaves[len-1], baseDate, _rom);
+            LeavesInfo memory lv = getLeavesWeightAtDate(map, leaves[len-1], baseDate, _bom);
             info.weight += lv.weight;
             info.emptyHead += lv.emptyHead;
             len--;
         }
         
         if (voter.weight == 0) {
-            uint64 w = _rom.votesAtDate(acct, baseDate);
+            uint64 w = _bom.votesAtDate(acct, baseDate);
             if (w > 0) info.weight += w;
             else info.emptyHead ++;
         }

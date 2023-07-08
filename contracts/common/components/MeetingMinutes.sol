@@ -28,12 +28,15 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint executor,
         uint contents
     ) private returns (uint64) {
-        MotionsRepo.Head memory head; 
-
-        head.typeOfMotion = uint8(typeOfMotion);
-        head.seqOfVR = uint16(seqOfVR);
-        head.creator = uint40(creator);
-        head.executor = uint40(executor);
+        MotionsRepo.Head memory head = MotionsRepo.Head({
+            typeOfMotion: uint8(typeOfMotion),
+            seqOfMotion: 0,
+            seqOfVR: uint16(seqOfVR),
+            creator: uint40(creator),
+            executor: uint40(executor),
+            createDate: 0,
+            data: 0
+        });
 
         head = _repo.addMotion(head, contents);
         emit CreateMotion(MotionsRepo.codifyHead(head), contents);
@@ -133,7 +136,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint256 seqOfMotion,
         uint proposer
     ) public onlyDirectKeeper {
-        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _gk.getROM(), _gk.getBOD(), proposer);
+        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _gk.getBOM(), _gk.getBOD(), proposer);
         emit ProposeMotionToGeneralMeeting(seqOfMotion, proposer);
     }
 
@@ -152,7 +155,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint delegate, 
         uint principal
     ) external onlyDirectKeeper {
-        _repo.entrustDelegate(seqOfMotion, delegate, principal, _gk.getROM(), _gk.getBOD());
+        _repo.entrustDelegate(seqOfMotion, delegate, principal, _gk.getBOM(), _gk.getBOD());
         emit EntrustDelegate(seqOfMotion, delegate, principal);
     }
 
@@ -164,7 +167,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDirectKeeper {
-        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROM());
+        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getBOM());
         emit CastVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -260,10 +263,10 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint256 seqOfMotion, 
         uint caller,
         uint baseDate, 
-        IRegisterOfMembers _rom 
+        IBookOfMembers _bom 
     ) external view returns(DelegateMap.LeavesInfo memory info)
     {
-        info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _rom);
+        info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _bom);
     }
 
     function getLeavesHeadcountOfDirectors(

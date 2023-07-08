@@ -20,7 +20,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier withinExecPeriod(address ia) {
         require(
-            block.timestamp <= _gk.getBOA().shaExecDeadline(ia),
+            block.timestamp <= _gk.getBOI().shaExecDeadline(ia),
             "missed review period"
         );
         _;
@@ -28,7 +28,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier afterExecPeriod(address ia) {
         require(
-            block.timestamp > _gk.getBOA().shaExecDeadline(ia),
+            block.timestamp > _gk.getBOI().shaExecDeadline(ia),
             "still within review period"
         );
         _;
@@ -36,7 +36,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier beforeProposeDeadline(address ia) {
         require(
-            block.timestamp <= _gk.getBOA().terminateStartpoint(ia),
+            block.timestamp <= _gk.getBOI().terminateStartpoint(ia),
             "SHAK.md.BPD: missed proposal deadline"
         );
         _;
@@ -44,7 +44,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     // modifier onlyEstablished(address ia) {
     //     require(
-    //         _gk.getBOA().getHeadOfFile(ia).state ==
+    //         _gk.getBOI().getHeadOfFile(ia).state ==
     //             uint8(FilesRepo.StateOfFile.Established),
     //         "IA not established"
     //     );
@@ -74,10 +74,10 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         require(deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated), 
             "SHAK.EAR: deal terminated");
 
-        _gk.getBOA().createMockOfIA(ia);
+        _gk.getBOI().createMockOfIA(ia);
         _checkAlongDeal(dragAlong, ia, deal, share, caller);
 
-        _gk.getBOA().execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
+        _gk.getBOI().execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
     }
 
     function _checkAlongDeal(
@@ -88,10 +88,10 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller
     ) private {
 
-        require(!_gk.getBOA().isFRClaimer(ia, caller), 
+        require(!_gk.getBOI().isFRClaimer(ia, caller), 
             "SHAK.CAD: caller is frClaimer");
 
-        require(!_gk.getBOA().isFRClaimer(ia, share.head.shareholder), 
+        require(!_gk.getBOI().isFRClaimer(ia, share.head.shareholder), 
             "SHAK.CAD: shareholder is frClaimer");
 
         address term = dragAlong
@@ -130,7 +130,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
     ) external onlyDirectKeeper afterExecPeriod(ia) {
 
         require(
-            block.timestamp <= _gk.getBOA().terminateStartpoint(ia),
+            block.timestamp <= _gk.getBOI().terminateStartpoint(ia),
             "SHAK.acceptAlongDeal: missed proposal deadline"
         );
 
@@ -140,7 +140,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         if (deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated))
         {
-            DTClaims.Claim memory claim = _gk.getBOA().getDTClaimForShare(ia, seqOfDeal, seqOfShare);
+            DTClaims.Claim memory claim = _gk.getBOI().getDTClaimForShare(ia, seqOfDeal, seqOfShare);
             SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
 
             uint256 seqOfAlongDeal = _createAlongDeal(ia, claim, deal, share);
@@ -226,7 +226,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         bytes32 sigHash
     ) private {
         for (uint256 i = 0; i < obligors.length; i++) {
-            bytes32[] memory sharesInHand = _gk.getROM().sharesInHand(obligors[i]);
+            bytes32[] memory sharesInHand = _gk.getBOM().sharesInHand(obligors[i]);
 
             for (uint256 j = 0; j < sharesInHand.length; j++) {
                 (uint256 seqOfGiftDeal, uint64 result) = _createGift(
@@ -300,7 +300,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         require(caller == deal.body.buyer, "caller is not buyer");
 
         if (IInvestmentAgreement(ia).takeGift(seqOfDeal))
-            _gk.getBOA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
+            _gk.getBOI().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
 
         _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _gk.getBOS().transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0, 0);
@@ -328,12 +328,12 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             "SHAK.EFR: rule and deal are not same type");
 
         require(
-            (rule.membersEqual && _gk.getROM().isMember(caller)) || 
+            (rule.membersEqual && _gk.getBOM().isMember(caller)) || 
             rule.rightholders[seqOfRightholder] == caller,
             "SHAK.EFR: caller NOT rightholder"
         );
 
-        if (_gk.getBOA().execFirstRefusalRight(ia, seqOfDeal, caller, sigHash))
+        if (_gk.getBOI().execFirstRefusalRight(ia, seqOfDeal, caller, sigHash))
             IInvestmentAgreement(ia).terminateDeal(seqOfDeal); 
     }
 
@@ -347,11 +347,11 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         if (deal.head.typeOfDeal == uint8(DealsRepo.TypeOfDeal.CapitalIncrease)
-        ) require( _gk.getROM().groupRep(caller) == _gk.getROM().controllor(), 
+        ) require( _gk.getBOM().groupRep(caller) == _gk.getBOM().controllor(), 
             "SHAK.AFR: not controller");
         else require(caller == deal.head.seller, "SHAK.AFR: not sellerOfDeal");
 
-        FRClaims.Claim[] memory cls = _gk.getBOA().acceptFirstRefusalClaims(ia, seqOfDeal);
+        FRClaims.Claim[] memory cls = _gk.getBOI().acceptFirstRefusalClaims(ia, seqOfDeal);
 
         uint256 len = cls.length;
 
@@ -377,7 +377,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         
         deal.body.buyer = cl.rightholder;
-        deal.body.groupOfBuyer = _gk.getROM().groupRep(cl.rightholder);
+        deal.body.groupOfBuyer = _gk.getBOM().groupRep(cl.rightholder);
         deal.body.paid = (deal.body.paid * cl.ratio) / 10000;
         deal.body.par = (deal.body.par * cl.ratio) / 10000;
         deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);

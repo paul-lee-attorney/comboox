@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-import "../boh/terms/IOptions.sol";
+import "../boc/terms/IOptions.sol";
 
 import "../../common/lib/Checkpoints.sol";
 import "../../common/lib/EnumerableSet.sol";

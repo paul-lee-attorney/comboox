@@ -137,7 +137,7 @@ contract RegCenter is IRegCenter {
     function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) public 
         returns(DocsRepo.Doc memory doc)
     {
-        uint40 owner = _users.getUserNo(primeKeyOfOwner, msg.sender);
+        uint40 owner = _users.getUserNo(primeKeyOfOwner, 20000, msg.sender);
         doc = _docs.createDoc(snOfDoc, owner);
         emit CreateDoc(doc.head.codifyHead(), doc.body);
     }
@@ -158,75 +158,72 @@ contract RegCenter is IRegCenter {
 
     function createComp() external 
     {
-        DocsRepo.Doc[20] memory docs;
+        address[21] memory docs;
 
         address primeKeyOfOwner = msg.sender;
         uint40 owner = _users.getMyUserNo(primeKeyOfOwner);
 
-        docs[19] = _createDocAtLatestVersion(20, primeKeyOfOwner);
-        IAccessControl(docs[19].body).init(
+        docs[20] = _createDocAtLatestVersion(21, primeKeyOfOwner);
+        IAccessControl(docs[20]).init(
             owner,
             address(this),
             address(this),
-            docs[19].body
+            docs[20]
         );
 
-        IGeneralKeeper(docs[19].body).createCorpSeal();
+        IGeneralKeeper(docs[20]).createCorpSeal();
 
         docs[9] = _createDocAtLatestVersion(10, primeKeyOfOwner);
-        IAccessControl(docs[9].body).init(
+        IAccessControl(docs[9]).init(
             owner,
-            docs[19].body,
+            docs[20],
             address(this),
-            docs[19].body
+            docs[20]
         );
-        IGeneralKeeper(docs[19].body).regKeeper(10, docs[9].body);
+        IGeneralKeeper(docs[20]).regKeeper(10, docs[9]);
 
-        uint16 i;
-        while (i < 9) {
+        uint i;
+        while (i < 10) {
             docs[i] = _createDocAtLatestVersion(i+1, primeKeyOfOwner);
-            IAccessControl(docs[i].body).init(
+            IAccessControl(docs[i]).init(
                 owner,
-                docs[19].body,
+                docs[20],
                 address(this),
-                docs[19].body
+                docs[20]
             );
-            IGeneralKeeper(docs[19].body).regKeeper(i+1, docs[i].body);
+            IGeneralKeeper(docs[20]).regKeeper(i+1, docs[i]);
 
-            uint16 j = i+10;
-
+            uint j = i+10;
             docs[j] = _createDocAtLatestVersion(j+1, primeKeyOfOwner);
-
-            if (j != 16 && j!= 17) {
-                IAccessControl(docs[j].body).init(
+            if (j != 13 && j!= 19) {
+                IAccessControl(docs[j]).init(
                     owner,
-                    docs[i].body,
+                    docs[i],
                     address(this),
-                    docs[19].body
+                    docs[20]
                 );                
             } else {
-                IAccessControl(docs[j].body).init(
+                IAccessControl(docs[j]).init(
                     owner,
                     primeKeyOfOwner,
                     address(this),
-                    docs[19].body
+                    docs[20]
                 );
             }
-            
-            IGeneralKeeper(docs[19].body).regBook(i+1, docs[j].body);
+            IGeneralKeeper(docs[20]).regBook(i+1, docs[j]);
             
             i++;
         }
 
-        IAccessControl(docs[19].body).setDirectKeeper(primeKeyOfOwner);
+        IAccessControl(docs[20]).setDirectKeeper(primeKeyOfOwner);
     }
 
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
-        returns(DocsRepo.Doc memory doc)
+        returns(address body)
     {
         uint256 latest = counterOfVersions(typeOfDoc);
         bytes32 snOfDoc = bytes32((typeOfDoc << 240) + (latest << 224));
-        doc = createDoc(snOfDoc, primeKeyOfOwner);
+        body = createDoc(snOfDoc, primeKeyOfOwner).body;
     }
 
     // ##################
@@ -264,8 +261,8 @@ contract RegCenter is IRegCenter {
         return _users.getUser(msg.sender);
     }
 
-    function getUserNo(address targetAddr) external returns (uint40) {
-        return _users.getUserNo(targetAddr, msg.sender);
+    function getUserNo(address targetAddr, uint fee) external returns (uint40) {
+        return _users.getUserNo(targetAddr, fee, msg.sender);
     }
 
     function getMyUserNo() public view returns(uint40) {

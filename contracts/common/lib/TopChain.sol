@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/boa/IInvestmentAgreement.sol";
+import "../../books/boi/IInvestmentAgreement.sol";
 
 // import "./DealsRepo.sol";
 

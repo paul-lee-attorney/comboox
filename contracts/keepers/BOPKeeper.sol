@@ -104,11 +104,11 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     ) external onlyDirectKeeper {
         DealsRepo.Deal memory deal;
         deal.head = DealsRepo.snParser(snOfDeal);
-        IBookOfIA _boa = _gk.getBOA();
-        IBookOfGM _bog = _gk.getBOG();
+        IBookOfIA _boi = _gk.getBOI();
+        IMeetingMinutes _gmm = _gk.getGMM();
 
         IInvestmentAgreement _ia = IInvestmentAgreement(
-            _createIA(deal.head.seqOfShare, seqOfPld, version, primeKeyOfCaller, _boa, caller)
+            _createIA(deal.head.seqOfShare, seqOfPld, version, primeKeyOfCaller, _boi, caller)
         );
 
         PledgesRepo.Pledge memory pld = 
@@ -119,11 +119,11 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         deal.body.paid = uint64(pld.body.paid);
         deal.body.par = uint64(pld.body.par);
 
-        deal.head.typeOfDeal = _gk.getROM().isMember(buyer) ? 3 : 2;
+        deal.head.typeOfDeal = _gk.getBOM().isMember(buyer) ? 3 : 2;
 
-        deal = _circulateIA(deal, _ia, _boa);
+        deal = _circulateIA(deal, _ia, _boi);
 
-        _proposeIA(_bog, _boa, address(_ia), deal, pld, caller);
+        _proposeIA(_gmm, _boi, address(_ia), deal, pld, caller);
     }
 
     function _createIA(
@@ -131,7 +131,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint seqOfPld,
         uint version,
         address primeKeyOfCaller,
-        IBookOfIA _boa,
+        IBookOfIA _boi,
         uint caller        
     ) private returns(address) {
         _gk.getBOP().execPledge(seqOfShare, seqOfPld, caller);
@@ -151,7 +151,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
             address(_gk)
         );
 
-        _boa.regFile(DocsRepo.codifyHead(doc.head), doc.body);
+        _boi.regFile(DocsRepo.codifyHead(doc.head), doc.body);
 
         return doc.body;        
     }
@@ -159,7 +159,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     function _circulateIA(
         DealsRepo.Deal memory deal,
         IInvestmentAgreement _ia,
-        IBookOfIA _boa
+        IBookOfIA _boi
     ) private returns (DealsRepo.Deal memory) {
         deal.head.seqOfDeal = _ia.regDeal(deal);
 
@@ -168,7 +168,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         RulesParser.VotingRule memory vr = 
             RulesParser.votingRuleParser(_gk.getSHA().getRule(deal.head.typeOfDeal));
 
-        _boa.circulateFile(
+        _boi.circulateFile(
             address(_ia), 0, 
             uint16((deal.head.closingDate - uint48(block.timestamp) + 43200)/86400), 
             vr, bytes32(0), bytes32(0)
@@ -181,7 +181,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         IInvestmentAgreement _ia,
         DealsRepo.Deal memory deal,
         PledgesRepo.Pledge memory pld,
-        IBookOfIA _boa
+        IBookOfIA _boi
     ) private {
         _ia.lockDealSubject(deal.head.seqOfDeal);
         
@@ -199,22 +199,22 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
             bytes32(0)
         );
 
-        _boa.establishFile(address(_ia));
+        _boi.establishFile(address(_ia));
     }
 
     function _proposeIA(
-        IBookOfGM _bog,
-        IBookOfIA _boa,
+        IMeetingMinutes _gmm,
+        IBookOfIA _boi,
         address ia,
         DealsRepo.Deal memory deal,
         PledgesRepo.Pledge memory pld,
         uint caller
     ) private {
         uint64 seqOfMotion = 
-            _bog.createMotionToApproveDoc(ia, deal.head.typeOfDeal, caller, pld.head.pledgor);
+            _gmm.createMotionToApproveDoc(ia, deal.head.typeOfDeal, caller, pld.head.pledgor);
         
-        _bog.proposeMotionToGeneralMeeting(seqOfMotion, pld.head.pledgor);
-        _boa.proposeFile(ia, seqOfMotion);       
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, pld.head.pledgor);
+        _boi.proposeFile(ia, seqOfMotion);       
     }
 
 

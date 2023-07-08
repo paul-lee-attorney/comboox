@@ -11,7 +11,7 @@ import "../../common/components/IMeetingMinutes.sol";
 
 import "../../common/lib/OfficersRepo.sol";
 
-interface IBookOfDirectors is IMeetingMinutes{
+interface IBookOfDirectors {
 
     //###################
     //##    events    ##

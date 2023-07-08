@@ -8,10 +8,9 @@
 pragma solidity ^0.8.8;
 
 import "./IBookOfDirectors.sol";
+import "../../common/access/AccessControl.sol";
 
-import "../../common/components/MeetingMinutes.sol";
-
-contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
+contract BookOfDirectors is IBookOfDirectors, AccessControl {
     using OfficersRepo for OfficersRepo.Repo;
 
     OfficersRepo.Repo private _repo;
@@ -20,7 +19,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
     //##    写接口    ##
     //#################
 
-    // ==== OptionSetting ====
+    // ==== PositionSetting ====
     function createPosition(bytes32 snOfPos) external onlyKeeper { 
             _repo.createPosition(snOfPos);
         emit AddPosition(snOfPos);
@@ -38,7 +37,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
 
     // ---- Officers ----
 
-    function takePosition (uint256 seqOfPos, uint caller) external onlyKeeper
+    function takePosition (uint256 seqOfPos, uint caller) external onlyDirectKeeper()
     {
         if (_repo.takePosition(seqOfPos, caller)) 
             emit TakePosition(seqOfPos, caller);
@@ -50,7 +49,7 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
             emit QuitPosition(seqOfPos, caller);
     }
 
-    function removeOfficer (uint256 seqOfPos) external onlyKeeper
+    function removeOfficer (uint256 seqOfPos) external onlyDirectKeeper()
     {
         if (_repo.vacatePosition(seqOfPos))
             emit RemoveOfficer(seqOfPos);
@@ -150,12 +149,12 @@ contract BookOfDirectors is IBookOfDirectors, MeetingMinutes{
 
     function hasTitle(uint acct, uint title) external view returns (bool flag)
     {
-        flag = _repo.hasTitle(acct, title, _gk.getROM());
+        flag = _repo.hasTitle(acct, title, _gk.getBOM());
     }
 
     function hasNominationRight(uint seqOfPos, uint acct) external view returns (bool)
     {
-        return _repo.hasNominationRight(seqOfPos, acct, _gk.getROM());
+        return _repo.hasNominationRight(seqOfPos, acct, _gk.getBOM());
     }
 
     // ==== seatsCalculator ====

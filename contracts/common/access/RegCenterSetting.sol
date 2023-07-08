@@ -12,32 +12,33 @@ import "../../IGeneralKeeper.sol";
 
 contract RegCenterSetting {
 
-    enum TitleOfBooks {
-        ZeroPoint,
-        BookOfIA,           // 1
-        BookOfDirectors,    // 2
-        BookOfGM,           // 3
-        BookOfSHA,          // 4
-        BookOfOptions,      // 5
-        BookOfPledges,      // 6
-        BookOfShares,       // 7
-        RegisterOfMembers,  // 8
-        RegisterOfSwaps     // 9
-    }
+    // enum TitleOfBooks {
+    //     ZeroPoint,
+    //     BOC,    // 1
+    //     BOD,    // 2
+    //     BMM,    // 3
+    //     BOM,    // 4
+    //     GMM,    // 5
+    //     BOI,    // 6
+    //     BOO,    // 7
+    //     BOP,    // 8
+    //     ROS,    // 9
+    //     BOS    // 10
+    // }
 
-    enum TitleOfKeepers {
-        ZeroPoint,
-        BOAKeeper, // 1
-        BODKeeper, // 2
-        BOGKeeper, // 3
-        BOHKeeper, // 4
-        BOOKeeper, // 5
-        BOPKeeper, // 6
-        BOSKeeper, // 7
-        ROMKeeper, // 8
-        ROSKeeper, // 9
-        SHAKeeper  // 10
-    }
+    // enum TitleOfKeepers {
+    //     ZeroPoint,
+    //     BOCKeeper, // 1
+    //     BODKeeper, // 2
+    //     BMMKeeper, // 3
+    //     BOMKeeper, // 4
+    //     GMMKeeper, // 5
+    //     BOIKeeper, // 6
+    //     BOOKeeper, // 7
+    //     BOPKeeper, // 8
+    //     ROSKeeper, // 9
+    //     SHAKeeper // 10
+    // }
 
     IRegCenter internal _rc;
     IGeneralKeeper internal _gk;
@@ -60,8 +61,14 @@ contract RegCenterSetting {
         _gk = IGeneralKeeper(gk);
     }
 
-    function _msgSender() internal returns (uint40) {
-        return _rc.getUserNo(msg.sender);
+    function _msgSender(uint fee) internal returns (uint40) {
+
+        uint40 usr = _rc.getUserNo(msg.sender, fee);
+
+        if (usr > 0)
+            return usr;
+        else revert ("RCS._msgSender: not registered");
+        
     }
 
 }

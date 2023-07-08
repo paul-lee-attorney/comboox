@@ -351,7 +351,7 @@ library UsersRepo {
         return repo.users[repo.userNo[msgSender]];
     }
 
-    function getUserNo(Repo storage repo, address targetAddr, address msgSender) 
+    function getUserNo(Repo storage repo, address targetAddr, uint fee, address msgSender) 
         public returns (uint40) 
     {
         uint target = repo.userNo[targetAddr];
@@ -359,9 +359,9 @@ library UsersRepo {
         // require(target > 0, "UR.GUN: not registered");
 
         if (msgSender != targetAddr) {
-            uint64 fee = _chargeFee(repo, target);
+            _chargeFee(repo, target, fee);
 
-            if (tx.origin != targetAddr) _chargeFee(repo, repo.userNo[tx.origin]);
+            if (tx.origin != targetAddr) _chargeFee(repo, repo.userNo[tx.origin], fee);
             else _awardBonus(repo, msgSender, fee);
         } else return getMyUserNo(repo, msgSender);
 
@@ -385,20 +385,22 @@ library UsersRepo {
         }
     }
 
-    function _chargeFee(Repo storage repo, uint user) 
-        private returns (uint64 fee) 
+    function _chargeFee(Repo storage repo, uint user, uint fee) 
+        private returns (uint64 afterReward)
     {
         User storage u = repo.users[user];
 
         Reward memory rw = getRewardSetting(repo);
+
+        uint64 unitPrice = uint64(fee);
         
         uint32 coupon = u.counterOfV * rw.discRate + rw.offAmt;
-        fee = (coupon < (rw.ceiling - rw.floor)) ? 
-                    (rw.ceiling - coupon) : 
-                    rw.floor;
+        afterReward = (coupon < (unitPrice - rw.floor)) 
+            ? (unitPrice - coupon) 
+            : rw.floor;
 
-        if (u.balance >= fee) {
-            u.balance -= fee;
+        if (u.balance >= afterReward) {
+            u.balance -= afterReward;
             u.counterOfV++;
         } else revert("RC.CF: insufficient balance");
     }

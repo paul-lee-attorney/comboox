@@ -9,25 +9,25 @@ pragma solidity ^0.8.8;
 
 import "./common/lib/RolesRepo.sol";
 
-import "./keepers/IBOAKeeper.sol";
+import "./keepers/IBOCKeeper.sol";
 import "./keepers/IBODKeeper.sol";
-import "./keepers/IBOHKeeper.sol";
-import "./keepers/IBOGKeeper.sol";
+import "./keepers/IBMMKeeper.sol";
+import "./keepers/IBOMKeeper.sol";
+import "./keepers/IGMMKeeper.sol";
+import "./keepers/IBOIKeeper.sol";
 import "./keepers/IBOOKeeper.sol";
 import "./keepers/IBOPKeeper.sol";
-import "./keepers/IBOSKeeper.sol";
-import "./keepers/IROMKeeper.sol";
-import "./keepers/ISHAKeeper.sol";
 import "./keepers/IROSKeeper.sol";
+import "./keepers/ISHAKeeper.sol";
 
-import "./books/boa/IBookOfIA.sol";
+import "./books/boi/IBookOfIA.sol";
 import "./books/bod/IBookOfDirectors.sol";
-import "./books/bog/IBookOfGM.sol";
-import "./books/boh/IBookOfSHA.sol";
+import "./common/components/IMeetingMinutes.sol";
+import "./books/boc/IBookOfConstitution.sol";
 import "./books/boo/IBookOfOptions.sol";
 import "./books/bop/IBookOfPledges.sol";
 import "./books/bos/IBookOfShares.sol";
-import "./books/rom/IRegisterOfMembers.sol";
+import "./books/bom/IBookOfMembers.sol";
 import "./books/ros/IRegisterOfSwaps.sol";
 
 interface IGeneralKeeper {
@@ -35,14 +35,6 @@ interface IGeneralKeeper {
     // ###############
     // ##   Event   ##
     // ###############
-
-    // event RegBook(uint256 indexed title, address indexed book);
-
-    // event RegKeeper(uint256 indexed title, address indexed keeper);
-
-    // event SetCompInfo(string indexed nameOfCompany, string indexed symbolOfCompany);
-
-    // event CreateCorpSeal(uint256 indexed corpNo);
 
     event ExecAction(uint256 indexed contents, bool indexed result);
 
@@ -68,33 +60,36 @@ interface IGeneralKeeper {
 
     function getBook(uint256 title) external view returns (address);
 
-    // ###################
-    // ##   BOAKeeper   ##
-    // ###################
+    // ##################
+    // ##  BOCKeeper   ##
+    // ##################
 
-    function createIA(uint256 snOfIA) external;
+    function createSHA(uint version) external;
 
-    function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external;
+    function circulateSHA(address body, bytes32 docUrl, bytes32 docHash) external;
 
-    function signIA(address ia, bytes32 sigHash) external;
+    function signSHA(address sha, bytes32 sigHash) external;
 
-    function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDate) 
-    external;
+    function activateSHA(address body) external;
 
-    function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
-    external;
-
-    function issueNewShare(address ia, uint256 seqOfDeal) external;
-
-    function transferTargetShare(address ia, uint256 seqOfDeal) external;
-
-    function revokeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
-    external;
-
-    function terminateDeal(address ia, uint256 seqOfDeal) external;
+    function acceptSHA(bytes32 sigHash) external;
 
     // ###################
     // ##   BODKeeper   ##
+    // ###################
+
+    function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external;
+
+    function removeDirector (uint256 seqOfMotion, uint256 seqOfPos) external;
+
+    function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external;
+
+    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external;
+
+    function quitPosition(uint256 seqOfPos) external;
+
+    // ###################
+    // ##   BMMKeeper   ##
     // ###################
 
     function nominateOfficer(uint256 seqOfPos, uint candidate) external;
@@ -120,12 +115,6 @@ interface IGeneralKeeper {
 
     function voteCounting(uint256 seqOfMotion) external;
 
-    function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external;
-
-    function quitPosition(uint256 seqOfPos) external;
-
-    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external;
-
     function execAction(
         uint typeOfAction,
         address[] memory targets,
@@ -136,7 +125,22 @@ interface IGeneralKeeper {
     ) external;
 
     // ###################
-    // ##   BOGKeeper   ##
+    // ##   BOMKeeper   ##
+    // ###################
+
+    function setMaxQtyOfMembers(uint max) external;
+
+    function setPayInAmt(bytes32 snOfLocker, uint amount) external;
+
+    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey) external;
+
+    function withdrawPayInAmt(bytes32 snOfLocker) external;
+
+    function decreaseCapital(uint256 seqOfShare, uint parValue, uint paidPar) 
+    external;
+
+    // ###################
+    // ##   GMMKeeper   ##
     // ###################
 
     function nominateDirector(uint256 seqOfPos, uint candidate) external;
@@ -166,15 +170,8 @@ interface IGeneralKeeper {
 
     function voteCountingOfGM(uint256 seqOfMotion) external;
 
-    function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external;
-
-    function removeDirector (
-        uint256 seqOfMotion, 
-        uint256 seqOfPos
-    ) external;
-
     function execActionOfGM(
-        uint seqOfVr,
+        uint seqOfVR,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
@@ -182,20 +179,29 @@ interface IGeneralKeeper {
         uint256 seqOfMotion
     ) external;
 
-    // ##################
-    // ##  BOHKeeper   ##
-    // ##################
+    // ###################
+    // ##   BOIKeeper   ##
+    // ###################
 
-    function createSHA(uint version) external;
+    function createIA(uint256 snOfIA) external;
 
-    function circulateSHA(address body, bytes32 docUrl, bytes32 docHash) external;
+    function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external;
 
-    function signSHA(address sha, bytes32 sigHash) external;
+    function signIA(address ia, bytes32 sigHash) external;
 
-    function activateSHA(address body) external;
+    // ======== Deal Closing ========
 
-    function acceptSHA(bytes32 sigHash) external;
+    function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDate) external;
 
+    function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) external;
+
+    function issueNewShare(address ia, uint256 seqOfDeal) external;
+
+    function transferTargetShare(address ia, uint256 seqOfDeal) external;
+
+    function revokeDeal(address ia, uint256 seqOfDeal, string memory hashKey) external;
+
+    function terminateDeal(address ia, uint256 seqOfDeal) external;
 
     // #################
     // ##  BOOKeeper  ##
@@ -257,30 +263,44 @@ interface IGeneralKeeper {
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external;
 
-    // ###################
-    // ##   BOSKeeper   ##
-    // ###################
-
-    function setPayInAmt(bytes32 snOfLocker, uint amount) external;
-
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey) external;
-
-    function withdrawPayInAmt(bytes32 snOfLocker) external;
-
-    function decreaseCapital(uint256 seqOfShare, uint parValue, uint paidPar) 
-    external;
-
-    // function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
-
     // ##################
-    // ##  ROMKeeper   ##
+    // ##  ROSKeeper   ##
     // ##################
 
-    function setVoteBase(bool onPar) external;
+    function createSwap(
+        bytes32 snOfSwap,
+        uint rightholder, 
+        uint paidOfConsider
+    ) external;
 
-    function setMaxQtyOfMembers(uint max) external;
+    function transferSwap(
+        uint256 seqOfSwap, 
+        uint to, 
+        uint amt
+    ) external;
 
-    function setAmtBase(bool onPar) external;
+    function crystalizeSwap(
+        uint256 seqOfSwap, 
+        uint seqOfConsider, 
+        uint seqOfTarget
+    ) external;
+
+    function lockSwap(
+        uint256 seqOfSwap, 
+        bytes32 hashLock
+    ) external;
+
+    function releaseSwap(uint256 seqOfSwap, string memory hashKey) external;
+
+    function execSwap(uint256 seqOfSwap) external;
+
+    function revokeSwap(uint256 seqOfSwap) external;
+
+    function requestToBuy(
+        uint256 seqOfMotion,
+        uint256 seqOfDeal,
+        uint seqOfTarget
+    ) external;
 
     // ###################
     // ##   SHAKeeper   ##
@@ -342,58 +362,23 @@ interface IGeneralKeeper {
         bytes32 sigHash
     ) external;
 
-    // ##################
-    // ##  ROSKeeper   ##
-    // ##################
-
-    function createSwap(
-        bytes32 snOfSwap,
-        uint rightholder, 
-        uint paidOfConsider
-    ) external;
-
-    function transferSwap(
-        uint256 seqOfSwap, 
-        uint to, 
-        uint amt
-    ) external;
-
-    function crystalizeSwap(
-        uint256 seqOfSwap, 
-        uint seqOfConsider, 
-        uint seqOfTarget
-    ) external;
-
-    function lockSwap(
-        uint256 seqOfSwap, 
-        bytes32 hashLock
-    ) external;
-
-    function releaseSwap(uint256 seqOfSwap, string memory hashKey) external;
-
-    function execSwap(uint256 seqOfSwap) external;
-
-    function revokeSwap(uint256 seqOfSwap) external;
-
-    function requestToBuy(
-        uint256 seqOfMotion,
-        uint256 seqOfDeal,
-        uint seqOfTarget
-    ) external;
-
     // ###############
     // ##  Routing  ##
     // ###############
 
-    function getBOA() external view returns (IBookOfIA);
+    function getBOC() external view returns (IBookOfConstitution );
+
+    function getSHA() external view returns (IShareholdersAgreement);
 
     function getBOD() external view returns (IBookOfDirectors);
 
-    function getBOG() external view returns (IBookOfGM);
+    function getBMM() external view returns (IMeetingMinutes);
 
-    function getBOH() external view returns (IBookOfSHA);
+    function getBOM() external view returns (IBookOfMembers);
 
-    function getSHA() external view returns (IShareholdersAgreement);
+    function getGMM() external view returns (IMeetingMinutes);
+
+    function getBOI() external view returns (IBookOfIA);
 
     function getBOO() external view returns (IBookOfOptions);
 
@@ -401,8 +386,5 @@ interface IGeneralKeeper {
 
     function getBOS() external view returns (IBookOfShares);
 
-    function getROM() external view returns (IRegisterOfMembers);
-
     function getROS() external view returns (IRegisterOfSwaps);
-
 }

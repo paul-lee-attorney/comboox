@@ -148,7 +148,7 @@ interface IMeetingMinutes {
         uint256 seqOfMotion, 
         uint caller,
         uint baseDate, 
-        IRegisterOfMembers _rom 
+        IBookOfMembers _bom 
     ) external view returns(DelegateMap.LeavesInfo memory info);
 
     function getLeavesHeadcountOfDirectors(
