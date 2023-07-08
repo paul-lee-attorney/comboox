@@ -55,46 +55,58 @@ contract RegCenter is IRegCenter {
         emit MintPoints(to, amt);
     }
 
-    function mintAndLockPoints(bytes32 snOfLocker, uint amt) external {
-        if (_users.mintAndLockPoints(snOfLocker, amt, msg.sender))
-            emit LockPoints(snOfLocker, amt);
+    function mintAndLockPoints(bytes32 headSn, bytes32 hashLock) external {
+        _users.mintAndLockPoints(headSn, hashLock, msg.sender);
+        emit LockPoints(headSn, hashLock);
     }
 
     function transferPoints(uint256 to, uint amt) external
     {
-        if (_users.transferPoints(msg.sender, to, amt))
-            emit TransferPoints(_users.userNo[msg.sender], to, amt);
+        _users.transferPoints(msg.sender, to, amt);
+        emit TransferPoints(_users.userNo[msg.sender], to, amt);
     }
 
-    function lockPoints(bytes32 snOfLocker, uint amt) 
-        external 
+    function lockPoints(bytes32 headSn, bytes32 hashLock) external 
     {
-        if (_users.lockPoints(snOfLocker, amt, msg.sender))
-            emit LockPoints(snOfLocker, amt);
+        _users.lockPoints(headSn, hashLock, msg.sender);
+        emit LockPoints(headSn, hashLock);
     }
 
-    function releasePoints(bytes32 snOfLocker, string memory hashKey)
-        external
+    function lockConsideration(bytes32 headSn, bytes32 bodySn, bytes32 hashLock) external 
     {
-        uint256 value = _users.releasePoints(snOfLocker, hashKey, msg.sender);
-
-        if (value > 0)
-            emit ReleasePoints(snOfLocker, hashKey, value);
+        _users.lockConsideration(headSn, bodySn, hashLock, msg.sender);
+        emit LockConsideration(headSn, bodySn, hashLock);
     }
 
-    function withdrawPoints(bytes32 snOfLocker, string memory hashKey)
-        external
+    function releasePoints(bytes32 hashLock, string memory hashKey) external
     {
-        uint256 value = _users.withdrawPoints(snOfLocker, hashKey, msg.sender);
+        LockersRepo.Head memory head = 
+            _users.releasePoints(hashLock, hashKey);
 
-        if (value > 0)
-            emit WithdrawPoints(snOfLocker, hashKey, value);
+        if (head.value > 0)
+            emit ReleasePoints(LockersRepo.codifyHead(head));
     }
 
-    function checkLocker(bytes32 snOfLocker) external
-        view returns (uint256 value)
+    function fetchConsideration(bytes32 hashLock, string memory hashKey) external 
     {
-        value = _users.checkLocker(snOfLocker, msg.sender);
+        LockersRepo.Head memory head =
+            _users.fetchConsideration(hashLock, hashKey, msg.sender);
+        emit FetchConsideration(LockersRepo.codifyHead(head));
+    }
+
+    function withdrawPoints(bytes32 hashLock) external
+    {
+        LockersRepo.Head memory head = 
+            _users.withdrawPoints(hashLock, msg.sender);
+
+        if (head.value > 0)
+            emit WithdrawPoints(LockersRepo.codifyHead(head));
+    }
+
+    function checkLocker(bytes32 hashLock) external
+        view returns (LockersRepo.Locker memory locker)
+    {
+        locker = _users.checkLocker(hashLock, msg.sender);
     }
 
     // ################

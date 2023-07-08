@@ -200,21 +200,21 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOMKeeper(_keepers[4]).setMaxQtyOfMembers(max);
     }
 
-    function setPayInAmt(bytes32 snOfLocker, uint amount) external onlyDirectKeeper {
-        IBOMKeeper(_keepers[4]).setPayInAmt(snOfLocker, amount);
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) external onlyDirectKeeper {
+        IBOMKeeper(_keepers[4]).setPayInAmt(headSn, hashLock);
     }
 
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey) external {
-        IBOMKeeper(_keepers[4]).requestPaidInCapital(snOfLocker, hashKey);
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external {
+        IBOMKeeper(_keepers[4]).requestPaidInCapital(hashLock, hashKey);
     }
 
-    function withdrawPayInAmt(bytes32 snOfLocker) external onlyDirectKeeper {
-        IBOMKeeper(_keepers[4]).withdrawPayInAmt(snOfLocker);
+    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDirectKeeper {
+        IBOMKeeper(_keepers[4]).withdrawPayInAmt(hashLock, seqOfShare);
     }
 
-    function decreaseCapital(uint256 seqOfShare, uint parValue, uint paidPar) 
+    function decreaseCapital(uint256 seqOfShare, uint paid, uint par) 
     external onlyDirectKeeper {
-        IBOMKeeper(_keepers[4]).decreaseCapital(seqOfShare, parValue, paidPar);
+        IBOMKeeper(_keepers[4]).decreaseCapital(seqOfShare, paid, par);
     }
 
     // function updatePaidInDeadline(uint256 seqOfShare, uint line) external onlyDirectKeeper {

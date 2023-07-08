@@ -8,7 +8,10 @@
 pragma solidity ^0.8.8;
 
 import "../common/lib/PledgesRepo.sol";
-import "../common/lib/SharesRepo.sol";
+// import "../common/lib/SharesRepo.sol";
+import "../common/lib/DealsRepo.sol";
+import "../common/lib/DocsRepo.sol";
+import "../common/lib/RulesParser.sol";
 
 interface IBOPKeeper {
     // ###################

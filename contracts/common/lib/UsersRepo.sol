@@ -131,10 +131,10 @@ library UsersRepo {
         repo.users[to].balance += uint216(amt);
     }
 
-    function mintAndLockPoints(Repo storage repo, bytes32 snOfLocker, uint amt, address msgSender) 
-        public onlyOwner(repo, msgSender) returns (bool flag) 
+    function mintAndLockPoints(Repo storage repo, bytes32 headSn, bytes32 hashLock, address msgSender) 
+        public onlyOwner(repo, msgSender) 
     {
-        flag = repo.lockers.lockValue(snOfLocker, amt, 0);
+        repo.lockers.lockAsset(headSn, hashLock);
     }
 
     function transferPoints(
@@ -142,91 +142,102 @@ library UsersRepo {
         address msgSender, 
         uint256 to, 
         uint amt
-    ) public onlyPrimeKey(repo, msgSender) returns (bool flag)
+    ) public onlyPrimeKey(repo, msgSender)
     {
         uint40 from = uint40(repo.userNo[msgSender]);
 
         if (repo.users[from].balance >= uint216(amt)) {
             repo.users[from].balance -= uint216(amt);
             repo.users[to].balance += uint216(amt);
-            flag = true;
-        }
+        } else revert ("UR.transPoints: insufficient balance");
     }
 
-    function lockPoints(Repo storage repo, bytes32 snOfLocker, uint amt, address msgSender) 
+    function lockPoints(Repo storage repo, bytes32 headSn, bytes32 hashLock, address msgSender) 
+        public onlyPrimeKey(repo, msgSender)
+    {
+        uint caller = repo.userNo[msgSender];
+        User storage user = repo.users[caller];
+
+        LockersRepo.Head memory head =
+            LockersRepo.headSnParser(headSn);
+
+        if (user.balance >= head.value) {
+            user.balance -= head.value;
+            repo.lockers.lockAsset(headSn, hashLock);
+        } else revert ("UR.lockPoints: insufficient balance");
+    }
+
+    function lockConsideration(Repo storage repo, bytes32 headSn, bytes32 bodySn, bytes32 hashLock, address msgSender) 
         public onlyPrimeKey(repo, msgSender) returns (bool flag)
     {
         uint caller = repo.userNo[msgSender];
         User storage user = repo.users[caller];
 
-        if (user.balance >= amt) {
-            user.balance -= uint216(amt);
+        LockersRepo.Head memory head =
+            LockersRepo.headSnParser(headSn);
 
-            flag = repo.lockers.lockValue(snOfLocker, amt, caller);
+        if (user.balance >= head.value) {
+            user.balance -= head.value;
+
+            repo.lockers.lockMoney(headSn, bodySn, hashLock);
+            flag = true;
         }
     }
 
     function releasePoints(
         Repo storage repo, 
-        bytes32 snOfLocker, 
+        bytes32 hashLock, 
+        string memory hashKey
+    ) public returns (LockersRepo.Head memory head) 
+    {
+        head = repo.lockers.releaseAsset(hashLock, bytes(hashKey));
+        
+        if (head.value > 0) {
+            repo.users[head.to].balance += head.value;
+        }
+    }
+
+    function fetchConsideration(
+        Repo storage repo, 
+        bytes32 hashLock, 
         string memory hashKey,
         address msgSender
-    ) public onlyPrimeKey(repo, msgSender) returns (uint216 value) 
+    ) public onlyPrimeKey(repo, msgSender) returns (LockersRepo.Head memory head) 
     {
         uint caller = repo.userNo[msgSender];
-        value = uint216(repo.lockers.releaseValue(snOfLocker, hashKey));
-        if (value > 0) {
-            repo.users[caller].balance += value;
+        head = repo.lockers.fetchMoney(hashLock, bytes(hashKey), caller);
+        
+        if (head.value > 0) {
+            repo.users[head.to].balance += head.value;
         }
     }
 
     function withdrawPoints(
         Repo storage repo, 
-        bytes32 snOfLocker, 
-        string memory hashKey, 
+        bytes32 hashLock, 
         address msgSender
-    ) public onlyPrimeKey(repo, msgSender) returns (uint216 value) {
+    ) public onlyPrimeKey(repo, msgSender) returns (LockersRepo.Head memory head) {
         uint caller = repo.userNo[msgSender];
-        value = uint216(repo.lockers.withdrawValue(snOfLocker, hashKey, caller));
-        if (value > 0) {
-            repo.users[caller].balance += value;
+        head = repo.lockers.burnLocker(hashLock, caller);
+        if (head.value > 0) {
+            repo.users[caller].balance += head.value;
         }
     }
 
     function checkLocker(
         Repo storage repo,
-        bytes32 snOfLocker,
+        bytes32 hashLock,
         address msgSender
-    ) public onlyPrimeKey(repo, msgSender) view returns (uint216 value) {
+    ) public onlyPrimeKey(repo, msgSender) 
+        view returns (LockersRepo.Locker memory locker) 
+    {
         uint caller = repo.userNo[msgSender];
-        value = uint216(repo.lockers.checkLocker(snOfLocker, caller));
+        locker = repo.lockers.checkLocker(hashLock, caller);
     }
 
     // ##########################
     // ##    User & Members    ##
     // ##########################
-
-    // function infoParser(bytes32 info) public pure returns(User memory user) {
-    //     uint _info = uint(info);
-
-    //     user = User({
-    //         isCOA: false,
-    //         counterOfV: 0,
-    //         balance: 0,
-    //         primeKey: Key({
-    //             pubKey: address(0),
-    //             seqOfKey: uint16(_info >> 240),
-    //             dataOfKey: uint32(_info >> 208),
-    //             dateOfKey: uint48(_info >> 160)
-    //         }),
-    //         backupKey: Key({
-    //             pubKey: address(0),
-    //             seqOfKey: uint16(_info >> 144),
-    //             dataOfKey: uint32(_info >> 112),
-    //             dateOfKey: uint48(_info >> 64)
-    //         })
-    //     });
-    // }
 
     // ==== reg user ====
 

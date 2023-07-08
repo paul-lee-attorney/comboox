@@ -56,18 +56,6 @@ interface IGMMKeeper {
 
     function voteCountingOfGM(uint256 seqOfMotion) external;
 
-    function takeSeat(
-        uint256 seqOfMotion,
-        uint256 seqOfPos,
-        uint caller 
-    ) external;
-
-    function removeDirector (
-        uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        uint caller
-    ) external;
-
     function execActionOfGM(
         uint typeOfAction,
         address[] memory targets,

@@ -18,34 +18,34 @@ interface IRegCenter {
 
     enum TypeOfDoc{
         ZeroPoint,
-        BOCKeeper,          // 1
-        BODKeeper,          // 2
-        BMMKeeper,          // 3
-        BOMKeeper,          // 4
-        GMMKeeper,          // 5
-        BOIKeeper,          // 6
-        BOOKeeper,          // 7
-        BOPKeeper,          // 8
-        ROSKeeper,          // 9
-        SHAKeeper,          // 10
-        BOC,                // 11
-        BOD,                // 12
-        BMM,                // 13
-        BOM,                // 14
-        GMM,                // 15
-        BOI,                // 16
-        BOO,                // 17
-        BOP,                // 18
-        ROS,                // 19
-        BOS,                // 20
-        GeneralKeeper,      // 21
-        IA,                 // 22
-        SHA,                // 23
-        AntiDilution,       // 24
-        DragAlong,          // 25
-        LockUp,             // 26
-        Options,            // 27
-        TagAlong            // 28
+        BOCKeeper,      // 1
+        BODKeeper,      // 2
+        BMMKeeper,      // 3
+        BOMKeeper,      // 4
+        GMMKeeper,      // 5
+        BOIKeeper,      // 6
+        BOOKeeper,      // 7
+        BOPKeeper,      // 8
+        ROSKeeper,      // 9
+        SHAKeeper,      // 10
+        BOC,            // 11
+        BOD,            // 12
+        BMM,            // 13
+        BOM,            // 14
+        GMM,            // 15
+        BOI,            // 16
+        BOO,            // 17
+        BOP,            // 18
+        ROS,            // 19
+        BOS,            // 20
+        GeneralKeeper,  // 21
+        IA,             // 22
+        SHA,            // 23
+        AntiDilution,   // 24
+        DragAlong,      // 25
+        LockUp,         // 26
+        Options,        // 27
+        TagAlong        // 28
     }
 
     // ##################
@@ -66,11 +66,15 @@ interface IRegCenter {
 
     event TransferPoints(uint256 indexed from, uint256 indexed to, uint256 amt);
 
-    event LockPoints(bytes32 indexed snOfLocker, uint256 indexed value);
+    event LockPoints(bytes32 indexed headSn, bytes32 indexed hashLock);
 
-    event ReleasePoints(bytes32 indexed snOfLocker, string indexed hashKey, uint256 indexed value);
+    event LockConsideration(bytes32 indexed headSn, bytes32 indexed bodySn, bytes32 indexed hashLock);
 
-    event WithdrawPoints(bytes32 indexed snOfLocker, string indexed hashKey, uint256 indexed value);
+    event ReleasePoints(bytes32 indexed headSn);
+
+    event FetchConsideration(bytes32 indexed headSn);
+
+    event WithdrawPoints(bytes32 indexed headSn);
 
     // ==== Docs ====
     event SetDocKeeper(address indexed keeper);
@@ -99,19 +103,24 @@ interface IRegCenter {
 
     function mintPoints(uint256 to, uint amt) external;
 
-    function mintAndLockPoints(bytes32 snOfLocker, uint amt) external;
+    function mintAndLockPoints(bytes32 headSn, bytes32 hashLock) external;
 
     // ==== Points Trade ====
 
     function transferPoints(uint256 to, uint amt) external;
 
-    function lockPoints(bytes32 snOfLocker, uint amt) external;
+    function lockPoints(bytes32 headSn, bytes32 hashLock) external;
 
-    function releasePoints(bytes32 snOfLocker, string memory hashKey) external;
+    function lockConsideration(bytes32 headSn, bytes32 bodySn, bytes32 hashLock) external;
 
-    function withdrawPoints(bytes32 snOfLocker, string memory hashKey) external;
+    function releasePoints(bytes32 hashLock, string memory hashKey) external;
 
-    function checkLocker(bytes32 snOfLocker) external view returns (uint256 value);
+    function fetchConsideration(bytes32 hashLock, string memory hashKey) external;
+
+    function withdrawPoints(bytes32 hashLock) external;
+
+    function checkLocker(bytes32 hashLock) external view 
+        returns (LockersRepo.Locker memory locker);
 
     // ==== User ====
 

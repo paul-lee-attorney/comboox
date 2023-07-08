@@ -45,7 +45,7 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
     function createSHA(uint version, address primeKeyOfCaller, uint caller) external onlyDirectKeeper {
         require(_gk.getBOM().isMember(caller), "not MEMBER");
 
-        bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.ShareholdersAgreement)) << 240) +
+        bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 240) +
             (version << 224)); 
 
         DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, primeKeyOfCaller);

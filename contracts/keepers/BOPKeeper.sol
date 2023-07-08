@@ -136,7 +136,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     ) private returns(address) {
         _gk.getBOP().execPledge(seqOfShare, seqOfPld, caller);
 
-        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.InvestmentAgreement)) << 240) +
+        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 240) +
             (version << 224)); 
 
         DocsRepo.Doc memory doc = _rc.createDoc(

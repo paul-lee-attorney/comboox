@@ -23,18 +23,18 @@ contract BOMKeeper is IBOMKeeper, AccessControl {
         _gk.getBOM().setMaxQtyOfMembers(max);
     }
 
-    function setPayInAmt(bytes32 snOfLocker, uint amount) 
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) 
     external onlyDirectKeeper {
-        _gk.getBOS().setPayInAmt(snOfLocker, amount);
+        _gk.getBOS().setPayInAmt(headSn, hashLock);
     }
 
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey)
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
     external onlyDirectKeeper {
-        _gk.getBOS().requestPaidInCapital(snOfLocker, hashKey);
+        _gk.getBOS().requestPaidInCapital(hashLock, hashKey);
     }
 
-    function withdrawPayInAmt(bytes32 snOfLocker) external onlyDirectKeeper {
-        _gk.getBOS().withdrawPayInAmt(snOfLocker);
+    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDirectKeeper {
+        _gk.getBOS().withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function decreaseCapital(uint256 seqOfShare, uint paid, uint par) 

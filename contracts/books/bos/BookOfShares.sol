@@ -12,6 +12,7 @@ import "../../common/access/AccessControl.sol";
 
 contract BookOfShares is IBookOfShares, AccessControl {
     using LockersRepo for LockersRepo.Repo;
+    using LockersRepo for bytes32;
     using SharesRepo for SharesRepo.Repo;
     using SharesRepo for SharesRepo.Share;
     using SharesRepo for SharesRepo.Head;
@@ -70,30 +71,31 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== PayInCapital ====
 
-    function setPayInAmt(bytes32 snOfLocker, uint amount) 
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) 
         external onlyDirectKeeper
     {
-        if (_lockers.lockValue(snOfLocker, amount, uint32(uint(snOfLocker) >> 216)))
-            emit SetPayInAmt(snOfLocker, amount);
+        _lockers.lockAsset(headSn, hashLock);
+        emit SetPayInAmt(headSn, hashLock);
     }
 
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey)
-        external onlyDirectKeeper
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external
     {
-        uint64 amount = uint64(_lockers.releaseValue(snOfLocker, hashKey));
-        if (amount > 0) {
-            SharesRepo.Share storage share = _repo.shares[uint32(uint(snOfLocker) >> 216)];
+        LockersRepo.Head memory head = 
+            _lockers.releaseAsset(hashLock, bytes(hashKey));
+        if (head.value > 0) {
+            SharesRepo.Share storage share = _repo.shares[head.from];
             // require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
-            _payInCapital(share, amount);
-            _gk.getBOM().changeAmtOfMember(share.head.shareholder, amount, 0, amount, true);
-            _gk.getBOM().capIncrease(amount, 0);
+            _payInCapital(share, head.value);
+            _gk.getBOM().changeAmtOfMember(share.head.shareholder, head.value, 0, head.value, true);
+            _gk.getBOM().capIncrease(head.value, 0);
         }
     }
 
-    function withdrawPayInAmt(bytes32 snOfLocker) external onlyDirectKeeper {
-        if (_lockers.burnLocker(snOfLocker, uint32(uint(snOfLocker) >> 216)))
-            emit WithdrawPayInAmt(snOfLocker);
+    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDirectKeeper {
+        LockersRepo.Head memory head = 
+            _lockers.burnLocker(hashLock, seqOfShare);
+        emit WithdrawPayInAmt(head.from, head.value);
     }
 
     // ==== TransferShare ====
@@ -276,8 +278,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== PayInCapital ====
 
-    function getLocker(bytes32 snOfLocker) external view returns (uint64 amount) {
-        amount = uint64(_lockers.lockers[snOfLocker]);
+    function getLocker(bytes32 hashLock, uint seqOfShare) external view returns (LockersRepo.Locker memory locker) {
+        locker = _lockers.checkLocker(hashLock, seqOfShare);
     }
 
     function getSharesOfClass(uint class) external view

@@ -16,11 +16,11 @@ interface IBOMKeeper {
 
     function setMaxQtyOfMembers(uint max) external;
 
-    function setPayInAmt(bytes32 snOfLocker, uint amount) external;
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) external;
 
-    function requestPaidInCapital(bytes32 snOfLocker, string memory hashKey) external;
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
 
-    function withdrawPayInAmt(bytes32 snOfLocker) external;
+    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 
     function decreaseCapital(
         uint256 seqOfShare,

@@ -40,7 +40,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
     function createIA(uint version, address primeKeyOfCaller, uint caller) external onlyDirectKeeper {
         require(_gk.getBOM().isMember(caller), "not MEMBER");
         
-        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.InvestmentAgreement)) << 240) +
+        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 240) +
             (version << 224)); 
 
         DocsRepo.Doc memory doc = _rc.createDoc(
@@ -163,18 +163,18 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
         uint seqOfMotion = _boi.getHeadOfFile(ia).seqOfMotion;
 
         IMeetingMinutes _gmm = _gk.getGMM();
-        IBookOfDirectors _bod = _gk.getBOD();
+        IMeetingMinutes _bmm = _gk.getBMM();
 
         if (vr.amountRatio > 0 || vr.headRatio > 0) {
             if (vr.authority == 1)
                 require(_gmm.isPassed(seqOfMotion), 
                     "BOAK.vrCheck:  rejected by GM");
             else if (vr.authority == 2)
-                require(_bod.isPassed(seqOfMotion), 
+                require(_bmm.isPassed(seqOfMotion), 
                     "BOAK.vrCheck:  rejected by Board");
             else if (vr.authority == 3)
                 require(_gmm.isPassed(seqOfMotion) && 
-                    _bod.isPassed(seqOfMotion), 
+                    _bmm.isPassed(seqOfMotion), 
                     "BOAK.vrCheck: rejected by GM or Board");
             else revert("BOAK.vrCheck: authority overflow");
         }

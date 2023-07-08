@@ -12,7 +12,7 @@ import "../common/access/AccessControl.sol";
 import "./IBODKeeper.sol";
 
 contract BODKeeper is IBODKeeper, AccessControl {
-    using RulesParser for bytes32;
+    // using RulesParser for bytes32;
 
     //##################
     //##   Modifier   ##

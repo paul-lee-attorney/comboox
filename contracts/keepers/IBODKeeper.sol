@@ -11,7 +11,7 @@ import "../books/bod/IBookOfDirectors.sol";
 
 // import "../common/lib/UsersRepo.sol";
 // import "../common/lib/MotionsRepo.sol";
-import "../common/lib/RulesParser.sol";
+// import "../common/lib/RulesParser.sol";
 
 interface IBODKeeper {
 
