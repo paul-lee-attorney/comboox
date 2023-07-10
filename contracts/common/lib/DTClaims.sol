@@ -13,6 +13,17 @@ import "./EnumerableSet.sol";
 library DTClaims {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    struct Head {
+        uint16 seqOfDeal;
+        bool dragAlong;
+        uint32 seqOfShare;
+        uint64 paid;
+        uint64 par;
+        uint40 caller;
+        uint16 para;
+        uint16 argu;
+    }
+
     struct Claim {
         uint8 typeOfClaim;
         uint32 seqOfShare;
@@ -39,6 +50,37 @@ library DTClaims {
     //##    写接口    ##
     //#################
 
+    function snParser(bytes32 sn) public pure returns(Head memory head) {
+        uint _sn = uint(sn);
+        head = Head({
+            seqOfDeal: uint16(_sn >> 240),
+            dragAlong: bool(uint8(_sn >> 232) == 1),
+            seqOfShare: uint32(_sn >> 200),
+            paid: uint64(_sn >> 136),
+            par: uint64(_sn >> 72),
+            caller: uint40(_sn >> 32),
+            para: uint16(_sn >> 16),
+            argu: uint16(_sn)
+        });
+    }
+
+    function codifyHead(Head memory head) public pure returns(bytes32 sn) {
+        bytes memory _sn = abi.encodePacked(
+                            head.seqOfDeal,
+                            head.dragAlong,
+                            head.seqOfShare,
+                            head.paid,
+                            head.par,
+                            head.caller,
+                            head.para,
+                            head.argu
+        );
+
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
+    }
+
     function execAlongRight(
         Claims storage cls,
         bool dragAlong,
@@ -47,6 +89,7 @@ library DTClaims {
         uint paid,
         uint par,
         uint256 claimer,
+        // Head memory head,
         bytes32 sigHash
     ) public returns (bool flag) {
 

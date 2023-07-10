@@ -13,6 +13,7 @@ import "../../common/components/FilesFolder.sol";
 
 contract BookOfIA is IBookOfIA, FilesFolder {
     using DTClaims for DTClaims.Claims;
+    using DTClaims for DTClaims.Head;
     using EnumerableSet for EnumerableSet.UintSet;
     using FRClaims for FRClaims.Claims;
     using FilesRepo for FilesRepo.Repo;
@@ -94,7 +95,19 @@ contract BookOfIA is IBookOfIA, FilesFolder {
     {
         if (_dtClaims[ia].execAlongRight(dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash))
         {
-            emit ExecAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
+            DTClaims.Head memory head = DTClaims.Head({
+                seqOfDeal: uint16(seqOfDeal),
+                dragAlong: dragAlong,
+                seqOfShare: uint32(seqOfShare),
+                paid: uint64(paid),
+                par: uint64(par),
+                caller: uint40(caller),
+                para: 0,
+                argu: 0
+            });
+
+
+            emit ExecAlongRight(ia, head.codifyHead(), sigHash);
             _resetDoc(ia, getHeadOfFile(ia));                
         }
     }

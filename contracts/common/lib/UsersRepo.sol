@@ -413,6 +413,6 @@ library UsersRepo {
         if (u.balance >= afterReward) {
             u.balance -= afterReward;
             u.counterOfV++;
-        } else revert("RC.CF: insufficient balance");
+        } else revert("RC.chargeFee: insufficient balance");
     }
 }

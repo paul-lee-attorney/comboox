@@ -24,8 +24,7 @@ interface IBookOfIA is IFilesFolder {
 
     event ExecFirstRefusalRight(address indexed ia, uint256 indexed seqOfDeal, uint256 indexed caller);
 
-    event ExecAlongRight(address indexed ia, bool indexed dragAlong, uint256 indexed seqOfDeal, 
-    uint256 seqOfShare, uint paid, uint par, uint256 claimer, bytes32 sigHash);
+    event ExecAlongRight(address indexed ia, bytes32 indexed snOfDTClaim, bytes32 sigHash);
 
     event AcceptFirstRefusalClaims(address indexed ia, uint256 indexed seqOfDeal);
 

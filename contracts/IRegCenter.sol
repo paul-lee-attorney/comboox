@@ -62,9 +62,9 @@ interface IRegCenter {
 
     // ==== Points ====
 
-    event MintPoints(uint256 indexed to, uint256 amt);
+    event MintPoints(uint256 indexed to, uint256 indexed amt);
 
-    event TransferPoints(uint256 indexed from, uint256 indexed to, uint256 amt);
+    event TransferPoints(uint256 indexed from, uint256 indexed to, uint256 indexed amt);
 
     event LockPoints(bytes32 indexed headSn, bytes32 indexed hashLock);
 
