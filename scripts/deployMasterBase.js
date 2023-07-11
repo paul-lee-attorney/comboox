@@ -29,7 +29,6 @@ async function main() {
 	const libRolesRepo = await deployTool(signers[0], "RolesRepo", libraries);
 	const libRulesParser = await deployTool(signers[0], "RulesParser", libraries);
 	const libTopChain = await deployTool(signers[0], "TopChain", libraries);
-	const libLockersRepo = await deployTool(signers[0], "LockersRepo", libraries);
 
 
 	libraries = {
@@ -40,11 +39,11 @@ async function main() {
 	const libDocsRepo = await deployTool(signers[0], "DocsRepo", libraries);
 	const libDTClaims = await deployTool(signers[0], "DTClaims", libraries);
 	const libFilesRepo = await deployTool(signers[0], "FilesRepo", libraries);
+	const libLockersRepo = await deployTool(signers[0], "LockersRepo", libraries);
 	const libOfficersRepo = await deployTool(signers[0], "OfficersRepo", libraries);
 	const libPledgesRepo = await deployTool(signers[0], "PledgesRepo", libraries);
 	const libSigsRepo = await deployTool(signers[0], "SigsRepo", libraries);
 	const libSwapsRepo = await deployTool(signers[0], "SwapsRepo", libraries);
-
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
