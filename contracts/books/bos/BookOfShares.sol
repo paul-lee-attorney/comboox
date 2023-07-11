@@ -71,20 +71,11 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== PayInCapital ====
 
-    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) 
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) 
         external onlyDirectKeeper
     {
-        SharesRepo.Share storage share = _repo.shares[seqOfShare];
-
-        LockersRepo.Head memory head = LockersRepo.Head({
-            from: share.head.seqOfShare,
-            to: share.head.shareholder,
-            expireDate: uint48(expireDate),
-            value: uint128(amt)
-        });
-
-        _lockers.lockAsset(head, hashLock);
-        emit SetPayInAmt(LockersRepo.codifyHead(head), hashLock);
+        _lockers.lockAsset(headSn, hashLock);
+        emit SetPayInAmt(headSn, hashLock);
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external
@@ -287,12 +278,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     // ==== PayInCapital ====
 
-    function getLocker(bytes32 hashLock) external view returns (LockersRepo.Locker memory locker) {
-        locker = _lockers.getLocker(hashLock);
-    }
-
-    function getLocksList() external view returns (bytes32[] memory) {
-        return _lockers.getSnList();
+    function getLocker(bytes32 hashLock, uint seqOfShare) external view returns (LockersRepo.Locker memory locker) {
+        locker = _lockers.checkLocker(hashLock, seqOfShare);
     }
 
     function getSharesOfClass(uint class) external view

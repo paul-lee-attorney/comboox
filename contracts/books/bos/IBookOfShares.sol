@@ -44,7 +44,7 @@ interface IBookOfShares {
 
     function regShare(SharesRepo.Share memory share) external returns(SharesRepo.Share memory newShare);
 
-    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external;
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) external;
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
 
@@ -94,9 +94,7 @@ interface IBookOfShares {
     function getShare(uint256 seqOfShare) external view
         returns (SharesRepo.Share memory share);
 
-    function getLocker(bytes32 hashLock) external view returns (LockersRepo.Locker memory locker);
-
-    function getLocksList() external view returns (bytes32[] memory);
+    function getLocker(bytes32 hashLock, uint seqOfShare) external view returns (LockersRepo.Locker memory locker);
 
     function getSharesOfClass(uint class) external view
         returns (uint256[] memory seqList);

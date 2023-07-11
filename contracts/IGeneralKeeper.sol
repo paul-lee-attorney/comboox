@@ -130,7 +130,7 @@ interface IGeneralKeeper {
 
     function setMaxQtyOfMembers(uint max) external;
 
-    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external;
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) external;
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
 

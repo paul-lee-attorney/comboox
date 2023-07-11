@@ -200,8 +200,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOMKeeper(_keepers[4]).setMaxQtyOfMembers(max);
     }
 
-    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external onlyDirectKeeper {
-        IBOMKeeper(_keepers[4]).setPayInAmt(seqOfShare, amt, expireDate, hashLock);
+    function setPayInAmt(bytes32 headSn, bytes32 hashLock) external onlyDirectKeeper {
+        IBOMKeeper(_keepers[4]).setPayInAmt(headSn, hashLock);
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external {

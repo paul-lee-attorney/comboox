@@ -55,9 +55,9 @@ contract RegCenter is IRegCenter {
         emit MintPoints(to, amt);
     }
 
-    function mintAndLockPoints(uint to, uint amt, uint expireDate, bytes32 hashLock) external {   
-        _users.mintAndLockPoints(to, amt, expireDate, hashLock, msg.sender);
-        emit LockPoints(to, amt, expireDate, hashLock);
+    function mintAndLockPoints(bytes32 headSn, bytes32 hashLock) external {
+        _users.mintAndLockPoints(headSn, hashLock, msg.sender);
+        emit LockPoints(headSn, hashLock);
     }
 
     function transferPoints(uint256 to, uint amt) external
@@ -66,32 +66,32 @@ contract RegCenter is IRegCenter {
         emit TransferPoints(_users.userNo[msg.sender], to, amt);
     }
 
-    function lockPoints(uint to, uint amt, uint expireDate, bytes32 hashLock) external 
+    function lockPoints(bytes32 headSn, bytes32 hashLock) external 
     {
-        _users.lockPoints(to, amt, expireDate, hashLock, msg.sender);
-        emit LockPoints(to, amt, expireDate, hashLock);
+        _users.lockPoints(headSn, hashLock, msg.sender);
+        emit LockPoints(headSn, hashLock);
     }
 
-    function lockConsideration(uint to, uint amt, uint expireDate, bytes32 bodySn, bytes32 hashLock) external 
+    function lockConsideration(bytes32 headSn, bytes32 bodySn, bytes32 hashLock) external 
     {
-        _users.lockConsideration(to, amt, expireDate, bodySn, hashLock, msg.sender);
-        emit LockConsideration(to, amt, expireDate, bodySn, hashLock);
+        _users.lockConsideration(headSn, bodySn, hashLock, msg.sender);
+        emit LockConsideration(headSn, bodySn, hashLock);
     }
 
-    function pickupPoints(bytes32 hashLock, string memory hashKey) external
+    function releasePoints(bytes32 hashLock, string memory hashKey) external
     {
         LockersRepo.Head memory head = 
-            _users.pickupPoints(hashLock, hashKey);
+            _users.releasePoints(hashLock, hashKey);
 
         if (head.value > 0)
-            emit PickupPoints(LockersRepo.codifyHead(head));
+            emit ReleasePoints(LockersRepo.codifyHead(head));
     }
 
-    function pickupConsideration(bytes32 hashLock, string memory hashKey) external 
+    function fetchConsideration(bytes32 hashLock, string memory hashKey) external 
     {
         LockersRepo.Head memory head =
-            _users.pickupConsideration(hashLock, hashKey, msg.sender);
-        emit PickupConsideration(LockersRepo.codifyHead(head));
+            _users.fetchConsideration(hashLock, hashKey, msg.sender);
+        emit FetchConsideration(LockersRepo.codifyHead(head));
     }
 
     function withdrawPoints(bytes32 hashLock) external
@@ -103,16 +103,10 @@ contract RegCenter is IRegCenter {
             emit WithdrawPoints(LockersRepo.codifyHead(head));
     }
 
-    function getLocker(bytes32 hashLock) external
+    function checkLocker(bytes32 hashLock) external
         view returns (LockersRepo.Locker memory locker)
     {
-        locker = _users.getLocker(hashLock);
-    }
-
-    function getLocksList() external 
-        view returns (bytes32[] memory)
-    {
-        return _users.getLocksList();
+        locker = _users.checkLocker(hashLock, msg.sender);
     }
 
     // ################
