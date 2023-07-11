@@ -131,10 +131,36 @@ library UsersRepo {
         repo.users[to].balance += uint216(amt);
     }
 
-    function mintAndLockPoints(Repo storage repo, bytes32 headSn, bytes32 hashLock, address msgSender) 
+    function mintAndLockPoints(Repo storage repo, uint to, uint amt, uint expireDate, bytes32 hashLock, address msgSender) 
         public onlyOwner(repo, msgSender) 
     {
-        repo.lockers.lockAsset(headSn, hashLock);
+        LockersRepo.Head memory head = 
+            _prepareLockerHead(repo, to, amt, expireDate, msgSender);
+        repo.lockers.lockAsset(head, hashLock);
+    }
+
+    function _prepareLockerHead(
+        Repo storage repo, 
+        uint to, 
+        uint amt, 
+        uint expireDate, 
+        address msgSender
+    ) private returns (LockersRepo.Head memory head) {
+        uint40 caller = uint40(repo.userNo[msgSender]);
+
+        User storage user = repo.users[caller];
+
+        head = LockersRepo.Head({
+            from: caller,
+            to: uint40(to),
+            expireDate: uint48(expireDate),
+            value: uint128(amt)
+        });
+
+        if (msgSender != getOwner(repo)) { 
+            if (user.balance >= amt) user.balance -= uint128(amt);
+            else revert("UR.lockAssets: insufficient balance");
+        }
     }
 
     function transferPoints(
@@ -152,39 +178,24 @@ library UsersRepo {
         } else revert ("UR.transPoints: insufficient balance");
     }
 
-    function lockPoints(Repo storage repo, bytes32 headSn, bytes32 hashLock, address msgSender) 
+    function lockPoints(Repo storage repo, uint to, uint amt, uint expireDate, bytes32 hashLock, address msgSender) 
         public onlyPrimeKey(repo, msgSender)
     {
-        uint caller = repo.userNo[msgSender];
-        User storage user = repo.users[caller];
-
         LockersRepo.Head memory head =
-            LockersRepo.headSnParser(headSn);
-
-        if (user.balance >= head.value) {
-            user.balance -= head.value;
-            repo.lockers.lockAsset(headSn, hashLock);
-        } else revert ("UR.lockPoints: insufficient balance");
+            _prepareLockerHead(repo, to, amt, expireDate, msgSender);
+        repo.lockers.lockAsset(head, hashLock);
     }
 
-    function lockConsideration(Repo storage repo, bytes32 headSn, bytes32 bodySn, bytes32 hashLock, address msgSender) 
-        public onlyPrimeKey(repo, msgSender) returns (bool flag)
+    function lockConsideration(Repo storage repo, uint to, uint amt, uint expireDate, bytes32 bodySn, bytes32 hashLock, address msgSender) 
+        public onlyPrimeKey(repo, msgSender)
     {
-        uint caller = repo.userNo[msgSender];
-        User storage user = repo.users[caller];
-
         LockersRepo.Head memory head =
-            LockersRepo.headSnParser(headSn);
-
-        if (user.balance >= head.value) {
-            user.balance -= head.value;
-
-            repo.lockers.lockMoney(headSn, bodySn, hashLock);
-            flag = true;
-        }
+            _prepareLockerHead(repo, to, amt, expireDate, msgSender);
+        LockersRepo.Body memory body = LockersRepo.bodySnParser(bodySn);
+        repo.lockers.lockMoney(head, body, hashLock);
     }
 
-    function releasePoints(
+    function pickupPoints(
         Repo storage repo, 
         bytes32 hashLock, 
         string memory hashKey
@@ -197,7 +208,7 @@ library UsersRepo {
         }
     }
 
-    function fetchConsideration(
+    function pickupConsideration(
         Repo storage repo, 
         bytes32 hashLock, 
         string memory hashKey,
@@ -224,15 +235,21 @@ library UsersRepo {
         }
     }
 
-    function checkLocker(
+    function getLocker(
         Repo storage repo,
-        bytes32 hashLock,
-        address msgSender
-    ) public onlyPrimeKey(repo, msgSender) 
-        view returns (LockersRepo.Locker memory locker) 
+        bytes32 hashLock
+        // address msgSender
+    ) public view returns (LockersRepo.Locker memory locker) 
     {
-        uint caller = repo.userNo[msgSender];
-        locker = repo.lockers.checkLocker(hashLock, caller);
+        // uint caller = repo.userNo[msgSender];
+        locker = repo.lockers.getLocker(hashLock);
+    }
+
+    function getLocksList(
+        Repo storage repo
+    ) public view returns (bytes32[] memory) 
+    {
+        return repo.lockers.getSnList();
     }
 
     // ##########################

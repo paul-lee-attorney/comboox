@@ -7,7 +7,10 @@
 
 pragma solidity ^0.8.8;
 
+import "./EnumerableSet.sol";
+
 library LockersRepo {
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
     struct Head {
         uint40 from;
@@ -28,6 +31,7 @@ library LockersRepo {
     struct Repo {
         // hashLock => locker
         mapping (bytes32 => Locker) lockers;
+        EnumerableSet.Bytes32Set snList;
     }
 
     //#################
@@ -68,27 +72,24 @@ library LockersRepo {
 
     function lockAsset(
         Repo storage repo,
-        bytes32 headSn,
+        Head memory head,
         bytes32 hashLock
-    ) public {
-        Locker storage locker = repo.lockers[hashLock]; 
-        
-        if (locker.head.value == 0) {            
-            locker.head = headSnParser(headSn);
+    ) public {        
+        if (repo.snList.add(hashLock)) {
+            repo.lockers[hashLock].head = head;            
         } else revert ("LR.lockAsset: occupied");
     }
 
     function lockMoney(
         Repo storage repo,
-        bytes32 headSn,
-        bytes32 bodySn,
+        Head memory head,
+        Body memory body,
         bytes32 hashLock
-    ) public {
-        Locker storage locker = repo.lockers[hashLock]; 
-        
-        if (locker.head.value == 0) {            
-            locker.head = headSnParser(headSn);
-            locker.body = bodySnParser(bodySn);
+    ) public {       
+        if (repo.snList.add(hashLock)) {            
+            Locker storage locker = repo.lockers[hashLock];      
+            locker.head = head;
+            locker.body = body;
         } else revert ("LR.lockMoney: occupied");
     }
 
@@ -98,6 +99,7 @@ library LockersRepo {
         bytes memory hashKey,
         uint caller
     ) public returns(Head memory head) {
+
         require(hashLock == keccak256(hashKey),
             "LR.fetchMoney: wrong key");
 
@@ -115,6 +117,7 @@ library LockersRepo {
         if (flag) {
             head = locker.head;
             delete repo.lockers[hashLock];
+            repo.snList.remove(hashLock);
         }
     }
 
@@ -131,14 +134,9 @@ library LockersRepo {
         require(block.timestamp < locker.head.expireDate, 
             "LR.releaseAsset: locker expired");
 
-        // require(locker.body.counterLocker == msgSender, 
-        //     "LR.releaseAsset: wrong msgSender");
-
-        // require(locker.body.selector == selector, 
-        //     "LR.releaseAsset: wrong functionSelector");
-
         head = locker.head;
         delete repo.lockers[hashLock];
+        repo.snList.remove(hashLock);
     }
 
     function burnLocker(
@@ -154,27 +152,34 @@ library LockersRepo {
 
         require(locker.head.from == caller, 
             "LR.burnLocker: wrong caller");
-        
-        head = locker.head;
-        delete repo.lockers[hashLock];
+
+        if (repo.snList.remove(hashLock)) {
+            head = locker.head;
+            delete repo.lockers[hashLock];
+        } revert ("LR.burnLocker: locker not exist");
     }
 
     //#################
     //##    Read     ##
     //#################
 
-    function checkLocker(
+    function getLocker(
         Repo storage repo,
-        bytes32 hashLock,
-        uint256 caller
+        bytes32 hashLock
+        // uint256 caller
     ) public view returns (Locker memory) {
 
         Locker memory locker = repo.lockers[hashLock];
 
-        require(locker.head.from == caller || locker.head.to == caller, 
-            "LR.CL: not interested party"); 
+        // require(locker.head.from == caller || locker.head.to == caller, 
+        //     "LR.CL: not interested party"); 
 
         return locker;
     }
 
+    function getSnList(
+        Repo storage repo
+    ) public view returns (bytes32[] memory ) {
+        return repo.snList.values();
+    }
 }
