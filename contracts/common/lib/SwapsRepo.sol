@@ -81,7 +81,7 @@ library SwapsRepo {
     } 
 
     function codifyHead(Head memory head) public pure returns (bytes32 sn) {
-        bytes memory _sn = abi.encode(
+        bytes memory _sn = abi.encodePacked(
                             head.seqOfSwap,
                             head.classOfTarget,
                             head.classOfConsider,

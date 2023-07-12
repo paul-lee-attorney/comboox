@@ -55,9 +55,21 @@ contract RegCenter is IRegCenter {
         emit MintPoints(to, amt);
     }
 
-    function mintAndLockPoints(uint to, uint amt, uint expireDate, bytes32 hashLock) external {   
-        _users.mintAndLockPoints(to, amt, expireDate, hashLock, msg.sender);
-        emit LockPoints(to, amt, expireDate, hashLock);
+    function mintAndLockPoints(
+        uint to, 
+        uint amt, 
+        uint expireDate, 
+        bytes32 hashLock
+    ) external {   
+        LockersRepo.Head memory head = 
+            _users.mintAndLockPoints(
+                to, 
+                amt, 
+                expireDate, 
+                hashLock, 
+                msg.sender
+            );
+        emit LockPoints( LockersRepo.codifyHead(head), hashLock);
     }
 
     function transferPoints(uint256 to, uint amt) external
@@ -66,38 +78,64 @@ contract RegCenter is IRegCenter {
         emit TransferPoints(_users.userNo[msg.sender], to, amt);
     }
 
-    function lockPoints(uint to, uint amt, uint expireDate, bytes32 hashLock) external 
-    {
-        _users.lockPoints(to, amt, expireDate, hashLock, msg.sender);
-        emit LockPoints(to, amt, expireDate, hashLock);
+    function lockPoints(
+        uint to, 
+        uint amt, 
+        uint expireDate, 
+        bytes32 hashLock
+    ) external {
+        LockersRepo.Head memory head = 
+            _users.lockPoints(
+                to, 
+                amt, 
+                expireDate, 
+                hashLock, 
+                msg.sender
+            );
+        emit LockPoints(LockersRepo.codifyHead(head), hashLock);
     }
 
-    function lockConsideration(uint to, uint amt, uint expireDate, bytes32 bodySn, bytes32 hashLock) external 
-    {
-        _users.lockConsideration(to, amt, expireDate, bodySn, hashLock, msg.sender);
-        emit LockConsideration(to, amt, expireDate, bodySn, hashLock);
+    function lockConsideration(
+        uint to, 
+        uint amt, 
+        uint expireDate, 
+        address counterLocker, 
+        bytes calldata payload, 
+        bytes32 hashLock
+    ) external {
+        LockersRepo.Head memory head =
+            _users.lockConsideration(
+                to, 
+                amt, 
+                expireDate, 
+                counterLocker, 
+                payload, 
+                hashLock, 
+                msg.sender
+            );
+        emit LockConsideration(LockersRepo.codifyHead(head), counterLocker, payload, hashLock);
     }
 
     function pickupPoints(bytes32 hashLock, string memory hashKey) external
     {
         LockersRepo.Head memory head = 
-            _users.pickupPoints(hashLock, hashKey);
+            _users.pickupPoints(hashLock, hashKey, msg.sender);
 
         if (head.value > 0)
             emit PickupPoints(LockersRepo.codifyHead(head));
     }
 
-    function pickupConsideration(bytes32 hashLock, string memory hashKey) external 
-    {
-        LockersRepo.Head memory head =
-            _users.pickupConsideration(hashLock, hashKey, msg.sender);
-        emit PickupConsideration(LockersRepo.codifyHead(head));
-    }
+    // function pickupConsideration(bytes32 hashLock, string memory hashKey) external 
+    // {
+    //     LockersRepo.Head memory head =
+    //         _users.pickupConsideration(hashLock, hashKey, msg.sender);
+    //     emit PickupConsideration(LockersRepo.codifyHead(head));
+    // }
 
     function withdrawPoints(bytes32 hashLock) external
     {
         LockersRepo.Head memory head = 
-            _users.withdrawPoints(hashLock, msg.sender);
+            _users.withdrawDeposit(hashLock, msg.sender);
 
         if (head.value > 0)
             emit WithdrawPoints(LockersRepo.codifyHead(head));
@@ -170,71 +208,47 @@ contract RegCenter is IRegCenter {
 
     }
 
-    // ###############
-    // ##    Comp   ##
-    // ###############
+    // #########################
+    // ## Comp Deploy Scripts ##
+    // #########################
 
     function createComp() external 
     {
-        address[21] memory docs;
-
         address primeKeyOfOwner = msg.sender;
         uint40 owner = _users.getMyUserNo(primeKeyOfOwner);
+        address rc = address(this);
 
-        docs[20] = _createDocAtLatestVersion(21, primeKeyOfOwner);
-        IAccessControl(docs[20]).init(
-            owner,
-            address(this),
-            address(this),
-            docs[20]
-        );
+        address gk = _createDocAtLatestVersion(21, primeKeyOfOwner);
+        IAccessControl(gk).init(owner, rc, rc, gk);
+        IGeneralKeeper(gk).createCorpSeal();
+        IAccessControl(gk).setDirectKeeper(primeKeyOfOwner);
 
-        IGeneralKeeper(docs[20]).createCorpSeal();
-
-        docs[9] = _createDocAtLatestVersion(10, primeKeyOfOwner);
-        IAccessControl(docs[9]).init(
-            owner,
-            docs[20],
-            address(this),
-            docs[20]
-        );
-        IGeneralKeeper(docs[20]).regKeeper(10, docs[9]);
-
-        uint i;
-        while (i < 10) {
-            docs[i] = _createDocAtLatestVersion(i+1, primeKeyOfOwner);
-            IAccessControl(docs[i]).init(
-                owner,
-                docs[20],
-                address(this),
-                docs[20]
-            );
-            IGeneralKeeper(docs[20]).regKeeper(i+1, docs[i]);
-
-            uint j = i+10;
-            docs[j] = _createDocAtLatestVersion(j+1, primeKeyOfOwner);
-            if (j != 13 && j!= 19) {
-                IAccessControl(docs[j]).init(
-                    owner,
-                    docs[i],
-                    address(this),
-                    docs[20]
-                );                
-            } else {
-                IAccessControl(docs[j]).init(
-                    owner,
-                    primeKeyOfOwner,
-                    address(this),
-                    docs[20]
-                );
-            }
-            IGeneralKeeper(docs[20]).regBook(i+1, docs[j]);
-            
-            i++;
+        uint i = 10;
+        while (i > 0) {
+            address keeper = _deployDoc(i, primeKeyOfOwner, owner, gk, rc, gk);
+            if (i == 4 || i == 10)
+                _deployDoc(i+10, primeKeyOfOwner, owner, primeKeyOfOwner, rc, gk); 
+            else _deployDoc(i+10, primeKeyOfOwner, owner, keeper, rc, gk);
+            i--;
         }
-
-        IAccessControl(docs[20]).setDirectKeeper(primeKeyOfOwner);
     }
+
+    function _deployDoc(
+        uint typeOfDoc, 
+        address primeKeyOfOwner, 
+        uint owner, 
+        address dk, 
+        address rc,
+        address gk
+    ) 
+        private returns (address body) 
+    {
+        body = _createDocAtLatestVersion(typeOfDoc, primeKeyOfOwner);
+        IAccessControl(body).init(owner, dk, rc, gk);
+        if (typeOfDoc < 11) IGeneralKeeper(gk).regKeeper(typeOfDoc, body);
+        else IGeneralKeeper(gk).regBook(typeOfDoc - 10, body);
+    }
+
 
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
         returns(address body)

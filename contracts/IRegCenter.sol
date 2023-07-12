@@ -66,9 +66,9 @@ interface IRegCenter {
 
     event TransferPoints(uint256 indexed from, uint256 indexed to, uint256 indexed amt);
 
-    event LockPoints(uint indexed to, uint indexed amt, uint expireDate, bytes32 indexed hashLock);
+    event LockPoints(bytes32 indexed headSn, bytes32 indexed hashLock);
 
-    event LockConsideration(uint indexed to, uint indexed amt, uint expireDate, bytes32 bodySn, bytes32 indexed hashLock);
+    event LockConsideration(bytes32 indexed headSn, address indexed counterLocker, bytes payload, bytes32 indexed hashLock);
 
     event PickupPoints(bytes32 indexed headSn);
 
@@ -111,11 +111,11 @@ interface IRegCenter {
 
     function lockPoints(uint to, uint amt, uint expireDate, bytes32 hashLock) external;
 
-    function lockConsideration(uint seqOfShare, uint amt, uint expireDate, bytes32 bodySn, bytes32 hashLock) external;
+    function lockConsideration(uint to, uint amt, uint expireDate, address counterLocker, bytes memory payload, bytes32 hashLock) external;
 
     function pickupPoints(bytes32 hashLock, string memory hashKey) external;
 
-    function pickupConsideration(bytes32 hashLock, string memory hashKey) external;
+    // function pickupConsideration(bytes32 hashLock, string memory hashKey) external;
 
     function withdrawPoints(bytes32 hashLock) external;
 

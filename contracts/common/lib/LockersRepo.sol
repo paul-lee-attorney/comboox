@@ -20,8 +20,7 @@ library LockersRepo {
     }
     struct Body {
         address counterLocker;
-        bytes4 selector;
-        uint64 data;
+        bytes payload;
     }
     struct Locker {
         Head head;
@@ -49,18 +48,8 @@ library LockersRepo {
         });
     }
 
-    function bodySnParser(bytes32 sn) public pure returns (Body memory body) {
-        uint _sn = uint(sn);
-        
-        body = Body({
-            counterLocker: address(uint160(_sn >> 96)),
-            selector: bytes4(uint32(_sn >> 64)),
-            data: uint64(_sn)
-        });
-    }
-
     function codifyHead(Head memory head) public pure returns (bytes32 headSn) {
-        bytes memory _sn = abi.encode(
+        bytes memory _sn = abi.encodePacked(
                             head.from,
                             head.to,
                             head.expireDate,
@@ -70,17 +59,16 @@ library LockersRepo {
         }
     }
 
-    function lockAsset(
+    function lockPoints(
         Repo storage repo,
         Head memory head,
         bytes32 hashLock
-    ) public {        
-        if (repo.snList.add(hashLock)) {
-            repo.lockers[hashLock].head = head;            
-        } else revert ("LR.lockAsset: occupied");
+    ) public {
+        Body memory body;
+        lockConsideration(repo, head, body, hashLock);        
     }
 
-    function lockMoney(
+    function lockConsideration(
         Repo storage repo,
         Head memory head,
         Body memory body,
@@ -90,29 +78,36 @@ library LockersRepo {
             Locker storage locker = repo.lockers[hashLock];      
             locker.head = head;
             locker.body = body;
-        } else revert ("LR.lockMoney: occupied");
+        } else revert ("LR.lockConsideration: occupied");
     }
 
-    function fetchMoney(
+    function pickupPoints(
         Repo storage repo,
         bytes32 hashLock,
-        bytes memory hashKey,
+        string memory hashKey,
         uint caller
     ) public returns(Head memory head) {
+        
+        bytes memory key = bytes(hashKey);
 
-        require(hashLock == keccak256(hashKey),
-            "LR.fetchMoney: wrong key");
+        require(hashLock == keccak256(key),
+            "LR.pickupPoints: wrong key");
 
         Locker storage locker = repo.lockers[hashLock];
 
         require(block.timestamp < locker.head.expireDate, 
-            "LR.fetchMoney: locker expired");
+            "LR.pickupPoints: locker expired");
 
-        require(locker.head.to == caller, 
-            "LR.fetchMoney: wrong caller");
+        bool flag = true;
 
-        bytes memory payload = abi.encodeWithSelector(locker.body.selector, hashKey);
-        (bool flag, ) = locker.body.counterLocker.call(payload);
+        if (locker.body.counterLocker != address(0)) {
+            require(locker.head.to == caller, 
+                "LR.pickupPoints: wrong caller");
+
+            uint len = key.length;
+            bytes memory payload = abi.encode(locker.body.payload, len, key);
+            (flag, ) = locker.body.counterLocker.call(payload);
+        }
 
         if (flag) {
             head = locker.head;
@@ -121,25 +116,7 @@ library LockersRepo {
         }
     }
 
-    function releaseAsset (
-        Repo storage repo,
-        bytes32 hashLock,
-        bytes memory hashKey
-    ) public returns(Head memory head) {
-        require(hashLock == keccak256(hashKey),
-            "LR.releaseAsset: wrong key");
-
-        Locker storage locker = repo.lockers[hashLock];
-
-        require(block.timestamp < locker.head.expireDate, 
-            "LR.releaseAsset: locker expired");
-
-        head = locker.head;
-        delete repo.lockers[hashLock];
-        repo.snList.remove(hashLock);
-    }
-
-    function burnLocker(
+    function withdrawDeposit(
         Repo storage repo,
         bytes32 hashLock,
         uint256 caller
@@ -148,15 +125,15 @@ library LockersRepo {
         Locker memory locker = repo.lockers[hashLock];
 
         require(block.timestamp >= locker.head.expireDate, 
-            "LR.burnLocker: locker not expired");
+            "LR.withdrawDeposit: locker not expired");
 
         require(locker.head.from == caller, 
-            "LR.burnLocker: wrong caller");
+            "LR.withdrawDeposit: wrong caller");
 
         if (repo.snList.remove(hashLock)) {
             head = locker.head;
             delete repo.lockers[hashLock];
-        } revert ("LR.burnLocker: locker not exist");
+        } revert ("LR.withdrawDeposit: locker not exist");
     }
 
     //#################
@@ -166,15 +143,8 @@ library LockersRepo {
     function getLocker(
         Repo storage repo,
         bytes32 hashLock
-        // uint256 caller
-    ) public view returns (Locker memory) {
-
-        Locker memory locker = repo.lockers[hashLock];
-
-        // require(locker.head.from == caller || locker.head.to == caller, 
-        //     "LR.CL: not interested party"); 
-
-        return locker;
+    ) public view returns (Locker memory locker) {
+        locker = repo.lockers[hashLock];
     }
 
     function getSnList(

@@ -111,7 +111,7 @@ library MotionsRepo {
     }
 
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
-        bytes memory _sn = abi.encode(
+        bytes memory _sn = abi.encodePacked(
                             head.typeOfMotion,
                             head.seqOfMotion,
                             head.seqOfVR,

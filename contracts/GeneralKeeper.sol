@@ -627,12 +627,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         return IBookOfPledges(_books[8]);
     }
 
-    function getBOS() external view returns (IBookOfShares ) {
-        return IBookOfShares(_books[9]);
+    function getROS() external view returns (IRegisterOfSwaps ) {
+        return IRegisterOfSwaps(_books[9]);
     }
 
-    function getROS() external view returns (IRegisterOfSwaps ) {
-        return IRegisterOfSwaps(_books[10]);
-    }
-    
+    function getBOS() external view returns (IBookOfShares ) {
+        return IBookOfShares(_books[10]);
+    }    
 }

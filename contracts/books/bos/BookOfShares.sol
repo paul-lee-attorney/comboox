@@ -83,14 +83,15 @@ contract BookOfShares is IBookOfShares, AccessControl {
             value: uint128(amt)
         });
 
-        _lockers.lockAsset(head, hashLock);
+        _lockers.lockPoints(head, hashLock);
         emit SetPayInAmt(LockersRepo.codifyHead(head), hashLock);
     }
 
-    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external
+    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) 
+        external onlyDirectKeeper
     {
         LockersRepo.Head memory head = 
-            _lockers.releaseAsset(hashLock, bytes(hashKey));
+            _lockers.pickupPoints(hashLock, hashKey, 0);
         if (head.value > 0) {
             SharesRepo.Share storage share = _repo.shares[head.from];
             // require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
@@ -103,7 +104,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDirectKeeper {
         LockersRepo.Head memory head = 
-            _lockers.burnLocker(hashLock, seqOfShare);
+            _lockers.withdrawDeposit(hashLock, seqOfShare);
         emit WithdrawPayInAmt(head.from, head.value);
     }
 

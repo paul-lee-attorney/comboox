@@ -94,7 +94,7 @@ library OfficersRepo {
     }
 
     function codifyPosition(Position memory position) public pure returns (bytes32 sn) {
-        bytes memory _sn = abi.encode(
+        bytes memory _sn = abi.encodePacked(
                             position.title,
                             position.seqOfPos,
                             position.acct,
