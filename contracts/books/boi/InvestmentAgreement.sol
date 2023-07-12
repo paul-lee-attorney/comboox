@@ -72,10 +72,10 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function clearDealCP(
         uint256 seq,
         bytes32 hashLock,
-        uint closingDate
+        uint closingDeadline
     ) external onlyDirectKeeper {
-        _repo.clearDealCP(seq, hashLock, closingDate);
-        emit ClearDealCP(seq, hashLock, closingDate);
+        _repo.clearDealCP(seq, hashLock, closingDeadline);
+        emit ClearDealCP(seq, hashLock, closingDeadline);
     }
 
     function closeDeal(uint256 seq, string memory hashKey)

@@ -20,7 +20,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier withinExecPeriod(address ia) {
         require(
-            block.timestamp <= _gk.getBOI().shaExecDeadline(ia),
+            block.timestamp < _gk.getBOI().shaExecDeadline(ia),
             "missed review period"
         );
         _;
@@ -28,7 +28,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier afterExecPeriod(address ia) {
         require(
-            block.timestamp > _gk.getBOI().shaExecDeadline(ia),
+            block.timestamp >= _gk.getBOI().shaExecDeadline(ia),
             "still within review period"
         );
         _;
@@ -36,7 +36,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier beforeProposeDeadline(address ia) {
         require(
-            block.timestamp <= _gk.getBOI().terminateStartpoint(ia),
+            block.timestamp < _gk.getBOI().terminateStartpoint(ia),
             "SHAK.md.BPD: missed proposal deadline"
         );
         _;
@@ -130,7 +130,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
     ) external onlyDirectKeeper afterExecPeriod(ia) {
 
         require(
-            block.timestamp <= _gk.getBOI().terminateStartpoint(ia),
+            block.timestamp < _gk.getBOI().terminateStartpoint(ia),
             "SHAK.acceptAlongDeal: missed proposal deadline"
         );
 
@@ -168,7 +168,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             seller: share.head.shareholder,
             priceOfPaid: deal.head.priceOfPaid,
             priceOfPar: deal.head.priceOfPar,
-            closingDate: deal.head.closingDate,
+            closingDeadline: deal.head.closingDeadline,
             para: 0
         });
 
@@ -275,7 +275,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
             giftDeal.head.seqOfShare = share.head.seqOfShare;
             giftDeal.head.seller = share.head.shareholder;
-            giftDeal.head.closingDate = deal.head.closingDate;
+            giftDeal.head.closingDeadline = deal.head.closingDeadline;
 
             giftDeal.body.buyer = deal.body.buyer;
             giftDeal.body.groupOfBuyer = deal.body.groupOfBuyer; 

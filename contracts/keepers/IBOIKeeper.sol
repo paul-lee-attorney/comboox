@@ -46,7 +46,7 @@ interface IBOIKeeper {
         address ia,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint closingDate,
+        uint closingDeadline,
         uint256 caller
     ) external;
 
@@ -63,13 +63,6 @@ interface IBOIKeeper {
     ) external;
 
     function issueNewShare(address ia, uint256 seqOfDeal) external;
-
-    function revokeDeal(
-        address ia,
-        uint256 seqOfDeal,
-        uint256 caller,
-        string memory hashKey
-    ) external;
 
     function terminateDeal(
         address ia,

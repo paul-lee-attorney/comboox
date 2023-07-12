@@ -227,9 +227,9 @@ library SharesRepo {
 
     function updatePayInDeadline(Share storage share, uint deadline) public 
     {
-        require (block.timestamp < deadline, "SR.UPID: passed deadline");
-        require (block.timestamp <= share.body.payInDeadline, 
-            "SR.UPID: missed original deadline");
+        require (block.timestamp < deadline, "SR.UPID: missed deadline");
+        require (block.timestamp < share.body.payInDeadline, 
+            "SR.UPID: missed payInDeadline");
 
         share.body.payInDeadline = uint48(deadline);
     }

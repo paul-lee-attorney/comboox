@@ -107,7 +107,7 @@ library SigsRepo {
     function signDoc(Page storage p, uint256 acct, bytes32 sigHash) 
         public returns (bool flag)
     {
-        require(block.timestamp <= getSigDeadline(p),
+        require(block.timestamp < getSigDeadline(p),
             "SR.SD: missed sigDeadline");
 
         require(!established(p),
@@ -136,7 +136,7 @@ library SigsRepo {
     function regSig(Page storage p, uint256 seqOfDeal, uint256 acct, uint sigDate, bytes32 sigHash)
         public returns (bool flag)
     {
-        require(block.timestamp <= getSigDeadline(p),
+        require(block.timestamp < getSigDeadline(p),
             "SR.RS: missed sigDeadline");
 
         require(!established(p),

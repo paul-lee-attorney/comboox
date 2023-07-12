@@ -316,9 +316,9 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     // ======== Deal Closing ========
 
-    function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDate) 
+    function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDeadline) 
     external {
-        IBOIKeeper(_keepers[6]).pushToCoffer(ia, seqOfDeal, hashLock, closingDate, _msgSender(fees[5]));
+        IBOIKeeper(_keepers[6]).pushToCoffer(ia, seqOfDeal, hashLock, closingDeadline, _msgSender(fees[5]));
     }
 
     function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
@@ -332,11 +332,6 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function transferTargetShare(address ia, uint256 seqOfDeal) external {
         IBOIKeeper(_keepers[6]).transferTargetShare(ia, seqOfDeal, _msgSender(fees[5]));
-    }
-
-    function revokeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
-    external {
-        IBOIKeeper(_keepers[6]).revokeDeal(ia, seqOfDeal, _msgSender(fees[2]), hashKey);
     }
 
     function terminateDeal(address ia, uint256 seqOfDeal) external {

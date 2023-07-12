@@ -126,7 +126,7 @@ library OfficersRepo {
         require (pos.seqOfPos > 0, "OR.addPosition: zero seqOfPos");
         require (pos.titleOfNominator > 0, "OR.addPosition: zero titleOfNominator");
         require (pos.endDate > pos.startDate, "OR.addPosition: endDate <= startDate");
-        require (pos.endDate > uint48(block.timestamp), "OR.addPosition: endDate not future");
+        require (pos.endDate > block.timestamp, "OR.addPosition: endDate not future");
 
         Position storage p = repo.positions[pos.seqOfPos];
         
@@ -341,7 +341,7 @@ library OfficersRepo {
         public view returns (bool)
     {
         Position memory pos = repo.positions[seqOfPos];
-        if (pos.endDate < block.timestamp) return false;
+        if (pos.endDate <= block.timestamp) return false;
         else if (pos.nominator == 0)
             return hasTitle(repo, acct, pos.titleOfNominator, _bom);
         else return (pos.nominator == acct);

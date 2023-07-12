@@ -59,7 +59,7 @@ library DealsRepo {
         uint40 seller;
         uint32 priceOfPaid;
         uint32 priceOfPar;
-        uint48 closingDate;
+        uint48 closingDeadline;
         uint16 para;
     }
 
@@ -113,7 +113,7 @@ library DealsRepo {
             seller: uint40(_sn >> 128),
             priceOfPaid: uint32(_sn >> 96),
             priceOfPar: uint32(_sn >> 64),
-            closingDate: uint48(_sn >> 16),
+            closingDeadline: uint48(_sn >> 16),
             para: uint16(_sn) 
         });
 
@@ -129,7 +129,7 @@ library DealsRepo {
                             head.seller,
                             head.priceOfPaid,
                             head.priceOfPaid,
-                            head.closingDate,
+                            head.closingDeadline,
                             head.para);        
         assembly {
             sn := mload(add(_sn, 0x20))
@@ -197,11 +197,16 @@ library DealsRepo {
 
     function releaseDealSubject(Repo storage repo, uint256 seqOfDeal) public returns (bool flag)
     {
-        if (repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Locked) ||
-            repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Cleared) ) {
+        uint8 state = repo.deals[seqOfDeal].body.state;
+
+        if ( state < uint8(StateOfDeal.Closed) ) {
 
             repo.deals[seqOfDeal].body.state = uint8(StateOfDeal.Drafting);
             flag = true;
+
+        } else if (state == uint8(StateOfDeal.Terminated)) {
+
+            flag = true;            
         }
     }
 
@@ -209,21 +214,21 @@ library DealsRepo {
         Repo storage repo,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint closingDate
+        uint closingDeadline
     ) public {
         Deal storage deal = repo.deals[seqOfDeal];
-
-        require(
-            block.timestamp < closingDate,
-            "IA.CDCP: not FUTURE time"
-        );
 
         require(deal.body.state == uint8(StateOfDeal.Locked), 
             "IA.CDCP: wrong Deal state");
 
         deal.body.state = uint8(StateOfDeal.Cleared);
         deal.hashLock = hashLock;
-        if (closingDate != 0) deal.head.closingDate = uint48(closingDate);
+
+        if (closingDeadline > 0) {
+            if (block.timestamp < closingDeadline) 
+                deal.head.closingDeadline = uint48(closingDeadline);
+            else revert ("IA.clearDealCP: updated closingDeadline not FUTURE time");
+        }
     }
 
     function closeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
@@ -253,7 +258,7 @@ library DealsRepo {
         Deal storage deal = repo.deals[seqOfDeal];
 
         require(
-            block.timestamp <= deal.head.closingDate,
+            block.timestamp < deal.head.closingDeadline,
             "IA.closeDeal: MISSED closing date"
         );
 
@@ -264,36 +269,36 @@ library DealsRepo {
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
-    function revokeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
-        external onlyCleared(repo, seqOfDeal) returns (bool flag)
-    {
-        Deal storage deal = repo.deals[seqOfDeal];
+    // function revokeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
+    //     external onlyCleared(repo, seqOfDeal) returns (bool flag)
+    // {
+    //     Deal storage deal = repo.deals[seqOfDeal];
 
-        require(
-            block.timestamp > deal.head.closingDate,
-            "DR.RD: NOT reached closing date"
-        );
+    //     require(
+    //         block.timestamp >= deal.head.closingDeadline,
+    //         "DR.RD: NOT reached closingDeadline"
+    //     );
 
-        require(
-            deal.head.typeOfDeal != uint8(TypeOfDeal.FreeGift),
-            "FreeGift deal cannot be revoked"
-        );
+    //     require(
+    //         deal.head.typeOfDeal != uint8(TypeOfDeal.FreeGift),
+    //         "FreeGift deal cannot be revoked"
+    //     );
 
-        require(
-            deal.body.state == uint8(StateOfDeal.Cleared),
-            "wrong state of Deal"
-        );
+    //     require(
+    //         deal.body.state == uint8(StateOfDeal.Cleared),
+    //         "wrong state of Deal"
+    //     );
 
-        require(
-            deal.hashLock == keccak256(bytes(hashKey)),
-            "hashKey NOT correct"
-        );
+    //     require(
+    //         deal.hashLock == keccak256(bytes(hashKey)),
+    //         "hashKey NOT correct"
+    //     );
 
-        deal.body.state = uint8(StateOfDeal.Terminated);
+    //     deal.body.state = uint8(StateOfDeal.Terminated);
 
-        _increaseCounterOfClosedDeal(repo);
-        flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
-    }
+    //     _increaseCounterOfClosedDeal(repo);
+    //     flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
+    // }
 
     function terminateDeal(Repo storage repo, uint256 seqOfDeal) public returns(bool flag){
         Body storage body = repo.deals[seqOfDeal].body;

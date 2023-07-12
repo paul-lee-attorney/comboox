@@ -191,15 +191,13 @@ interface IGeneralKeeper {
 
     // ======== Deal Closing ========
 
-    function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDate) external;
+    function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDeadline) external;
 
     function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) external;
 
     function issueNewShare(address ia, uint256 seqOfDeal) external;
 
     function transferTargetShare(address ia, uint256 seqOfDeal) external;
-
-    function revokeDeal(address ia, uint256 seqOfDeal, string memory hashKey) external;
 
     function terminateDeal(address ia, uint256 seqOfDeal) external;
 

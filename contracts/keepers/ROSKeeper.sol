@@ -119,7 +119,7 @@ contract ROSKeeper is IROSKeeper, AccessControl {
 
         require(block.timestamp < motion.body.voteEndDate + 
             uint48(motion.votingRule.execDaysForPutOpt) * 86400, 
-            "BOGK.RTB: missed EXEC date");
+            "BOGK.RTB: missed EXEC deadline");
 
         SwapsRepo.Swap memory swap;
 
@@ -129,7 +129,7 @@ contract ROSKeeper is IROSKeeper, AccessControl {
             classOfConsider: deal.head.classOfShare,
             createDate: uint48(block.timestamp),
             triggerDate: uint48(block.timestamp),
-            closingDays: uint16((deal.head.closingDate + 43200 - block.timestamp) / 86400),
+            closingDays: uint16((deal.head.closingDeadline + 43200 - block.timestamp) / 86400),
             obligor: target.head.shareholder,
             rateOfSwap: deal.head.priceOfPaid * 10000 / target.head.priceOfPaid,
             para: 0

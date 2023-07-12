@@ -20,7 +20,7 @@ interface IInvestmentAgreement {
     event ClearDealCP(
         uint256 indexed seq,
         bytes32 indexed hashLock,
-        uint indexed closingDate
+        uint indexed closingDeadline
     );
 
     event CloseDeal(uint256 indexed seq, string indexed hashKey);
@@ -51,7 +51,7 @@ interface IInvestmentAgreement {
 
     function releaseDealSubject(uint256 seq) external returns (bool flag);
 
-    function clearDealCP( uint256 seq, bytes32 hashLock, uint closingDate) external;
+    function clearDealCP( uint256 seq, bytes32 hashLock, uint closingDeadline) external;
 
     function closeDeal(uint256 seq, string memory hashKey)
         external returns (bool flag);

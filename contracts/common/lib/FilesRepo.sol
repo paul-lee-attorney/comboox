@@ -153,7 +153,7 @@ library FilesRepo {
 
         File storage file = repo.files[body];
 
-        require(block.timestamp <= signingDeadline(repo, body) , 
+        require(block.timestamp < signingDeadline(repo, body) , 
             "FR.SF: missed signingDeadline");
 
         file.head.state = uint8(StateOfFile.Established);
@@ -230,7 +230,7 @@ library FilesRepo {
 
         File storage file = repo.files[body];
 
-        require(timestamp <= closingDeadline(repo, body), 
+        require(timestamp < closingDeadline(repo, body), 
             "FR.EF: missed closingDeadline");
 
         file.head.state = uint8(StateOfFile.Closed);
@@ -241,12 +241,12 @@ library FilesRepo {
         address body
     ) public onlyRegistered(repo, body) {
 
-        require(
-            repo.files[body].head.state != uint8(StateOfFile.Closed),
-            "FR.RF: Doc is executed"
-        );
-
         File storage file = repo.files[body];
+
+        require(
+            file.head.state != uint8(StateOfFile.Closed),
+            "FR.RF: Doc is closed"
+        );
 
         // require(block.timestamp > closingDeadline(repo, body), 
         //     "FR.RF: still in execPeriod");

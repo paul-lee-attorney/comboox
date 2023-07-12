@@ -81,7 +81,7 @@ contract LockUp is ILockUp, AccessControl {
         if (
             deal.head.typeOfDeal > 1 &&
             isLocked(deal.head.seqOfShare) &&
-            _lockers[deal.head.seqOfShare].dueDate >= deal.head.closingDate
+            _lockers[deal.head.seqOfShare].dueDate >= deal.head.closingDeadline
         ) return true;
 
         return false;

@@ -131,7 +131,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
         address ia,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint closingDate,
+        uint closingDeadline,
         uint256 caller
     ) external onlyDirectKeeper {
         DealsRepo.Head memory head = 
@@ -144,7 +144,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
 
         _vrAndSHACheck(ia, seqOfDeal, isST);
 
-        IInvestmentAgreement(ia).clearDealCP(seqOfDeal, hashLock, closingDate);
+        IInvestmentAgreement(ia).clearDealCP(seqOfDeal, hashLock, closingDeadline);
     }
 
     function _vrAndSHACheck(address ia, uint256 seqOfDeal, bool isST) private view {
@@ -289,26 +289,26 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
         _shareTransfer(ia, seqOfDeal);
     }
 
-    function revokeDeal(
-        address ia,
-        uint256 seqOfDeal,
-        uint256 caller,
-        string memory hashKey
-    ) external onlyDirectKeeper {
-        require(_gk.getBOI().getHeadOfFile(ia).state == 
-                    uint8(FilesRepo.StateOfFile.Approved),
-                    "BOAK.RD: wrong State");
+    // function revokeDeal(
+    //     address ia,
+    //     uint256 seqOfDeal,
+    //     uint256 caller,
+    //     string memory hashKey
+    // ) external onlyDirectKeeper {
+    //     require(_gk.getBOI().getHeadOfFile(ia).state == 
+    //                 uint8(FilesRepo.StateOfFile.Approved),
+    //                 "BOAK.RD: wrong State");
 
-        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
+    //     DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        require(caller == deal.head.seller, "BOAK.RD: NOT seller");
+    //     require(caller == deal.head.seller, "BOAK.RD: NOT seller");
 
-        if (IInvestmentAgreement(ia).revokeDeal(seqOfDeal, hashKey))
-            _gk.getBOI().execFile(ia);
+    //     if (IInvestmentAgreement(ia).revokeDeal(seqOfDeal, hashKey))
+    //         _gk.getBOI().terminateFile(ia);
 
-        if (IInvestmentAgreement(ia).releaseDealSubject(seqOfDeal))
-            _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
-    }
+    //     if (IInvestmentAgreement(ia).releaseDealSubject(seqOfDeal))
+    //         _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
+    // }
 
     function terminateDeal(
         address ia,
@@ -324,16 +324,20 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
         );
 
         IBookOfIA _boi = _gk.getBOI();
+        IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         uint8 state = _boi.getHeadOfFile(ia).state;
 
-        if (((state < uint8(FilesRepo.StateOfFile.Proposed) &&
-            block.timestamp > _boi.terminateStartpoint(ia)) || 
-            state == uint8(FilesRepo.StateOfFile.Rejected)))
-        {
-            if (IInvestmentAgreement(ia).terminateDeal(seqOfDeal))
+        if ((state < uint8(FilesRepo.StateOfFile.Proposed) &&
+                block.timestamp >= _boi.terminateStartpoint(ia)) || 
+            state == uint8(FilesRepo.StateOfFile.Rejected) ||
+            (state == uint8(FilesRepo.StateOfFile.Approved) &&
+                block.timestamp >= _ia.getHeadOfDeal(seqOfDeal).closingDeadline)
+        ) {
+            if (_ia.terminateDeal(seqOfDeal))
                 _boi.terminateFile(ia);
-            _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);            
+            if (_ia.releaseDealSubject(seqOfDeal))
+                _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);            
         } else revert("BOAK.TD: wrong state");
     }
 }

@@ -111,7 +111,7 @@ contract DragAlong is IAlongs, AccessControl {
         }
 
         if (
-            _roeOfDeal(deal.head.priceOfPaid, share.head.priceOfPaid, deal.head.closingDate, share.head.issueDate) >=
+            _roeOfDeal(deal.head.priceOfPaid, share.head.priceOfPaid, deal.head.closingDeadline, share.head.issueDate) >=
             lr.roe
         ) return true;
 
@@ -157,14 +157,14 @@ contract DragAlong is IAlongs, AccessControl {
     function _roeOfDeal(
         uint32 dealPrice,
         uint32 issuePrice,
-        uint48 closingDate,
+        uint48 closingDeadline,
         uint48 issueDateOfShare
     ) internal pure returns (uint32 roe) {
         require(dealPrice > issuePrice, "ROE: NEGATIVE selling price");
-        require(closingDate > issueDateOfShare, "ROE: NEGATIVE holding period");
+        require(closingDeadline > issueDateOfShare, "ROE: NEGATIVE holding period");
 
         uint32 deltaPrice = dealPrice - issuePrice;
-        uint32 deltaDate = uint32(closingDate - issueDateOfShare);
+        uint32 deltaDate = uint32(closingDeadline - issueDateOfShare);
 
         roe = (((deltaPrice * 10000) / issuePrice) * 31536000) / deltaDate;
     }

@@ -170,7 +170,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
         _boi.circulateFile(
             address(_ia), 0, 
-            uint16((deal.head.closingDate - uint48(block.timestamp) + 43200)/86400), 
+            uint16((deal.head.closingDeadline - uint48(block.timestamp) + 43200)/86400), 
             vr, bytes32(0), bytes32(0)
         );
 

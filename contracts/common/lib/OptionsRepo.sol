@@ -53,7 +53,7 @@ library OptionsRepo {
     }
 
     struct Body {
-        uint48 closingDate;
+        uint48 closingDeadline;
         uint40 rightholder;
         uint64 paid;
         uint64 par;
@@ -159,7 +159,7 @@ library OptionsRepo {
         opt.head = snParser(snOfOpt);
         opt.cond = snOfCond.snParser();
 
-        opt.body.closingDate = opt.head.triggerDate + (uint48(opt.head.execDays) + uint48(opt.head.closingDays)) * 86400;
+        opt.body.closingDeadline = opt.head.triggerDate + (uint48(opt.head.execDays) + uint48(opt.head.closingDays)) * 86400;
         opt.body.rightholder = uint40(rightholder);
         opt.body.paid = uint64(paid);
         opt.body.par = uint64(par);
@@ -183,7 +183,7 @@ library OptionsRepo {
 
         require(opt.head.rate > 0, "OR.IO: ZERO rate");
 
-        require(opt.head.triggerDate >= block.timestamp, "OR.IO: triggerDate not order");
+        require(opt.head.triggerDate > block.timestamp, "OR.IO: triggerDate not future");
         require(opt.head.execDays > 0, "OR.IO: ZERO execDays");
         require(opt.head.closingDays > 0, "OR.IO: ZERO closingDays");
         require(opt.head.obligor > 0, "OR.IO: ZERO obligor");
@@ -265,7 +265,7 @@ library OptionsRepo {
             } else revert("OR.EO: logical operator overflow");
         }
 
-        opt.body.closingDate = uint48(block.timestamp) + uint48(opt.head.closingDays) * 86400;
+        opt.body.closingDeadline = uint48(block.timestamp) + uint48(opt.head.closingDays) * 86400;
         opt.body.state = uint8(StateOfOpt.Executed);
     }
 
@@ -284,7 +284,7 @@ library OptionsRepo {
         Record storage rcd = repo.records[seqOfOpt];
 
         require(opt.body.state == uint8(StateOfOpt.Executed), "OR.IS: wrong state");
-        require(block.timestamp < opt.body.closingDate, "OR.IS: option expired");
+        require(block.timestamp < opt.body.closingDeadline, "OR.IS: option expired");
 
         SharesRepo.Share memory consider = _gk.getBOS().getShare(seqOfConsider);
         SharesRepo.Share memory target = _gk.getBOS().getShare(seqOfTarget);
@@ -298,7 +298,7 @@ library OptionsRepo {
             classOfConsider: consider.head.class,
             createDate: uint48(block.timestamp),
             triggerDate: uint48(block.timestamp) + 120,
-            closingDays: uint16((opt.body.closingDate + 43200 - block.timestamp) / 86400),
+            closingDays: uint16((opt.body.closingDeadline + 43200 - block.timestamp) / 86400),
             obligor: opt.head.obligor,
             rateOfSwap: 0,
             para: 0

@@ -53,7 +53,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         bytes32 sigHash
     ) external onlyKeeper returns (bool flag) {
         FilesRepo.Head memory headOfFile = getHeadOfFile(ia);
-        require(_repo.shaExecDeadline(ia) >= block.timestamp, 
+        require(block.timestamp < _repo.shaExecDeadline(ia), 
             "BOA.EFRR: missed shaExecDeadline");
 
         if (_frClaims[ia].execFirstRefusalRight(seqOfDeal, caller, sigHash))
