@@ -376,7 +376,7 @@ library UsersRepo {
     {
         uint target = repo.userNo[targetAddr];
 
-        // require(target > 0, "UR.GUN: not registered");
+        require(target > 0, "UR.getUserNo: not registered");
 
         if (msgSender != targetAddr) {
             _chargeFee(repo, target, fee);
@@ -391,7 +391,10 @@ library UsersRepo {
     function getMyUserNo(Repo storage repo, address msgSender) 
         public view returns(uint40) 
     {
-        return uint40(repo.userNo[msgSender]);
+        uint40 user = uint40(repo.userNo[msgSender]);
+
+        if (user > 0) return user;
+        else revert ("UR.getMyUserNo: not registered");
     }
 
     function _awardBonus(Repo storage repo, address querySender, uint fee) 
