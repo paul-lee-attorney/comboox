@@ -62,7 +62,7 @@ library UsersRepo {
     }
 
     modifier onlyPrimeKey(Repo storage repo, address msgSender) {
-        require(msgSender == repo.users[repo.userNo[msgSender]].primeKey.pubKey, 
+        require(msgSender == repo.users[getMyUserNo(repo, msgSender)].primeKey.pubKey, 
             "UR.mf.OPK: not primeKey");
         _;
     }
@@ -145,7 +145,7 @@ library UsersRepo {
         uint expireDate, 
         address msgSender
     ) private returns (LockersRepo.Head memory head) {
-        uint40 caller = uint40(repo.userNo[msgSender]);
+        uint40 caller = getMyUserNo(repo, msgSender);
 
         User storage user = repo.users[caller];
 
@@ -169,7 +169,7 @@ library UsersRepo {
         uint amt
     ) public onlyPrimeKey(repo, msgSender)
     {
-        uint40 from = uint40(repo.userNo[msgSender]);
+        uint40 from = getMyUserNo(repo, msgSender);
 
         if (repo.users[from].balance >= uint216(amt)) {
             repo.users[from].balance -= uint216(amt);
@@ -209,7 +209,7 @@ library UsersRepo {
         address msgSender
     ) public returns (LockersRepo.Head memory head) 
     {
-        uint caller = repo.userNo[msgSender];
+        uint caller = getMyUserNo(repo, msgSender);
         head = repo.lockers.pickupPoints(hashLock, hashKey, caller);
         
         if (head.value > 0) {
@@ -222,7 +222,7 @@ library UsersRepo {
         bytes32 hashLock, 
         address msgSender
     ) public onlyPrimeKey(repo, msgSender) returns (LockersRepo.Head memory head) {
-        uint caller = repo.userNo[msgSender];
+        uint caller = getMyUserNo(repo, msgSender);
         head = repo.lockers.withdrawDeposit(hashLock, caller);
         if (head.value > 0) {
             repo.users[caller].balance += head.value;
@@ -291,7 +291,7 @@ library UsersRepo {
     {
         uint _info = uint(info);
 
-        uint caller = repo.userNo[msgSender];
+        uint caller = getMyUserNo(repo, msgSender);
         User storage user = repo.users[caller];
 
         user.primeKey.seqOfKey = uint16(_info >> 240);
@@ -309,7 +309,7 @@ library UsersRepo {
     {
         require (!isKey(repo, bKey), "UR.SBK: used key");
 
-        uint caller = repo.userNo[msgSender];
+        uint caller = getMyUserNo(repo, msgSender);
 
         User storage user = repo.users[caller];
 
@@ -368,22 +368,20 @@ library UsersRepo {
     function getUser(Repo storage repo, address msgSender) 
         public view returns (User memory)
     {
-        return repo.users[repo.userNo[msgSender]];
+        return repo.users[getMyUserNo(repo, msgSender)];
     }
 
     function getUserNo(Repo storage repo, address targetAddr, uint fee, address msgSender) 
         public returns (uint40) 
     {
-        uint target = repo.userNo[targetAddr];
-
-        require(target > 0, "UR.getUserNo: not registered");
+        uint40 target = getMyUserNo(repo, msgSender);
 
         if (msgSender != targetAddr) {
             _chargeFee(repo, target, fee);
 
-            if (tx.origin != targetAddr) _chargeFee(repo, repo.userNo[tx.origin], fee);
+            if (tx.origin != targetAddr) _chargeFee(repo, getMyUserNo(repo, tx.origin), fee);
             else _awardBonus(repo, msgSender, fee);
-        } else return getMyUserNo(repo, msgSender);
+        } else return target;
 
         return uint40(target);
     }
@@ -402,7 +400,7 @@ library UsersRepo {
     {
         Reward memory rw = getRewardSetting(repo);
 
-        uint sender = repo.userNo[querySender];
+        uint sender = getMyUserNo(repo, querySender);
         if (sender > 0) {
             repo.users[sender].balance += uint64(fee * rw.refundRatio / 10000);
         }
