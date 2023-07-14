@@ -221,7 +221,6 @@ contract RegCenter is IRegCenter {
         address gk = _createDocAtLatestVersion(21, primeKeyOfOwner);
         IAccessControl(gk).init(owner, rc, rc, gk);
         IGeneralKeeper(gk).createCorpSeal();
-        IAccessControl(gk).setDirectKeeper(primeKeyOfOwner);
 
         uint i = 10;
         while (i > 0) {
@@ -231,6 +230,8 @@ contract RegCenter is IRegCenter {
             else _deployDoc(i+10, primeKeyOfOwner, owner, keeper, rc, gk);
             i--;
         }
+    
+        IAccessControl(gk).setDirectKeeper(primeKeyOfOwner);
     }
 
     function _deployDoc(

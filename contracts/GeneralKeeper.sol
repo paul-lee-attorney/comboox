@@ -334,6 +334,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOIKeeper(_keepers[6]).transferTargetShare(ia, seqOfDeal, _msgSender(fees[5]));
     }
 
+
     function terminateDeal(address ia, uint256 seqOfDeal) external {
         IBOIKeeper(_keepers[6]).terminateDeal(ia, seqOfDeal, _msgSender(fees[1]));
     }

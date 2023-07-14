@@ -25,7 +25,7 @@ interface IInvestmentAgreement {
 
     event CloseDeal(uint256 indexed seq, string indexed hashKey);
 
-    event RevokeDeal(uint256 indexed seq, string indexed hashKey);
+    // event RevokeDeal(uint256 indexed seq, string indexed hashKey);
 
     event TerminateDeal(uint256 indexed seq);
 
@@ -58,8 +58,8 @@ interface IInvestmentAgreement {
 
     function directCloseDeal(uint256 seq) external returns (bool flag);
 
-    function revokeDeal(uint256 seq, string memory hashKey)
-        external returns (bool);
+    // function revokeDeal(uint256 seq, string memory hashKey)
+    //     external returns (bool);
 
     function terminateDeal(uint256 seqOfDeal) external returns(bool);
 

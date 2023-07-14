@@ -13,5 +13,5 @@ artifacts
 # client/src/contracts
 client
 server
-server/src/contracts
+server/src/contracts/contracts-address.json
 

@@ -374,7 +374,7 @@ library UsersRepo {
     function getUserNo(Repo storage repo, address targetAddr, uint fee, address msgSender) 
         public returns (uint40) 
     {
-        uint40 target = getMyUserNo(repo, msgSender);
+        uint40 target = getMyUserNo(repo, targetAddr);
 
         if (msgSender != targetAddr) {
             _chargeFee(repo, target, fee);
@@ -400,7 +400,7 @@ library UsersRepo {
     {
         Reward memory rw = getRewardSetting(repo);
 
-        uint sender = getMyUserNo(repo, querySender);
+        uint sender = repo.userNo[querySender];
         if (sender > 0) {
             repo.users[sender].balance += uint64(fee * rw.refundRatio / 10000);
         }

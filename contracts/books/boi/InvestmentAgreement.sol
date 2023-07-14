@@ -96,14 +96,14 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         emit CloseDeal(seq, '');
     }
 
-    function revokeDeal(uint256 seq, string memory hashKey)
-        external
-        onlyDirectKeeper
-        returns (bool flag)
-    {
-        flag = _repo.revokeDeal(seq, hashKey);
-        emit RevokeDeal(seq, hashKey);
-    }
+    // function revokeDeal(uint256 seq, string memory hashKey)
+    //     external
+    //     onlyDirectKeeper
+    //     returns (bool flag)
+    // {
+    //     flag = _repo.revokeDeal(seq, hashKey);
+    //     emit RevokeDeal(seq, hashKey);
+    // }
 
     function terminateDeal(uint256 seqOfDeal) 
         external onlyKeeper returns(bool flag)

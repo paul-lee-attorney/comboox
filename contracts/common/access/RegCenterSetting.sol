@@ -61,13 +61,13 @@ contract RegCenterSetting {
         _gk = IGeneralKeeper(gk);
     }
 
-    function _msgSender(uint fee) internal returns (uint40) {
+    function _msgSender(uint fee) internal returns (uint40 usr) {
 
-        uint40 usr = _rc.getUserNo(msg.sender, fee);
+        usr = _rc.getUserNo(msg.sender, fee);
 
-        if (usr > 0)
-            return usr;
-        else revert ("RCS._msgSender: not registered");
+        // if (usr > 0)
+        //     return usr;
+        // else revert ("RCS._msgSender: not registered");
         
     }
 
