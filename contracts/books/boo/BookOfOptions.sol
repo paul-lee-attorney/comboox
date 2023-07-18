@@ -194,7 +194,13 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         return _repo.records[seqOfOpt].oracles.getAtDate(date);
     }
 
-    function getALLOraclesOfOption(uint256 seqOfOpt)
+    function getLatestOracle(uint256 seqOfOpt) external 
+        view optionExist(seqOfOpt) returns(Checkpoints.Checkpoint memory)
+    {
+        return _repo.records[seqOfOpt].oracles.latest();
+    }
+
+    function getAllOraclesOfOption(uint256 seqOfOpt)
         external
         view
         optionExist(seqOfOpt)

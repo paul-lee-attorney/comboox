@@ -73,11 +73,13 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         require(deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated), 
             "SHAK.EAR: deal terminated");
+        
+        IBookOfIA _boi = _gk.getBOI();
 
-        _gk.getBOI().createMockOfIA(ia);
-        _checkAlongDeal(dragAlong, ia, deal, share, caller);
+        _boi.createMockOfIA(ia);
+        _checkAlongDeal(dragAlong, ia, deal, share, caller, _boi);
 
-        _gk.getBOI().execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
+        _boi.execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
     }
 
     function _checkAlongDeal(
@@ -85,13 +87,14 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         address ia,
         DealsRepo.Deal memory deal,
         SharesRepo.Share memory share,
-        uint256 caller
+        uint256 caller,
+        IBookOfIA _boi
     ) private {
 
-        require(!_gk.getBOI().isFRClaimer(ia, caller), 
+        require(!_boi.isFRClaimer(ia, caller), 
             "SHAK.CAD: caller is frClaimer");
 
-        require(!_gk.getBOI().isFRClaimer(ia, share.head.shareholder), 
+        require(!_boi.isFRClaimer(ia, share.head.shareholder), 
             "SHAK.CAD: shareholder is frClaimer");
 
         address term = dragAlong
@@ -105,7 +108,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         require(ITerm(term).isTriggered(ia, deal), "SHAK.CAD: not triggered");
 
         require(
-            IAlongs(term).isLinked(deal.head.seller, share.head.shareholder),
+            IAlongs(term).isLinked(deal.head.seller, share.head.shareholder, _gk.getBOM()),
             "SHAK.CAD: NOT linked"
         );
 

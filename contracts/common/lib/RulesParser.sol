@@ -224,38 +224,39 @@ library RulesParser {
     // ======== LinkRule ========
 
     struct LinkRule {
-        uint16 seqOfRule;
-        uint8 qtyOfSubRule;
-        uint8 seqOfSubRule;
-        uint40 drager;
-        uint40 dragerGroup;
+        uint48 triggerDate;
+        uint16 effectiveDays;
         uint8 triggerType;  
         uint16 shareRatioThreshold;
+        uint32 rate;
         bool proRata;
-        uint32 unitPrice;
-        uint32 roe;
-        uint16 para;
-        uint32 data;
+        uint8 typeOfFollowers; // 0-regula 1-restMembers 2-TheClasses
+        uint16[7] classes;
+        uint8 para;
     }
 
     function linkRuleParser(bytes32 sn) public pure returns (LinkRule memory rule) {
         uint _sn = uint(sn);
 
         rule = LinkRule({
-            seqOfRule: uint16(_sn >> 240),
-            qtyOfSubRule: uint8(_sn >> 232),
-            seqOfSubRule: uint8(_sn >> 224),
-            drager: uint40(_sn >> 184),
-            dragerGroup: uint40(_sn >> 144),
-            triggerType: uint8(_sn >> 136),  
-            shareRatioThreshold: uint16(_sn >> 120),
-            proRata: uint8(_sn >> 112) == 1,
-            unitPrice: uint32(_sn >> 80),
-            roe: uint32(_sn >> 48),
-            para: uint16(_sn >> 32),
-            data: uint32(_sn)            
+            triggerDate: uint48(_sn >> 208),
+            effectiveDays: uint16(_sn >> 192),
+            triggerType: uint8(_sn >> 184),  
+            shareRatioThreshold: uint16(_sn >> 168),
+            rate: uint32(_sn >> 136),
+            proRata: uint8(_sn >> 128) == 1,
+            typeOfFollowers: uint8(_sn >> 120),
+            classes: [
+                uint16(_sn >> 104),
+                uint16(_sn >> 88),
+                uint16(_sn >> 72),
+                uint16(_sn >> 56),
+                uint16(_sn >> 40),
+                uint16(_sn >> 24),
+                uint16(_sn >> 8)
+            ],
+            para: uint8(_sn)
         });
     }
-
 
 }

@@ -13,14 +13,14 @@ library CondsRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     enum LogOps {
-        ZeroPoint,
-        And,
-        Or,
+        ZeroPoint,  // 0
+        And,           
+        Or,         // 2
         AndOr,
         OrAnd,
         Equal,
-        NotEqual,
-        AndAndAnd,
+        NotEqual,   // 6
+        AndAndAnd,  
         OrOrOr,
         AndOrOr,
         OrAndOr,

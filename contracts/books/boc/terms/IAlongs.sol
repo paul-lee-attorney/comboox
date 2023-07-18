@@ -14,6 +14,7 @@ import "../../../common/lib/SharesRepo.sol";
 import "../../../common/lib/RulesParser.sol";
 
 import "../../../common/components/IFilesFolder.sol";
+import "../../../books/bom/IBookOfMembers.sol";
 
 interface IAlongs {
 
@@ -55,7 +56,7 @@ interface IAlongs {
 
     function isDrager(uint256 drager) external view returns (bool);
 
-    function isLinked(uint256 drager, uint256 follower)
+    function isLinked(uint256 drager, uint256 follower, IBookOfMembers _bom)
         external
         view
         returns (bool);

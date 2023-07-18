@@ -43,10 +43,7 @@ contract LockUp is ILockUp, AccessControl {
         _lockers[seqOfShare].keyHolders.add(keyholder);
     }
 
-    function removeKeyholder(uint256 seqOfShare, uint256 keyholder)
-        external
-        onlyAttorney
-    {
+    function removeKeyholder(uint256 seqOfShare, uint256 keyholder) external onlyAttorney {
         require(seqOfShare != 0, "LU.removeKeyholder: zero seqOfShare");
         _lockers[seqOfShare].keyHolders.remove(keyholder);
     }

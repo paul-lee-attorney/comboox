@@ -59,7 +59,7 @@ library OptionsRepo {
         uint64 par;
         uint8 state;
         uint16 para;
-        uint16 arg;
+        uint16 argu;
     }
 
     struct Option {

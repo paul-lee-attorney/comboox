@@ -233,10 +233,7 @@ interface IGeneralKeeper {
         string memory hashKey
     ) external;
 
-    function execSwapOrder(
-        uint256 seqOfOpt, 
-        uint256 seqOfBrf
-    ) external;
+    function execSwapOrder(uint256 seqOfOpt, uint256 seqOfBrf) external;
 
     function revokeSwapOrder(uint256 seqOfOpt, uint256 seqOfBrf) external;
 

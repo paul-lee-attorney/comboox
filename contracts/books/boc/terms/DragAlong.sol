@@ -65,12 +65,30 @@ contract DragAlong is IAlongs, AccessControl {
         return _repo.draggersList.contains(drager);
     }
 
-    function isLinked(uint256 drager, uint256 follower)
-        public
-        view
-        returns (bool)
+    function isLinked(uint256 drager, uint256 follower, IBookOfMembers _bom)
+        public view returns (bool)
     {
-        return _repo.links[drager].followers.contains(follower);
+        RulesParser.LinkRule memory lr = _repo.links[drager].linkRule;
+
+        if (lr.typeOfFollowers == 1)
+            return _bom.isMember(follower);
+        else if (lr.typeOfFollowers == 2) {
+            uint i = 0;
+            while (i < 7) {
+                if (_checkTheClasses(follower, lr.classes[i], _bom))
+                    return true;
+                i++;
+            }
+            return false;
+        }
+        else if (lr.typeOfFollowers == 0)
+            return _repo.links[drager].followers.contains(follower);
+        return false;
+    }
+
+    function _checkTheClasses(uint acct, uint class, IBookOfMembers _bom)
+        private view returns(bool) {
+            return (class > 0 && _bom.isClassMember(acct, class));
     }
 
     function dragers() external view returns (uint256[] memory) {
@@ -106,13 +124,13 @@ contract DragAlong is IAlongs, AccessControl {
             lr.triggerType ==
             uint8(TriggerTypeOfAlongs.ControlChangedWithHigherPrice)
         ) {
-            if (deal.head.priceOfPaid >= lr.unitPrice) return true;
+            if (deal.head.priceOfPaid >= lr.rate) return true;
             else return false;
         }
 
         if (
             _roeOfDeal(deal.head.priceOfPaid, share.head.priceOfPaid, deal.head.closingDeadline, share.head.issueDate) >=
-            lr.roe
+            lr.rate
         ) return true;
 
         return false;
@@ -136,6 +154,11 @@ contract DragAlong is IAlongs, AccessControl {
         if (!_repo.draggersList.contains(deal.head.seller)) return false;
 
         RulesParser.LinkRule memory rule = _repo.links[deal.head.seller].linkRule;
+
+        if (rule.triggerDate > 0 && 
+            (block.timestamp < rule.triggerDate ||
+                block.timestamp >= rule.triggerDate + rule.effectiveDays ))
+        return false;
 
         if (rule.triggerType == uint8(TriggerTypeOfAlongs.NoConditions))
             return true;

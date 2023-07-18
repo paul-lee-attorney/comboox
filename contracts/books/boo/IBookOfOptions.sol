@@ -110,15 +110,16 @@ interface IBookOfOptions {
         external view returns (OptionsRepo.Brief memory brf);
 
     function getAllBriefsOfOption(uint256 seqOfOpt)
-        external
-        view
-        returns (OptionsRepo.Brief[] memory);
+        external view returns (OptionsRepo.Brief[] memory);
 
     // ==== oracles ====
 
     function getOracleAtDate(uint256 seqOfOpt, uint date)
         external view returns (Checkpoints.Checkpoint memory);
 
-    function getALLOraclesOfOption(uint256 seqOfOpt)
+    function getLatestOracle(uint256 seqOfOpt) external 
+        view returns(Checkpoints.Checkpoint memory);
+
+    function getAllOraclesOfOption(uint256 seqOfOpt)
         external view returns (Checkpoints.Checkpoint[] memory);
 }
