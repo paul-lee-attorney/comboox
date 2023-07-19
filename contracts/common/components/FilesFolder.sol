@@ -21,7 +21,7 @@ contract FilesFolder is IFilesFolder, AccessControl {
     //##################
 
     function regFile(bytes32 snOfDoc, address body)
-        external onlyDirectKeeper
+        external onlyDK
     {
         if (_repo.regFile(snOfDoc, body)) 
             emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Created));
@@ -34,14 +34,14 @@ contract FilesFolder is IFilesFolder, AccessControl {
         RulesParser.VotingRule memory vr,
         bytes32 docUrl,
         bytes32 docHash
-    ) external onlyDirectKeeper {
+    ) external onlyDK {
         _repo.circulateFile(body, signingDays, closingDays, vr, docUrl, docHash);
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Circulated));
     }
 
     function establishFile(
         address body
-    ) external onlyDirectKeeper {
+    ) external onlyDK {
         _repo.establishFile(body);
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Established));
     }
@@ -66,14 +66,14 @@ contract FilesFolder is IFilesFolder, AccessControl {
 
     function execFile(
         address body
-    ) public onlyDirectKeeper {
+    ) public onlyDK {
         _repo.execFile(body);
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Closed));
     }
 
     function terminateFile(
         address body
-    ) public onlyDirectKeeper {
+    ) public onlyDK {
         _repo.terminateFile(body);
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Revoked));
     }

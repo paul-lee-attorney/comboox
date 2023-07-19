@@ -40,35 +40,36 @@ contract RegCenterSetting {
     //     SHAKeeper // 10
     // }
 
-    IRegCenter internal _rc;
-    IGeneralKeeper internal _gk;
+    // address internal _dk;
+    // IRegCenter internal _getRC();
+    // IGeneralKeeper internal _getGK();
 
     // ##################
     // ##    写端口    ##
     // ##################
 
-    function _setRegCenter(address rc) internal {
-        require(address(_rc) == address(0), "already set regCenter");
+    // function _setRegCenter(address rc) internal {
+    //     require(address(_getRC()) == address(0), "already set regCenter");
 
-        // emit SetRegCenter(rc);
-        _rc = IRegCenter(rc);
-    }
+    //     // emit SetRegCenter(rc);
+    //     _getRC() = IRegCenter(rc);
+    // }
 
-    function _setGeneralKeeper(address gk) internal {
-        require(address(_gk) == address(0), "already set generalKeeper");
+    // function _setGeneralKeeper(address gk) internal {
+    //     require(address(_getGK()) == address(0), "already set generalKeeper");
 
-        // emit SetGeneralKeeper(gk);
-        _gk = IGeneralKeeper(gk);
-    }
+    //     // emit SetGeneralKeeper(gk);
+    //     _getGK() = IGeneralKeeper(gk);
+    // }
 
-    function _msgSender(uint fee) internal returns (uint40 usr) {
+    // function _msgSender(uint fee) internal returns (uint40 usr) {
 
-        usr = _rc.getUserNo(msg.sender, fee);
+    //     usr = _getRC().getUserNo(msg.sender, fee, 1);
 
-        // if (usr > 0)
-        //     return usr;
-        // else revert ("RCS._msgSender: not registered");
+    //     // if (usr > 0)
+    //     //     return usr;
+    //     // else revert ("RCS._msgSender: not registered");
         
-    }
+    // }
 
 }

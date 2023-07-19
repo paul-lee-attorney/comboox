@@ -18,6 +18,8 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Option;
     using OptionsRepo for OptionsRepo.Record;
 
+
+    IGeneralKeeper private _gk = _getGK();
     OptionsRepo.Repo private _repo;
 
     // ##################
@@ -68,12 +70,12 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         }
     }
 
-    function addObligorIntoOption(uint256 seqOfOpt, uint256 obligor) external onlyDirectKeeper {
+    function addObligorIntoOption(uint256 seqOfOpt, uint256 obligor) external onlyDK {
         if (_repo.records[seqOfOpt].obligors.add(obligor))
             emit AddObligorIntoOpt(seqOfOpt, obligor);
     }
 
-    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external onlyDirectKeeper {
+    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external onlyDK {
         if (_repo.records[seqOfOpt].obligors.remove(obligor))
             emit RemoveObligorFromOpt(seqOfOpt, obligor);
     }
@@ -85,7 +87,7 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         uint d1,
         uint d2,
         uint d3
-    ) external onlyDirectKeeper {
+    ) external onlyDK {
         emit UpdateOracle(seqOfOpt, d1, d2, d3);
         _repo.records[seqOfOpt].oracles.push(d1, d2, d3);
     }

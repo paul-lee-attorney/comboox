@@ -19,13 +19,15 @@ contract BookOfMembers is IBookOfMembers, AccessControl {
 
     MembersRepo.Repo private _repo;
 
+    IBookOfShares private _bos = _getGK().getBOS();
+
     //##################
     //##   Modifier   ##
     //##################
 
     modifier onlyBOS() {
         require(
-            msg.sender == address(_gk.getBOS()),
+            msg.sender == address(_bos),
             "ROM.mf.OBOS: msgSender is not BOS"
         );
         _;
@@ -45,7 +47,7 @@ contract BookOfMembers is IBookOfMembers, AccessControl {
     //##    写接口    ##
     //##################
 
-    function setMaxQtyOfMembers(uint max) external onlyDirectKeeper {
+    function setMaxQtyOfMembers(uint max) external onlyDK {
         _repo.chain.setMaxQtyOfMembers(max);
         emit SetMaxQtyOfMembers(max);
     }

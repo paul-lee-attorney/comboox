@@ -15,16 +15,19 @@ contract TagAlong is DragAlong {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
+    IMeetingMinutes private _gmm = _getGK().getGMM();
+
     // #############
     // ##  写接口  ##
     // #############
 
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {        
-        require(_gk.getGMM().isPassed(uint256(uint160(ia))), "motion NOT passed");
+
+        require(_gmm.isPassed(uint256(uint160(ia))), "motion NOT passed");
 
         if (!isTriggered(ia, deal)) return true;
 
-        uint256[] memory consentParties = _gk.getGMM().getCaseOfAttitude(
+        uint256[] memory consentParties = _gmm.getCaseOfAttitude(
             uint256(uint160(ia)),
             1
         ).voters;

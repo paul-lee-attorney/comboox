@@ -13,6 +13,10 @@ import "../../common/access/AccessControl.sol";
 contract BookOfDirectors is IBookOfDirectors, AccessControl {
     using OfficersRepo for OfficersRepo.Repo;
 
+
+    IGeneralKeeper private _gk = _getGK();
+    IBookOfMembers private _bom = _gk.getBOM();
+
     OfficersRepo.Repo private _repo;
 
     //#################
@@ -37,19 +41,19 @@ contract BookOfDirectors is IBookOfDirectors, AccessControl {
 
     // ---- Officers ----
 
-    function takePosition (uint256 seqOfPos, uint caller) external onlyDirectKeeper()
+    function takePosition (uint256 seqOfPos, uint caller) external onlyDK()
     {
         if (_repo.takePosition(seqOfPos, caller)) 
             emit TakePosition(seqOfPos, caller);
     }
 
-    function quitPosition (uint256 seqOfPos, uint caller) external onlyDirectKeeper
+    function quitPosition (uint256 seqOfPos, uint caller) external onlyDK
     {
         if (_repo.quitPosition(seqOfPos, caller))
             emit QuitPosition(seqOfPos, caller);
     }
 
-    function removeOfficer (uint256 seqOfPos) external onlyDirectKeeper()
+    function removeOfficer (uint256 seqOfPos) external onlyDK()
     {
         if (_repo.vacatePosition(seqOfPos))
             emit RemoveOfficer(seqOfPos);
@@ -149,12 +153,12 @@ contract BookOfDirectors is IBookOfDirectors, AccessControl {
 
     function hasTitle(uint acct, uint title) external view returns (bool flag)
     {
-        flag = _repo.hasTitle(acct, title, _gk.getBOM());
+        flag = _repo.hasTitle(acct, title, _bom);
     }
 
     function hasNominationRight(uint seqOfPos, uint acct) external view returns (bool)
     {
-        return _repo.hasNominationRight(seqOfPos, acct, _gk.getBOM());
+        return _repo.hasNominationRight(seqOfPos, acct, _bom);
     }
 
     // ==== seatsCalculator ====

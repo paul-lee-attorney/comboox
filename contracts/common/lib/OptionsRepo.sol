@@ -286,8 +286,10 @@ library OptionsRepo {
         require(opt.body.state == uint8(StateOfOpt.Executed), "OR.IS: wrong state");
         require(block.timestamp < opt.body.closingDeadline, "OR.IS: option expired");
 
-        SharesRepo.Share memory consider = _gk.getBOS().getShare(seqOfConsider);
-        SharesRepo.Share memory target = _gk.getBOS().getShare(seqOfTarget);
+        IBookOfShares _bos = _gk.getBOS();
+
+        SharesRepo.Share memory consider = _bos.getShare(seqOfConsider);
+        SharesRepo.Share memory target = _bos.getShare(seqOfTarget);
         
         require(rcd.obligors.contains(target.head.shareholder), "OR.IS: obligor not target shareholder");
         require(opt.body.rightholder == consider.head.shareholder, "OR.IS: rightholder not consider shareholder");

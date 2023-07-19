@@ -147,14 +147,12 @@ interface IMeetingMinutes {
     function getLeavesWeightAtDate(
         uint256 seqOfMotion, 
         uint caller,
-        uint baseDate, 
-        IBookOfMembers _bom 
+        uint baseDate
     ) external view returns(DelegateMap.LeavesInfo memory info);
 
     function getLeavesHeadcountOfDirectors(
         uint256 seqOfMotion, 
-        uint caller,
-        IBookOfDirectors _bod 
+        uint caller
     ) external view returns(uint32 head);
 
     // ==== motion ====

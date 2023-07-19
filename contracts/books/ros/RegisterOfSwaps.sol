@@ -17,6 +17,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
     using SwapsRepo for SwapsRepo.Swap;
     using SwapsRepo for uint256;
 
+    IGeneralKeeper private _gk = _getGK();
     SwapsRepo.Repo private _repo;
 
     //#################

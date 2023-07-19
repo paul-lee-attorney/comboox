@@ -8,199 +8,135 @@
 pragma solidity ^0.8.8;
 
 library RolesRepo {
-    bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
 
-    struct GroupOfRole {
-        mapping(uint256 => bool) isMember;
-        uint40 admin;
+    struct Role {
+        address admin;
+        mapping(address => bool) isMember;
     }
 
-    struct Roles {
-        uint40 owner;
-        address bookeeper;
-        uint40 generalCounsel;
+    struct Repo {
+        address owner;
         uint8 state; // 0-pending; 1-initiated; 2-finalized
-        mapping(bytes32 => GroupOfRole) roles;
+        mapping(bytes32 => Role) roles;
     }
 
     // ##################
-    // ##    写端口    ##
+    // ##    Modifier  ##
     // ##################
 
-    function initDoc(
-        Roles storage self,
-        uint256 owner,
-        address keeper
-    ) public {
-
-        require(self.state == 0, 
-            "RR.ID: already initiated");
-
-        self.state = 1;
-        self.owner = uint40(owner);
-        self.bookeeper = keeper;
+    modifier isOwner(Repo storage repo, address caller) {
+        require(
+            repo.owner == caller,
+            "RR.isOwner: not owner"
+        );
+        _;
     }
 
-    function setBookeeper(
-        Roles storage self,
-        address acct,
-        address caller
-    ) public {
-        require(caller == self.bookeeper, 
-            "RR.SK: not bookeeper");
-        self.bookeeper = acct;
+    modifier isRoleAdmin(Repo storage repo, bytes32 role, 
+        address caller) 
+    {
+        require(
+            repo.roles[role].admin == caller, 
+            "RR.isRoleAdmin: not admin"
+        );
+        _;
+    }
+
+    // #################
+    // ##    Write    ##
+    // #################
+
+    function initDoc(Repo storage repo, address owner) public 
+    {
+        require(repo.state == 0, "already initiated");
+        repo.state = 1;
+        repo.owner = owner;
     }
 
     function setOwner(
-        Roles storage self,
-        uint256 acct,
-        uint256 caller
-    ) public {
-        require(caller == self.owner, 
-            "RR.SO: not owner");
-        self.owner = uint40(acct);
-    }
-
-    function setGeneralCounsel(
-        Roles storage self,
-        uint256 acct,
-        uint256 caller,
-        address msgSender
-    ) public {
-        require(caller == self.owner ||
-            msgSender == self.bookeeper ||
-            caller == self.generalCounsel, 
-            "RR.SGC: neither owner nor gc");
-        uint40 gc = uint40(acct);
-        
-        self.generalCounsel = gc;
-
-        if (gc > 0) {
-            self.roles[_ATTORNEYS].admin = gc;
-            self.roles[_ATTORNEYS].isMember[gc] = true;
-        }
+        Repo storage repo, 
+        address acct,
+        address caller
+    ) public isOwner(repo, caller){
+        repo.owner = acct;
     }
 
     // ==== role ====
 
     function setRoleAdmin(
-        Roles storage self,
+        Repo storage repo,
         bytes32 role,
-        uint256 acct,
-        uint256 caller
-    ) public {
-
-        require(
-            caller == self.owner,
-            "RR.SRA: not owner"
-        );
-
-        self.roles[role].admin = uint40(acct);
+        address acct,
+        address caller
+    ) public isOwner(repo, caller) {
+        repo.roles[role].admin = acct;
+        repo.roles[role].isMember[acct] = true;
     }
 
-    function grantRole(
-        Roles storage self,
+    function quitRoleAdmin(
+        Repo storage repo,
         bytes32 role,
-        uint256 acct,
-        uint256 caller
-    ) public {
-        require(
-            caller == roleAdmin(self, role),
-            "RR.GR: not adminOfRole"
-        );
-        self.roles[role].isMember[acct] = true;
+        address caller
+    ) public isRoleAdmin(repo, role, caller) {
+        delete repo.roles[role].admin;
+        delete repo.roles[role].isMember[caller];
+    }
+    
+    function grantRole(
+        Repo storage repo,
+        bytes32 role,
+        address acct,
+        address caller
+    ) public isRoleAdmin(repo, role, caller) {
+        repo.roles[role].isMember[acct] = true;
     }
 
     function revokeRole(
-        Roles storage self,
+        Repo storage repo,
         bytes32 role,
-        uint256 acct,
-        uint256 caller
-    ) public {
-        require(caller == roleAdmin(self, role), 
-            "RR.RR: not adminOfRole");
-
-        delete self.roles[role].isMember[acct];
+        address acct,
+        address caller
+    ) public isRoleAdmin(repo, role, caller) {
+        delete repo.roles[role].isMember[acct];
     }
 
     function renounceRole(
-        Roles storage self,
+        Repo storage repo,
         bytes32 role,
-        uint256 caller
+        address caller
     ) public {
-        delete self.roles[role].isMember[caller];
+        delete repo.roles[role].isMember[caller];
     }
 
     function abandonRole(
-        Roles storage self,
+        Repo storage repo,
         bytes32 role,
-        uint256 caller
-    ) public {
-        require(caller == self.owner ||
-            caller == roleAdmin(self, role), 
-            "RR.AR: neither owner nor adminOfRole");
-        self.roles[role].admin = 0;
-        delete self.roles[role];
+        address caller
+    ) public isOwner(repo, caller) {
+        delete repo.roles[role];
     }
 
-    // ##################
-    // ##   查询端口   ##
-    // ##################
-
-    function isOwner(
-        Roles storage self,
-        uint256 acct
-    ) public view returns (bool) {
-        return self.owner == acct && self.owner != 0;
-    }
-
-    function isGeneralCounsel(
-        Roles storage self,
-        uint256 acct
-    ) public view returns (bool) {
-        return self.generalCounsel == acct && self.generalCounsel != 0;
-    }
-
-    function isDirectKeeper(
-        Roles storage self,
-        address keeper
-    ) public view returns (bool) {
-        return self.bookeeper == keeper;
-    }
-
-    function getKeeper(
-        Roles storage self
-    ) public view returns (address) {
-        return self.bookeeper;
-    }
+    // ###############
+    // ##   Read    ##
+    // ###############
 
     function getOwner(
-        Roles storage self
-    ) public view returns (uint40) {
-        return self.owner;
+        Repo storage repo
+    ) public view returns (address) {
+        return repo.owner;
     }
 
-    function getGeneralCounsel(
-        Roles storage self
-    ) public view returns (uint40) {
-        return self.generalCounsel;
+    function getRoleAdmin(Repo storage repo, bytes32 role)
+        public view returns (address)
+    {
+        return repo.roles[role].admin;
     }
-
-    // ==== role ====
 
     function hasRole(
-        Roles storage self,
+        Repo storage repo,
         bytes32 role,
-        uint256 acct
+        address acct
     ) public view returns (bool) {
-        return self.roles[role].isMember[acct];
-    }
-
-    function roleAdmin(Roles storage self, bytes32 role)
-        public
-        view
-        returns (uint40)
-    {
-        return self.roles[role].admin;
+        return repo.roles[role].isMember[acct];
     }
 }

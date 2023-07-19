@@ -8,27 +8,55 @@
 pragma solidity ^0.8.8;
 
 import "../lib/RolesRepo.sol";
+import "../../IRegCenter.sol";
+import "../../IGeneralKeeper.sol";
 
 interface IAccessControl {
+
+    // enum TitleOfBooks {
+    //     ZeroPoint,
+    //     BOC,    // 1
+    //     BOD,    // 2
+    //     BMM,    // 3
+    //     BOM,    // 4
+    //     GMM,    // 5
+    //     BOI,    // 6
+    //     BOO,    // 7
+    //     BOP,    // 8
+    //     ROS,    // 9
+    //     BOS    // 10
+    // }
+
+    // enum TitleOfKeepers {
+    //     ZeroPoint,
+    //     BOCKeeper, // 1
+    //     BODKeeper, // 2
+    //     BMMKeeper, // 3
+    //     BOMKeeper, // 4
+    //     GMMKeeper, // 5
+    //     BOIKeeper, // 6
+    //     BOOKeeper, // 7
+    //     BOPKeeper, // 8
+    //     ROSKeeper, // 9
+    //     SHAKeeper // 10
+    // }
 
     // ##################
     // ##   Event      ##
     // ##################
 
     event Init(
-        uint256 indexed owner,
+        address indexed owner,
         address indexed directKeeper,
         address regCenter,
         address indexed generalKeeper
     );
 
+    event SetOwner(address indexed acct);
+
     event SetDirectKeeper(address indexed keeper);
 
-    event RemoveDirectKeeper(address indexed target);
-
-    event SetOwner(uint256 indexed acct);
-
-    event SetGeneralCounsel(uint256 indexed acct);
+    event SetRoleAdmin(bytes32 indexed role, address indexed acct);
 
     event LockContents();
 
@@ -37,25 +65,21 @@ interface IAccessControl {
     // ##################
 
     function init(
-        uint256 owner,
+        address owner,
         address directKeeper,
         address regCenter,
         address generalKeeper
     ) external;
 
+    function setOwner(address acct) external;
+
     function setDirectKeeper(address keeper) external;
 
-    function removeDirectKeeper(address target) external;
+    function setRoleAdmin(bytes32 role, address acct) external;
 
-    function setOwner(uint256 acct) external;
+    function grantRole(bytes32 role, address acct) external;
 
-    function setGeneralCounsel(uint256 acct) external;
-
-    function setRoleAdmin(bytes32 role, uint256 acct) external;
-
-    function grantRole(bytes32 role, uint256 acct) external;
-
-    function revokeRole(bytes32 role, uint256 acct) external;
+    function revokeRole(bytes32 role, address acct) external;
 
     function renounceRole(bytes32 role) external;
 
@@ -67,14 +91,19 @@ interface IAccessControl {
     // ##   查询端口    ##
     // ##################
 
-    function getOwner() external view returns (uint40);
+    function getOwner() external view returns (address);
 
-    function getGeneralCounsel() external view returns (uint40);
+    function getDK() external view returns (address);
 
-    function getBookeeper() external view returns (address);
+    // function getRC() external view returns (IRegCenter);
+
+    // function getGK() external view returns (IGeneralKeeper);
+
+    function isFinalized() external view returns (bool);
+
+    function getRoleAdmin(bytes32 role) external view returns (address);
+
+    function hasRole(bytes32 role, address acct) external view returns (bool);
 
 
-    function finalized() external view returns (bool);
-
-    function hasRole(bytes32 role, uint256 acct) external view returns (bool);
 }

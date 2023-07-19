@@ -13,6 +13,8 @@ import "../../common/components/SigPage.sol";
 contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    IGeneralKeeper private _gk = _getGK();
+
     TermsRepo private _terms;
     RulesRepo private _rules;
 
@@ -34,23 +36,27 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     function createTerm(uint typeOfDoc, uint version)
         external
-        onlyGeneralCounsel
+        onlyGC
     {
-        // uint40 owner = getOwner();
-        uint40 gc = getGeneralCounsel();
+        // address owner = getOwner();
+        // uint40 gc = _msgSender(10000);
+        address gc = msg.sender;
 
         bytes32 snOfDoc = bytes32((typeOfDoc << 240) + uint240(version << 224));
 
-        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, msg.sender);        
+        IRegCenter _rc = _getRC();
+
+        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, gc);        
 
         IAccessControl(doc.body).init(
-            gc,
+            address(this),
             address(this),
             address(_rc),
             address(_gk)
         );
 
-        IAccessControl(doc.body).setGeneralCounsel(gc);
+        IAccessControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);
+        // IAccessControl(doc.body).setOwner(owner);
 
         _terms.terms[typeOfDoc] = doc.body;
         _terms.seqList.add(typeOfDoc);
@@ -78,6 +84,22 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         }
     }
 
+    // ==== Finalize SHA ====
+
+    function finalizeSHA() external {
+
+        uint[] memory titles = getTitles();
+        uint len = titles.length;
+
+        while (len > 0) {
+            IAccessControl(_terms.terms[titles[len-1]]).lockContents();
+            len --;
+        }
+
+        lockContents();
+    }
+    
+
     //##################
     //##    读接口    ##
     //##################
@@ -92,11 +114,11 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         return _terms.seqList.length();
     }
 
-    function titles() external view returns (uint256[] memory) {
+    function getTitles() public view returns (uint256[] memory) {
         return _terms.seqList.values();
     }
 
-    function getTerm(uint256 title) external view returns (address) {
+    function getTerm(uint256 title) external view titleExist(title) returns (address) {
         return _terms.terms[title];
     }
 
@@ -128,7 +150,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         return _rules.seqList.length();
     }
 
-    function rules() external view returns (uint256[] memory) {
+    function getRules() external view returns (uint256[] memory) {
         return _rules.seqList.values();
     }
 

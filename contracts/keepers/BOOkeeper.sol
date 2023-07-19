@@ -13,18 +13,22 @@ import "../common/access/AccessControl.sol";
 
 contract BOOKeeper is IBOOKeeper, AccessControl {
 
+    IGeneralKeeper private _gk = _getGK();
+    IBookOfOptions private _boo = _gk.getBOO(); 
+    IRegisterOfSwaps private _ros = _gk.getROS();
+
     // ##################
     // ##   Modifier   ##
     // ##################
 
     modifier onlyRightholder(uint256 seqOfOpt, uint256 caller) {
-        require(_gk.getBOO().isRightholder(seqOfOpt, caller), 
+        require(_boo.isRightholder(seqOfOpt, caller), 
             "BOOK.mf.OR: NOT rightholder");
         _;
     }
 
     modifier onlyObligor(uint256 seqOfOpt, uint256 caller) {
-        require(_gk.getBOO().isObligor(seqOfOpt, caller), 
+        require(_boo.isObligor(seqOfOpt, caller), 
             "BOOK.mf.OO: NOT obligor");
         _;
     }
@@ -38,8 +42,8 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
         uint d1,
         uint d2,
         uint d3
-    ) external onlyDirectKeeper {
-        _gk.getBOO().updateOracle(seqOfOpt, d1, d2, d3);
+    ) external onlyDK {
+        _boo.updateOracle(seqOfOpt, d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt, uint256 caller)
@@ -47,7 +51,7 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
         onlyKeeper
         onlyRightholder(seqOfOpt, caller)
     {
-        _gk.getBOO().execOption(seqOfOpt);
+        _boo.execOption(seqOfOpt);
     }
 
     function placeSwapOrder(
@@ -57,11 +61,12 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
         uint seqOfTarget,
         uint256 caller
     ) external onlyKeeper onlyRightholder(seqOfOpt, caller) {
+        
         SwapsRepo.Swap memory swap = 
-            _gk.getBOO().createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget);
-        swap = _gk.getROS().regSwap(swap);
-        swap.body = _gk.getROS().crystalizeSwap(swap.head.seqOfSwap, seqOfConsider, seqOfTarget);
-        _gk.getBOO().regSwapOrder(seqOfOpt, swap);
+            _boo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget);
+        swap = _ros.regSwap(swap);
+        swap.body = _ros.crystalizeSwap(swap.head.seqOfSwap, seqOfConsider, seqOfTarget);
+        _boo.regSwapOrder(seqOfOpt, swap);
     }
 
     function lockSwapOrder(
@@ -70,8 +75,9 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
         bytes32 hashLock, 
         uint256 caller
     ) external onlyKeeper onlyRightholder(seqOfOpt, caller) {
-        OptionsRepo.Brief memory brf = _gk.getBOO().getBrief(seqOfOpt, seqOfBrf);
-        _gk.getROS().lockSwap(brf.seqOfSwap, hashLock);
+    
+        OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
+        _ros.lockSwap(brf.seqOfSwap, hashLock);
     }
 
     function releaseSwapOrder(
@@ -79,8 +85,9 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
         uint256 seqOfBrf, 
         string memory hashKey 
     ) external onlyKeeper {
-        OptionsRepo.Brief memory brf = _gk.getBOO().getBrief(seqOfOpt, seqOfBrf);
-        _gk.getROS().releaseSwap(brf.seqOfSwap, hashKey);
+
+        OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
+        _ros.releaseSwap(brf.seqOfSwap, hashKey);
     }
 
     function execSwapOrder(
@@ -88,8 +95,9 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
         uint256 seqOfBrf,
         uint256 caller
     ) external onlyKeeper onlyRightholder(seqOfOpt, caller) {
-        OptionsRepo.Brief memory brf = _gk.getBOO().getBrief(seqOfOpt, seqOfBrf);
-        _gk.getROS().execSwap(brf.seqOfSwap);
+    
+        OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
+        _ros.execSwap(brf.seqOfSwap);
     }
 
     function revokeSwapOrder(
@@ -97,10 +105,12 @@ contract BOOKeeper is IBOOKeeper, AccessControl {
         uint256 seqOfBrf,
         uint256 caller
     ) external onlyKeeper {
-        require(_gk.getBOO().isRightholder(seqOfOpt, caller)||
-            _gk.getBOO().isObligor(seqOfOpt, caller), "BOOK.RSO: not interested party");
 
-        OptionsRepo.Brief memory brf = _gk.getBOO().getBrief(seqOfOpt, seqOfBrf);
-        _gk.getROS().execSwap(brf.seqOfSwap);
+
+        require(_boo.isRightholder(seqOfOpt, caller)||
+            _boo.isObligor(seqOfOpt, caller), "BOOK.RSO: not interested party");
+
+        OptionsRepo.Brief memory brf = _boo.getBrief(seqOfOpt, seqOfBrf);
+        _ros.execSwap(brf.seqOfSwap);
     }    
 }

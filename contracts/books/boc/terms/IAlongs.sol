@@ -56,7 +56,7 @@ interface IAlongs {
 
     function isDrager(uint256 drager) external view returns (bool);
 
-    function isLinked(uint256 drager, uint256 follower, IBookOfMembers _bom)
+    function isLinked(uint256 drager, uint256 follower)
         external
         view
         returns (bool);

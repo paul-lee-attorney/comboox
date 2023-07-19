@@ -19,7 +19,7 @@ contract BookOfConstitution is IBookOfConstitution, FilesFolder {
     //##    写接口    ##
     //##################
 
-    function changePointer(address body) external onlyDirectKeeper {
+    function changePointer(address body) external onlyDK {
         if (_pointer != address(0)) setStateOfFile(_pointer, uint8(FilesRepo.StateOfFile.Revoked));
         // setStateOfFile(body, uint8(StateOfFile.Closed));
         _pointer = body;

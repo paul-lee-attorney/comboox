@@ -28,7 +28,7 @@ contract BookOfPledges is IBookOfPledges, AccessControl {
         uint par,
         uint guaranteedAmt,
         uint execDays
-    ) external onlyDirectKeeper returns(PledgesRepo.Head memory head){
+    ) external onlyDK returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
             snOfPld,
             paid,

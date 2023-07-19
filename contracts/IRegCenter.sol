@@ -150,7 +150,7 @@ interface IRegCenter {
 
     // ==== Comp ====
 
-    function createComp() external;
+    function createComp(address dk) external;
 
     // #################
     // ##   查询端口   ##
@@ -177,7 +177,7 @@ interface IRegCenter {
 
     function getUser() external view returns (UsersRepo.User memory);
 
-    function getUserNo(address targetAddr, uint fee) external returns (uint40);
+    function getUserNo(address targetAddr, uint fee, uint author) external returns (uint40);
 
     function getMyUserNo() external returns (uint40);
 

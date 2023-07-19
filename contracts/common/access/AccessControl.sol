@@ -8,171 +8,170 @@
 pragma solidity ^0.8.8;
 
 import "./IAccessControl.sol";
-import "./RegCenterSetting.sol";
 
-contract AccessControl is IAccessControl, RegCenterSetting {
-    using RolesRepo for RolesRepo.Roles;
+contract AccessControl is IAccessControl {
+    using RolesRepo for RolesRepo.Repo;
 
     bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
 
-    RolesRepo.Roles private _roles;
-    // ##################
-    // ##   修饰器      ##
-    // ##################
+    RolesRepo.Repo private _roles;
+
+    address private _dk;
+    IRegCenter private _rc;
+    IGeneralKeeper private _gk;
+
+    // ################
+    // ##  Modifier  ##
+    // ################
 
     modifier onlyOwner {
         require(
-            _roles.isOwner(_msgSender(30000)),
-            "AC.ow: not owner"
+            _roles.getOwner() == msg.sender,
+            "AC.onlyOwner: NOT"
         );
         _;
     }
 
-    modifier onlyDirectKeeper() {
+    modifier onlyDK {
         require(
-            _roles.isDirectKeeper(msg.sender),
-            "AC.onlyDirectKeeper: not direct keeper"
+            _dk == msg.sender,
+            "AC.onlyDK: NOT"
         );
         _;
     }
 
-    modifier onlyGeneralCounsel {
+    modifier onlyGC {
         require(
-            _roles.isGeneralCounsel(_msgSender(30000)),
-            "AC.ogc: not general counsel"
-        );
-        _;
-    }
-
-    modifier ownerOrDirectBookeeper() {
-        require(
-            _roles.isDirectKeeper(msg.sender) ||
-                _roles.isOwner(_msgSender(30000)),
-            "AC.ownerOrDirectBookeeper: neither owner nor bookeeper"
+            _roles.getRoleAdmin(_ATTORNEYS) == msg.sender,
+            "AC.onlyGC: NOT"
         );
         _;
     }
 
     modifier onlyKeeper {
-        require(_roles.isDirectKeeper(msg.sender) ||
-            _gk.isKeeper(msg.sender), "AC.ok: not Keeper");
+        require(
+            _gk.isKeeper(msg.sender) || 
+            _dk == msg.sender, 
+            "AC.onlyKeeper: NOT"
+        );
         _;
     }
 
     modifier onlyAttorney {
         require(
-            _roles.hasRole(_ATTORNEYS, _msgSender(50000)),
-            "AccessControl.md.onlyAttorney: not Attorney"
+            _roles.hasRole(_ATTORNEYS, msg.sender),
+            "AC.onlyAttorney: NOT"
         );
         _;
     }
 
     modifier attorneyOrKeeper {
         require(
-            _roles.hasRole(_ATTORNEYS, _msgSender(50000)) ||
-                _gk.isKeeper(msg.sender),
-            "AccessControl.md.attorneyOrKeeper: neither Attorney nor Bookeeper"
+            _roles.hasRole(_ATTORNEYS, msg.sender) ||
+            _gk.isKeeper(msg.sender),
+            "AC.md.attorneyOrKeeper: NOT"
         );
         _;
     }
 
-    modifier onlyFinalized() {
-        require(_roles.state == 2, "AC.mf.OF: still pending");
-        _;
-    }
-
-    // ##################
-    // ##    写端口    ##
-    // ##################
+    // #################
+    // ##    Write    ##
+    // #################
 
     function init(
-        uint256 owner,
+        address owner,
         address directKeeper,
         address regCenter,
         address generalKeeper
     ) external {
-        _roles.initDoc(owner, directKeeper);
-        _setRegCenter(regCenter);
-        _setGeneralKeeper(generalKeeper);
+        _roles.initDoc(owner);
+        _dk = directKeeper;
+        _rc = IRegCenter(regCenter);
+        _gk = IGeneralKeeper(generalKeeper);
         emit Init(owner, directKeeper, regCenter, generalKeeper);
     }
 
-    function setOwner(uint256 acct) external {
-        _roles.setOwner(acct, _msgSender(30000));
+    function setOwner(address acct) external {
+        _roles.setOwner(acct, msg.sender);
         emit SetOwner(acct);
     }
 
-    function setDirectKeeper(address keeper) external {
-        _roles.setBookeeper(keeper, msg.sender);
-        emit SetDirectKeeper(keeper);
+    function setDirectKeeper(address acct) external onlyDK() {
+        _dk = acct;
+        emit SetDirectKeeper(acct);
     }
 
-    function removeDirectKeeper(address target) onlyDirectKeeper external {
-        IAccessControl(target).setDirectKeeper(msg.sender);
-        emit RemoveDirectKeeper(target);
+    function setRoleAdmin(bytes32 role, address acct) external {
+        _roles.setRoleAdmin(role, acct, msg.sender);
+        emit SetRoleAdmin(role, acct);
     }
 
-    function setGeneralCounsel(uint256 acct)
-        external ownerOrDirectBookeeper
-    {
-        _roles.setGeneralCounsel(acct, _msgSender(30000), msg.sender);
-        emit SetGeneralCounsel(acct);
+    function grantRole(bytes32 role, address acct) external {
+        _roles.grantRole(role, acct, msg.sender);
     }
 
-    function setRoleAdmin(bytes32 role, uint256 acct) external {
-        _roles.setRoleAdmin(role, acct, _msgSender(50000));
-    }
-
-    function grantRole(bytes32 role, uint256 acct) external {
-        _roles.grantRole(role, acct, _msgSender(50000));
-    }
-
-    function revokeRole(bytes32 role, uint256 acct) external {
-        _roles.revokeRole(role, acct, _msgSender(50000));
+    function revokeRole(bytes32 role, address acct) external {
+        _roles.revokeRole(role, acct, msg.sender);
     }
 
     function renounceRole(bytes32 role) external {
-        _roles.renounceRole(role, _msgSender(50000));
+        _roles.renounceRole(role, msg.sender);
     }
 
     function abandonRole(bytes32 role) external {
-        _roles.abandonRole(role, _msgSender(50000));
+        _roles.abandonRole(role, msg.sender);
     }
 
     function lockContents() public {
-        require(_roles.state == 1, "AC.LC: Doc is finalized");
+        require(_roles.state == 1, "AC.lockContents: wrong state");
 
-        _roles.abandonRole(_ATTORNEYS, _msgSender(50000));
-        _roles.setGeneralCounsel(0, _msgSender(30000), msg.sender);
-        _roles.setOwner(0, _msgSender(30000));
+        address owner = msg.sender;
 
+        _roles.abandonRole(_ATTORNEYS, owner);
+        _roles.setOwner(address(0), owner);
         _roles.state = 2;
 
         emit LockContents();
     }
 
-    // ##################
-    // ##   查询端口   ##
-    // ##################
+    // #################
+    // ##  verify ID  ##
+    // #################
 
-    function getOwner() public view returns (uint40) {
+    function _msgSender(uint fee) internal returns (uint40 usr) {
+        usr = _getRC().getUserNo(msg.sender, fee, 1);
+    }
+
+    // ##############
+    // ##   Read   ##
+    // ##############
+
+    function getOwner() public view returns (address) {
         return _roles.getOwner();
     }
 
-    function getGeneralCounsel() public view returns (uint40) {
-        return _roles.getGeneralCounsel();
+    function getDK() external view returns (address) {
+        return _dk;
     }
 
-    function getBookeeper() public view returns (address) {
-        return _roles.getKeeper();
+    function _getRC() internal view returns (IRegCenter) {
+        return _rc;
     }
 
+    function _getGK() internal view returns (IGeneralKeeper) {
+        return _gk;
+    }
 
-    function finalized() public view returns (bool) {
+    function isFinalized() public view returns (bool) {
         return _roles.state == 2;
     }
 
-    function hasRole(bytes32 role, uint256 acct) public view returns (bool) {
+    function getRoleAdmin(bytes32 role) public view returns (address) {
+        return _roles.getRoleAdmin(role);
+    }
+
+    function hasRole(bytes32 role, address acct) public view returns (bool) {
         return _roles.hasRole(role, acct);
     }
+
 }

@@ -15,6 +15,10 @@ contract DragAlong is IAlongs, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using RulesParser for bytes32;
 
+    IGeneralKeeper private _gk = _getGK();
+    IBookOfMembers private _bom = _gk.getBOM();
+    IBookOfIA private _boi = _gk.getBOI();
+
     DraggersRepo internal _repo;
 
     // ################
@@ -65,7 +69,7 @@ contract DragAlong is IAlongs, AccessControl {
         return _repo.draggersList.contains(drager);
     }
 
-    function isLinked(uint256 drager, uint256 follower, IBookOfMembers _bom)
+    function isLinked(uint256 drager, uint256 follower)
         public view returns (bool)
     {
         RulesParser.LinkRule memory lr = _repo.links[drager].linkRule;
@@ -75,7 +79,7 @@ contract DragAlong is IAlongs, AccessControl {
         else if (lr.typeOfFollowers == 2) {
             uint i = 0;
             while (i < 7) {
-                if (_checkTheClasses(follower, lr.classes[i], _bom))
+                if (_checkTheClasses(follower, lr.classes[i]))
                     return true;
                 i++;
             }
@@ -86,7 +90,7 @@ contract DragAlong is IAlongs, AccessControl {
         return false;
     }
 
-    function _checkTheClasses(uint acct, uint class, IBookOfMembers _bom)
+    function _checkTheClasses(uint acct, uint class)
         private view returns(bool) {
             return (class > 0 && _bom.isClassMember(acct, class));
     }
@@ -142,7 +146,8 @@ contract DragAlong is IAlongs, AccessControl {
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
         
-        if (_gk.getBOI().getHeadOfFile(ia).state != uint8(FilesRepo.StateOfFile.Circulated))
+
+        if (_boi.getHeadOfFile(ia).state != uint8(FilesRepo.StateOfFile.Circulated))
             return false;
 
         if (
@@ -163,12 +168,12 @@ contract DragAlong is IAlongs, AccessControl {
         if (rule.triggerType == uint8(TriggerTypeOfAlongs.NoConditions))
             return true;
 
-        uint40 controllor = _gk.getBOM().controllor();
+        uint40 controllor = _bom.controllor();
 
-        if (controllor != _gk.getBOM().groupRep(deal.head.seller)) return false;
+        if (controllor != _bom.groupRep(deal.head.seller)) return false;
 
         (uint40 newControllor, uint16 shareRatio) = 
-            _gk.getBOI().mockResultsOfIA(ia);
+            _boi.mockResultsOfIA(ia);
 
         if (controllor != newControllor) return true;
 

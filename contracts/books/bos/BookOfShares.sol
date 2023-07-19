@@ -18,8 +18,11 @@ contract BookOfShares is IBookOfShares, AccessControl {
     using SharesRepo for SharesRepo.Head;
     using SharesRepo for uint256;
 
-    SharesRepo.Repo private _repo;
+    IGeneralKeeper private _gk = _getGK();
+    IBookOfMembers private _bom = _gk.getBOM();
+    IBookOfPledges private _bop = _gk.getBOP();
 
+    SharesRepo.Repo private _repo;
     LockersRepo.Repo private _lockers;
 
     //##################
@@ -53,9 +56,9 @@ contract BookOfShares is IBookOfShares, AccessControl {
         require ( newShare.head.issueDate <= newShare.body.payInDeadline, 
             "BOS.issueShare: issueDate later than payInDeadline");
 
-        _gk.getBOM().addMember(newShare.head.shareholder);
-        _gk.getBOM().addShareToMember(newShare);
-        _gk.getBOM().capIncrease(paid, par);
+        _bom.addMember(newShare.head.shareholder);
+        _bom.addShareToMember(newShare);
+        _bom.capIncrease(paid, par);
 
         emit IssueShare(newShare.head.codifyHead(), paid, par);
     }
@@ -64,7 +67,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
         public onlyKeeper returns(SharesRepo.Share memory newShare)
     {
         newShare = _repo.regShare(share);
-        _gk.getBOM().addShareToMember(newShare);
+        _bom.addShareToMember(newShare);
 
         emit IssueShare(newShare.head.codifyHead(), newShare.body.paid, newShare.body.par);
     }
@@ -72,7 +75,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
     // ==== PayInCapital ====
 
     function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) 
-        external onlyDirectKeeper
+        external onlyDK
     {
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
@@ -88,7 +91,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) 
-        external onlyDirectKeeper
+        external onlyDK
     {
         LockersRepo.Head memory head = 
             _lockers.pickupPoints(hashLock, hashKey, 0);
@@ -97,12 +100,12 @@ contract BookOfShares is IBookOfShares, AccessControl {
             // require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
             _payInCapital(share, head.value);
-            _gk.getBOM().changeAmtOfMember(share.head.shareholder, head.value, 0, head.value, true);
-            _gk.getBOM().capIncrease(head.value, 0);
+            _bom.changeAmtOfMember(share.head.shareholder, head.value, 0, head.value, true);
+            _bom.capIncrease(head.value, 0);
         }
     }
 
-    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDirectKeeper {
+    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
         LockersRepo.Head memory head = 
             _lockers.withdrawDeposit(hashLock, seqOfShare);
         emit WithdrawPayInAmt(head.from, head.value);
@@ -124,7 +127,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _gk.getBOM().addMember(to);
+        _bom.addMember(to);
 
         SharesRepo.Share memory newShare;
 
@@ -158,12 +161,12 @@ contract BookOfShares is IBookOfShares, AccessControl {
         uint256 seqOfShare,
         uint paid,
         uint par
-    ) external onlyDirectKeeper shareExist(seqOfShare) notFreezed(seqOfShare) {
+    ) external onlyDK shareExist(seqOfShare) notFreezed(seqOfShare) {
         SharesRepo.Share storage share = _repo.shares[seqOfShare];        
 
         _decreaseShareAmt(share, paid, par);
 
-        _gk.getBOM().capDecrease(paid, par);
+        _bom.capDecrease(paid, par);
     }
 
     // ==== cleanAmt ====
@@ -171,40 +174,40 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function decreaseCleanPaid(uint256 seqOfShare, uint paid)
         external shareExist(seqOfShare) notFreezed(seqOfShare)
     {
-        require(msg.sender == address(_gk.getBOP()) ||
+        require(msg.sender == address(_bop) ||
         _gk.isKeeper(msg.sender), "BOS.DCP: neither keeper nor BOP");
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
         share.decreaseCleanPaid(paid);
-        _gk.getBOM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, false);
+        _bom.changeAmtOfMember(share.head.shareholder, 0, 0, paid, false);
         emit DecreaseCleanPaid(seqOfShare, paid);
     }
 
     function increaseCleanPaid(uint256 seqOfShare, uint paid)
         external shareExist(seqOfShare) notFreezed(seqOfShare)
     {
-        require(msg.sender == address(_gk.getBOP()) ||
+        require(msg.sender == address(_bop) ||
         _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
         share.increaseCleanPaid(paid);
-        _gk.getBOM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, true);
+        _bom.changeAmtOfMember(share.head.shareholder, 0, 0, paid, true);
         emit IncreaseCleanPaid(seqOfShare, paid);
     }
 
     // ==== State & PaidInDeadline ====
 
     function updateStateOfShare(uint256 seqOfShare, uint state)
-        external onlyDirectKeeper shareExist(seqOfShare)
+        external onlyDK shareExist(seqOfShare)
     {
         emit UpdateStateOfShare(seqOfShare, state);
         _repo.shares[seqOfShare].body.state = uint8(state);
     }
 
     // function updatePaidInDeadline(uint256 seqOfShare, uint deadline)
-    //     external onlyDirectKeeper shareExist(seqOfShare)
+    //     external onlyDK shareExist(seqOfShare)
     // {
     //     _repo.shares[seqOfShare].updatePayInDeadline(deadline);
     //     emit UpdatePaidInDeadline(seqOfShare, deadline);
@@ -227,11 +230,11 @@ contract BookOfShares is IBookOfShares, AccessControl {
         private 
     {
         if (par == share.body.par) {
-            _gk.getBOM().removeShareFromMember(share);
+            _bom.removeShareFromMember(share);
             _repo.deregShare(share.head.seqOfShare);
         } else {
             _subAmtFromShare(share, paid, par);
-            _gk.getBOM().changeAmtOfMember(
+            _bom.changeAmtOfMember(
                 share.head.shareholder,
                 paid,
                 par,

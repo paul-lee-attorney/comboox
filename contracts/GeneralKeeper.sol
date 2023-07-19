@@ -37,7 +37,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         // emit SetCompInfo(_name, _symbol);
     }
 
-    function createCorpSeal() external onlyKeeper {
+    function createCorpSeal() external onlyDK {
+        IRegCenter _rc = _getRC();
         _rc.regUser();
         regNumOfCompany = _rc.getMyUserNo();
         _rc.setDocSnOfUser();
@@ -46,7 +47,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ---- Keepers ----
 
     function regKeeper(uint256 title, address keeper) 
-    external onlyDirectKeeper {
+    external onlyDK {
         _keepers[title] = keeper;
         // emit RegKeeper(title, keeper);
     }
@@ -67,7 +68,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     // ---- Books ----
 
-    function regBook(uint256 title, address book) external onlyDirectKeeper {
+    function regBook(uint256 title, address book) external onlyDK {
         _books[title] = book;
         // emit RegBook(title, book);
     } 
@@ -196,11 +197,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##   BOMKeeper   ##
     // ###################
 
-    function setMaxQtyOfMembers(uint max) external onlyDirectKeeper {
+    function setMaxQtyOfMembers(uint max) external onlyDK {
         IBOMKeeper(_keepers[4]).setMaxQtyOfMembers(max);
     }
 
-    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external onlyDirectKeeper {
+    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external onlyDK {
         IBOMKeeper(_keepers[4]).setPayInAmt(seqOfShare, amt, expireDate, hashLock);
     }
 
@@ -208,16 +209,16 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOMKeeper(_keepers[4]).requestPaidInCapital(hashLock, hashKey);
     }
 
-    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDirectKeeper {
+    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
         IBOMKeeper(_keepers[4]).withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function decreaseCapital(uint256 seqOfShare, uint paid, uint par) 
-    external onlyDirectKeeper {
+    external onlyDK {
         IBOMKeeper(_keepers[4]).decreaseCapital(seqOfShare, paid, par);
     }
 
-    // function updatePaidInDeadline(uint256 seqOfShare, uint line) external onlyDirectKeeper {
+    // function updatePaidInDeadline(uint256 seqOfShare, uint line) external onlyDK {
     //     IBOMKeeper(_keepers[9]).updatePaidInDeadline(seqOfShare, line);
     // }
 
@@ -326,7 +327,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBOIKeeper(_keepers[6]).closeDeal(ia, seqOfDeal, hashKey);
     }
 
-    function issueNewShare(address ia, uint256 seqOfDeal) external onlyDirectKeeper {
+    function issueNewShare(address ia, uint256 seqOfDeal) external onlyDK {
         IBOIKeeper(_keepers[6]).issueNewShare(ia, seqOfDeal);
     }
 
@@ -348,7 +349,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint d1,
         uint d2,
         uint d3
-    ) external onlyDirectKeeper {
+    ) external onlyDK {
         IBOOKeeper(_keepers[7]).updateOracle(seqOfOpt, d1, d2, d3);
     }
 

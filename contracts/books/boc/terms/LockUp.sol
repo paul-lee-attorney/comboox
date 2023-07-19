@@ -18,8 +18,9 @@ contract LockUp is ILockUp, AccessControl {
     // 基准日条件未成就时，按“2105-09-19”设定到期日
     uint48 constant _REMOTE_FUTURE = 4282732800;
 
-    // lockers[0].keyHolders: ssnList;
+    IMeetingMinutes private _gmm = _getGK().getGMM();
 
+    // lockers[0].keyHolders: ssnList;
     // seqOfShare => Locker
     mapping(uint256 => Locker) private _lockers;
 
@@ -107,7 +108,7 @@ contract LockUp is ILockUp, AccessControl {
         
         uint256 motionId = uint256(uint160(ia));
                
-        uint256[] memory consentParties = _gk.getGMM().
+        uint256[] memory consentParties = _gmm.
             getCaseOfAttitude(motionId,1).voters;
 
         uint256[] memory parties = ISigPage(ia).getParties();

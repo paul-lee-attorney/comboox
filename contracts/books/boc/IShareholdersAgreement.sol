@@ -16,11 +16,11 @@ interface IShareholdersAgreement {
 
     // enum TypeOfDoc {
     //      ...
-    //     AntiDilution,    22
-    //     DragAlong,       23
-    //     LockUp,          24
-    //     Options          25
-    //     TagAlong,        26
+    //     AntiDilution,    24
+    //     DragAlong,       25
+    //     LockUp,          26
+    //     Options          27
+    //     TagAlong,        28
     // }
 
     // ==== Rules ========
@@ -82,10 +82,11 @@ interface IShareholdersAgreement {
 
     function removeTerm(uint typeOfDoc) external;
 
-    // ==== Rules ====
     function addRule(bytes32 rule) external;
 
     function removeRule(uint256 seq) external;
+
+    function finalizeSHA() external;
 
     //##################
     //##    读接口    ##
@@ -97,7 +98,7 @@ interface IShareholdersAgreement {
 
     function qtyOfTerms() external view returns (uint256);
 
-    function titles() external view returns (uint256[] memory);
+    function getTitles() external view returns (uint256[] memory);
 
     function getTerm(uint256 title) external view returns (address);
 
@@ -119,7 +120,7 @@ interface IShareholdersAgreement {
 
     function qtyOfRules() external view returns (uint256);
 
-    function rules() external view returns (uint256[] memory);
+    function getRules() external view returns (uint256[] memory);
 
     function getRule(uint256 seq) external view returns (bytes32);
 }

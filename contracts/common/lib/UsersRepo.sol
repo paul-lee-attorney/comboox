@@ -371,16 +371,16 @@ library UsersRepo {
         return repo.users[getMyUserNo(repo, msgSender)];
     }
 
-    function getUserNo(Repo storage repo, address targetAddr, uint fee, address msgSender) 
+    function getUserNo(Repo storage repo, address targetAddr, uint fee, uint author, address msgSender) 
         public returns (uint40) 
     {
         uint40 target = getMyUserNo(repo, targetAddr);
 
         if (msgSender != targetAddr) {
-            _chargeFee(repo, target, fee);
+            _chargeFee(repo, target, fee, author);
 
-            if (tx.origin != targetAddr) _chargeFee(repo, getMyUserNo(repo, tx.origin), fee);
-            else _awardBonus(repo, msgSender, fee);
+            if (tx.origin != targetAddr) _chargeFee(repo, getMyUserNo(repo, tx.origin), fee, author);
+            else _awardBonus(repo, msgSender, fee, author);
         } else return target;
 
         return uint40(target);
@@ -395,21 +395,24 @@ library UsersRepo {
         else revert ("UR.getMyUserNo: not registered");
     }
 
-    function _awardBonus(Repo storage repo, address querySender, uint fee) 
+    function _awardBonus(Repo storage repo, address querySender, uint fee, uint author) 
         private 
     {
         Reward memory rw = getRewardSetting(repo);
 
         uint sender = repo.userNo[querySender];
         if (sender > 0) {
-            repo.users[sender].balance += uint64(fee * rw.refundRatio / 10000);
+            uint64 bonus = uint64(fee * rw.refundRatio / 10000);
+            repo.users[sender].balance += bonus;
+            repo.users[author].balance -= bonus;
         }
     }
 
-    function _chargeFee(Repo storage repo, uint user, uint fee) 
+    function _chargeFee(Repo storage repo, uint user, uint fee, uint author) 
         private returns (uint64 afterReward)
     {
         User storage u = repo.users[user];
+        User storage a = repo.users[author];
 
         Reward memory rw = getRewardSetting(repo);
 
@@ -423,6 +426,7 @@ library UsersRepo {
         if (u.balance >= afterReward) {
             u.balance -= afterReward;
             u.counterOfV++;
+            a.balance += afterReward;
         } else revert("RC.chargeFee: insufficient balance");
     }
 }

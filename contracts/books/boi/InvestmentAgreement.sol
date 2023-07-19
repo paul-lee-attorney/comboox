@@ -38,7 +38,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     {
         seqOfDeal = _repo.regDeal(deal);
 
-        if (!finalized()) {
+        if (!isFinalized()) {
             if (deal.head.seller != 0) _sigPages[0].addBlank(false, seqOfDeal, deal.head.seller);
             _sigPages[0].addBlank(true, seqOfDeal, deal.body.buyer);
         } else {
@@ -64,7 +64,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     function releaseDealSubject(uint256 seq)
-        external onlyDirectKeeper returns (bool flag)
+        external onlyDK returns (bool flag)
     {
         flag = _repo.releaseDealSubject(seq);
     }
@@ -73,14 +73,14 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint256 seq,
         bytes32 hashLock,
         uint closingDeadline
-    ) external onlyDirectKeeper {
+    ) external onlyDK {
         _repo.clearDealCP(seq, hashLock, closingDeadline);
         emit ClearDealCP(seq, hashLock, closingDeadline);
     }
 
     function closeDeal(uint256 seq, string memory hashKey)
         external
-        onlyDirectKeeper
+        onlyDK
         returns (bool flag)
     {        
         flag = _repo.closeDeal(seq, hashKey);
@@ -89,7 +89,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
 
     function directCloseDeal(uint256 seq)
         external
-        onlyDirectKeeper
+        onlyDK
         returns (bool flag)
     {        
         flag = _repo.directCloseDeal(seq);
@@ -98,7 +98,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
 
     // function revokeDeal(uint256 seq, string memory hashKey)
     //     external
-    //     onlyDirectKeeper
+    //     onlyDK
     //     returns (bool flag)
     // {
     //     flag = _repo.revokeDeal(seq, hashKey);

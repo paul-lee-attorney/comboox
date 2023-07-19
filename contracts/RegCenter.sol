@@ -193,7 +193,7 @@ contract RegCenter is IRegCenter {
     function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) public 
         returns(DocsRepo.Doc memory doc)
     {
-        uint40 owner = _users.getUserNo(primeKeyOfOwner, 20000, msg.sender);
+        uint40 owner = _users.getUserNo(primeKeyOfOwner, 10000, 1, msg.sender);
         doc = _docs.createDoc(snOfDoc, owner);
         emit CreateDoc(doc.head.codifyHead(), doc.body);
     }
@@ -212,32 +212,30 @@ contract RegCenter is IRegCenter {
     // ## Comp Deploy Scripts ##
     // #########################
 
-    function createComp() external 
+    function createComp(address dk) external 
     {
         address primeKeyOfOwner = msg.sender;
-        uint40 owner = _users.getMyUserNo(primeKeyOfOwner);
         address rc = address(this);
 
         address gk = _createDocAtLatestVersion(21, primeKeyOfOwner);
-        IAccessControl(gk).init(owner, rc, rc, gk);
+        IAccessControl(gk).init(primeKeyOfOwner, rc, rc, gk);
         IGeneralKeeper(gk).createCorpSeal();
 
         uint i = 10;
         while (i > 0) {
-            address keeper = _deployDoc(i, primeKeyOfOwner, owner, gk, rc, gk);
+            address keeper = _deployDoc(i, primeKeyOfOwner, gk, rc, gk);
             if (i == 4 || i == 10)
-                _deployDoc(i+10, primeKeyOfOwner, owner, primeKeyOfOwner, rc, gk); 
-            else _deployDoc(i+10, primeKeyOfOwner, owner, keeper, rc, gk);
+                _deployDoc(i+10, primeKeyOfOwner, primeKeyOfOwner, rc, gk); 
+            else _deployDoc(i+10, primeKeyOfOwner, keeper, rc, gk);
             i--;
         }
     
-        IAccessControl(gk).setDirectKeeper(primeKeyOfOwner);
+        IAccessControl(gk).setDirectKeeper(dk);
     }
 
     function _deployDoc(
         uint typeOfDoc, 
         address primeKeyOfOwner, 
-        uint owner, 
         address dk, 
         address rc,
         address gk
@@ -245,7 +243,7 @@ contract RegCenter is IRegCenter {
         private returns (address body) 
     {
         body = _createDocAtLatestVersion(typeOfDoc, primeKeyOfOwner);
-        IAccessControl(body).init(owner, dk, rc, gk);
+        IAccessControl(body).init(primeKeyOfOwner, dk, rc, gk);
         if (typeOfDoc < 11) IGeneralKeeper(gk).regKeeper(typeOfDoc, body);
         else IGeneralKeeper(gk).regBook(typeOfDoc - 10, body);
     }
@@ -294,8 +292,8 @@ contract RegCenter is IRegCenter {
         return _users.getUser(msg.sender);
     }
 
-    function getUserNo(address targetAddr, uint fee) external returns (uint40) {
-        return _users.getUserNo(targetAddr, fee, msg.sender);
+    function getUserNo(address targetAddr, uint fee, uint author) external returns (uint40) {
+        return _users.getUserNo(targetAddr, fee, author, msg.sender);
     }
 
     function getMyUserNo() public view returns(uint40) {

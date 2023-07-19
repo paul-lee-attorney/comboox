@@ -15,6 +15,10 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     using MotionsRepo for MotionsRepo.Repo;
     using RulesParser for bytes32;
 
+    IGeneralKeeper private _gk = _getGK();
+    IBookOfDirectors private _bod = _gk.getBOD();
+    IBookOfMembers private _bom = _gk.getBOM();
+
     MotionsRepo.Repo private _repo;
 
     //##################
@@ -48,7 +52,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint seqOfVR,
         uint candidate,
         uint nominator    
-    ) external onlyDirectKeeper returns(uint64) {
+    ) external onlyDK returns(uint64) {
 
         return _addMotion(
             uint8(MotionsRepo.TypeOfMotion.ElectOfficer),
@@ -63,7 +67,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint256 seqOfPos,
         uint seqOfVR,
         uint nominator    
-    ) external onlyDirectKeeper returns(uint64) {
+    ) external onlyDK returns(uint64) {
 
         return _addMotion(
             uint8(MotionsRepo.TypeOfMotion.RemoveOfficer),
@@ -98,7 +102,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 desHash,
         uint executor,
         uint proposer
-    ) external onlyDirectKeeper returns (uint64){
+    ) external onlyDK returns (uint64){
 
         uint256 contents = _hashAction(
             seqOfVR,
@@ -135,16 +139,16 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint proposer
-    ) public onlyDirectKeeper {
-        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _gk.getBOM(), _gk.getBOD(), proposer);
+    ) public onlyDK {
+        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _bom, _bod, proposer);
         emit ProposeMotionToGeneralMeeting(seqOfMotion, proposer);
     }
 
     function proposeMotionToBoard (
         uint seqOfMotion,
         uint caller
-    ) external onlyDirectKeeper {
-        _repo.proposeMotionToBoard(seqOfMotion, _gk.getSHA(), _gk.getBOD(), caller);
+    ) external onlyDK {
+        _repo.proposeMotionToBoard(seqOfMotion, _gk.getSHA(), _bod, caller);
         emit ProposeMotionToBoard(seqOfMotion, caller);
     }
 
@@ -154,8 +158,8 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint256 seqOfMotion,
         uint delegate, 
         uint principal
-    ) external onlyDirectKeeper {
-        _repo.entrustDelegate(seqOfMotion, delegate, principal, _gk.getBOM(), _gk.getBOD());
+    ) external onlyDK {
+        _repo.entrustDelegate(seqOfMotion, delegate, principal, _bom, _bod);
         emit EntrustDelegate(seqOfMotion, delegate, principal);
     }
 
@@ -166,8 +170,8 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint attitude,
         bytes32 sigHash,
         uint256 caller
-    ) external onlyDirectKeeper {
-        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getBOM());
+    ) external onlyDK {
+        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _bom);
         emit CastVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -176,15 +180,15 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint attitude,
         bytes32 sigHash,
         uint256 caller
-    ) external onlyDirectKeeper {
-        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getBOD());
+    ) external onlyDK {
+        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _bod);
         emit CastVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
     // ==== UpdateVoteResult ====
 
     function voteCounting(bool flag0, uint256 seqOfMotion, MotionsRepo.VoteCalBase memory base) 
-        external onlyDirectKeeper returns(uint8 result)
+        external onlyDK returns(uint8 result)
     {            
         result = _repo.voteCounting(flag0, seqOfMotion, base);
         emit VoteCounting(seqOfMotion, result);            
@@ -207,7 +211,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external onlyDirectKeeper returns (uint contents) {
+    ) external onlyDK returns (uint contents) {
 
         MotionsRepo.Motion memory motion =  
             _repo.getMotion(seqOfMotion);
@@ -262,8 +266,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function getLeavesWeightAtDate(
         uint256 seqOfMotion, 
         uint caller,
-        uint baseDate, 
-        IBookOfMembers _bom 
+        uint baseDate
     ) external view returns(DelegateMap.LeavesInfo memory info)
     {
         info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _bom);
@@ -271,8 +274,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
     function getLeavesHeadcountOfDirectors(
         uint256 seqOfMotion, 
-        uint caller,
-        IBookOfDirectors _bod 
+        uint caller
     ) external view returns(uint32 head)
     {
         head = _repo.getLeavesHeadcountOfDirectors(seqOfMotion, caller, _bod);

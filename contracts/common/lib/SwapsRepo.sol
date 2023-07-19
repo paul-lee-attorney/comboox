@@ -133,9 +133,10 @@ library SwapsRepo {
         Swap memory swap,
         IGeneralKeeper _gk
     ) public returns(Swap memory){
-        require(_gk.getBOM().isClassMember(swap.head.obligor, swap.head.classOfTarget), 
+        IBookOfMembers _bom = _gk.getBOM();
+        require(_bom.isClassMember(swap.head.obligor, swap.head.classOfTarget), 
             "SR.RS: obligor not memberOfTargetClass");
-        require(_gk.getBOM().isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
+        require(_bom.isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
             "SR.RS: rightholder not memberOfConsiderClass");
 
         require(block.timestamp <= swap.head.triggerDate, "SR.RS: triggerDate not future");
@@ -209,8 +210,10 @@ library SwapsRepo {
 
         require(swap.body.state == uint8(StateOfSwap.Issued), "SR.CS: wrong state");
 
-        SharesRepo.Share memory consider = _gk.getBOS().getShare(seqOfConsider);
-        SharesRepo.Share memory target = _gk.getBOS().getShare(seqOfTarget);
+        IBookOfShares _bos = _gk.getBOS();
+
+        SharesRepo.Share memory consider = _bos.getShare(seqOfConsider);
+        SharesRepo.Share memory target = _bos.getShare(seqOfTarget);
 
         require(consider.head.shareholder == swap.body.rightholder, 
             "SR.CS: consider not rightholder's share");
