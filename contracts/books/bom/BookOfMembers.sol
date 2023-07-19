@@ -19,15 +19,13 @@ contract BookOfMembers is IBookOfMembers, AccessControl {
 
     MembersRepo.Repo private _repo;
 
-    IBookOfShares private _bos = _getGK().getBOS();
-
     //##################
     //##   Modifier   ##
     //##################
 
     modifier onlyBOS() {
         require(
-            msg.sender == address(_bos),
+            msg.sender == address(_getGK().getBOS()),
             "ROM.mf.OBOS: msgSender is not BOS"
         );
         _;

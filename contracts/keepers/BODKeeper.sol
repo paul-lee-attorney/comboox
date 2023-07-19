@@ -14,17 +14,14 @@ import "./IBODKeeper.sol";
 contract BODKeeper is IBODKeeper, AccessControl {
     // using RulesParser for bytes32;
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfDirectors private _bod = _gk.getBOD();
-    IMeetingMinutes private _bmm = _gk.getBMM();
-    IMeetingMinutes private _gmm = _gk.getGMM();
+    
 
     //##################
     //##   Modifier   ##
     //##################
 
     modifier directorExist(uint256 acct) {
-        require(_bod.isDirector(acct), 
+        require(_getGK().getBOD().isDirector(acct), 
             "BODK.DE: not director");
         _;
     }
@@ -40,13 +37,15 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller 
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+        IMeetingMinutes _gmm = _gk.getGMM();
         
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.ElectOfficer), 
             "BODK.takeSeat: not a suitable motion");
 
         _gmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _bod.takePosition(seqOfPos, caller);
+        _gk.getBOD().takePosition(seqOfPos, caller);
     }
 
     function removeDirector (
@@ -54,13 +53,15 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+        IMeetingMinutes _gmm = _gk.getGMM();
 
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.RemoveOfficer), 
             "BODK.removeDirector: not a suitable motion");
 
         _gmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _bod.removeOfficer(seqOfPos);
+        _gk.getBOD().removeOfficer(seqOfPos);
     }
 
     // ==== Officers ====
@@ -70,13 +71,15 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller 
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+        IMeetingMinutes _bmm = _gk.getBMM();
     
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.ElectOfficer), 
             "BODK.takePos: not a suitable motion");
 
         _bmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _bod.takePosition(seqOfPos, caller);
+        _gk.getBOD().takePosition(seqOfPos, caller);
     }
 
     function removeOfficer (
@@ -84,13 +87,15 @@ contract BODKeeper is IBODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller
     ) external onlyDK {
-        
+        IGeneralKeeper _gk = _getGK();
+        IMeetingMinutes _bmm = _gk.getBMM();
+
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.RemoveOfficer), 
             "BODK.removeOfficer: not a suitable motion");
 
         _bmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _bod.removeOfficer(seqOfPos);        
+        _gk.getBOD().removeOfficer(seqOfPos);        
     }
 
     // ==== Quit ====
@@ -98,7 +103,7 @@ contract BODKeeper is IBODKeeper, AccessControl {
     function quitPosition(uint256 seqOfPos, uint caller)
         external onlyDK 
     {
-        _bod.quitPosition(seqOfPos, caller);
+        _getGK().getBOD().quitPosition(seqOfPos, caller);
     }
 
 

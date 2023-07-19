@@ -13,7 +13,7 @@ import "../../common/components/SigPage.sol";
 contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    IGeneralKeeper private _gk = _getGK();
+    
 
     TermsRepo private _terms;
     RulesRepo private _rules;
@@ -52,7 +52,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
             address(this),
             address(this),
             address(_rc),
-            address(_gk)
+            address(_getGK())
         );
 
         IAccessControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);

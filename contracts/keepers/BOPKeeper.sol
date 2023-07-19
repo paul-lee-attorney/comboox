@@ -13,13 +13,6 @@ import "./IBOPKeeper.sol";
 
 contract BOPKeeper is IBOPKeeper, AccessControl {
     using PledgesRepo for bytes32;
-
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfMembers private _bom = _gk.getBOM();
-    IMeetingMinutes private _gmm = _gk.getGMM();
-    IBookOfIA private _boi = _gk.getBOI();
-    IBookOfPledges private _bop = _gk.getBOP();
-    IBookOfShares private _bos = _gk.getBOS();
     
     // ###################
     // ##   BOPKeeper   ##
@@ -33,6 +26,8 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint execDays,
         uint256 caller
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+        IBookOfShares _bos = _gk.getBOS();
 
         PledgesRepo.Head memory head = snOfPld.snParser();
         
@@ -40,7 +35,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
         require(head.pledgor == caller, "BOPK.createPld: NOT shareholder");
 
-        head = _bop.createPledge(
+        head = _gk.getBOP().createPledge(
             snOfPld,
             paid,
             par,
@@ -58,7 +53,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint amt,
         uint256 caller
     ) external onlyDK {
-        _bop.transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
+        _getGK().getBOP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
     }
 
     function refundDebt(
@@ -67,11 +62,12 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint amt,
         uint256 caller
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
 
         PledgesRepo.Pledge memory pld = 
-            _bop.refundDebt(seqOfShare, seqOfPld, amt, caller);
+            _gk.getBOP().refundDebt(seqOfShare, seqOfPld, amt, caller);
 
-        _bos.increaseCleanPaid(seqOfShare, pld.body.paid);
+        _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);
     }
 
     function extendPledge(
@@ -80,7 +76,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint extDays,
         uint256 caller
     ) external onlyDK {
-        _bop.extendPledge(seqOfShare, seqOfPld, extDays, caller);    
+        _getGK().getBOP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
     }
 
     function lockPledge(
@@ -89,7 +85,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         bytes32 hashLock,
         uint256 caller
     ) external onlyDK {        
-        _bop.lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
+        _getGK().getBOP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
     }
 
     function releasePledge(
@@ -97,9 +93,10 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint256 seqOfPld, 
         string memory hashKey
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
 
-        uint64 paid = _bop.releasePledge(seqOfShare, seqOfPld, hashKey);
-        _bos.increaseCleanPaid(seqOfShare, paid);
+        uint64 paid = _gk.getBOP().releasePledge(seqOfShare, seqOfPld, hashKey);
+        _gk.getBOS().increaseCleanPaid(seqOfShare, paid);
     }
 
     function execPledge(
@@ -118,15 +115,17 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
             _createIA(deal.head.seqOfShare, seqOfPld, version, primeKeyOfCaller, caller)
         );
 
+        IGeneralKeeper _gk = _getGK();
+
         PledgesRepo.Pledge memory pld = 
-            _bop.getPledge(deal.head.seqOfShare, seqOfPld);
+            _gk.getBOP().getPledge(deal.head.seqOfShare, seqOfPld);
 
         deal.body.buyer = uint40(buyer);
         deal.body.groupOfBuyer = uint40(groupOfBuyer);
         deal.body.paid = uint64(pld.body.paid);
         deal.body.par = uint64(pld.body.par);
 
-        deal.head.typeOfDeal = _bom.isMember(buyer) ? 3 : 2;
+        deal.head.typeOfDeal = _gk.getBOM().isMember(buyer) ? 3 : 2;
 
         deal = _circulateIA(deal, _ia);
 
@@ -140,7 +139,9 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         address primeKeyOfCaller,
         uint caller        
     ) private returns(address) {
-        _bop.execPledge(seqOfShare, seqOfPld, caller);
+        IGeneralKeeper _gk = _getGK();
+
+        _gk.getBOP().execPledge(seqOfShare, seqOfPld, caller);
 
         bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 240) +
             (version << 224)); 
@@ -157,7 +158,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
             address(_gk)
         );
 
-        _boi.regFile(DocsRepo.codifyHead(doc.head), doc.body);
+        _gk.getBOI().regFile(DocsRepo.codifyHead(doc.head), doc.body);
 
         return doc.body;        
     }
@@ -170,10 +171,12 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
         _ia.setTypeOfIA(deal.head.typeOfDeal);
 
+        IGeneralKeeper _gk = _getGK();
+
         RulesParser.VotingRule memory vr = 
             RulesParser.votingRuleParser(_gk.getSHA().getRule(deal.head.typeOfDeal));
 
-        _boi.circulateFile(
+        _gk.getBOI().circulateFile(
             address(_ia), 0, 
             uint16((deal.head.closingDeadline - uint48(block.timestamp) + 43200)/86400), 
             vr, bytes32(0), bytes32(0)
@@ -203,7 +206,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
             bytes32(0)
         );
 
-        _boi.establishFile(address(_ia));
+        _getGK().getBOI().establishFile(address(_ia));
     }
 
     function _proposeIA(
@@ -212,11 +215,15 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         PledgesRepo.Pledge memory pld,
         uint caller
     ) private {
+        IGeneralKeeper _gk = _getGK();
+
+        IMeetingMinutes _gmm = _gk.getGMM();
+
         uint64 seqOfMotion = 
             _gmm.createMotionToApproveDoc(ia, deal.head.typeOfDeal, caller, pld.head.pledgor);
         
         _gmm.proposeMotionToGeneralMeeting(seqOfMotion, pld.head.pledgor);
-        _boi.proposeFile(ia, seqOfMotion);       
+        _gk.getBOI().proposeFile(ia, seqOfMotion);       
     }
 
 
@@ -225,12 +232,15 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         uint256 seqOfPld,
         uint256 caller
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+
+        IBookOfPledges _bop = _gk.getBOP();
 
         PledgesRepo.Pledge memory pld = _bop.getPledge(seqOfShare, seqOfPld);
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
 
         _bop.revokePledge(seqOfShare, seqOfPld, caller);
-        _bos.increaseCleanPaid(seqOfShare, pld.body.paid);   
+        _gk.getBOS().increaseCleanPaid(seqOfShare, pld.body.paid);   
         
     }
 }

@@ -14,11 +14,7 @@ import "./ISHAKeeper.sol";
 contract SHAKeeper is ISHAKeeper, AccessControl {
     using RulesParser for bytes32;
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfMembers private _bom = _gk.getBOM();
-    IBookOfIA private _boi = _gk.getBOI();
-    IBookOfShares private _bos = _gk.getBOS();
-
+    
 
     // ##################
     // ##   Modifier   ##
@@ -26,7 +22,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier withinExecPeriod(address ia) {
         require(
-            block.timestamp < _boi.shaExecDeadline(ia),
+            block.timestamp < _getGK().getBOI().shaExecDeadline(ia),
             "missed review period"
         );
         _;
@@ -34,7 +30,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier afterExecPeriod(address ia) {
         require(
-            block.timestamp >= _boi.shaExecDeadline(ia),
+            block.timestamp >= _getGK().getBOI().shaExecDeadline(ia),
             "still within review period"
         );
         _;
@@ -42,7 +38,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
     modifier beforeProposeDeadline(address ia) {
         require(
-            block.timestamp < _boi.terminateStartpoint(ia),
+            block.timestamp < _getGK().getBOI().terminateStartpoint(ia),
             "SHAK.md.BPD: missed proposal deadline"
         );
         _;
@@ -73,9 +69,12 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK withinExecPeriod(ia) {
+        IGeneralKeeper _gk = _getGK();
+
+        IBookOfIA _boi = _gk.getBOI();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
-        SharesRepo.Share memory share = _bos.getShare(seqOfShare);
+        SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
 
         require(deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated), 
             "SHAK.EAR: deal terminated");
@@ -93,6 +92,9 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         SharesRepo.Share memory share,
         uint256 caller
     ) private {
+        IGeneralKeeper _gk = _getGK();
+
+        IBookOfIA _boi = _gk.getBOI();
 
         require(!_boi.isFRClaimer(ia, caller), 
             "SHAK.CAD: caller is frClaimer");
@@ -134,6 +136,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK afterExecPeriod(ia) {
+        IGeneralKeeper _gk = _getGK();
+        IBookOfIA _boi = _gk.getBOI();
 
         require(
             block.timestamp < _boi.terminateStartpoint(ia),
@@ -147,7 +151,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         if (deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated))
         {
             DTClaims.Claim memory claim = _boi.getDTClaimForShare(ia, seqOfDeal, seqOfShare);
-            SharesRepo.Share memory share = _bos.getShare(seqOfShare);
+            SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
 
             uint256 seqOfAlongDeal = _createAlongDeal(ia, claim, deal, share);
 
@@ -192,7 +196,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         seqOfAlongDeal = IInvestmentAgreement(ia).regDeal(deal);
 
         IInvestmentAgreement(ia).lockDealSubject(seqOfAlongDeal);
-        _bos.decreaseCleanPaid(share.head.seqOfShare, claim.paid);
+        _getGK().getBOS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
     }
 
     // ======== AntiDilution ========
@@ -204,8 +208,9 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK withinExecPeriod(ia) {
+        IGeneralKeeper _gk = _getGK();
 
-        SharesRepo.Share memory share = _bos.getShare(seqOfShare);
+        SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
 
         require(caller == share.head.shareholder,
                 "SHAK.EAD: not shareholder");
@@ -232,7 +237,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         bytes32 sigHash
     ) private {
         for (uint256 i = 0; i < obligors.length; i++) {
-            bytes32[] memory sharesInHand = _bom.sharesInHand(obligors[i]);
+            bytes32[] memory sharesInHand = _getGK().getBOM().sharesInHand(obligors[i]);
 
             for (uint256 j = 0; j < sharesInHand.length; j++) {
                 (uint256 seqOfGiftDeal, uint64 result) = _createGift(
@@ -263,6 +268,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfShare,
         uint giftPaid
     ) private returns (uint256 seqOfGiftDeal, uint64 result) {
+        IBookOfShares _bos = _getGK().getBOS();
         
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _bos.getShare(seqOfShare);
@@ -301,12 +307,16 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfDeal,
         uint caller
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+
+        IBookOfShares _bos = _gk.getBOS();
+
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(caller == deal.body.buyer, "caller is not buyer");
 
         if (IInvestmentAgreement(ia).takeGift(seqOfDeal))
-            _boi.setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
+            _gk.getBOI().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
 
         _bos.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _bos.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0, 0);
@@ -322,6 +332,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK withinExecPeriod(ia) {
+        IGeneralKeeper _gk = _getGK();
 
         require(!ISigPage(ia).isSeller(true, caller), 
             "SHAK.EFR: frClaimer is seller");
@@ -334,12 +345,12 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             "SHAK.EFR: rule and deal are not same type");
 
         require(
-            (rule.membersEqual && _bom.isMember(caller)) || 
+            (rule.membersEqual && _gk.getBOM().isMember(caller)) || 
             rule.rightholders[seqOfRightholder] == caller,
             "SHAK.EFR: caller NOT rightholder"
         );
 
-        if (_boi.execFirstRefusalRight(ia, seqOfDeal, caller, sigHash))
+        if (_gk.getBOI().execFirstRefusalRight(ia, seqOfDeal, caller, sigHash))
             IInvestmentAgreement(ia).terminateDeal(seqOfDeal); 
     }
 
@@ -349,6 +360,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK afterExecPeriod(ia) {
+        IGeneralKeeper _gk = _getGK();
+        IBookOfMembers _bom = _gk.getBOM();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
@@ -357,7 +370,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             "SHAK.AFR: not controller");
         else require(caller == deal.head.seller, "SHAK.AFR: not sellerOfDeal");
 
-        FRClaims.Claim[] memory cls = _boi.acceptFirstRefusalClaims(ia, seqOfDeal);
+        FRClaims.Claim[] memory cls = _gk.getBOI().acceptFirstRefusalClaims(ia, seqOfDeal);
 
         uint256 len = cls.length;
 
@@ -374,6 +387,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         DealsRepo.Deal memory deal,
         FRClaims.Claim memory cl
     ) private {
+        IBookOfMembers _bom = _getGK().getBOM();
 
         if (deal.head.seqOfShare != 0) {
             deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FirstRefusal);

@@ -14,23 +14,19 @@ import "../common/access/AccessControl.sol";
 contract GMMKeeper is IGMMKeeper, AccessControl {
     using RulesParser for bytes32;
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfConstitution private _boc = _gk.getBOC();
-    IBookOfDirectors private _bod = _gk.getBOD();
-    IBookOfMembers private _bom = _gk.getBOM();    
-    IMeetingMinutes private _gmm = _gk.getGMM();
-    IBookOfIA private _boi = _gk.getBOI();
-
+    
 
     modifier memberExist(uint256 acct) {
-        require(_bom.isMember(acct), 
+        require(_getGK().getBOM().isMember(acct), 
             "BOGK.mf: NOT Member");
         _;
     }
 
     modifier memberOrDirector(uint256 acct) {
-        require(_bom.isMember(acct) ||
-            _bod.isDirector(acct), 
+        IGeneralKeeper _gk = _getGK();
+
+        require(_gk.getBOM().isMember(acct) ||
+            _gk.getBOD().isDirector(acct), 
             "BOGK.mf: not Member or Director");
         _;
     }
@@ -47,11 +43,14 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint candidate,
         uint nominator
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+
+        IBookOfDirectors _bod = _gk.getBOD();
 
         require(_bod.hasNominationRight(seqOfPos, nominator),
             "BODKeeper.nominateOfficer: has no nominationRight");
 
-        _gmm.nominateOfficer(
+        _gk.getGMM().nominateOfficer(
             seqOfPos, 
             _bod.getPosition(seqOfPos).seqOfVR, 
             candidate, 
@@ -63,11 +62,14 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+
+        IBookOfDirectors _bod = _gk.getBOD();
 
         require(_bod.hasNominationRight(seqOfPos, caller),
             "BODKeeper.nominateOfficer: has no nominationRight");
 
-        _gmm.createMotionToRemoveOfficer(
+        _gk.getGMM().createMotionToRemoveOfficer(
             seqOfPos, 
             _bod.getPosition(seqOfPos).seqOfVR, 
             caller
@@ -80,6 +82,9 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK memberExist(proposer) {
+        IGeneralKeeper _gk = _getGK();
+
+        IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
             _gmm.createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
@@ -89,8 +94,8 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         ) { 
             _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
             seqOfVR == 8 ?
-                _boc.proposeFile(doc, seqOfMotion) :
-                _boi.proposeFile(doc, seqOfMotion);
+                _gk.getBOC().proposeFile(doc, seqOfMotion) :
+                _gk.getBOI().proposeFile(doc, seqOfMotion);
         }
     }
 
@@ -103,7 +108,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK memberOrDirector(proposer) {
-        _gmm.createAction(
+        _getGK().getGMM().createAction(
             seqOfVR,
             targets,
             values,
@@ -122,14 +127,14 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint caller
     ) external onlyDK {
         _avoidanceCheck(seqOfMotion, caller);
-        _gmm.entrustDelegate(seqOfMotion, delegate, caller);
+        _getGK().getGMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint caller
     ) external onlyKeeper {
-        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);
+        _getGK().getGMM().proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
 
     function castVoteOfGM(
@@ -139,11 +144,11 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint256 caller
     ) external onlyDK {
         _avoidanceCheck(seqOfMotion, caller);
-        _gmm.castVoteInGeneralMeeting(seqOfMotion, attitude, sigHash, caller);
+        _getGK().getGMM().castVoteInGeneralMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
     function _avoidanceCheck(uint256 seqOfMotion, uint256 caller) private view {
-        MotionsRepo.Motion memory motion = _gmm.getMotion(seqOfMotion);
+        MotionsRepo.Motion memory motion = _getGK().getGMM().getMotion(seqOfMotion);
 
         if (motion.head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) 
@@ -157,6 +162,10 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     // ==== VoteCounting ====
 
     function voteCountingOfGM(uint256 seqOfMotion) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+
+        IBookOfMembers _bom = _gk.getBOM();
+        IMeetingMinutes _gmm = _gk.getGMM();
 
         MotionsRepo.Motion memory motion = 
             _gmm.getMotion(seqOfMotion);
@@ -234,8 +243,8 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
             address doc = address(uint160(motion.contents));
 
             if (motion.head.seqOfVR == 8)
-                _boc.voteCountingForFile(doc, approved);
-            else _boi.voteCountingForFile(doc, approved);
+                _gk.getBOC().voteCountingForFile(doc, approved);
+            else _gk.getBOI().voteCountingForFile(doc, approved);
         }
     }
 
@@ -250,7 +259,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint256 seqOfMotion,
         uint caller
     ) external returns (uint){
-        return _gmm.execAction(
+        return _getGK().getGMM().execAction(
             typeOfAction,
             targets,
             values,

@@ -15,39 +15,37 @@ import "./IBOMKeeper.sol";
 
 contract BOMKeeper is IBOMKeeper, AccessControl {
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfMembers private _bom = _gk.getBOM();
-    IBookOfShares private _bos = _gk.getBOS();
+    
 
     // ###################
     // ##   BOMKeeper   ##
     // ###################
 
     function setMaxQtyOfMembers(uint max) external onlyDK {
-        _bom.setMaxQtyOfMembers(max);
+        _getGK().getBOM().setMaxQtyOfMembers(max);
     }
 
     function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) 
     external onlyDK {
-        _bos.setPayInAmt(seqOfShare, amt, expireDate, hashLock);
+        _getGK().getBOS().setPayInAmt(seqOfShare, amt, expireDate, hashLock);
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
     external onlyDK {
-        _bos.requestPaidInCapital(hashLock, hashKey);
+        _getGK().getBOS().requestPaidInCapital(hashLock, hashKey);
     }
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
-        _bos.withdrawPayInAmt(hashLock, seqOfShare);
+        _getGK().getBOS().withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function decreaseCapital(uint256 seqOfShare, uint paid, uint par) 
     external onlyDK {
-        _bos.decreaseCapital(seqOfShare, paid, par);
+        _getGK().getBOS().decreaseCapital(seqOfShare, paid, par);
     }
 
     // function updatePaidInDeadline(uint256 seqOfShare, uint line) 
     // external onlyDK {
-    //     _bos.updatePaidInDeadline(seqOfShare, line);
+    //     _gk.getBOS().updatePaidInDeadline(seqOfShare, line);
     // }
 }

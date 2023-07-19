@@ -15,10 +15,6 @@ contract DragAlong is IAlongs, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using RulesParser for bytes32;
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfMembers private _bom = _gk.getBOM();
-    IBookOfIA private _boi = _gk.getBOI();
-
     DraggersRepo internal _repo;
 
     // ################
@@ -75,7 +71,7 @@ contract DragAlong is IAlongs, AccessControl {
         RulesParser.LinkRule memory lr = _repo.links[drager].linkRule;
 
         if (lr.typeOfFollowers == 1)
-            return _bom.isMember(follower);
+            return _getGK().getBOM().isMember(follower);
         else if (lr.typeOfFollowers == 2) {
             uint i = 0;
             while (i < 7) {
@@ -92,7 +88,7 @@ contract DragAlong is IAlongs, AccessControl {
 
     function _checkTheClasses(uint acct, uint class)
         private view returns(bool) {
-            return (class > 0 && _bom.isClassMember(acct, class));
+            return (class > 0 && _getGK().getBOM().isClassMember(acct, class));
     }
 
     function dragers() external view returns (uint256[] memory) {
@@ -145,8 +141,10 @@ contract DragAlong is IAlongs, AccessControl {
     // ################
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
+        IGeneralKeeper _gk = _getGK();
+        IBookOfMembers _bom = _gk.getBOM();
+        IBookOfIA _boi = _gk.getBOI();
         
-
         if (_boi.getHeadOfFile(ia).state != uint8(FilesRepo.StateOfFile.Circulated))
             return false;
 

@@ -13,10 +13,6 @@ import "../../common/access/AccessControl.sol";
 contract BookOfDirectors is IBookOfDirectors, AccessControl {
     using OfficersRepo for OfficersRepo.Repo;
 
-
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfMembers private _bom = _gk.getBOM();
-
     OfficersRepo.Repo private _repo;
 
     //#################
@@ -153,12 +149,12 @@ contract BookOfDirectors is IBookOfDirectors, AccessControl {
 
     function hasTitle(uint acct, uint title) external view returns (bool flag)
     {
-        flag = _repo.hasTitle(acct, title, _bom);
+        flag = _repo.hasTitle(acct, title, _getGK().getBOM());
     }
 
     function hasNominationRight(uint seqOfPos, uint acct) external view returns (bool)
     {
-        return _repo.hasNominationRight(seqOfPos, acct, _bom);
+        return _repo.hasNominationRight(seqOfPos, acct, _getGK().getBOM());
     }
 
     // ==== seatsCalculator ====

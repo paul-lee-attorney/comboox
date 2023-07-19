@@ -12,25 +12,19 @@ import "./IROSKeeper.sol";
 import "../common/access/AccessControl.sol";
 
 contract ROSKeeper is IROSKeeper, AccessControl {
-    // using SwapsRepo for SwapsRepo.Repo;
-
-    IGeneralKeeper private _gk = _getGK();
-    IMeetingMinutes private _gmm = _gk.getGMM();
-    IRegisterOfSwaps private _ros = _gk.getROS();
-    IBookOfShares private _bos = _gk.getBOS();
 
     // ##################
     // ##   Modifier   ##
     // ##################
 
     modifier onlyRightholder(uint256 seqOfSwap, uint caller) {
-        require(_ros.getSwap(seqOfSwap).body.rightholder == caller,
+        require(_getGK().getROS().getSwap(seqOfSwap).body.rightholder == caller,
             "ROSK.md.OR: not rightholder");
         _;        
     }
 
     modifier onlyObligor(uint256 seqOfSwap, uint caller) {
-        require(_ros.getSwap(seqOfSwap).head.obligor == caller,
+        require(_getGK().getROS().getSwap(seqOfSwap).head.obligor == caller,
             "ROSK.md.OO: not obligor");
         _;        
     }
@@ -48,7 +42,7 @@ contract ROSKeeper is IROSKeeper, AccessControl {
     ) external onlyDK {
         require(caller == SwapsRepo.snParser(snOfSwap).obligor,
             "ROSK.CS: not obligor");
-        _ros.createSwap(snOfSwap, rightholder, paidOfConsider);
+        _getGK().getROS().createSwap(snOfSwap, rightholder, paidOfConsider);
     }
 
     function transferSwap(
@@ -57,7 +51,7 @@ contract ROSKeeper is IROSKeeper, AccessControl {
         uint amt,
         uint caller
     ) external onlyDK onlyRightholder(seqOfSwap, caller) {
-        _ros.transferSwap(seqOfSwap, to, amt);
+        _getGK().getROS().transferSwap(seqOfSwap, to, amt);
     }
 
     function crystalizeSwap(
@@ -66,7 +60,7 @@ contract ROSKeeper is IROSKeeper, AccessControl {
         uint seqOfTarget,
         uint caller
     ) external onlyDK onlyRightholder(seqOfSwap, caller) {
-        _ros.crystalizeSwap(seqOfSwap, seqOfConsider, seqOfTarget);
+        _getGK().getROS().crystalizeSwap(seqOfSwap, seqOfConsider, seqOfTarget);
     }
 
     function lockSwap(
@@ -74,25 +68,25 @@ contract ROSKeeper is IROSKeeper, AccessControl {
         bytes32 hashLock,
         uint caller
     ) external onlyDK onlyRightholder(seqOfSwap, caller) {
-        _ros.lockSwap(seqOfSwap, hashLock);        
+        _getGK().getROS().lockSwap(seqOfSwap, hashLock);        
     }
 
     function releaseSwap(uint256 seqOfSwap, string memory hashKey)
         external onlyDK
     {
-        _ros.releaseSwap(seqOfSwap, hashKey);
+        _getGK().getROS().releaseSwap(seqOfSwap, hashKey);
     } 
 
     function execSwap(uint256 seqOfSwap, uint caller) external 
         onlyDK onlyRightholder(seqOfSwap, caller) 
     {
-        _ros.execSwap(seqOfSwap);
+        _getGK().getROS().execSwap(seqOfSwap);
     }
 
     function revokeSwap(uint256 seqOfSwap, uint caller) external
         onlyDK onlyObligor(seqOfSwap, caller) 
     {
-        _ros.revokeSwap(seqOfSwap);
+        _getGK().getROS().revokeSwap(seqOfSwap);
     }
 
     function requestToBuy(
@@ -101,6 +95,10 @@ contract ROSKeeper is IROSKeeper, AccessControl {
         uint seqOfTarget,
         uint256 caller
     ) external onlyDK {
+        IGeneralKeeper _gk = _getGK();
+
+        IMeetingMinutes _gmm = _gk.getGMM();
+        IRegisterOfSwaps _ros = _gk.getROS();
 
         MotionsRepo.Motion memory motion = 
             _gmm.getMotion(seqOfMotion);
@@ -115,7 +113,7 @@ contract ROSKeeper is IROSKeeper, AccessControl {
 
         require(caller == deal.head.seller, "BOGK.RTB: not Seller");
 
-        SharesRepo.Share memory target = _bos.getShare(seqOfTarget);
+        SharesRepo.Share memory target = _gk.getBOS().getShare(seqOfTarget);
 
         require(_gmm.getBallot(seqOfMotion, _gmm.getDelegateOf(seqOfMotion, target.head.shareholder)).attitude == 2,
             "BOGK.RTB: not vetoer");

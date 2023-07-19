@@ -18,8 +18,7 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Option;
     using OptionsRepo for OptionsRepo.Record;
 
-
-    IGeneralKeeper private _gk = _getGK();
+    
     OptionsRepo.Repo private _repo;
 
     // ##################
@@ -103,7 +102,7 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         uint paidOfConsider,
         uint seqOfTarget
     ) external onlyKeeper view returns (SwapsRepo.Swap memory swap) {
-        swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _gk);
+        swap = _repo.createSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _getGK());
     }
 
     function regSwapOrder(

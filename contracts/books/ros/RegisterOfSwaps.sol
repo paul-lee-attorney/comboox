@@ -17,7 +17,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
     using SwapsRepo for SwapsRepo.Swap;
     using SwapsRepo for uint256;
 
-    IGeneralKeeper private _gk = _getGK();
+    
     SwapsRepo.Repo private _repo;
 
     //#################
@@ -29,7 +29,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
         uint rightholder, 
         uint paidOfConsider
     ) external onlyKeeper {
-        SwapsRepo.Head memory head = _repo.createSwap(snOfSwap, rightholder, paidOfConsider, _gk);
+        SwapsRepo.Head memory head = _repo.createSwap(snOfSwap, rightholder, paidOfConsider, _getGK());
         emit CreateSwap(head.seqOfSwap, rightholder, head.obligor, paidOfConsider, head.rateOfSwap);
     }
 
@@ -38,14 +38,14 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
         uint rightholder, 
         uint paidOfConsider
     ) external onlyKeeper {
-        SwapsRepo.Head memory regHead = _repo.issueSwap(head, rightholder, paidOfConsider, _gk);
+        SwapsRepo.Head memory regHead = _repo.issueSwap(head, rightholder, paidOfConsider, _getGK());
         emit CreateSwap(regHead.seqOfSwap, rightholder, regHead.obligor, paidOfConsider, regHead.rateOfSwap);
     }
     
     function regSwap(SwapsRepo.Swap memory swap) external onlyKeeper 
         returns (SwapsRepo.Swap memory newSwap)
     {
-        newSwap = _repo.regSwap(swap, _gk);
+        newSwap = _repo.regSwap(swap, _getGK());
         emit CreateSwap(newSwap.head.seqOfSwap, newSwap.body.rightholder, newSwap.head.obligor, newSwap.body.paidOfConsider, newSwap.head.rateOfSwap);
     }
 
@@ -54,7 +54,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
     {
         SwapsRepo.Swap memory swap;
 
-        swap.head = _repo.splitSwap(seqOfSwap, to, amt, _gk);
+        swap.head = _repo.splitSwap(seqOfSwap, to, amt, _getGK());
         swap = _repo.swaps[swap.head.seqOfSwap];
 
         emit CreateSwap(swap.head.seqOfSwap, swap.body.rightholder, swap.head.obligor, swap.body.paidOfConsider, swap.head.rateOfSwap);
@@ -63,7 +63,7 @@ contract RegisterOfSwaps is IRegisterOfSwaps, AccessControl {
     function crystalizeSwap(uint256 seqOfSwap, uint seqOfConsider, uint seqOfTarget)
         external onlyKeeper returns(SwapsRepo.Body memory body)
     {        
-        body = _repo.swaps[seqOfSwap].crystalizeSwap(seqOfConsider, seqOfTarget, _gk);
+        body = _repo.swaps[seqOfSwap].crystalizeSwap(seqOfConsider, seqOfTarget, _getGK());
         emit CrystalizeSwap(seqOfSwap, seqOfConsider, body.paidOfConsider, seqOfTarget, body.paidOfTarget);
     }
 

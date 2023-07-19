@@ -15,10 +15,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfMembers private _bom = _gk.getBOM();
-    IMeetingMinutes private _gmm = _gk.getGMM();
-    IBookOfShares private _bos = _gk.getBOS();
+    
 
     Ruler private _ruler;
 
@@ -99,7 +96,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
     {
         DealsRepo.Deal memory deal = 
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
-            SharesRepo.Share memory share = _bos.getShare(seqOfShare);
+            SharesRepo.Share memory share = _getGK().getBOS().getShare(seqOfShare);
 
         uint64 floorPrice = getFloorPriceOfClass(share.head.class);
 
@@ -129,6 +126,8 @@ contract AntiDilution is IAntiDilution, AccessControl {
         view
         returns (bool)
     {
+        IBookOfMembers _bom = _getGK().getBOM();
+
         require(
             consentParties.length != 0,
             "AD.isExempted: zero consentParties"
@@ -158,7 +157,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
         
         uint256[] memory parties = ISigPage(ia).getParties();
 
-        uint256[] memory supporters = _gmm.
+        uint256[] memory supporters = _getGK().getGMM().
             getCaseOfAttitude(motionId, 1).voters;
         
         uint256[] memory consentParties = parties.merge(supporters);        

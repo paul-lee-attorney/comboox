@@ -17,14 +17,11 @@ contract BookOfIA is IBookOfIA, FilesFolder {
     using EnumerableSet for EnumerableSet.UintSet;
     using FRClaims for FRClaims.Claims;
     using FilesRepo for FilesRepo.Repo;
-    // using RulesParser for bytes32;
     using TopChain for TopChain.Chain;
 
 
     
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfMembers private _bom = _gk.getBOM();
-
+    
 
     // ia => frClaims
     mapping(address => FRClaims.Claims) private _frClaims;
@@ -81,7 +78,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         uint256 seqOfDeal
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {        
         emit AcceptFirstRefusalClaims(ia, seqOfDeal);
-        output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _bom);
+        output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _getGK().getBOM());
     }
 
     // ==== DragAlong & TagAlong ====
@@ -131,7 +128,7 @@ contract BookOfIA is IBookOfIA, FilesFolder {
         returns (bool flag)
     {        
         if (_mockOfIA[ia].getNumOfMembers() == 0) {
-            _mockOfIA[ia].restoreChain(_bom.getSnapshot());
+            _mockOfIA[ia].restoreChain(_getGK().getBOM().getSnapshot());
             _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia));
 
             flag = true;

@@ -225,7 +225,7 @@ contract RegCenter is IRegCenter {
         while (i > 0) {
             address keeper = _deployDoc(i, primeKeyOfOwner, gk, rc, gk);
             if (i == 4 || i == 10)
-                _deployDoc(i+10, primeKeyOfOwner, primeKeyOfOwner, rc, gk); 
+                _deployDoc(i+10, primeKeyOfOwner, dk, rc, gk); 
             else _deployDoc(i+10, primeKeyOfOwner, keeper, rc, gk);
             i--;
         }

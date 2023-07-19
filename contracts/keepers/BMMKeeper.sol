@@ -14,17 +14,14 @@ import "./IBODKeeper.sol";
 contract BMMKeeper is IBMMKeeper, AccessControl {
     using RulesParser for bytes32;
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfDirectors private _bod = _gk.getBOD();
-    IMeetingMinutes private _bmm = _gk.getBMM();
-
+    
 
     //##################
     //##   Modifier   ##
     //##################
 
     modifier directorExist(uint256 acct) {
-        require(_bod.isDirector(acct), 
+        require(_getGK().getBOD().isDirector(acct), 
             "BODK.DE: not director");
         _;
     }
@@ -42,22 +39,26 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint candidate,
         uint nominator
     ) external onlyDK {
-
+        IGeneralKeeper _gk = _getGK();
+        IBookOfDirectors _bod = _gk.getBOD();
+        
         require(_bod.hasNominationRight(seqOfPos, nominator),
             "BMMKeeper.nominateOfficer: no rights");
      
-        _bmm.nominateOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, candidate, nominator);
+        _gk.getBMM().nominateOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, candidate, nominator);
     }
 
     function createMotionToRemoveOfficer(
         uint256 seqOfPos,
         uint nominator
     ) external onlyDK directorExist(nominator) {
-
+        IGeneralKeeper _gk = _getGK();
+        IBookOfDirectors _bod = _gk.getBOD();
+        
         require(_bod.hasNominationRight(seqOfPos, nominator),
             "BODK.createMotionToRemoveOfficer: no rights");
 
-        _bmm.createMotionToRemoveOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, nominator);
+        _gk.getBMM().createMotionToRemoveOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, nominator);
     }
 
     // ---- Docs ----
@@ -68,7 +69,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK directorExist(proposer) {
-        _bmm.createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
+        _getGK().getBMM().createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
     }
 
     // ---- Actions ----
@@ -82,7 +83,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK directorExist(proposer){
-        _bmm.createAction(
+        _getGK().getBMM().createAction(
             seqOfVR,
             targets,
             values,
@@ -101,14 +102,14 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint caller
     ) external onlyDK directorExist(caller) {
         _avoidanceCheck(seqOfMotion, caller);
-        _bmm.entrustDelegate(seqOfMotion, delegate, caller);
+        _getGK().getBMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
     function proposeMotionToBoard (
         uint seqOfMotion,
         uint caller
     ) external onlyDK directorExist(caller) {
-        _bmm.proposeMotionToBoard(seqOfMotion, caller);
+        _getGK().getBMM().proposeMotionToBoard(seqOfMotion, caller);
     }
 
     function castVote(
@@ -118,12 +119,13 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint256 caller
     ) external onlyDK {
         _avoidanceCheck(seqOfMotion, caller);
-        _bmm.castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
+        _getGK().getBMM().castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
     function _avoidanceCheck(uint256 seqOfMotion, uint256 caller) private view {
+        IGeneralKeeper _gk = _getGK();
 
-        MotionsRepo.Motion memory motion = _bmm.getMotion(seqOfMotion);
+        MotionsRepo.Motion memory motion = _gk.getBMM().getMotion(seqOfMotion);
 
         if (motion.head.typeOfMotion == 
                 uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) 
@@ -131,7 +133,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
             address doc = address(uint160(motion.contents));
             
             OfficersRepo.Position[] memory poses = 
-                _bod.getFullPosInfoInHand(caller);
+                _gk.getBOD().getFullPosInfoInHand(caller);
             uint256 len = poses.length;            
             while (len > 0) {
                 require (!ISigPage(doc).isSigner(poses[len-1].nominator), 
@@ -149,7 +151,11 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
     function voteCounting(uint256 seqOfMotion)
         external onlyDK
     {
+        IGeneralKeeper _gk = _getGK();
 
+        IBookOfDirectors _bod = _gk.getBOD();
+        IMeetingMinutes _bmm = _gk.getBMM();
+        
         MotionsRepo.Motion memory motion = 
             _bmm.getMotion(seqOfMotion);
 
@@ -223,7 +229,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint256 seqOfMotion,
         uint caller
     ) external directorExist(caller) returns (uint) {
-        return _bmm.execAction(
+        return _getGK().getBMM().execAction(
             typeOfAction,
             targets,
             values,

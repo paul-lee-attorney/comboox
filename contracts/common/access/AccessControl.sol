@@ -96,7 +96,7 @@ contract AccessControl is IAccessControl {
         emit SetOwner(acct);
     }
 
-    function setDirectKeeper(address acct) external onlyDK() {
+    function setDirectKeeper(address acct) external onlyDK {
         _dk = acct;
         emit SetDirectKeeper(acct);
     }

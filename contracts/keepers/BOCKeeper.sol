@@ -14,12 +14,7 @@ import "./IBOCKeeper.sol";
 contract BOCKeeper is IBOCKeeper, AccessControl {
     using RulesParser for bytes32;
 
-    IGeneralKeeper private _gk = _getGK();
-    IBookOfDirectors private _bod = _gk.getBOD();
-    IBookOfMembers private _bom = _gk.getBOM();
-    IBookOfConstitution private _boc = _gk.getBOC(); 
-    IBookOfOptions private _boo = _gk.getBOO(); 
-    IBookOfShares private _bos = _gk.getBOS();
+    
     
     // ##################
     // ##   Modifier   ##
@@ -41,8 +36,9 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
     ) external onlyDK {
 
         IRegCenter _rc = _getRC();
+        IGeneralKeeper _gk = _getGK();
 
-        require(_bom.isMember(caller), "not MEMBER");
+        require(_gk.getBOM().isMember(caller), "not MEMBER");
 
         bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 240) +
             (version << 224)); 
@@ -56,7 +52,7 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
             address(_gk)
         );
 
-        _boc.regFile(DocsRepo.codifyHead(doc.head), doc.body);
+        _gk.getBOC().regFile(DocsRepo.codifyHead(doc.head), doc.body);
     }
 
     function circulateSHA(
@@ -73,6 +69,7 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
         uint16 signingDays = ISigPage(sha).getSigningDays();
         uint16 closingDays = ISigPage(sha).getClosingDays();
 
+        IGeneralKeeper _gk = _getGK();
         IShareholdersAgreement _sha = _gk.getSHA();
 
         RulesParser.VotingRule memory vr = 
@@ -82,7 +79,7 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
         
         ISigPage(sha).setTiming(false, signingDays + vr.shaExecDays + vr.shaConfirmDays, closingDays);
 
-        _boc.circulateFile(sha, signingDays, closingDays, vr, docUrl, docHash);
+        _gk.getBOC().circulateFile(sha, signingDays, closingDays, vr, docUrl, docHash);
     }
 
     // ======== Sign SHA ========
@@ -92,6 +89,9 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK onlyPartyOf(sha, caller) {
+
+        IBookOfConstitution _boc = _getGK().getBOC();
+
         require(
             _boc.getHeadOfFile(sha).state == uint8(FilesRepo.StateOfFile.Circulated),
             "SHA not in Circulated State"
@@ -107,11 +107,13 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
     function activateSHA(address sha, uint256 caller)
         external onlyDK onlyPartyOf(sha, caller)
     {
-        IBookOfConstitution _boh = _boc;
+        IGeneralKeeper _gk = _getGK();
+        IBookOfConstitution _boc = _gk.getBOC();
+        IBookOfMembers _bom = _gk.getBOM();
 
-        _boh.execFile(sha);
+        _boc.execFile(sha);
 
-        _boh.changePointer(sha);
+        _boc.changePointer(sha);
 
         RulesParser.GovernanceRule memory gr = 
             IShareholdersAgreement(sha).getRule(0).governanceRuleParser();
@@ -135,6 +137,8 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
     }
 
     function _lockUpShares(address sha) private {
+        IBookOfShares _bos = _getGK().getBOS();
+
         uint256[] memory lockedShares = ILockUp(IShareholdersAgreement(sha).getTerm(
             uint8(IRegCenter.TypeOfDoc.Options))).lockedShares();
         uint256 len = lockedShares.length;
@@ -149,10 +153,12 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
     function _regOptionTerms(address sha) private {
         address opts = IShareholdersAgreement(sha).
             getTerm(uint8(IRegCenter.TypeOfDoc.Options));
-        _boo.regOptionTerms(opts);
+        _getGK().getBOO().regOptionTerms(opts);
     }
 
     function _updatePositionSetting(address sha) private {
+        IBookOfDirectors _bod = _getGK().getBOD();
+
         uint256 len = IShareholdersAgreement(sha).getRule(256).positionAllocateRuleParser().qtyOfSubRule;
         uint256 i;
         while (i < len) {
@@ -184,6 +190,8 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
 
 
     function _updateGrouping(address sha) private {
+        IBookOfMembers _bom = _getGK().getBOM();
+
         uint256 len = IShareholdersAgreement(sha).getRule(768).groupUpdateOrderParser().qtyOfSubRule;
         uint256 i;
 
@@ -211,7 +219,7 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
     }
 
     function acceptSHA(bytes32 sigHash, uint256 caller) external onlyDK {
-        address _sha = address(_gk.getSHA());
+        address _sha = address(_getGK().getSHA());
         ISigPage(_sha).addBlank(false, true, 1, caller);
         ISigPage(_sha).signDoc(false, caller, sigHash);
     }
