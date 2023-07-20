@@ -16,7 +16,7 @@ import "./SwapsRepo.sol";
 import "../../books/bos/IBookOfShares.sol";
 
 library OptionsRepo {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    // using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
     using Checkpoints for Checkpoints.History;
     using CondsRepo for CondsRepo.Cond;
@@ -88,7 +88,7 @@ library OptionsRepo {
     struct Repo {
         mapping(uint256 => Option) options;
         mapping(uint256 => Record) records;
-        EnumerableSet.Bytes32Set snList;
+        EnumerableSet.UintSet seqList;
     }
 
     // ###############
@@ -194,10 +194,26 @@ library OptionsRepo {
 
         opt.head.seqOfOpt = _increaseCounterOfOptions(repo);
 
-        if (repo.snList.add(codifyHead(opt.head))) {
+        if (repo.seqList.add(opt.head.seqOfOpt)) {
             repo.options[opt.head.seqOfOpt] = opt;
             repo.records[opt.head.seqOfOpt].obligors.add(opt.head.obligor);
             head = opt.head;
+        }
+    }
+
+    function removeOption(
+        Repo storage repo,
+        uint seqOfOpt
+    ) public returns (bool flag) {
+
+        require (
+            repo.options[seqOfOpt].body.state == uint8(StateOfOpt.Pending),
+            "OR.removeOption: wrong state" 
+        );
+
+        if (repo.seqList.remove(seqOfOpt)) {
+            delete repo.options[seqOfOpt];
+            flag = true;
         }
     }
 
@@ -374,15 +390,35 @@ library OptionsRepo {
     {
         return repo.options[0].head.seqOfOpt;
     }
-    
+
+    function isOption(Repo storage repo, uint256 seqOfOpt) 
+        public view returns (bool) 
+    {
+        return repo.options[seqOfOpt].head.issueDate > 0;
+    }
+
+    function qtyOfOptions(Repo storage repo)
+        public view returns (uint)
+    {
+        return repo.seqList.length();
+    }
+
+    function getOption(Repo storage repo, uint256 seqOfOpt) public view
+        returns (OptionsRepo.Option memory option)   
+    {
+        require (isOption(repo, seqOfOpt), "OR.getOpt: not exist");
+        option = repo.options[seqOfOpt];
+    }
+
     function getAllOptions(Repo storage repo) 
         public view returns (Option[] memory) 
     {
-        uint256 len = counterOfOptions(repo);
+        uint[] memory ls = repo.seqList.values();
+        uint256 len = ls.length;
         Option[] memory output = new Option[](len);
         
         while (len > 0) {
-            output[len-1] = repo.options[len];
+            output[len-1] = repo.options[ls[len-1]];
             len--;
         }
         return output;

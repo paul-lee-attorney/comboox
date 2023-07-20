@@ -139,7 +139,7 @@ contract AccessControl is IAccessControl {
     // #################
 
     function _msgSender(uint fee) internal returns (uint40 usr) {
-        usr = _getRC().getUserNo(msg.sender, fee, 1);
+        usr = _rc.getUserNo(msg.sender, fee, 1);
     }
 
     // ##############

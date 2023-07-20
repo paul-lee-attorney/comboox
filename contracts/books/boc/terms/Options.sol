@@ -36,13 +36,7 @@ contract Options is IOptions, AccessControl {
     }
 
     function delOption(uint256 seqOfOpt) external onlyAttorney returns(bool flag){
-        OptionsRepo.Head memory head = _repo.options[seqOfOpt].head;
-
-        if (_repo.snList.remove(head.codifyHead())) {
-            delete _repo.options[seqOfOpt];
-            delete _repo.records[seqOfOpt];
-            flag = true;
-        }
+        flag = _repo.removeOption(seqOfOpt);
     }
 
     function addObligorIntoOpt(
@@ -68,18 +62,21 @@ contract Options is IOptions, AccessControl {
     // ==== Option ====
 
     function counterOfOptions() external view returns (uint32) {
-        return _repo.options[0].head.seqOfOpt;
+        return _repo.counterOfOptions();
+    }
+
+    function qtyOfOptions() external view returns (uint) {
+        return _repo.qtyOfOptions();
     }
 
     function isOption(uint256 seqOfOpt) public view returns (bool) {
-        return _repo.options[seqOfOpt].head.issueDate > 0;
+        return _repo.isOption(seqOfOpt);
     }
 
     function getOption(uint256 seqOfOpt) external view
         returns (OptionsRepo.Option memory option)   
     {
-        require (isOption(seqOfOpt), "OP.GO: opt not exist");
-        option = _repo.options[seqOfOpt];
+        return _repo.getOption(seqOfOpt);
     }
 
     function getAllOptions() external view returns (OptionsRepo.Option[] memory) 
@@ -101,9 +98,8 @@ contract Options is IOptions, AccessControl {
         return _repo.records[seqOfOpt].obligors.values();
     }
 
-    // ==== snOfOpt ====
-    function getSNList() external view returns(bytes32[] memory) {
-        return _repo.snList.values();
+    function getSeqList() external view returns(uint[] memory) {
+        return _repo.seqList.values();
     }
 
 }

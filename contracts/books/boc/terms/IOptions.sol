@@ -44,6 +44,8 @@ interface IOptions {
 
     function counterOfOptions() external view returns (uint32);
 
+    function qtyOfOptions() external view returns (uint);
+
     function isOption(uint256 seqOfOpt) external view returns (bool);
 
     function getOption(uint256 seqOfOpt) external view
@@ -60,6 +62,6 @@ interface IOptions {
         returns (uint256[] memory);
 
     // ==== snOfOpt ====
-    function getSNList() external view returns(bytes32[] memory);
+    function getSeqList() external view returns(uint[] memory);
 
 }
