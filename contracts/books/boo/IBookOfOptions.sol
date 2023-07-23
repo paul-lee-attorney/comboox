@@ -88,6 +88,8 @@ interface IBookOfOptions {
 
     function counterOfOptions() external view returns (uint32);
 
+    function qtyOfOptions() external view returns (uint);
+
     function isOption(uint256 seqOfOpt) external view returns (bool);
 
     function getOption(uint256 seqOfOpt) external view

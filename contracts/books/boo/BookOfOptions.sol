@@ -53,16 +53,21 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     }
 
     function regOptionTerms(address opts) external onlyKeeper {
-        uint32 len = IOptions(opts).counterOfOptions();
+
+        OptionsRepo.Option[] memory optsList = IOptions(opts).getAllOptions();
+
+        uint len = optsList.length;
 
         while (len > 0) {
-            OptionsRepo.Option memory opt = IOptions(opts).getOption(len); 
+            OptionsRepo.Option memory opt = optsList[len - 1]; 
+
+            uint256[] memory obligors = 
+                IOptions(opts).getObligorsOfOption(opt.head.seqOfOpt);
 
             opt.head = _repo.issueOption(opt);
 
             emit CreateOpt(opt.head.seqOfOpt, OptionsRepo.codifyHead(opt.head));
 
-            uint256[] memory obligors = IOptions(opts).getObligorsOfOption(len);
             _repo.records[opt.head.seqOfOpt].addObligorsIntoOption(obligors);
 
             len--;
@@ -133,14 +138,18 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
         return _repo.counterOfOptions();
     }
 
+    function qtyOfOptions() external view returns (uint) {
+        return _repo.qtyOfOptions();
+    }
+
     function isOption(uint256 seqOfOpt) public view returns (bool) {
-        return _repo.options[seqOfOpt].head.issueDate > 0;
+        return _repo.isOption(seqOfOpt);
     }
 
     function getOption(uint256 seqOfOpt) external view
         returns (OptionsRepo.Option memory opt)
     {
-        opt = _repo.options[seqOfOpt];
+        opt = _repo.getOption(seqOfOpt);
     }
 
     function getAllOptions() external view returns (OptionsRepo.Option[] memory) {
@@ -148,19 +157,19 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     }
 
     function isRightholder(uint256 seqOfOpt, uint256 acct) external view returns (bool){
-        return _repo.options[seqOfOpt].body.rightholder == acct;
+        return _repo.isRightholder(seqOfOpt, acct);
     }
 
     function isObligor(uint256 seqOfOpt, uint256 acct) external view
-        optionExist(seqOfOpt) returns (bool) 
+        returns (bool) 
     { 
-        return _repo.records[seqOfOpt].obligors.contains(acct);
+        return _repo.isObligor(seqOfOpt, acct);
     }
 
     function getObligorsOfOption(uint256 seqOfOpt)
         external view returns (uint256[] memory)
     {
-        return _repo.records[seqOfOpt].obligors.values();
+        return _repo.getObligorsOfOption(seqOfOpt);
     }
 
     // ==== Brief ====

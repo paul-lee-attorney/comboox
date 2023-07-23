@@ -89,17 +89,17 @@ contract Options is IOptions, AccessControl {
     function isObligor(uint256 seqOfOpt, uint256 acct) external 
         view returns (bool) 
     {
-        return _repo.records[seqOfOpt].obligors.contains(acct);
+        return _repo.isObligor(seqOfOpt, acct);
     }
 
     function getObligorsOfOption(uint256 seqOfOpt) external view
         returns (uint256[] memory)
     {
-        return _repo.records[seqOfOpt].obligors.values();
+        return _repo.getObligorsOfOption(seqOfOpt);
     }
 
     function getSeqList() external view returns(uint[] memory) {
-        return _repo.seqList.values();
+        return _repo.getSeqList();
     }
 
 }

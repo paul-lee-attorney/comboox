@@ -140,12 +140,12 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
         IBookOfShares _bos = _getGK().getBOS();
 
         uint256[] memory lockedShares = ILockUp(IShareholdersAgreement(sha).getTerm(
-            uint8(IRegCenter.TypeOfDoc.Options))).lockedShares();
+            uint8(IRegCenter.TypeOfDoc.LockUp))).lockedShares();
         uint256 len = lockedShares.length;
         while (len > 0) {
 
             SharesRepo.Share memory share = _bos.getShare(lockedShares[len-1]);
-            _bos.decreaseCleanPaid(share.head.seqOfShare, share.body.paid);
+            _bos.decreaseCleanPaid(share.head.seqOfShare, share.body.cleanPaid);
             len--;
         }
     }

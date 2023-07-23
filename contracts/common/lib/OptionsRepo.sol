@@ -92,6 +92,22 @@ library OptionsRepo {
     }
 
     // ###############
+    // ##  Modifier ##
+    // ###############
+
+
+    modifier optExist(Repo storage repo, uint seqOfOpt) {
+        require (isOption(repo, seqOfOpt), "OR.optExist: not");
+        _;
+    }
+
+    modifier brfExist(Repo storage repo, uint seqOfOpt, uint seqOfBrf) {
+        require (isBrief(repo, seqOfOpt, seqOfBrf), "OR.brfExist: not");
+        _;
+    }
+
+
+    // ###############
     // ##   写接口   ##
     // ###############
 
@@ -391,22 +407,21 @@ library OptionsRepo {
         return repo.options[0].head.seqOfOpt;
     }
 
-    function isOption(Repo storage repo, uint256 seqOfOpt) 
-        public view returns (bool) 
-    {
-        return repo.options[seqOfOpt].head.issueDate > 0;
-    }
-
     function qtyOfOptions(Repo storage repo)
         public view returns (uint)
     {
         return repo.seqList.length();
     }
 
-    function getOption(Repo storage repo, uint256 seqOfOpt) public view
+    function isOption(Repo storage repo, uint256 seqOfOpt) 
+        public view returns (bool) 
+    {
+        return repo.options[seqOfOpt].head.issueDate > 0;
+    }
+
+    function getOption(Repo storage repo, uint256 seqOfOpt) public view optExist(repo, seqOfOpt)
         returns (OptionsRepo.Option memory option)   
     {
-        require (isOption(repo, seqOfOpt), "OR.getOpt: not exist");
         option = repo.options[seqOfOpt];
     }
 
@@ -424,6 +439,28 @@ library OptionsRepo {
         return output;
     }
 
+    function isRightholder(Repo storage repo, uint256 seqOfOpt, uint256 acct) 
+        public view optExist(repo, seqOfOpt) returns (bool)
+    {
+        return repo.options[seqOfOpt].body.rightholder == acct;
+    }
+
+    function isObligor(Repo storage repo, uint256 seqOfOpt, uint256 acct) public 
+        view optExist(repo, seqOfOpt) returns (bool) 
+    {
+        return repo.records[seqOfOpt].obligors.contains(acct);
+    }
+
+    function getObligorsOfOption(Repo storage repo, uint256 seqOfOpt) public 
+        view optExist(repo, seqOfOpt) returns (uint256[] memory)
+    {
+        return repo.records[seqOfOpt].obligors.values();
+    }
+
+    function getSeqList(Repo storage repo) public view returns(uint[] memory) {
+        return repo.seqList.values();
+    }
+
     // ==== Brief ====
 
     function counterOfBriefs(Repo storage repo, uint256 seqOfOpt)
@@ -431,6 +468,20 @@ library OptionsRepo {
     {
         return repo.records[seqOfOpt].briefs[0].seqOfBrf;
     }
+
+    function isBrief(Repo storage repo, uint256 seqOfOpt, uint256 seqOfBrf)
+        public view returns (bool)
+    {
+        return repo.records[seqOfOpt].briefs[seqOfBrf].seqOfBrf > 0;
+    }
+
+
+    function getBrief(Repo storage repo, uint256 seqOfOpt, uint256 seqOfBrf)
+        public view brfExist(repo, seqOfOpt, seqOfBrf) returns (OptionsRepo.Brief memory brf)
+    {
+        brf = repo.records[seqOfOpt].briefs[seqOfBrf];
+    }
+
 
     function getAllBriefsOfOption(Repo storage repo, uint256 seqOfOpt)
         public view returns (Brief[] memory )
@@ -459,5 +510,6 @@ library OptionsRepo {
 
         return true;        
     }
+
 
 }
