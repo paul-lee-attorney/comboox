@@ -262,34 +262,34 @@ interface IGeneralKeeper {
     // ##  ROSKeeper   ##
     // ##################
 
-    function createSwap(
-        bytes32 snOfSwap,
-        uint rightholder, 
-        uint paidOfConsider
-    ) external;
+    // function createSwap(
+    //     bytes32 snOfSwap,
+    //     uint rightholder, 
+    //     uint paidOfConsider
+    // ) external;
 
-    function transferSwap(
-        uint256 seqOfSwap, 
-        uint to, 
-        uint amt
-    ) external;
+    // function transferSwap(
+    //     uint256 seqOfSwap, 
+    //     uint to, 
+    //     uint amt
+    // ) external;
 
-    function crystalizeSwap(
-        uint256 seqOfSwap, 
-        uint seqOfConsider, 
-        uint seqOfTarget
-    ) external;
+    // function crystalizeSwap(
+    //     uint256 seqOfSwap, 
+    //     uint seqOfConsider, 
+    //     uint seqOfTarget
+    // ) external;
 
-    function lockSwap(
-        uint256 seqOfSwap, 
-        bytes32 hashLock
-    ) external;
+    // function lockSwap(
+    //     uint256 seqOfSwap, 
+    //     bytes32 hashLock
+    // ) external;
 
-    function releaseSwap(uint256 seqOfSwap, string memory hashKey) external;
+    // function releaseSwap(uint256 seqOfSwap, string memory hashKey) external;
 
-    function execSwap(uint256 seqOfSwap) external;
+    // function execSwap(uint256 seqOfSwap) external;
 
-    function revokeSwap(uint256 seqOfSwap) external;
+    // function revokeSwap(uint256 seqOfSwap) external;
 
     function requestToBuy(
         uint256 seqOfMotion,

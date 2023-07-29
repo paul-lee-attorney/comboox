@@ -75,6 +75,8 @@ interface IAccessControl {
 
     function setDirectKeeper(address keeper) external;
 
+    function takeBackKeys(address target) external;
+
     function setRoleAdmin(bytes32 role, address acct) external;
 
     function grantRole(bytes32 role, address acct) external;

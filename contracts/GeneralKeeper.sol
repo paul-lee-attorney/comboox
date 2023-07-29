@@ -434,56 +434,56 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  ROSKeeper   ##
     // ##################
 
-    function createSwap(
-        bytes32 snOfSwap,
-        uint rightholder, 
-        uint paidOfConsider
-    ) external  {
-        IROSKeeper(_keepers[10]).createSwap(snOfSwap, rightholder, paidOfConsider, _msgSender(fees[7]));
-    }
+    // function createSwap(
+    //     bytes32 snOfSwap,
+    //     uint rightholder, 
+    //     uint paidOfConsider
+    // ) external  {
+    //     IROSKeeper(_keepers[9]).createSwap(snOfSwap, rightholder, paidOfConsider, _msgSender(fees[7]));
+    // }
 
-    function transferSwap(
-        uint256 seqOfSwap, 
-        uint to, 
-        uint amt
-    ) external {
-        IROSKeeper(_keepers[10]).transferSwap(seqOfSwap, to, amt, _msgSender(fees[6]));
-    }
+    // function transferSwap(
+    //     uint256 seqOfSwap, 
+    //     uint to, 
+    //     uint amt
+    // ) external {
+    //     IROSKeeper(_keepers[9]).transferSwap(seqOfSwap, to, amt, _msgSender(fees[6]));
+    // }
 
-    function crystalizeSwap(
-        uint256 seqOfSwap, 
-        uint seqOfConsider, 
-        uint seqOfTarget
-    ) external {
-        IROSKeeper(_keepers[10]).crystalizeSwap(seqOfSwap, seqOfConsider, seqOfTarget, _msgSender(fees[5]));
-    }
+    // function crystalizeSwap(
+    //     uint256 seqOfSwap, 
+    //     uint seqOfConsider, 
+    //     uint seqOfTarget
+    // ) external {
+    //     IROSKeeper(_keepers[9]).crystalizeSwap(seqOfSwap, seqOfConsider, seqOfTarget, _msgSender(fees[5]));
+    // }
 
-    function lockSwap(
-        uint256 seqOfSwap, 
-        bytes32 hashLock
-    ) external {
-        IROSKeeper(_keepers[10]).lockSwap(seqOfSwap, hashLock, _msgSender(fees[5]));
-    }
+    // function lockSwap(
+    //     uint256 seqOfSwap, 
+    //     bytes32 hashLock
+    // ) external {
+    //     IROSKeeper(_keepers[9]).lockSwap(seqOfSwap, hashLock, _msgSender(fees[5]));
+    // }
 
-    function releaseSwap(uint256 seqOfSwap, string memory hashKey) external {
-        IROSKeeper(_keepers[10]).releaseSwap(seqOfSwap, hashKey);
-    } 
+    // function releaseSwap(uint256 seqOfSwap, string memory hashKey) external {
+    //     IROSKeeper(_keepers[9]).releaseSwap(seqOfSwap, hashKey);
+    // } 
 
-    function execSwap(uint256 seqOfSwap) external {
-        IROSKeeper(_keepers[10]).execSwap(seqOfSwap, _msgSender(fees[7]));
-    }
+    // function execSwap(uint256 seqOfSwap) external {
+    //     IROSKeeper(_keepers[9]).execSwap(seqOfSwap, _msgSender(fees[7]));
+    // }
 
-    function revokeSwap(uint256 seqOfSwap) external
-    {
-        IROSKeeper(_keepers[10]).revokeSwap(seqOfSwap, _msgSender(fees[1]));
-    }
+    // function revokeSwap(uint256 seqOfSwap) external
+    // {
+    //     IROSKeeper(_keepers[9]).revokeSwap(seqOfSwap, _msgSender(fees[1]));
+    // }
 
     function requestToBuy(
         uint256 seqOfMotion,
         uint256 seqOfDeal,
         uint seqOfTarget
     ) external {
-        IROSKeeper(_keepers[10]).requestToBuy(seqOfMotion, seqOfDeal, seqOfTarget, _msgSender(fees[7]));
+        IROSKeeper(_keepers[9]).requestToBuy(seqOfMotion, seqOfDeal, seqOfTarget, _msgSender(fees[7]));
     }
 
     // ###################
@@ -500,7 +500,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint par,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[11]).execAlongRight(
+        ISHAKeeper(_keepers[10]).execAlongRight(
                 ia,
                 seqOfDeal,
                 false,
@@ -522,7 +522,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint par,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[11]).execAlongRight(
+        ISHAKeeper(_keepers[10]).execAlongRight(
                 ia,
                 seqOfDeal,
                 true,
@@ -540,7 +540,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfShare,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[11]).acceptAlongDeal(ia, seqOfDeal, seqOfShare, _msgSender(fees[6]), sigHash);
+        ISHAKeeper(_keepers[10]).acceptAlongDeal(ia, seqOfDeal, seqOfShare, _msgSender(fees[6]), sigHash);
     }
 
     // ======== AntiDilution ========
@@ -551,11 +551,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfShare,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[11]).execAntiDilution(ia, seqOfDeal, seqOfShare, _msgSender(fees[5]), sigHash);
+        ISHAKeeper(_keepers[10]).execAntiDilution(ia, seqOfDeal, seqOfShare, _msgSender(fees[5]), sigHash);
     }
 
     function takeGiftShares(address ia, uint256 seqOfDeal) external {
-        ISHAKeeper(_keepers[11]).takeGiftShares(ia, seqOfDeal, _msgSender(fees[7]));
+        ISHAKeeper(_keepers[10]).takeGiftShares(ia, seqOfDeal, _msgSender(fees[7]));
     }
 
     // ======== First Refusal ========
@@ -567,7 +567,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfDeal,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[11]).execFirstRefusal(seqOfRule, seqOfRightholder, ia, seqOfDeal, _msgSender(fees[6]), sigHash);
+        ISHAKeeper(_keepers[10]).execFirstRefusal(seqOfRule, seqOfRightholder, ia, seqOfDeal, _msgSender(fees[6]), sigHash);
     }
 
     function acceptFirstRefusal(
@@ -575,7 +575,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfDeal,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[11]).acceptFirstRefusal(
+        ISHAKeeper(_keepers[10]).acceptFirstRefusal(
                 ia,
                 seqOfDeal,
                 _msgSender(fees[6]),

@@ -379,11 +379,12 @@ library UsersRepo {
         if (msgSender != targetAddr) {
             _chargeFee(repo, target, fee, author);
 
-            if (tx.origin != targetAddr) _chargeFee(repo, getMyUserNo(repo, tx.origin), fee, author);
-            else _awardBonus(repo, msgSender, fee, author);
+            if (tx.origin != targetAddr) 
+                _chargeFee(repo, getMyUserNo(repo, tx.origin), fee, author);
+            // else _awardBonus(repo, msgSender, fee, author);
         } else return target;
 
-        return uint40(target);
+        return target;
     }
 
     function getMyUserNo(Repo storage repo, address msgSender) 
@@ -395,38 +396,38 @@ library UsersRepo {
         else revert ("UR.getMyUserNo: not registered");
     }
 
-    function _awardBonus(Repo storage repo, address querySender, uint fee, uint author) 
-        private 
-    {
-        Reward memory rw = getRewardSetting(repo);
+    // function _awardBonus(Repo storage repo, address querySender, uint fee, uint author) 
+    //     private 
+    // {
+    //     Reward memory rw = getRewardSetting(repo);
 
-        uint sender = repo.userNo[querySender];
-        if (sender > 0) {
-            uint64 bonus = uint64(fee * rw.refundRatio / 10000);
-            repo.users[sender].balance += bonus;
-            repo.users[author].balance -= bonus;
-        }
-    }
+    //     uint sender = repo.userNo[querySender];
+    //     if (sender > 0) {
+    //         uint64 bonus = uint64(fee * rw.refundRatio / 10000);
+    //         repo.users[sender].balance += bonus;
+    //         repo.users[author].balance -= bonus;
+    //     }
+    // }
 
-    function _chargeFee(Repo storage repo, uint user, uint fee, uint author) 
-        private returns (uint64 afterReward)
+    function _chargeFee(Repo storage repo, uint target, uint fee, uint author) 
+        private
     {
-        User storage u = repo.users[user];
+        User storage u = repo.users[target];
         User storage a = repo.users[author];
 
-        Reward memory rw = getRewardSetting(repo);
+        // Reward memory rw = getRewardSetting(repo);
 
         uint64 unitPrice = uint64(fee);
         
-        uint32 coupon = u.counterOfV * rw.discRate + rw.offAmt;
-        afterReward = (coupon < (unitPrice - rw.floor)) 
-            ? (unitPrice - coupon) 
-            : rw.floor;
+        // uint32 coupon = u.counterOfV * rw.discRate + rw.offAmt;
+        // afterReward = (coupon < (unitPrice - rw.floor)) 
+        //     ? (unitPrice - coupon) 
+        //     : rw.floor;
 
-        if (u.balance >= afterReward) {
-            u.balance -= afterReward;
+        if (u.balance >= unitPrice) {
+            u.balance -= unitPrice;
             u.counterOfV++;
-            a.balance += afterReward;
+            a.balance += unitPrice;
         } else revert("RC.chargeFee: insufficient balance");
     }
 }

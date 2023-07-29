@@ -19,10 +19,6 @@ contract BookOfIA is IBookOfIA, FilesFolder {
     using FilesRepo for FilesRepo.Repo;
     using TopChain for TopChain.Chain;
 
-
-    
-    
-
     // ia => frClaims
     mapping(address => FRClaims.Claims) private _frClaims;
     // ia => dtClaims

@@ -186,7 +186,7 @@ contract RegCenter is IRegCenter {
     }
 
     function setTemplate(bytes32 snOfDoc, address body) external {
-        DocsRepo.Doc memory doc = _docs.setTemplate(snOfDoc, body, msg.sender, getMyUserNo());
+        DocsRepo.Doc memory doc = _docs.setTemplate(snOfDoc, body, msg.sender, _users.getMyUserNo(msg.sender));
         emit SetTemplate(doc.head.typeOfDoc, doc.head.version, doc.body);
     }
 

@@ -86,6 +86,8 @@ interface IShareholdersAgreement {
 
     function removeRule(uint256 seq) external;
 
+    function initDefaultRules() external;
+
     function finalizeSHA() external;
 
     //##################

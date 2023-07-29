@@ -101,6 +101,10 @@ contract AccessControl is IAccessControl {
         emit SetDirectKeeper(acct);
     }
 
+    function takeBackKeys (address target) external onlyDK {
+        IAccessControl(target).setDirectKeeper(msg.sender);
+    }
+
     function setRoleAdmin(bytes32 role, address acct) external {
         _roles.setRoleAdmin(role, acct, msg.sender);
         emit SetRoleAdmin(role, acct);

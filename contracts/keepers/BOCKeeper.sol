@@ -52,6 +52,8 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
             address(_gk)
         );
 
+        IShareholdersAgreement(doc.body).initDefaultRules();
+
         _gk.getBOC().regFile(DocsRepo.codifyHead(doc.head), doc.body);
     }
 

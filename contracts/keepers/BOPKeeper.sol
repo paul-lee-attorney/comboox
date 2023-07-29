@@ -129,7 +129,9 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
         deal = _circulateIA(deal, _ia);
 
-        _proposeIA(address(_ia), deal, pld, caller);
+        _signIA(_ia, deal);
+
+        _proposeIA(address(_ia), deal, caller);
     }
 
     function _createIA(
@@ -187,14 +189,13 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
 
     function _signIA(
         IInvestmentAgreement _ia,
-        DealsRepo.Deal memory deal,
-        PledgesRepo.Pledge memory pld
+        DealsRepo.Deal memory deal
     ) private {
         _ia.lockDealSubject(deal.head.seqOfDeal);
         
         ISigPage(address(_ia)).regSig(
             deal.head.seqOfDeal,
-            pld.head.pledgor,
+            deal.head.seller,
             uint48(block.timestamp),
             bytes32(0)
         );
@@ -212,7 +213,6 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     function _proposeIA(
         address ia,
         DealsRepo.Deal memory deal,
-        PledgesRepo.Pledge memory pld,
         uint caller
     ) private {
         IGeneralKeeper _gk = _getGK();
@@ -220,9 +220,9 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
-            _gmm.createMotionToApproveDoc(ia, deal.head.typeOfDeal, caller, pld.head.pledgor);
+            _gmm.createMotionToApproveDoc(ia, deal.head.typeOfDeal, caller, deal.head.seller);
         
-        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, pld.head.pledgor);
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, deal.head.seller);
         _gk.getBOI().proposeFile(ia, seqOfMotion);       
     }
 
