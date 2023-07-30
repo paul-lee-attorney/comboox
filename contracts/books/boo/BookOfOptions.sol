@@ -18,7 +18,6 @@ contract BookOfOptions is IBookOfOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Option;
     using OptionsRepo for OptionsRepo.Record;
 
-    
     OptionsRepo.Repo private _repo;
 
     // ##################

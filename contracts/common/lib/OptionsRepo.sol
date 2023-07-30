@@ -16,7 +16,6 @@ import "./SwapsRepo.sol";
 import "../../books/bos/IBookOfShares.sol";
 
 library OptionsRepo {
-    // using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
     using Checkpoints for Checkpoints.History;
     using CondsRepo for CondsRepo.Cond;
