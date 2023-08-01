@@ -77,25 +77,26 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     }
 
     function proposeDocOfGM(
-        address doc,
+        uint doc,
         uint seqOfVR,
         uint executor,
         uint proposer
     ) external onlyDK memberExist(proposer) {
         IGeneralKeeper _gk = _getGK();
-
         IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
             _gmm.createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
 
+        address addr = address(uint160(doc));
+
         if (seqOfVR < 9 && 
-            ISigPage(doc).isSigner(proposer)
+            ISigPage(addr).isSigner(proposer)
         ) { 
             _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
             seqOfVR == 8 ?
-                _gk.getBOC().proposeFile(doc, seqOfMotion) :
-                _gk.getBOI().proposeFile(doc, seqOfMotion);
+                _gk.getBOC().proposeFile(addr, seqOfMotion) :
+                _gk.getBOI().proposeFile(addr, seqOfMotion);
         }
     }
 

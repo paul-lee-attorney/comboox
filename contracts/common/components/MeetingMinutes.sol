@@ -77,7 +77,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     }
 
     function createMotionToApproveDoc(
-        address doc,
+        uint doc,
         uint seqOfVR,
         uint executor,
         uint proposer    
@@ -88,7 +88,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             seqOfVR,
             proposer,
             executor,
-            uint256(uint160(doc))
+            doc
         );
     }
 

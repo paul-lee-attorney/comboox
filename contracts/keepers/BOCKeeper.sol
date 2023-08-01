@@ -79,7 +79,7 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
                 RulesParser.SHA_INIT_VR.votingRuleParser() :
                 _sha.getRule(8).votingRuleParser();
         
-        ISigPage(sha).setTiming(false, signingDays + vr.shaExecDays + vr.shaConfirmDays, closingDays);
+        // ISigPage(sha).setTiming(false, signingDays + vr.shaExecDays + vr.shaConfirmDays, closingDays);
 
         _gk.getBOC().circulateFile(sha, signingDays, closingDays, vr, docUrl, docHash);
     }
@@ -99,8 +99,9 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
             "SHA not in Circulated State"
         );
 
-        if (ISigPage(sha).signDoc(true, caller, sigHash) &&
-            ISigPage(sha).established())
+        ISigPage(sha).signDoc(true, caller, sigHash);
+
+        if (ISigPage(sha).established())
         {
             _boc.establishFile(sha);
         }

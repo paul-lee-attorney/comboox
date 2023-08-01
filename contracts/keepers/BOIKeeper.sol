@@ -105,9 +105,9 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
         );
 
         _lockDealsOfParty(ia, caller);
-        if (ISigPage(ia).signDoc(true, caller, sigHash) && 
-            ISigPage(ia).established()) 
-        {
+        ISigPage(ia).signDoc(true, caller, sigHash);
+        
+        if (ISigPage(ia).established()) {
             _boi.establishFile(ia);
         }
     }

@@ -105,9 +105,10 @@ library SigsRepo {
     }
 
     function signDoc(Page storage p, uint256 acct, bytes32 sigHash) 
-        public returns (bool flag)
+        public 
     {
-        require(block.timestamp < getSigDeadline(p),
+        require(block.timestamp < getSigDeadline(p) ||
+            getSigDeadline(p) == 0,
             "SR.SD: missed sigDeadline");
 
         require(!established(p),
@@ -126,10 +127,10 @@ library SigsRepo {
 
             _increaseCounterOfSigs(p, p.blanks[acct].seqOfDeals.length());
 
-            if (counterOfBlanks(p) == counterOfSigs(p))
-                p.blanks[0].sig.flag = true;
+            // if (counterOfBlanks(p) == counterOfSigs(p))
+            //     p.blanks[0].sig.flag = true;
 
-            flag = true;   
+            // flag = true;   
         }
     }
 
@@ -140,7 +141,7 @@ library SigsRepo {
             "SR.RS: missed sigDeadline");
 
         require(!established(p),
-            "SR.SD: Doc already established");
+            "SR.regSig: Doc already established");
 
         if ((p.buyers.contains(acct) ||
             p.sellers.contains(acct)) && 
@@ -157,8 +158,8 @@ library SigsRepo {
 
             _increaseCounterOfSigs(p, 1);
 
-            if (counterOfBlanks(p) == counterOfSigs(p))
-                p.blanks[0].sig.flag = true;
+            // if (counterOfBlanks(p) == counterOfSigs(p))
+            //     p.blanks[0].sig.flag = true;
 
             flag = true;
         }
@@ -188,7 +189,9 @@ library SigsRepo {
 
     function established(Page storage p) public view returns (bool)
     {
-        return p.blanks[0].sig.flag;
+        // return p.blanks[0].sig.flag;
+        return counterOfBlanks(p) > 0 
+            && counterOfBlanks(p) == counterOfSigs(p);
     }
 
     function counterOfBlanks(Page storage p) public view returns(uint16) {

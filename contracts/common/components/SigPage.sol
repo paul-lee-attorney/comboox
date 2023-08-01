@@ -52,12 +52,12 @@ contract SigPage is ISigPage, AccessControl {
     }
 
     function signDoc(bool initPage, uint256 caller, bytes32 sigHash)
-        external onlyKeeper returns(bool)
+        external onlyKeeper
     {
         if (initPage) {
-            return _sigPages[0].signDoc(caller, sigHash);
+            _sigPages[0].signDoc(caller, sigHash);
         } else {
-            return _sigPages[1].signDoc(caller, sigHash);
+            _sigPages[1].signDoc(caller, sigHash);
         }
     }
 
@@ -148,15 +148,17 @@ contract SigPage is ISigPage, AccessControl {
     function getBuyers(bool initPage)
         public view returns (uint256[] memory buyers)
     {
-        buyers = initPage ? _sigPages[0].buyers.values() :
-            _sigPages[0].buyers.values();
+        buyers = initPage 
+            ? _sigPages[0].buyers.values() 
+            : _sigPages[1].buyers.values();
     }
 
     function getSellers(bool initPage)
         public view returns (uint256[] memory sellers)
     {
-        sellers = initPage ? _sigPages[0].sellers.values():
-            _sigPages[1].sellers.values();
+        sellers = initPage 
+            ? _sigPages[0].sellers.values()
+            : _sigPages[1].sellers.values();
     }
 
     function getParties() external view

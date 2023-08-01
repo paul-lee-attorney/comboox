@@ -64,7 +64,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
     // ---- Docs ----
 
     function createMotionToApproveDoc(
-        address doc,
+        uint doc,
         uint seqOfVR,
         uint executor,
         uint proposer

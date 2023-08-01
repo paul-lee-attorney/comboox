@@ -28,7 +28,7 @@ interface IBMMKeeper {
     // ---- Docs ----
 
     function createMotionToApproveDoc(
-        address doc,
+        uint doc,
         uint seqOfVR,
         uint executor,
         uint proposer

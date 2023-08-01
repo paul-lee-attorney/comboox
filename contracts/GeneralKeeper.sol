@@ -137,7 +137,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IBMMKeeper(_keepers[3]).createMotionToRemoveOfficer(seqOfPos, _msgSender(fees[6]));
     }
 
-    function createMotionToApproveDoc(address doc, uint seqOfVR, uint executor) external {
+    function createMotionToApproveDoc(uint doc, uint seqOfVR, uint executor) external {
         IBMMKeeper(_keepers[3]).createMotionToApproveDoc(doc, seqOfVR, executor, _msgSender(fees[7]));
     }
 
@@ -234,7 +234,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IGMMKeeper(_keepers[5]).createMotionToRemoveDirector(seqOfPos, _msgSender(fees[7]));
     }
 
-    function proposeDocOfGM(address doc, uint seqOfVR, uint executor) external {
+    function proposeDocOfGM(uint doc, uint seqOfVR, uint executor) external {
         IGMMKeeper(_keepers[5]).proposeDocOfGM(doc, seqOfVR, executor, _msgSender(fees[6]));
     }
 

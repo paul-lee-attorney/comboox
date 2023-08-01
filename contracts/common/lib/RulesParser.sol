@@ -61,7 +61,7 @@ library RulesParser {
     // ---- VotingRule ----
 
     bytes32 public constant SHA_INIT_VR = 
-        bytes32(uint(0x00080c08000100001a0b00000100000700000100000000000000000000000000));
+        bytes32(uint(0x00080c08000100001a0b00000100000100000100000000000000000000000000));
 
     struct VotingRule{
         uint16 seqOfRule;

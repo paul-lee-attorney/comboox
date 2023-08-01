@@ -31,7 +31,7 @@ interface IGMMKeeper {
         uint caller
     ) external;
 
-    function proposeDocOfGM(address doc, uint seqOfVR, uint executor,  uint proposer) external;
+    function proposeDocOfGM(uint doc, uint seqOfVR, uint executor,  uint proposer) external;
 
     function createActionOfGM(
         uint seqOfVR,

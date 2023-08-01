@@ -96,7 +96,7 @@ interface IGeneralKeeper {
 
     function createMotionToRemoveOfficer(uint256 seqOfPos) external;
 
-    function createMotionToApproveDoc(address doc, uint seqOfVR, uint executor) external;
+    function createMotionToApproveDoc(uint doc, uint seqOfVR, uint executor) external;
 
     function createAction(
         uint seqOfVR,
@@ -147,7 +147,7 @@ interface IGeneralKeeper {
 
     function createMotionToRemoveDirector(uint256 seqOfPos) external;
 
-    function proposeDocOfGM(address doc, uint seqOfVR, uint executor) external;
+    function proposeDocOfGM(uint doc, uint seqOfVR, uint executor) external;
 
     function createActionOfGM(
         uint seqOfVR,

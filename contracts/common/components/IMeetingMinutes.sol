@@ -55,7 +55,7 @@ interface IMeetingMinutes {
     ) external returns(uint64);
 
     function createMotionToApproveDoc(
-        address doc,
+        uint doc,
         uint seqOfVR,
         uint executor,
         uint proposer    

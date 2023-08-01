@@ -220,7 +220,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
-            _gmm.createMotionToApproveDoc(ia, deal.head.typeOfDeal, caller, deal.head.seller);
+            _gmm.createMotionToApproveDoc(uint(uint160(ia)), deal.head.typeOfDeal, caller, deal.head.seller);
         
         _gmm.proposeMotionToGeneralMeeting(seqOfMotion, deal.head.seller);
         _gk.getBOI().proposeFile(ia, seqOfMotion);       
