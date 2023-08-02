@@ -129,8 +129,8 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
         _bom.setVoteBase(gr.basedOnPar);
 
 
-        if (IShareholdersAgreement(sha).hasTitle(uint8(IRegCenter.TypeOfDoc.LockUp)))
-            _lockUpShares(sha);
+        // if (IShareholdersAgreement(sha).hasTitle(uint8(IRegCenter.TypeOfDoc.LockUp)))
+        //     _lockUpShares(sha);
         
         if (IShareholdersAgreement(sha).hasTitle(uint8(IRegCenter.TypeOfDoc.Options))) 
             _regOptionTerms(sha);
@@ -139,19 +139,19 @@ contract BOCKeeper is IBOCKeeper, AccessControl {
         _updateGrouping(sha);
     }
 
-    function _lockUpShares(address sha) private {
-        IBookOfShares _bos = _getGK().getBOS();
+    // function _lockUpShares(address sha) private {
+    //     IBookOfShares _bos = _getGK().getBOS();
 
-        uint256[] memory lockedShares = ILockUp(IShareholdersAgreement(sha).getTerm(
-            uint8(IRegCenter.TypeOfDoc.LockUp))).lockedShares();
-        uint256 len = lockedShares.length;
-        while (len > 0) {
+    //     uint256[] memory lockedShares = ILockUp(IShareholdersAgreement(sha).getTerm(
+    //         uint8(IRegCenter.TypeOfDoc.LockUp))).lockedShares();
+    //     uint256 len = lockedShares.length;
+    //     while (len > 0) {
 
-            SharesRepo.Share memory share = _bos.getShare(lockedShares[len-1]);
-            _bos.decreaseCleanPaid(share.head.seqOfShare, share.body.cleanPaid);
-            len--;
-        }
-    }
+    //         SharesRepo.Share memory share = _bos.getShare(lockedShares[len-1]);
+    //         _bos.decreaseCleanPaid(share.head.seqOfShare, share.body.cleanPaid);
+    //         len--;
+    //     }
+    // }
 
     function _regOptionTerms(address sha) private {
         address opts = IShareholdersAgreement(sha).

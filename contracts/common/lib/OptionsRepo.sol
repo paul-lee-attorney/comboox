@@ -340,8 +340,12 @@ library OptionsRepo {
         if (opt.head.typeOfOpt % 4 < 2) 
             swap.head.rateOfSwap = consider.head.priceOfPaid * 10000 / opt.head.rate;
         else {
-            swap.head.rateOfSwap = consider.head.priceOfPaid * (365 + opt.head.rate) * 
-                uint32(block.timestamp - consider.head.issueDate) * 100/ (864 * 365 * target.head.priceOfPaid);
+            // swap.head.rateOfSwap = (consider.head.priceOfPaid * (365 + opt.head.rate) *
+            //     100/ (864 * 365 * target.head.priceOfPaid)) * uint32(block.timestamp - consider.head.issueDate);
+            uint32 ds = uint32(block.timestamp - consider.head.issueDate) / 86400;
+
+            swap.head.rateOfSwap = consider.head.priceOfPaid * (opt.head.rate * ds + 3650000) /
+                target.head.priceOfPaid / 365;
         }
 
         if (opt.head.typeOfOpt % 2 == 1) {

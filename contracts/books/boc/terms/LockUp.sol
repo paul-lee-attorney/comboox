@@ -104,10 +104,10 @@ contract LockUp is ILockUp, AccessControl {
 
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
         
-        uint256 motionId = uint256(uint160(ia));
+        uint seqOfMotion = _getGK().getBOI().getHeadOfFile(ia).seqOfMotion;
                
         uint256[] memory consentParties = _getGK().getGMM().
-            getCaseOfAttitude(motionId,1).voters;
+            getCaseOfAttitude(seqOfMotion,1).voters;
 
         uint256[] memory parties = ISigPage(ia).getParties();
 

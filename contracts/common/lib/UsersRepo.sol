@@ -382,7 +382,7 @@ library UsersRepo {
             if (tx.origin != targetAddr) 
                 _chargeFee(repo, getMyUserNo(repo, tx.origin), fee, author);
             // else _awardBonus(repo, msgSender, fee, author);
-        } else return target;
+        }
 
         return target;
     }

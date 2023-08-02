@@ -60,9 +60,14 @@ library ArrayUtils {
         public pure returns(uint256[] memory)
     {
         uint256[] memory output = new uint256[](len);
-        assembly {
-            output := arrA
+
+        while (len > 0) {
+            output[len - 1] = arrA[len - 1];
+            len--;
         }
+        // assembly {
+        //     output := arrA
+        // }
         return output;
     }
 
@@ -95,6 +100,7 @@ library ArrayUtils {
         while (lenA > 0) {
             bool flag = false;
             lenB = arrB.length;
+            
             while (lenB > 0) {
                 if (arrB[lenB - 1] == arrA[lenA - 1]) {
                     flag = true;

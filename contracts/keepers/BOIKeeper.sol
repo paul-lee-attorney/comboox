@@ -14,22 +14,23 @@ import "../common/access/AccessControl.sol";
 contract BOIKeeper is IBOIKeeper, AccessControl {
     using RulesParser for bytes32;
 
-    IRegCenter.TypeOfDoc[] private _termsForCapitalIncrease = [
-        IRegCenter.TypeOfDoc.AntiDilution
-    ];
 
-    IRegCenter.TypeOfDoc[] private _termsForShareTransfer = [
-        IRegCenter.TypeOfDoc.LockUp,
-        IRegCenter.TypeOfDoc.TagAlong,
-        IRegCenter.TypeOfDoc.DragAlong
-    ];
+    // IRegCenter.TypeOfDoc[] public termsForCapitalIncrease = [
+    //     IRegCenter.TypeOfDoc.AntiDilution
+    // ];
+
+    // IRegCenter.TypeOfDoc[] public termsForShareTransfer = [
+    //     IRegCenter.TypeOfDoc.LockUp,
+    //     IRegCenter.TypeOfDoc.TagAlong,
+    //     IRegCenter.TypeOfDoc.DragAlong
+    // ];
 
     // ##################
     // ##   Modifier   ##
     // ##################
 
     modifier onlyPartyOf(address ia, uint256 caller) {
-        require(ISigPage(ia).isParty(caller), "BOAK.md.OPO: NOT Party");
+        require(ISigPage(ia).isParty(caller), "BOIK.md.OPO: NOT Party");
         _;
     }
 
@@ -71,7 +72,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
         uint256 caller
     ) external onlyDK onlyPartyOf(ia, caller){
         require(IAccessControl(ia).isFinalized(), 
-            "BOAK.CIA: IA not finalized");
+            "BOIK.CIA: IA not finalized");
 
         ISigPage(ia).circulateDoc();
 
@@ -101,7 +102,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
 
         require(
             _boi.getHeadOfFile(ia).state == uint8(FilesRepo.StateOfFile.Circulated),
-            "BOAK.signIA: wrong state"
+            "BOIK.signIA: wrong state"
         );
 
         _lockDealsOfParty(ia, caller);
@@ -149,8 +150,8 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
 
         bool isST = (head.seqOfShare != 0);
 
-        if (isST) require(caller == head.seller, "BOAK.PTC: not seller");
-        else require(_getGK().getBOD().isDirector(caller), "BOAK.PTC: not director");
+        if (isST) require(caller == head.seller, "BOIK.PTC: not seller");
+        else require(_getGK().getBOD().isDirector(caller), "BOIK.PTC: not director");
 
         _vrAndSHACheck(ia, seqOfDeal, isST);
 
@@ -166,7 +167,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
 
         require(
             _boi.getHeadOfFile(ia).state == uint8(FilesRepo.StateOfFile.Approved),
-            "BOAK.vrAndSHACheck: wrong state"
+            "BOIK.vrAndSHACheck: wrong state"
         );
 
         uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
@@ -180,36 +181,41 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
         if (vr.amountRatio > 0 || vr.headRatio > 0) {
             if (vr.authority == 1)
                 require(_gmm.isPassed(seqOfMotion), 
-                    "BOAK.vrCheck:  rejected by GM");
+                    "BOIK.vrCheck:  rejected by GM");
             else if (vr.authority == 2)
                 require(_bmm.isPassed(seqOfMotion), 
-                    "BOAK.vrCheck:  rejected by Board");
+                    "BOIK.vrCheck:  rejected by Board");
             else if (vr.authority == 3)
                 require(_gmm.isPassed(seqOfMotion) && 
                     _bmm.isPassed(seqOfMotion), 
-                    "BOAK.vrCheck: rejected by GM or Board");
-            else revert("BOAK.vrCheck: authority overflow");
+                    "BOIK.vrCheck: rejected by GM or Board");
+            else revert("BOIK.vrCheck: authority overflow");
         }
 
-        if (isST) _checkSHA(_termsForShareTransfer, ia, seqOfDeal, _sha);
-        else _checkSHA(_termsForCapitalIncrease, ia, seqOfDeal, _sha);
+        _checkSHA(isST, ia, seqOfDeal, _sha);
+        // else _checkSHA(termsForCapitalIncrease, ia, seqOfDeal, _sha);
     }
 
     function _checkSHA(
-        IRegCenter.TypeOfDoc[] memory terms,
+        bool isST,
         address ia,
         uint256 seqOfDeal,
         IShareholdersAgreement _sha
     ) private view {
-        uint256 len = terms.length;
+        uint8[4] memory terms = [ 25, 26, 28, 24 ];
 
-        while (len > 0) {
-            if (_sha.hasTitle(uint8(terms[len - 1])))
+        uint len = isST ? 3 : 4;
+        uint i = isST ? 0 : 3;
+
+        while (i < len) {
+            if (_sha.hasTitle(terms[i])) {
                 require(
-                    _sha.termIsExempted(uint8(terms[len - 1]), ia, seqOfDeal),
-                    "BOAK.PTC: term not exempted"
+                    _sha.termIsExempted(terms[i], ia, seqOfDeal),
+                    "BOIK.checkSHA: term not exempted"
                 );
-            len--;
+            }
+
+            i++;
         }
     }
 
@@ -292,7 +298,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
     ) public onlyDK {
         require(
             caller == IInvestmentAgreement(ia).getHeadOfDeal(seqOfDeal).seller,
-                "BOAK.TTS: not sellerOfDeal"
+                "BOIK.TTS: not sellerOfDeal"
         );
 
 
@@ -316,7 +322,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
 
         require(
             caller == deal.head.seller,
-            "BOAK.TD: NOT seller"
+            "BOIK.TD: NOT seller"
         );
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
@@ -325,7 +331,7 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
 
         if ((state < uint8(FilesRepo.StateOfFile.Proposed) &&
                 block.timestamp >= _boi.terminateStartpoint(ia)) || 
-            state == uint8(FilesRepo.StateOfFile.Rejected) ||
+            (state == uint8(FilesRepo.StateOfFile.Rejected)) ||
             (state == uint8(FilesRepo.StateOfFile.Approved) &&
                 block.timestamp >= _ia.getHeadOfDeal(seqOfDeal).closingDeadline)
         ) {
@@ -333,6 +339,6 @@ contract BOIKeeper is IBOIKeeper, AccessControl {
                 _boi.terminateFile(ia);
             if (_ia.releaseDealSubject(seqOfDeal))
                 _gk.getBOS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);            
-        } else revert("BOAK.TD: wrong state");
+        } else revert("BOIK.TD: wrong state");
     }
 }

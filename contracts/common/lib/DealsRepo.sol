@@ -269,41 +269,12 @@ library DealsRepo {
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
-    // function revokeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
-    //     external onlyCleared(repo, seqOfDeal) returns (bool flag)
-    // {
-    //     Deal storage deal = repo.deals[seqOfDeal];
-
-    //     require(
-    //         block.timestamp >= deal.head.closingDeadline,
-    //         "DR.RD: NOT reached closingDeadline"
-    //     );
-
-    //     require(
-    //         deal.head.typeOfDeal != uint8(TypeOfDeal.FreeGift),
-    //         "FreeGift deal cannot be revoked"
-    //     );
-
-    //     require(
-    //         deal.body.state == uint8(StateOfDeal.Cleared),
-    //         "wrong state of Deal"
-    //     );
-
-    //     require(
-    //         deal.hashLock == keccak256(bytes(hashKey)),
-    //         "hashKey NOT correct"
-    //     );
-
-    //     deal.body.state = uint8(StateOfDeal.Terminated);
-
-    //     _increaseCounterOfClosedDeal(repo);
-    //     flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
-    // }
-
     function terminateDeal(Repo storage repo, uint256 seqOfDeal) public returns(bool flag){
         Body storage body = repo.deals[seqOfDeal].body;
 
-        require(body.state == uint8(StateOfDeal.Locked), "IA.TD: wrong stateOfDeal");
+        require(body.state == uint8(StateOfDeal.Locked) ||
+            body.state == uint8(StateOfDeal.Cleared)
+            , "IA.TD: wrong stateOfDeal");
 
         body.state = uint8(StateOfDeal.Terminated);
 
@@ -338,9 +309,36 @@ library DealsRepo {
         repo.deals[0].head.seqOfDeal++;
     }
 
-    function setTypeOfIA(Repo storage repo, uint t) public {
-        repo.deals[0].head.typeOfDeal = uint8(t);
+    function calTypeOfIA(Repo storage repo) public {
+        uint[3] memory types;
+
+        uint[] memory seqList = repo.seqList.values();
+        uint len = seqList.length;
+        
+        while (len > 0) {
+            uint typeOfDeal = repo.deals[seqList[len-1]].head.typeOfDeal;
+            len--;
+
+            if (typeOfDeal == 1) {
+                if (types[0] == 0) types[0] = 1;
+                continue;
+            } else if (typeOfDeal == 2) {
+                if (types[1] == 0) types[1] = 2;
+                continue;
+            } else if (typeOfDeal == 3) {
+                if (types[2] == 0) types[2] = 3;
+                continue;
+            }
+        }
+
+        uint8 sum = uint8(types[0] + types[1] + types[2]);
+        repo.deals[0].head.typeOfDeal = (sum == 3)
+                ? (types[2] == 0)
+                    ? 7
+                    : 3
+                : sum;
     }
+
 
     //  ################################
     //  ##       查询接口              ##

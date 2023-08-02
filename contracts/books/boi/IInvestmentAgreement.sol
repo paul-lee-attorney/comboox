@@ -65,7 +65,7 @@ interface IInvestmentAgreement {
 
     function takeGift(uint256 seq) external returns(bool);
 
-    function setTypeOfIA(uint t) external;
+    function finalizeIA() external;
 
     //  #####################
     //  ##     查询接口     ##

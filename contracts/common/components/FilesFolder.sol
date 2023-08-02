@@ -34,7 +34,7 @@ contract FilesFolder is IFilesFolder, AccessControl {
         RulesParser.VotingRule memory vr,
         bytes32 docUrl,
         bytes32 docHash
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.circulateFile(body, signingDays, closingDays, vr, docUrl, docHash);
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Circulated));
     }

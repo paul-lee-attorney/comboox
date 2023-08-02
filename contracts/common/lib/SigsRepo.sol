@@ -108,7 +108,7 @@ library SigsRepo {
         public 
     {
         require(block.timestamp < getSigDeadline(p) ||
-            getSigDeadline(p) == 0,
+            getSigningDays(p) == 0,
             "SR.SD: missed sigDeadline");
 
         require(!established(p),

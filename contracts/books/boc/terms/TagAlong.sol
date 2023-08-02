@@ -22,12 +22,16 @@ contract TagAlong is DragAlong {
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {        
         IMeetingMinutes _gmm = _getGK().getGMM();
 
-        require(_gmm.isPassed(uint256(uint160(ia))), "motion NOT passed");
+        uint seqOfMotion = _getGK().getBOI().getHeadOfFile(ia).seqOfMotion;
+
+        require(_gmm.isPassed(seqOfMotion), "motion NOT passed");
 
         if (!isTriggered(ia, deal)) return true;
 
+        // uint seqOfMotion = _getGK().getBOI().getHeadOfFile(ia).seqOfMotion;
+
         uint256[] memory consentParties = _gmm.getCaseOfAttitude(
-            uint256(uint160(ia)),
+            seqOfMotion,
             1
         ).voters;
 

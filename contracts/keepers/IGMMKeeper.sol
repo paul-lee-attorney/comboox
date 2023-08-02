@@ -43,7 +43,7 @@ interface IGMMKeeper {
         uint proposer
     ) external;
 
-    function entrustDelegaterForGeneralMeeting(uint256 motionId, uint delegate, uint caller) external;
+    function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate, uint caller) external;
 
     function proposeMotionToGeneralMeeting(uint256 seqOfMotion,uint caller) external;
 

@@ -154,7 +154,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
         );
 
         IAccessControl(doc.body).init(
-            primeKeyOfCaller,
+            address(this),
             address(this),
             address(_getRC()),
             address(_gk)
@@ -171,7 +171,7 @@ contract BOPKeeper is IBOPKeeper, AccessControl {
     ) private returns (DealsRepo.Deal memory) {
         deal.head.seqOfDeal = _ia.regDeal(deal);
 
-        _ia.setTypeOfIA(deal.head.typeOfDeal);
+        _ia.finalizeIA();
 
         IGeneralKeeper _gk = _getGK();
 

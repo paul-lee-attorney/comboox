@@ -119,8 +119,9 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         emit CloseDeal(seq, "0");
     }
 
-    function setTypeOfIA(uint t) external attorneyOrKeeper() {
-        _repo.setTypeOfIA(t);
+    function finalizeIA() external {
+        _repo.calTypeOfIA();
+        lockContents();
     }
 
     //  #################################

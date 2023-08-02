@@ -153,12 +153,12 @@ contract AntiDilution is IAntiDilution, AccessControl {
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
         if (!isTriggered(ia, deal)) return true;
 
-        uint256 motionId = uint256(uint160(ia));
+        uint seqOfMotion = _getGK().getBOI().getHeadOfFile(ia).seqOfMotion;
         
         uint256[] memory parties = ISigPage(ia).getParties();
 
         uint256[] memory supporters = _getGK().getGMM().
-            getCaseOfAttitude(motionId, 1).voters;
+            getCaseOfAttitude(seqOfMotion, 1).voters;
         
         uint256[] memory consentParties = parties.merge(supporters);        
 
