@@ -24,12 +24,14 @@ library BallotsBox {
         uint48 sigDate;
         uint64 blocknumber;
         bytes32 sigHash;
+        uint[] principals;
     }
 
     struct Case {
         uint32 sumOfHead;
         uint64 sumOfWeight;
         uint256[] voters;
+        uint256[] principals;
     }
 
     struct Box {
@@ -47,7 +49,8 @@ library BallotsBox {
         uint attitude,
         uint head,
         uint weight,
-        bytes32 sigHash
+        bytes32 sigHash,
+        uint[] memory principals
     ) public returns (bool flag) {
         // uint40 voter = uint40(acct);        
         require(
@@ -67,24 +70,41 @@ library BallotsBox {
                 weight: uint64(weight),
                 sigDate: uint48(block.timestamp),
                 blocknumber: uint64(block.number),
-                sigHash: sigHash
+                sigHash: sigHash,
+                principals: principals
             });
 
-            Case storage c = box.cases[attitude];
+            // Case storage c = box.cases[attitude];
 
-            c.sumOfHead += b.head;
-            c.sumOfWeight += b.weight;
-            c.voters.push(acct);
+            // c.sumOfHead += b.head;
+            // c.sumOfWeight += b.weight;
+            // c.voters.push(acct);
 
-            c = box.cases[uint8(AttitudeOfVote.All)];
+            // c = box.cases[uint8(AttitudeOfVote.All)];
 
-            c.sumOfHead += b.head;
-            c.sumOfWeight += b.weight;
-            c.voters.push(acct);
+            // c.sumOfHead += b.head;
+            // c.sumOfWeight += b.weight;
+            // c.voters.push(acct);
+
+            _pushToCase(box.cases[attitude], b);
+            _pushToCase(box.cases[uint8(AttitudeOfVote.All)], b);
 
             flag = true;
         }
     }
+
+    function _pushToCase(Case storage c, Ballot memory b) private {
+            c.sumOfHead += b.head;
+            c.sumOfWeight += b.weight;
+            c.voters.push(b.acct);
+            
+            uint len = b.principals.length;
+            while (len > 0) {
+                c.principals.push(b.principals[len - 1]);
+                len--;
+            }
+    }
+
 
     // #################
     // ##    Read     ##

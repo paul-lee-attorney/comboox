@@ -39,7 +39,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
     }
 
     //##################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //##################
 
     // ==== IssueShare ====
@@ -47,7 +47,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) 
         external onlyKeeper
     {
-        IBookOfMembers _bom = _getGK().getBOM();
+        IRegisterOfMembers _rom = _getGK().getROM();
 
         SharesRepo.Share memory newShare = 
             _repo.addShare(shareNumber, payInDeadline, paid, par);
@@ -55,9 +55,9 @@ contract BookOfShares is IBookOfShares, AccessControl {
         require ( newShare.head.issueDate <= newShare.body.payInDeadline, 
             "BOS.issueShare: issueDate later than payInDeadline");
 
-        _bom.addMember(newShare.head.shareholder);
-        _bom.addShareToMember(newShare);
-        _bom.capIncrease(paid, par);
+        _rom.addMember(newShare.head.shareholder);
+        _rom.addShareToMember(newShare);
+        _rom.capIncrease(paid, par);
 
         emit IssueShare(newShare.head.codifyHead(), paid, par);
     }
@@ -66,7 +66,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
         public onlyKeeper returns(SharesRepo.Share memory newShare)
     {
         newShare = _repo.regShare(share);
-        _getGK().getBOM().addShareToMember(newShare);
+        _getGK().getROM().addShareToMember(newShare);
 
         emit IssueShare(newShare.head.codifyHead(), newShare.body.paid, newShare.body.par);
     }
@@ -92,7 +92,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) 
         external onlyDK
     {
-        IBookOfMembers _bom = _getGK().getBOM();
+        IRegisterOfMembers _rom = _getGK().getROM();
 
         LockersRepo.Head memory head = 
             _lockers.pickupPoints(hashLock, hashKey, 0);
@@ -101,8 +101,8 @@ contract BookOfShares is IBookOfShares, AccessControl {
             // require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
             _payInCapital(share, head.value);
-            _bom.changeAmtOfMember(share.head.shareholder, head.value, 0, head.value, true);
-            _bom.capIncrease(head.value, 0);
+            _rom.changeAmtOfMember(share.head.shareholder, head.value, 0, head.value, true);
+            _rom.capIncrease(head.value, 0);
         }
     }
 
@@ -128,7 +128,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _getGK().getBOM().addMember(to);
+        _getGK().getROM().addMember(to);
 
         SharesRepo.Share memory newShare;
 
@@ -167,7 +167,7 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _getGK().getBOM().capDecrease(paid, par);
+        _getGK().getROM().capDecrease(paid, par);
     }
 
     // ==== cleanAmt ====
@@ -177,13 +177,13 @@ contract BookOfShares is IBookOfShares, AccessControl {
     {
         IGeneralKeeper _gk = _getGK();
 
-        require(msg.sender == address(_gk.getBOP()) ||
-        _gk.isKeeper(msg.sender), "BOS.DCP: neither keeper nor BOP");
+        require(msg.sender == address(_gk.getROP()) ||
+        _gk.isKeeper(msg.sender), "BOS.DCP: neither keeper nor ROP");
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
         share.decreaseCleanPaid(paid);
-        _gk.getBOM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, false);
+        _gk.getROM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, false);
         emit DecreaseCleanPaid(seqOfShare, paid);
     }
 
@@ -192,13 +192,13 @@ contract BookOfShares is IBookOfShares, AccessControl {
     {
         IGeneralKeeper _gk = _getGK();
 
-        require(msg.sender == address(_gk.getBOP()) ||
-        _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor BOP");
+        require(msg.sender == address(_gk.getROP()) ||
+        _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor ROP");
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
         share.increaseCleanPaid(paid);
-        _gk.getBOM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, true);
+        _gk.getROM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, true);
         emit IncreaseCleanPaid(seqOfShare, paid);
     }
 
@@ -234,14 +234,14 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function _decreaseShareAmt(SharesRepo.Share storage share, uint paid, uint par) 
         private 
     {
-        IBookOfMembers _bom = _getGK().getBOM();
+        IRegisterOfMembers _rom = _getGK().getROM();
 
         if (par == share.body.par) {
-            _bom.removeShareFromMember(share);
+            _rom.removeShareFromMember(share);
             _repo.deregShare(share.head.seqOfShare);
         } else {
             _subAmtFromShare(share, paid, par);
-            _bom.changeAmtOfMember(
+            _rom.changeAmtOfMember(
                 share.head.shareholder,
                 paid,
                 par,

@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/boi/IInvestmentAgreement.sol";
+import "../../books/roa/IInvestmentAgreement.sol";
 
 // import "./DealsRepo.sol";
 
@@ -47,7 +47,7 @@ library TopChain {
     }
 
     //#################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //#################
 
     // ==== Setting ====

@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/boi/IInvestmentAgreement.sol";
+import "../books/roa/IInvestmentAgreement.sol";
 
 import "../common/lib/MotionsRepo.sol";
 import "../common/lib/OfficersRepo.sol";

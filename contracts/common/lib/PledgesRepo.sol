@@ -57,7 +57,7 @@ library PledgesRepo {
     }
 
     //##################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //##################
 
     function snParser(bytes32 sn) public pure returns (Head memory head) {

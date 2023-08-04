@@ -9,7 +9,7 @@ pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
 
-import "./IBODKeeper.sol";
+import "./IRODKeeper.sol";
 
 contract BMMKeeper is IBMMKeeper, AccessControl {
     using RulesParser for bytes32;
@@ -21,7 +21,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
     //##################
 
     modifier directorExist(uint256 acct) {
-        require(_getGK().getBOD().isDirector(acct), 
+        require(_getGK().getROD().isDirector(acct), 
             "BODK.DE: not director");
         _;
     }
@@ -40,12 +40,12 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint nominator
     ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
-        IBookOfDirectors _bod = _gk.getBOD();
+        IRegisterOfDirectors _rod = _gk.getROD();
         
-        require(_bod.hasNominationRight(seqOfPos, nominator),
+        require(_rod.hasNominationRight(seqOfPos, nominator),
             "BMMKeeper.nominateOfficer: no rights");
      
-        _gk.getBMM().nominateOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, candidate, nominator);
+        _gk.getBMM().nominateOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, candidate, nominator);
     }
 
     function createMotionToRemoveOfficer(
@@ -53,12 +53,12 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint nominator
     ) external onlyDK directorExist(nominator) {
         IGeneralKeeper _gk = _getGK();
-        IBookOfDirectors _bod = _gk.getBOD();
+        IRegisterOfDirectors _rod = _gk.getROD();
         
-        require(_bod.hasNominationRight(seqOfPos, nominator),
+        require(_rod.hasNominationRight(seqOfPos, nominator),
             "BODK.createMotionToRemoveOfficer: no rights");
 
-        _gk.getBMM().createMotionToRemoveOfficer(seqOfPos, _bod.getPosition(seqOfPos).seqOfVR, nominator);
+        _gk.getBMM().createMotionToRemoveOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, nominator);
     }
 
     // ---- Docs ----
@@ -133,7 +133,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
             address doc = address(uint160(motion.contents));
             
             OfficersRepo.Position[] memory poses = 
-                _gk.getBOD().getFullPosInfoInHand(caller);
+                _gk.getROD().getFullPosInfoInHand(caller);
             uint256 len = poses.length;            
             while (len > 0) {
                 require (!ISigPage(doc).isSigner(poses[len-1].nominator), 
@@ -153,7 +153,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
     {
         IGeneralKeeper _gk = _getGK();
 
-        IBookOfDirectors _bod = _gk.getBOD();
+        IRegisterOfDirectors _rod = _gk.getROD();
         IMeetingMinutes _bmm = _gk.getBMM();
         
         MotionsRepo.Motion memory motion = 
@@ -162,7 +162,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         MotionsRepo.VoteCalBase memory base;
         BallotsBox.Case memory case0 = _bmm.getCaseOfAttitude(seqOfMotion, 0);
 
-        uint32 numOfDirectors = uint32(_bod.getNumOfDirectors());
+        uint32 numOfDirectors = uint32(_rod.getNumOfDirectors());
         base.attendHeadRatio = uint16(case0.sumOfHead * 10000 / numOfDirectors);
 
         if (motion.votingRule.onlyAttendance) {
@@ -184,7 +184,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
 
                 while (len > 0) {
                     uint32 voteHead = 
-                        uint32(_bod.getBoardSeatsOccupied(uint40(parties[len - 1])));
+                        uint32(_rod.getBoardSeatsOccupied(uint40(parties[len - 1])));
 
                     if (voteHead > 0) {
                         if (motion.votingRule.partyAsConsent) {

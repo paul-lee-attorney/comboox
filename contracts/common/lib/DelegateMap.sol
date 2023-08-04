@@ -7,8 +7,8 @@
 
 pragma solidity ^0.8.8;
 
-import "../../books/bom/IBookOfMembers.sol";
-import "../../books/bod/IBookOfDirectors.sol";
+import "../../books/rom/IRegisterOfMembers.sol";
+import "../../books/rod/IRegisterOfDirectors.sol";
 
 library DelegateMap {
 
@@ -22,7 +22,7 @@ library DelegateMap {
         uint64 weight;
         uint64 repWeight;
         uint32 repHead;
-        uint40[] principals;
+        uint[] principals;
     }
 
     struct Map {
@@ -58,11 +58,20 @@ library DelegateMap {
             d.repWeight += (p.repWeight + p.weight);
             // d.repHead += p.repHead;
             // d.repWeight += p.repWeight;
-
             d.principals.push(uint40(principal));
+            _consolidatePrincipals(p.principals, d);
 
             flag = true;
         }
+    }
+
+    function _consolidatePrincipals(uint[] memory principals, Voter storage d) private {
+        uint len = principals.length;
+
+        while (len > 0) {
+            d.principals.push(principals[len-1]);
+            len--;
+        }        
     }
 
     // #################
@@ -80,37 +89,62 @@ library DelegateMap {
         }
     }
 
-    function getLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IBookOfMembers _bom)
-        public view returns(LeavesInfo memory info)
+    function updateLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IRegisterOfMembers _rom)
+        public
     {
-        Voter memory voter = map.voters[acct];
+        LeavesInfo memory info;
+        Voter storage voter = map.voters[acct];
 
-        uint40[] memory leaves = voter.principals;
+        uint[] memory leaves = voter.principals;
         uint256 len = leaves.length;
         while (len > 0) {
-            LeavesInfo memory lv = getLeavesWeightAtDate(map, leaves[len-1], baseDate, _bom);
-            info.weight += lv.weight;
-            info.emptyHead += lv.emptyHead;
+            // LeavesInfo memory lv = getLeavesWeightAtDate(map, leaves[len-1], baseDate, _rom);
+            // info.weight += lv.weight;
+            // info.emptyHead += lv.emptyHead;
+
+            info = _checkVoteInfo(leaves[len - 1], baseDate, _rom, info);
+
             len--;
         }
         
-        if (voter.weight == 0) {
-            uint64 w = _bom.votesAtDate(acct, baseDate);
-            if (w > 0) info.weight += w;
-            else info.emptyHead ++;
-        }
+        voter.weight = _rom.votesAtDate(acct, baseDate);
+        voter.repWeight = info.weight;
+        voter.repHead = uint32(leaves.length) - info.emptyHead;
+
+        // info = _checkVoteInof(acct, baseDate, _rom, info);
+
+        // if (voter.weight == 0) {
+        //     uint64 w = _rom.votesAtDate(acct, baseDate);
+        //     if (w > 0) info.weight += w;
+        //     else info.emptyHead ++;
+        // }
     }
 
-    function getLeavesHeadcountOfDirectors(Map storage map, uint256 acct, IBookOfDirectors _bod) 
-        public view returns (uint32 head) 
+    function _checkVoteInfo(uint acct, uint baseDate, IRegisterOfMembers _rom, LeavesInfo memory input) 
+        private view returns(LeavesInfo memory) 
     {
-        uint40[] memory leaves = map.voters[acct].principals;
+        uint64 w = _rom.votesAtDate(acct, baseDate);
+        if (w > 0) input.weight += w;
+        else input.emptyHead ++;
+
+        return input;
+    }
+
+    function updateLeavesHeadcountOfDirectors(Map storage map, uint256 acct, IRegisterOfDirectors _rod) 
+        public 
+    {
+        uint[] memory leaves = map.voters[acct].principals;
         uint256 len = leaves.length;
+
+        uint32 repHead;        
         while (len > 0) {
-            head += getLeavesHeadcountOfDirectors(map, leaves[len-1], _bod);
+            // head += getLeavesHeadcountOfDirectors(map, leaves[len-1], _rod);
+            if (_rod.isDirector(acct)) repHead++;
             len--;
         }
 
-        if (_bod.isDirector(acct)) head++;
+        map.voters[acct].repHead = repHead;
+
+        // if (_rod.isDirector(acct)) repHead++;
     }
 }

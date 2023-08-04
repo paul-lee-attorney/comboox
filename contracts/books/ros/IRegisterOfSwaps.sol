@@ -35,7 +35,7 @@ interface IRegisterOfSwaps {
     event RevokeSwap(uint256 indexed seqOfSwap);
 
     //#################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //#################
 
     function createSwap(

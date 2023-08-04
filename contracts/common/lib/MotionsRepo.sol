@@ -12,7 +12,7 @@ import "./DelegateMap.sol";
 import "./EnumerableSet.sol";
 import "./RulesParser.sol";
 
-import "../../books/boc/IShareholdersAgreement.sol";
+import "../../books/roc/IShareholdersAgreement.sol";
 
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
@@ -91,7 +91,7 @@ library MotionsRepo {
     }
 
     //##################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //##################
 
     // ==== snParser ====
@@ -163,8 +163,8 @@ library MotionsRepo {
         uint256 seqOfMotion,
         uint delegate,
         uint principal,
-        IBookOfMembers _bom,
-        IBookOfDirectors _bod
+        IRegisterOfMembers _rom,
+        IRegisterOfDirectors _rod
     ) public returns (bool flag) {
         Motion storage m = repo.motions[seqOfMotion];
 
@@ -172,12 +172,12 @@ library MotionsRepo {
             m.body.state == uint8(StateOfMotion.Proposed) , 
             "MR.EntrustDelegate: wrong state");
 
-        if (_bom.isMember(delegate) && _bom.isMember(principal)) {
+        if (_rom.isMember(delegate) && _rom.isMember(principal)) {
             uint64 weight;
             if (m.body.shareRegDate > 0 && block.timestamp >= m.body.shareRegDate) 
-                weight = _bom.votesAtDate(principal, m.body.shareRegDate);    
+                weight = _rom.votesAtDate(principal, m.body.shareRegDate);    
             return repo.records[seqOfMotion].map.entrustDelegate(principal, delegate, weight);
-        } else if (_bod.isDirector(delegate) && _bod.isDirector(principal)) {
+        } else if (_rod.isDirector(delegate) && _rod.isDirector(principal)) {
             return repo.records[seqOfMotion].map.entrustDelegate(principal, delegate, 0);
         } else revert ("MR.entrustDelegate: not both Members or Directors");        
     }
@@ -188,8 +188,8 @@ library MotionsRepo {
         Repo storage repo,
         uint256 seqOfMotion,
         IShareholdersAgreement _sha,
-        IBookOfMembers _bom,
-        IBookOfDirectors _bod,
+        IRegisterOfMembers _rom,
+        IRegisterOfDirectors _rod,
         uint caller
     ) public {
 
@@ -198,8 +198,8 @@ library MotionsRepo {
             ? RulesParser.SHA_INIT_GR.governanceRuleParser()
             : _sha.getRule(0).governanceRuleParser();
 
-        require(_memberProposalRightCheck(repo, seqOfMotion, gr, caller, _bom) ||
-            _directorProposalRightCheck(repo, seqOfMotion, caller, gr.proposeHeadRatioOfDirectorsInGM, _bod),
+        require(_memberProposalRightCheck(repo, seqOfMotion, gr, caller, _rom) ||
+            _directorProposalRightCheck(repo, seqOfMotion, caller, gr.proposeHeadRatioOfDirectorsInGM, _rod),
             "MR.PMTGM: has no proposalRight");
 
         _proposeMotion(repo, seqOfMotion, _sha, caller);
@@ -247,27 +247,28 @@ library MotionsRepo {
         uint seqOfMotion,
         RulesParser.GovernanceRule memory gr,
         uint caller,
-        IBookOfMembers _bom
-    ) private view returns(bool) {
-        if (!_bom.isMember(caller)) return false;
+        IRegisterOfMembers _rom
+    ) private returns(bool) {
+        if (!_rom.isMember(caller)) return false;
 
-        uint totalVotes = _bom.totalVotes();
+        uint totalVotes = _rom.totalVotes();
 
         if (gr.proposeWeightRatioOfGM > 0 &&
-            _bom.votesInHand(caller) * 10000 / totalVotes >= gr.proposeWeightRatioOfGM)
+            _rom.votesInHand(caller) * 10000 / totalVotes >= gr.proposeWeightRatioOfGM)
                 return true;
 
         Record storage r = repo.records[seqOfMotion];
+        r.map.updateLeavesWeightAtDate(caller, uint48(block.timestamp), _rom);
 
-        DelegateMap.LeavesInfo memory info = 
-            r.map.getLeavesWeightAtDate(caller, uint48(block.timestamp), _bom);
+        DelegateMap.Voter memory voter = r.map.voters[caller];
+
 
         if (gr.proposeWeightRatioOfGM > 0 && 
-            info.weight * 10000 / totalVotes >= gr.proposeWeightRatioOfGM)
+            (voter.weight + voter.repWeight) * 10000 / totalVotes >= gr.proposeWeightRatioOfGM)
                 return true;
 
         if (gr.proposeHeadRatioOfMembers > 0 &&
-            (r.map.voters[caller].repHead + 1 - info.emptyHead) * 10000 / _bom.getNumOfMembers() >= 
+            (voter.repHead + 1) * 10000 / _rom.getNumOfMembers() >= 
                 gr.proposeHeadRatioOfMembers)
                     return true;
         
@@ -279,14 +280,15 @@ library MotionsRepo {
         uint seqOfMotion,
         uint caller,
         uint16 proposalThreshold,
-        IBookOfDirectors _bod
-    ) private view returns (bool) {
-        if (!_bod.isDirector(caller)) return false;
+        IRegisterOfDirectors _rod
+    ) private returns (bool) {
+        if (!_rod.isDirector(caller)) return false;
 
-        uint totalHead = _bod.getNumOfDirectors();
+        uint totalHead = _rod.getNumOfDirectors();
+        repo.records[seqOfMotion].map.updateLeavesHeadcountOfDirectors(caller, _rod);
 
         if (proposalThreshold > 0 &&
-            repo.records[seqOfMotion].map.getLeavesHeadcountOfDirectors(caller, _bod) * 10000 / totalHead >=
+            (repo.records[seqOfMotion].map.voters[caller].repHead + 1) * 10000 / totalHead >=
                 proposalThreshold)
                     return true;
 
@@ -297,7 +299,7 @@ library MotionsRepo {
         Repo storage repo,
         uint256 seqOfMotion,
         IShareholdersAgreement _sha,
-        IBookOfDirectors _bod,
+        IRegisterOfDirectors _rod,
         uint caller
     ) public {
 
@@ -308,7 +310,7 @@ library MotionsRepo {
             _directorProposalRightCheck(
                 repo, seqOfMotion, caller, 
                 gr.proposeHeadRatioOfDirectorsInBoard, 
-                _bod
+                _rod
             ),
             "MR.PMTB: has no proposalRight");
 
@@ -323,27 +325,24 @@ library MotionsRepo {
         uint256 acct,
         uint attitude,
         bytes32 sigHash,
-        IBookOfMembers _bom
+        IRegisterOfMembers _rom
     ) public {
 
-        require(_bom.isMember(acct), "MR.castVoteInGM: not Member");
+        require(_rom.isMember(acct), "MR.castVoteInGM: not Member");
 
         Motion storage m = repo.motions[seqOfMotion];
         Record storage r = repo.records[seqOfMotion];
         DelegateMap.Voter storage voter = r.map.voters[acct];
 
-        uint32 headcount = 1;
-        uint64 weight = _bom.votesAtDate(acct, m.body.shareRegDate);
+        // uint32 headcount = 1;
+        // uint64 weight = _rom.votesAtDate(acct, m.body.shareRegDate);
 
-        if (voter.repHead > 0) {
-            DelegateMap.LeavesInfo memory info = 
-                r.map.getLeavesWeightAtDate(acct, m.body.shareRegDate, _bom);
+        r.map.updateLeavesWeightAtDate(acct, m.body.shareRegDate, _rom);
 
-            weight = voter.repWeight + info.weight;
-            headcount = voter.repHead + 1 - info.emptyHead;
-        }
+        // weight += voter.repWeight;
+        // headcount = voter.repHead + 1;
 
-        _castVote(repo, seqOfMotion, acct, attitude, headcount, weight, sigHash);
+        _castVote(repo, seqOfMotion, acct, attitude, voter.repHead + 1, voter.weight + voter.repWeight, sigHash);
     }
 
     function castVoteInBoardMeeting(
@@ -352,20 +351,21 @@ library MotionsRepo {
         uint256 acct,
         uint attitude,
         bytes32 sigHash,
-        IBookOfDirectors _bod
+        IRegisterOfDirectors _rod
     ) public {
-        require(_bod.isDirector(acct), "MR.CVBM: not Director");
+        require(_rod.isDirector(acct), "MR.CVBM: not Director");
 
         Record storage r = repo.records[seqOfMotion];
 
         DelegateMap.Voter storage voter = r.map.voters[acct];
 
-        uint32 headcount = 1;
-        if (voter.repHead > 0) {
-            headcount = r.map.getLeavesHeadcountOfDirectors(acct, _bod);
-        }
+        // uint32 headcount = 1;
+        // if (voter.repHead > 0) {
+        r.map.updateLeavesHeadcountOfDirectors(acct, _rod);
+        //     headcount += voter.repHead;
+        // }
 
-        _castVote(repo, seqOfMotion, acct, attitude, headcount, 0, sigHash);
+        _castVote(repo, seqOfMotion, acct, attitude, voter.repHead + 1, 0, sigHash);
     }
 
     function _castVote(
@@ -382,11 +382,12 @@ library MotionsRepo {
         require(!voteEnded(repo, seqOfMotion), "MR.CV: vote is Ended");
 
         Record storage r = repo.records[seqOfMotion];
+        DelegateMap.Voter storage voter = r.map.voters[acct];
 
-        require(r.map.voters[acct].delegate == 0, 
+        require(voter.delegate == 0, 
             "MR.CV: entrusted delegate");
 
-        r.box.castVote(acct, attitude, headcount, weight, sigHash);
+        r.box.castVote(acct, attitude, headcount, weight, sigHash, voter.principals);
     }
 
 
@@ -507,26 +508,34 @@ library MotionsRepo {
         return repo.records[seqOfMotion].map.getDelegateOf(acct);
     }
 
-    function getLeavesWeightAtDate(
-        Repo storage repo, 
-        uint256 seqOfMotion, 
-        uint acct,
-        uint baseDate, 
-        IBookOfMembers _bom
-    ) public view returns(DelegateMap.LeavesInfo memory info)
-    {
-        info = repo.records[seqOfMotion].map.getLeavesWeightAtDate(acct, baseDate, _bom);
-    }
+    // function getLeavesWeightAtDate(
+    //     Repo storage repo, 
+    //     uint256 seqOfMotion, 
+    //     uint acct,
+    //     uint baseDate, 
+    //     IRegisterOfMembers _rom
+    // ) public view returns(uint64 weight)
+    // {
+    //     repo.records[seqOfMotion].map.updateLeavesWeightAtDate(acct, baseDate, _rom);
 
-    function getLeavesHeadcountOfDirectors(
-        Repo storage repo, 
-        uint256 seqOfMotion, 
-        uint acct,
-        IBookOfDirectors _bod
-    ) public view returns(uint32 head)
-    {
-        head = repo.records[seqOfMotion].map.getLeavesHeadcountOfDirectors(acct, _bod);
-    }
+    //     DelegateMap.Voter storage voter = repo.records[seqOfMotion].map.voters[acct];
+
+    //     weight = voter.weight + voter.repWeight;
+    // }
+
+    // function getLeavesHeadcountOfDirectors(
+    //     Repo storage repo, 
+    //     uint256 seqOfMotion, 
+    //     uint acct,
+    //     IRegisterOfDirectors _rod
+    // ) public view returns(uint32 head)
+    // {
+    //     repo.records[seqOfMotion].map.updateLeavesHeadcountOfDirectors(acct, _rod);
+
+    //     DelegateMap.Voter storage voter = repo.records[seqOfMotion].map.voters[acct];
+
+    //     head = voter.repHead + 1;
+    // }
 
 
     // ==== motion ====

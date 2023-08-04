@@ -22,7 +22,7 @@ library Checkpoints {
     }
 
     //##################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //##################
 
     function push(

@@ -8,7 +8,7 @@
 pragma solidity ^0.8.8;
 
 
-import "../../books/bom/IBookOfMembers.sol";
+import "../../books/rom/IRegisterOfMembers.sol";
 
 library FRClaims {
 
@@ -37,7 +37,7 @@ library FRClaims {
     }
 
     //##################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //##################
 
     function execFirstRefusalRight(
@@ -68,7 +68,7 @@ library FRClaims {
     function acceptFirstRefusalClaims(
         Claims storage cls,
         uint256 seqOfDeal,
-        IBookOfMembers rom
+        IRegisterOfMembers rom
     ) public returns (Claim[] memory output) {
 
         require(isTargetDeal(cls, seqOfDeal), "FRD.AFRC: no claims received");

@@ -17,7 +17,7 @@ contract FilesFolder is IFilesFolder, AccessControl {
     FilesRepo.Repo internal _repo;
 
     //##################
-    //##    写接口     ##
+    //##  Write I/O   ##
     //##################
 
     function regFile(bytes32 snOfDoc, address body)

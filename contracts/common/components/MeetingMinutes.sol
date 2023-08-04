@@ -140,7 +140,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     ) public onlyDK {
         IGeneralKeeper _gk = _getGK();
 
-        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _gk.getBOM(), _gk.getBOD(), proposer);
+        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _gk.getROM(), _gk.getROD(), proposer);
         emit ProposeMotionToGeneralMeeting(seqOfMotion, proposer);
     }
 
@@ -150,7 +150,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
 
-        _repo.proposeMotionToBoard(seqOfMotion, _gk.getSHA(), _gk.getBOD(), caller);
+        _repo.proposeMotionToBoard(seqOfMotion, _gk.getSHA(), _gk.getROD(), caller);
         emit ProposeMotionToBoard(seqOfMotion, caller);
     }
 
@@ -163,7 +163,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
 
-        _repo.entrustDelegate(seqOfMotion, delegate, principal, _gk.getBOM(), _gk.getBOD());
+        _repo.entrustDelegate(seqOfMotion, delegate, principal, _gk.getROM(), _gk.getROD());
         emit EntrustDelegate(seqOfMotion, delegate, principal);
     }
 
@@ -175,7 +175,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _getGK().getBOM());
+        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _getGK().getROM());
         emit CastVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -185,7 +185,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _getGK().getBOD());
+        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _getGK().getROD());
         emit CastVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -267,22 +267,22 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         return _repo.getDelegateOf(seqOfMotion, acct);
     }
 
-    function getLeavesWeightAtDate(
-        uint256 seqOfMotion, 
-        uint caller,
-        uint baseDate
-    ) external view returns(DelegateMap.LeavesInfo memory info)
-    {
-        info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _getGK().getBOM());
-    }
+    // function getLeavesWeightAtDate(
+    //     uint256 seqOfMotion, 
+    //     uint caller,
+    //     uint baseDate
+    // ) external view returns(DelegateMap.LeavesInfo memory info)
+    // {
+    //     info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _getGK().getROM());
+    // }
 
-    function getLeavesHeadcountOfDirectors(
-        uint256 seqOfMotion, 
-        uint caller
-    ) external view returns(uint32 head)
-    {
-        head = _repo.getLeavesHeadcountOfDirectors(seqOfMotion, caller, _getGK().getBOD());
-    }
+    // function getLeavesHeadcountOfDirectors(
+    //     uint256 seqOfMotion, 
+    //     uint caller
+    // ) external view returns(uint32 head)
+    // {
+    //     head = _repo.getLeavesHeadcountOfDirectors(seqOfMotion, caller, _getGK().getROD());
+    // }
 
     // ==== motion ====
 

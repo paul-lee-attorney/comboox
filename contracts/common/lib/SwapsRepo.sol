@@ -8,7 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../../IGeneralKeeper.sol";
-import "../../books/bom/IBookOfMembers.sol";
+import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/bos/IBookOfShares.sol";
 
 import "./EnumerableSet.sol";
@@ -62,7 +62,7 @@ library SwapsRepo {
     }
 
     //##################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //##################
 
     function snParser(bytes32 sn) public pure returns (Head memory head) {
@@ -133,10 +133,10 @@ library SwapsRepo {
         Swap memory swap,
         IGeneralKeeper _gk
     ) public returns(Swap memory){
-        IBookOfMembers _bom = _gk.getBOM();
-        require(_bom.isClassMember(swap.head.obligor, swap.head.classOfTarget), 
+        IRegisterOfMembers _rom = _gk.getROM();
+        require(_rom.isClassMember(swap.head.obligor, swap.head.classOfTarget), 
             "SR.RS: obligor not memberOfTargetClass");
-        require(_bom.isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
+        require(_rom.isClassMember(swap.body.rightholder, swap.head.classOfConsider), 
             "SR.RS: rightholder not memberOfConsiderClass");
 
         require(block.timestamp <= swap.head.triggerDate, "SR.RS: triggerDate not future");

@@ -33,7 +33,7 @@ interface IMeetingMinutes {
     event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
 
     //#################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //#################
 
     // function addMotion(
@@ -144,16 +144,16 @@ interface IMeetingMinutes {
     function getDelegateOf(uint256 seqOfMotion, uint acct)
         external view returns (uint);
 
-    function getLeavesWeightAtDate(
-        uint256 seqOfMotion, 
-        uint caller,
-        uint baseDate
-    ) external view returns(DelegateMap.LeavesInfo memory info);
+    // function getLeavesWeightAtDate(
+    //     uint256 seqOfMotion, 
+    //     uint caller,
+    //     uint baseDate
+    // ) external view returns(DelegateMap.LeavesInfo memory info);
 
-    function getLeavesHeadcountOfDirectors(
-        uint256 seqOfMotion, 
-        uint caller
-    ) external view returns(uint32 head);
+    // function getLeavesHeadcountOfDirectors(
+    //     uint256 seqOfMotion, 
+    //     uint caller
+    // ) external view returns(uint32 head);
 
     // ==== motion ====
 

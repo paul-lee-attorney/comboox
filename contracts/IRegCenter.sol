@@ -18,24 +18,24 @@ interface IRegCenter {
 
     enum TypeOfDoc{
         ZeroPoint,
-        BOCKeeper,      // 1
-        BODKeeper,      // 2
+        ROCKeeper,      // 1
+        RODKeeper,      // 2
         BMMKeeper,      // 3
-        BOMKeeper,      // 4
+        ROMKeeper,      // 4
         GMMKeeper,      // 5
-        BOIKeeper,      // 6
-        BOOKeeper,      // 7
-        BOPKeeper,      // 8
+        ROAKeeper,      // 6
+        ROOKeeper,      // 7
+        ROPKeeper,      // 8
         ROSKeeper,      // 9
         SHAKeeper,      // 10
-        BOC,            // 11
-        BOD,            // 12
+        ROC,            // 11
+        ROD,            // 12
         BMM,            // 13
-        BOM,            // 14
+        ROM,            // 14
         GMM,            // 15
-        BOI,            // 16
-        BOO,            // 17
-        BOP,            // 18
+        ROA,            // 16
+        ROO,            // 17
+        ROP,            // 18
         ROS,            // 19
         BOS,            // 20
         GeneralKeeper,  // 21

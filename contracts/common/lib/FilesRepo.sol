@@ -68,7 +68,7 @@ library FilesRepo {
     }
 
     //##################
-    //##    写接口     ##
+    //##  Write I/O   ##
     //##################
 
     function regFile(Repo storage repo, bytes32 snOfDoc, address body) 

@@ -258,7 +258,7 @@ contract RegCenter is IRegCenter {
     }
 
     // ##################
-    // ##   Read I/O   ##
+    // ## Write I/O ##
     // ##################
 
     // ==== options ====

@@ -61,7 +61,7 @@ library CondsRepo {
     }
 
     // ###############
-    // ##   写接口   ##
+    // ## Write I/O ##
     // ###############
 
     // ==== codify / parser ====
@@ -129,7 +129,7 @@ library CondsRepo {
     }
     
     // ##################
-    // ##   Read I/O   ##
+    // ## Write I/O ##
     // ##################
 
     function counterOfConds(Repo storage repo) public view returns(uint32 seqOfCond) {

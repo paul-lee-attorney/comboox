@@ -37,7 +37,7 @@ interface IBookOfShares {
     event WithdrawPayInAmt(uint indexed seqOfShare, uint indexed amount);
 
     //##################
-    //##    写接口    ##
+    //##  Write I/O  ##
     //##################
 
     function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) external;

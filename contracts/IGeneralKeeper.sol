@@ -9,25 +9,25 @@ pragma solidity ^0.8.8;
 
 import "./common/lib/RolesRepo.sol";
 
-import "./keepers/IBOCKeeper.sol";
-import "./keepers/IBODKeeper.sol";
+import "./keepers/IROCKeeper.sol";
+import "./keepers/IRODKeeper.sol";
 import "./keepers/IBMMKeeper.sol";
-import "./keepers/IBOMKeeper.sol";
+import "./keepers/IROMKeeper.sol";
 import "./keepers/IGMMKeeper.sol";
-import "./keepers/IBOIKeeper.sol";
-import "./keepers/IBOOKeeper.sol";
-import "./keepers/IBOPKeeper.sol";
+import "./keepers/IROAKeeper.sol";
+import "./keepers/IROOKeeper.sol";
+import "./keepers/IROPKeeper.sol";
 import "./keepers/IROSKeeper.sol";
 import "./keepers/ISHAKeeper.sol";
 
-import "./books/boi/IBookOfIA.sol";
-import "./books/bod/IBookOfDirectors.sol";
+import "./books/roa/IRegisterOfAgreements.sol";
+import "./books/rod/IRegisterOfDirectors.sol";
 import "./common/components/IMeetingMinutes.sol";
-import "./books/boc/IBookOfConstitution.sol";
-import "./books/boo/IBookOfOptions.sol";
-import "./books/bop/IBookOfPledges.sol";
+import "./books/roc/IRegisterOfConstitution.sol";
+import "./books/roo/IRegisterOfOptions.sol";
+import "./books/rop/IRegisterOfPledges.sol";
 import "./books/bos/IBookOfShares.sol";
-import "./books/bom/IBookOfMembers.sol";
+import "./books/rom/IRegisterOfMembers.sol";
 import "./books/ros/IRegisterOfSwaps.sol";
 
 interface IGeneralKeeper {
@@ -61,7 +61,7 @@ interface IGeneralKeeper {
     function getBook(uint256 title) external view returns (address);
 
     // ##################
-    // ##  BOCKeeper   ##
+    // ##  ROCKeeper   ##
     // ##################
 
     function createSHA(uint version) external;
@@ -75,7 +75,7 @@ interface IGeneralKeeper {
     function acceptSHA(bytes32 sigHash) external;
 
     // ###################
-    // ##   BODKeeper   ##
+    // ##   RODKeeper   ##
     // ###################
 
     function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external;
@@ -125,7 +125,7 @@ interface IGeneralKeeper {
     ) external;
 
     // ###################
-    // ##   BOMKeeper   ##
+    // ##   ROMKeeper   ##
     // ###################
 
     function setMaxQtyOfMembers(uint max) external;
@@ -180,7 +180,7 @@ interface IGeneralKeeper {
     ) external;
 
     // ###################
-    // ##   BOIKeeper   ##
+    // ##   ROAKeeper   ##
     // ###################
 
     function createIA(uint256 snOfIA) external;
@@ -202,7 +202,7 @@ interface IGeneralKeeper {
     function terminateDeal(address ia, uint256 seqOfDeal) external;
 
     // #################
-    // ##  BOOKeeper  ##
+    // ##  ROOKeeper  ##
     // #################
 
     function updateOracle(
@@ -238,7 +238,7 @@ interface IGeneralKeeper {
     function revokeSwapOrder(uint256 seqOfOpt, uint256 seqOfBrf) external;
 
     // ###################
-    // ##   BOPKeeper   ##
+    // ##   ROPKeeper   ##
     // ###################
 
     function createPledge(bytes32 snOfPld, uint paid, uint par, uint guaranteedAmt, uint execDays) external;
@@ -361,25 +361,25 @@ interface IGeneralKeeper {
     // ##  Routing  ##
     // ###############
 
-    function getBOC() external view returns (IBookOfConstitution );
+    function getROC() external view returns (IRegisterOfConstitution );
 
     function getSHA() external view returns (IShareholdersAgreement);
 
-    function getBOD() external view returns (IBookOfDirectors);
+    function getROD() external view returns (IRegisterOfDirectors);
 
     function getBMM() external view returns (IMeetingMinutes);
 
-    function getBOM() external view returns (IBookOfMembers);
+    function getROM() external view returns (IRegisterOfMembers);
 
     function getGMM() external view returns (IMeetingMinutes);
 
-    function getBOI() external view returns (IBookOfIA);
+    function getROA() external view returns (IRegisterOfAgreements);
 
-    function getBOO() external view returns (IBookOfOptions);
+    function getROO() external view returns (IRegisterOfOptions);
 
-    function getBOP() external view returns (IBookOfPledges);
-
-    function getBOS() external view returns (IBookOfShares);
+    function getROP() external view returns (IRegisterOfPledges);
 
     function getROS() external view returns (IRegisterOfSwaps);
+
+    function getBOS() external view returns (IBookOfShares);
 }

@@ -7,7 +7,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/bod/IBookOfDirectors.sol";
+import "../books/rod/IRegisterOfDirectors.sol";
 
 // import "../common/lib/UsersRepo.sol";
 // import "../common/lib/MotionsRepo.sol";

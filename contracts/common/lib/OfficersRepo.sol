@@ -8,7 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "./EnumerableSet.sol";
-import "../../books/bom/IBookOfMembers.sol";
+import "../../books/rom/IRegisterOfMembers.sol";
 
 library OfficersRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -321,11 +321,11 @@ library OfficersRepo {
         output = getFullPosInfo(repo, pl);
     }
 
-    function hasTitle(Repo storage repo, uint acct, uint title, IBookOfMembers _bom)
+    function hasTitle(Repo storage repo, uint acct, uint title, IRegisterOfMembers _rom)
         public view returns (bool)
     {
         if (title == uint8(TitleOfOfficers.Shareholder))
-            return _bom.isMember(acct);
+            return _rom.isMember(acct);
 
         Position[] memory list = getFullPosInfoInHand(repo, acct);
         uint len = list.length;
@@ -337,13 +337,13 @@ library OfficersRepo {
         return false;
     }
 
-    function hasNominationRight(Repo storage repo, uint seqOfPos, uint acct, IBookOfMembers _bom)
+    function hasNominationRight(Repo storage repo, uint seqOfPos, uint acct, IRegisterOfMembers _rom)
         public view returns (bool)
     {
         Position memory pos = repo.positions[seqOfPos];
         if (pos.endDate <= block.timestamp) return false;
         else if (pos.nominator == 0)
-            return hasTitle(repo, acct, pos.titleOfNominator, _bom);
+            return hasTitle(repo, acct, pos.titleOfNominator, _rom);
         else return (pos.nominator == acct);
     }
 

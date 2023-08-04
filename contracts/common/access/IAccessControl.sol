@@ -15,28 +15,28 @@ interface IAccessControl {
 
     // enum TitleOfBooks {
     //     ZeroPoint,
-    //     BOC,    // 1
-    //     BOD,    // 2
+    //     ROC,    // 1
+    //     ROD,    // 2
     //     BMM,    // 3
-    //     BOM,    // 4
+    //     ROM,    // 4
     //     GMM,    // 5
-    //     BOI,    // 6
-    //     BOO,    // 7
-    //     BOP,    // 8
+    //     ROA,    // 6
+    //     ROO,    // 7
+    //     ROP,    // 8
     //     ROS,    // 9
     //     BOS    // 10
     // }
 
     // enum TitleOfKeepers {
     //     ZeroPoint,
-    //     BOCKeeper, // 1
-    //     BODKeeper, // 2
+    //     ROCKeeper, // 1
+    //     RODKeeper, // 2
     //     BMMKeeper, // 3
-    //     BOMKeeper, // 4
+    //     ROMKeeper, // 4
     //     GMMKeeper, // 5
-    //     BOIKeeper, // 6
-    //     BOOKeeper, // 7
-    //     BOPKeeper, // 8
+    //     ROAKeeper, // 6
+    //     ROOKeeper, // 7
+    //     ROPKeeper, // 8
     //     ROSKeeper, // 9
     //     SHAKeeper // 10
     // }

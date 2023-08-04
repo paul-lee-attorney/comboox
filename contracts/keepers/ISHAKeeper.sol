@@ -7,13 +7,13 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/boc/terms/IAntiDilution.sol";
-import "../books/boc/terms/ITerm.sol";
-import "../books/boc/terms/IAlongs.sol";
+import "../books/roc/terms/IAntiDilution.sol";
+import "../books/roc/terms/ITerm.sol";
+import "../books/roc/terms/IAlongs.sol";
 
-import "../books/boc/IShareholdersAgreement.sol";
+import "../books/roc/IShareholdersAgreement.sol";
 
-import "../books/boi/IInvestmentAgreement.sol";
+import "../books/roa/IInvestmentAgreement.sol";
 
 import "../common/components/IFilesFolder.sol";
 import "../common/components/ISigPage.sol";

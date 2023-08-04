@@ -78,51 +78,51 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     // ##################
-    // ##  BOCKeeper   ##
+    // ##  ROCKeeper   ##
     // ##################
 
     function createSHA(uint version) external {
-        IBOCKeeper(_keepers[1]).createSHA(version, msg.sender, _msgSender(60000));
+        IROCKeeper(_keepers[1]).createSHA(version, msg.sender, _msgSender(60000));
     }
 
     function circulateSHA(address body, bytes32 docUrl, bytes32 docHash) external {
-        IBOCKeeper(_keepers[1]).circulateSHA(body, docUrl, docHash, _msgSender(30000));
+        IROCKeeper(_keepers[1]).circulateSHA(body, docUrl, docHash, _msgSender(30000));
     }
 
     function signSHA(address sha, bytes32 sigHash) external  {
-        IBOCKeeper(_keepers[1]).signSHA(sha, sigHash, _msgSender(20000));
+        IROCKeeper(_keepers[1]).signSHA(sha, sigHash, _msgSender(20000));
     }
 
     function activateSHA(address body) external {
-        IBOCKeeper(_keepers[1]).activateSHA(body, _msgSender(50000));
+        IROCKeeper(_keepers[1]).activateSHA(body, _msgSender(50000));
     }
 
     function acceptSHA(bytes32 sigHash) external {
-        IBOCKeeper(_keepers[1]).acceptSHA(sigHash, _msgSender(20000));
+        IROCKeeper(_keepers[1]).acceptSHA(sigHash, _msgSender(20000));
     }
 
     // ###################
-    // ##   BODKeeper   ##
+    // ##   RODKeeper   ##
     // ###################
 
     function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external {
-        IBODKeeper(_keepers[2]).takeSeat(seqOfMotion, seqOfPos, _msgSender(70000));
+        IRODKeeper(_keepers[2]).takeSeat(seqOfMotion, seqOfPos, _msgSender(70000));
     }
 
     function removeDirector (uint256 seqOfMotion, uint256 seqOfPos) external {
-        IBODKeeper(_keepers[2]).removeDirector(seqOfMotion, seqOfPos, _msgSender(70000));        
+        IRODKeeper(_keepers[2]).removeDirector(seqOfMotion, seqOfPos, _msgSender(70000));        
     }
 
     function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external {
-        IBODKeeper(_keepers[2]).takePosition(seqOfMotion, seqOfPos, _msgSender(70000));
+        IRODKeeper(_keepers[2]).takePosition(seqOfMotion, seqOfPos, _msgSender(70000));
     }
 
     function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external {
-        IBODKeeper(_keepers[2]).removeOfficer(seqOfMotion, seqOfPos, _msgSender(70000));
+        IRODKeeper(_keepers[2]).removeOfficer(seqOfMotion, seqOfPos, _msgSender(70000));
     }
 
     function quitPosition(uint256 seqOfPos) external {
-        IBODKeeper(_keepers[2]).quitPosition(seqOfPos, _msgSender(20000));
+        IRODKeeper(_keepers[2]).quitPosition(seqOfPos, _msgSender(20000));
     }
 
     // ###################
@@ -194,32 +194,32 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     // ###################
-    // ##   BOMKeeper   ##
+    // ##   ROMKeeper   ##
     // ###################
 
     function setMaxQtyOfMembers(uint max) external onlyDK {
-        IBOMKeeper(_keepers[4]).setMaxQtyOfMembers(max);
+        IROMKeeper(_keepers[4]).setMaxQtyOfMembers(max);
     }
 
     function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external onlyDK {
-        IBOMKeeper(_keepers[4]).setPayInAmt(seqOfShare, amt, expireDate, hashLock);
+        IROMKeeper(_keepers[4]).setPayInAmt(seqOfShare, amt, expireDate, hashLock);
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external {
-        IBOMKeeper(_keepers[4]).requestPaidInCapital(hashLock, hashKey);
+        IROMKeeper(_keepers[4]).requestPaidInCapital(hashLock, hashKey);
     }
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
-        IBOMKeeper(_keepers[4]).withdrawPayInAmt(hashLock, seqOfShare);
+        IROMKeeper(_keepers[4]).withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function decreaseCapital(uint256 seqOfShare, uint paid, uint par) 
     external onlyDK {
-        IBOMKeeper(_keepers[4]).decreaseCapital(seqOfShare, paid, par);
+        IROMKeeper(_keepers[4]).decreaseCapital(seqOfShare, paid, par);
     }
 
     // function updatePaidInDeadline(uint256 seqOfShare, uint line) external onlyDK {
-    //     IBOMKeeper(_keepers[9]).updatePaidInDeadline(seqOfShare, line);
+    //     IROMKeeper(_keepers[9]).updatePaidInDeadline(seqOfShare, line);
     // }
 
     // ###################
@@ -300,48 +300,48 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     // ###################
-    // ##   BOIKeeper   ##
+    // ##   ROAKeeper   ##
     // ###################
 
     function createIA(uint256 snOfIA) external {
-        IBOIKeeper(_keepers[6]).createIA(snOfIA, msg.sender, _msgSender(60000));
+        IROAKeeper(_keepers[6]).createIA(snOfIA, msg.sender, _msgSender(60000));
     }
 
     function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external {
-        IBOIKeeper(_keepers[6]).circulateIA(body, docUrl, docHash, _msgSender(30000));
+        IROAKeeper(_keepers[6]).circulateIA(body, docUrl, docHash, _msgSender(30000));
     }
 
     function signIA(address ia, bytes32 sigHash) external {
-        IBOIKeeper(_keepers[6]).signIA(ia, _msgSender(20000), sigHash);
+        IROAKeeper(_keepers[6]).signIA(ia, _msgSender(20000), sigHash);
     }
 
     // ======== Deal Closing ========
 
     function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDeadline) 
     external {
-        IBOIKeeper(_keepers[6]).pushToCoffer(ia, seqOfDeal, hashLock, closingDeadline, _msgSender(50000));
+        IROAKeeper(_keepers[6]).pushToCoffer(ia, seqOfDeal, hashLock, closingDeadline, _msgSender(50000));
     }
 
     function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
     external {
-        IBOIKeeper(_keepers[6]).closeDeal(ia, seqOfDeal, hashKey);
+        IROAKeeper(_keepers[6]).closeDeal(ia, seqOfDeal, hashKey);
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal) external onlyDK {
-        IBOIKeeper(_keepers[6]).issueNewShare(ia, seqOfDeal);
+        IROAKeeper(_keepers[6]).issueNewShare(ia, seqOfDeal);
     }
 
     function transferTargetShare(address ia, uint256 seqOfDeal) external {
-        IBOIKeeper(_keepers[6]).transferTargetShare(ia, seqOfDeal, _msgSender(50000));
+        IROAKeeper(_keepers[6]).transferTargetShare(ia, seqOfDeal, _msgSender(50000));
     }
 
 
     function terminateDeal(address ia, uint256 seqOfDeal) external {
-        IBOIKeeper(_keepers[6]).terminateDeal(ia, seqOfDeal, _msgSender(10000));
+        IROAKeeper(_keepers[6]).terminateDeal(ia, seqOfDeal, _msgSender(10000));
     }
 
     // #################
-    // ##  BOOKeeper  ##
+    // ##  ROOKeeper  ##
     // #################
 
     function updateOracle(
@@ -350,11 +350,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint d2,
         uint d3
     ) external onlyDK {
-        IBOOKeeper(_keepers[7]).updateOracle(seqOfOpt, d1, d2, d3);
+        IROOKeeper(_keepers[7]).updateOracle(seqOfOpt, d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt) external {
-        IBOOKeeper(_keepers[7]).execOption(seqOfOpt, _msgSender(70000));
+        IROOKeeper(_keepers[7]).execOption(seqOfOpt, _msgSender(70000));
     }
 
     function placeSwapOrder(
@@ -363,7 +363,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint paidOfConsider,
         uint seqOfTarget
     ) external {
-        IBOOKeeper(_keepers[7]).placeSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _msgSender(70000));
+        IROOKeeper(_keepers[7]).placeSwapOrder(seqOfOpt, seqOfConsider, paidOfConsider, seqOfTarget, _msgSender(70000));
     }
 
     function lockSwapOrder(
@@ -371,7 +371,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfBrf, 
         bytes32 hashLock
     ) external {
-        IBOOKeeper(_keepers[7]).lockSwapOrder(seqOfOpt, seqOfBrf, hashLock, _msgSender(60000));
+        IROOKeeper(_keepers[7]).lockSwapOrder(seqOfOpt, seqOfBrf, hashLock, _msgSender(60000));
     }
 
     function releaseSwapOrder(
@@ -379,55 +379,55 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 seqOfBrf, 
         string memory hashKey
     ) external {
-        IBOOKeeper(_keepers[7]).releaseSwapOrder(seqOfOpt, seqOfBrf, hashKey);
+        IROOKeeper(_keepers[7]).releaseSwapOrder(seqOfOpt, seqOfBrf, hashKey);
     }
 
     function execSwapOrder(
         uint256 seqOfOpt, 
         uint256 seqOfBrf
     ) external {
-        IBOOKeeper(_keepers[7]).execSwapOrder(seqOfOpt, seqOfBrf, _msgSender(60000));
+        IROOKeeper(_keepers[7]).execSwapOrder(seqOfOpt, seqOfBrf, _msgSender(60000));
     }
 
     function revokeSwapOrder(uint256 seqOfOpt, uint256 seqOfBrf) external {
-        IBOOKeeper(_keepers[7]).revokeSwapOrder(seqOfOpt, seqOfBrf, _msgSender(30000));
+        IROOKeeper(_keepers[7]).revokeSwapOrder(seqOfOpt, seqOfBrf, _msgSender(30000));
     }
 
     // ###################
-    // ##   BOPKeeper   ##
+    // ##   ROPKeeper   ##
     // ###################
 
     function createPledge(bytes32 snOfPld, uint paid, uint par, uint guaranteedAmt, uint execDays) external {
-        IBOPKeeper(_keepers[8]).createPledge(snOfPld, paid, par, guaranteedAmt, execDays, _msgSender(50000));
+        IROPKeeper(_keepers[8]).createPledge(snOfPld, paid, par, guaranteedAmt, execDays, _msgSender(50000));
     }
 
     function transferPledge(uint256 seqOfShare, uint256 seqOfPld, uint buyer, uint amt) 
     external {
-        IBOPKeeper(_keepers[8]).transferPledge(seqOfShare, seqOfPld, buyer, amt, _msgSender(50000));
+        IROPKeeper(_keepers[8]).transferPledge(seqOfShare, seqOfPld, buyer, amt, _msgSender(50000));
     }
 
     function refundDebt(uint256 seqOfShare, uint256 seqOfPld, uint amt) external {
-        IBOPKeeper(_keepers[8]).refundDebt(seqOfShare, seqOfPld, amt, _msgSender(30000));
+        IROPKeeper(_keepers[8]).refundDebt(seqOfShare, seqOfPld, amt, _msgSender(30000));
     }
 
     function extendPledge(uint256 seqOfShare, uint256 seqOfPld, uint extDays) external {
-        IBOPKeeper(_keepers[8]).extendPledge(seqOfShare, seqOfPld, extDays, _msgSender(30000));
+        IROPKeeper(_keepers[8]).extendPledge(seqOfShare, seqOfPld, extDays, _msgSender(30000));
     }
 
     function lockPledge(uint256 seqOfShare, uint256 seqOfPld, bytes32 hashLock) external {
-        IBOPKeeper(_keepers[8]).lockPledge(seqOfShare, seqOfPld, hashLock, _msgSender(50000));
+        IROPKeeper(_keepers[8]).lockPledge(seqOfShare, seqOfPld, hashLock, _msgSender(50000));
     }
 
     function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey) external {
-        IBOPKeeper(_keepers[8]).releasePledge(seqOfShare, seqOfPld, hashKey);
+        IROPKeeper(_keepers[8]).releasePledge(seqOfShare, seqOfPld, hashKey);
     }
 
     function execPledge(bytes32 snOfDeal, uint256 seqOfPld, uint version, uint buyer, uint groupOfBuyer) external {
-        IBOPKeeper(_keepers[8]).execPledge(snOfDeal, seqOfPld, version, msg.sender, buyer, groupOfBuyer, _msgSender(60000));
+        IROPKeeper(_keepers[8]).execPledge(snOfDeal, seqOfPld, version, msg.sender, buyer, groupOfBuyer, _msgSender(60000));
     }
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external {
-        IBOPKeeper(_keepers[8]).revokePledge(seqOfShare, seqOfPld, _msgSender(10000));
+        IROPKeeper(_keepers[8]).revokePledge(seqOfShare, seqOfPld, _msgSender(10000));
     }
 
     // ##################
@@ -588,40 +588,40 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  Routing  ##
     // ###############
 
-    function getBOC() external view returns (IBookOfConstitution ) {
-        return IBookOfConstitution(_books[1]);
+    function getROC() external view returns (IRegisterOfConstitution ) {
+        return IRegisterOfConstitution(_books[1]);
     }
 
     function getSHA() external view returns (IShareholdersAgreement ) {
-        return IShareholdersAgreement(IBookOfConstitution(_books[1]).pointer());
+        return IShareholdersAgreement(IRegisterOfConstitution(_books[1]).pointer());
     }
 
-    function getBOD() external view returns (IBookOfDirectors ) {
-        return IBookOfDirectors(_books[2]);
+    function getROD() external view returns (IRegisterOfDirectors ) {
+        return IRegisterOfDirectors(_books[2]);
     }
 
     function getBMM() external view returns (IMeetingMinutes ) {
         return IMeetingMinutes(_books[3]);
     }
 
-    function getBOM() external view returns (IBookOfMembers ) {
-        return IBookOfMembers(_books[4]);
+    function getROM() external view returns (IRegisterOfMembers ) {
+        return IRegisterOfMembers(_books[4]);
     }
 
     function getGMM() external view returns (IMeetingMinutes ) {
         return IMeetingMinutes(_books[5]);
     }
 
-    function getBOI() external view returns (IBookOfIA) {
-        return IBookOfIA(_books[6]);
+    function getROA() external view returns (IRegisterOfAgreements) {
+        return IRegisterOfAgreements(_books[6]);
     }
 
-    function getBOO() external view returns (IBookOfOptions ) {
-        return IBookOfOptions(_books[7]);
+    function getROO() external view returns (IRegisterOfOptions ) {
+        return IRegisterOfOptions(_books[7]);
     }
 
-    function getBOP() external view returns (IBookOfPledges ) {
-        return IBookOfPledges(_books[8]);
+    function getROP() external view returns (IRegisterOfPledges ) {
+        return IRegisterOfPledges(_books[8]);
     }
 
     function getROS() external view returns (IRegisterOfSwaps ) {

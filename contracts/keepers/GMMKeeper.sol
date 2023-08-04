@@ -17,7 +17,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     
 
     modifier memberExist(uint256 acct) {
-        require(_getGK().getBOM().isMember(acct), 
+        require(_getGK().getROM().isMember(acct), 
             "BOGK.mf: NOT Member");
         _;
     }
@@ -25,8 +25,8 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     modifier memberOrDirector(uint256 acct) {
         IGeneralKeeper _gk = _getGK();
 
-        require(_gk.getBOM().isMember(acct) ||
-            _gk.getBOD().isDirector(acct), 
+        require(_gk.getROM().isMember(acct) ||
+            _gk.getROD().isDirector(acct), 
             "BOGK.mf: not Member or Director");
         _;
     }
@@ -45,14 +45,14 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
 
-        IBookOfDirectors _bod = _gk.getBOD();
+        IRegisterOfDirectors _rod = _gk.getROD();
 
-        require(_bod.hasNominationRight(seqOfPos, nominator),
-            "BODKeeper.nominateOfficer: has no nominationRight");
+        require(_rod.hasNominationRight(seqOfPos, nominator),
+            "RODKeeper.nominateOfficer: has no nominationRight");
 
         _gk.getGMM().nominateOfficer(
             seqOfPos, 
-            _bod.getPosition(seqOfPos).seqOfVR, 
+            _rod.getPosition(seqOfPos).seqOfVR, 
             candidate, 
             nominator
         );
@@ -64,14 +64,14 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
 
-        IBookOfDirectors _bod = _gk.getBOD();
+        IRegisterOfDirectors _rod = _gk.getROD();
 
-        require(_bod.hasNominationRight(seqOfPos, caller),
-            "BODKeeper.nominateOfficer: has no nominationRight");
+        require(_rod.hasNominationRight(seqOfPos, caller),
+            "RODKeeper.nominateOfficer: has no nominationRight");
 
         _gk.getGMM().createMotionToRemoveOfficer(
             seqOfPos, 
-            _bod.getPosition(seqOfPos).seqOfVR, 
+            _rod.getPosition(seqOfPos).seqOfVR, 
             caller
         );
     }
@@ -95,8 +95,8 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         ) { 
             _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
             seqOfVR == 8 ?
-                _gk.getBOC().proposeFile(addr, seqOfMotion) :
-                _gk.getBOI().proposeFile(addr, seqOfMotion);
+                _gk.getROC().proposeFile(addr, seqOfMotion) :
+                _gk.getROA().proposeFile(addr, seqOfMotion);
         }
     }
 
@@ -165,7 +165,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     function voteCountingOfGM(uint256 seqOfMotion) external onlyDK {
         IGeneralKeeper _gk = _getGK();
 
-        IBookOfMembers _bom = _gk.getBOM();
+        IRegisterOfMembers _rom = _gk.getROM();
         IMeetingMinutes _gmm = _gk.getGMM();
 
         MotionsRepo.Motion memory motion = 
@@ -174,9 +174,9 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         MotionsRepo.VoteCalBase memory base;
         BallotsBox.Case memory case0 = _gmm.getCaseOfAttitude(seqOfMotion, 0);
 
-        uint64 votesOfMembers = _bom.basedOnPar() 
-            ? _bom.capAtDate(motion.body.shareRegDate).par
-            : _bom.capAtDate(motion.body.shareRegDate).paid;
+        uint64 votesOfMembers = _rom.basedOnPar() 
+            ? _rom.capAtDate(motion.body.shareRegDate).par
+            : _rom.capAtDate(motion.body.shareRegDate).paid;
 
         base.attendWeightRatio = uint16(case0.sumOfWeight * 10000 / votesOfMembers);
 
@@ -184,7 +184,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
             base.totalHead = case0.sumOfHead;
             base.totalWeight = case0.sumOfWeight;
         } else {
-            base.totalHead = _bom.getNumOfMembers();
+            base.totalHead = _rom.getNumOfMembers();
             base.totalWeight = votesOfMembers; 
             if (motion.votingRule.impliedConsent) {
                 base.supportHead = (base.totalHead - case0.sumOfHead);
@@ -202,7 +202,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
 
                 while (len > 0) {
                     uint64 votesAtDate = 
-                        _bom.votesAtDate(parties[len - 1], motion.body.shareRegDate);
+                        _rom.votesAtDate(parties[len - 1], motion.body.shareRegDate);
 
                     if (votesAtDate > 0) {
                         if (motion.votingRule.partyAsConsent) {
@@ -244,8 +244,8 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
             address doc = address(uint160(motion.contents));
 
             if (motion.head.seqOfVR == 8)
-                _gk.getBOC().voteCountingForFile(doc, approved);
-            else _gk.getBOI().voteCountingForFile(doc, approved);
+                _gk.getROC().voteCountingForFile(doc, approved);
+            else _gk.getROA().voteCountingForFile(doc, approved);
         }
     }
 
