@@ -17,9 +17,6 @@ contract RegCenter is IRegCenter {
     
     UsersRepo.Repo private _users;
     DocsRepo.Repo private _docs;
-
-    // userNo => snOfDoc
-    mapping(uint => bytes32) private _docSnOfUser;
     
     constructor() {
         _users.regUser(msg.sender);
@@ -29,9 +26,9 @@ contract RegCenter is IRegCenter {
     // ##    Opts Setting    ##
     // ########################
 
-    function setReward(bytes32 snOfReward) external {
-        _users.setReward(snOfReward, msg.sender);
-        emit SetReward(snOfReward);
+    function setPlatformRule(bytes32 snOfRule) external {
+        _users.setPlatformRule(snOfRule, msg.sender);
+        emit SetPlatformRule(snOfRule);
     }
 
     // ==== Power transfer ====
@@ -169,43 +166,27 @@ contract RegCenter is IRegCenter {
         _users.setBackupKey(bKey, msg.sender);
     }
 
+    function setRoyaltyRule(bytes32 snOfRoyalty) external {
+        _users.setRoyaltyRule(snOfRoyalty, msg.sender);
+    }
+
     // ###############
     // ##    Docs   ##
     // ###############
 
-    function initDocsRepo(address docKeeper) external {
-        require(msg.sender == _users.getBookeeper(),
-            "RC.IDR: not keeper");
-        if (_docs.init(docKeeper))
-            emit SetDocKeeper(docKeeper);
+    function setTemplate(uint typeOfDoc, address body) external {
+        DocsRepo.Head memory head = _docs.setTemplate(typeOfDoc, body, _users.getMyUserNo(msg.sender));
+        emit SetTemplate(head.typeOfDoc, head.version, body);
     }
 
-    function turnOverKeyOfDocsRepo(address newKeeper) external {
-        if (_docs.turnOverRepoKey(newKeeper, msg.sender))
-            emit SetDocKeeper(newKeeper);
-    }
-
-    function setTemplate(bytes32 snOfDoc, address body) external {
-        DocsRepo.Doc memory doc = _docs.setTemplate(snOfDoc, body, msg.sender, _users.getMyUserNo(msg.sender));
-        emit SetTemplate(doc.head.typeOfDoc, doc.head.version, doc.body);
-    }
-
-    function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) public 
-        returns(DocsRepo.Doc memory doc)
+    function createDoc(
+        bytes32 snOfDoc,
+        address primeKeyOfOwner
+    ) public returns(DocsRepo.Doc memory doc)
     {
         uint40 owner = _users.getUserNo(primeKeyOfOwner, 10000, 1, msg.sender);
         doc = _docs.createDoc(snOfDoc, owner);
         emit CreateDoc(doc.head.codifyHead(), doc.body);
-    }
-
-    function setDocSnOfUser() external {
-
-        uint myNo = _users.getMyUserNo(msg.sender);
-
-        if (myNo > 0) {
-            _docSnOfUser[myNo] = _docs.getSN(msg.sender);
-        }
-
     }
 
     // #########################
@@ -252,14 +233,14 @@ contract RegCenter is IRegCenter {
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
         returns(address body)
     {
-        uint256 latest = counterOfVersions(typeOfDoc);
-        bytes32 snOfDoc = bytes32((typeOfDoc << 240) + (latest << 224));
+        uint256 latest = _docs.counterOfVersions(typeOfDoc);
+        bytes32 snOfDoc = bytes32((typeOfDoc << 224) + (latest << 192));
         body = createDoc(snOfDoc, primeKeyOfOwner).body;
     }
 
-    // ##################
-    // ## Write I/O ##
-    // ##################
+    // ##############
+    // ## Read I/O ##
+    // ##############
 
     // ==== options ====
 
@@ -271,20 +252,14 @@ contract RegCenter is IRegCenter {
         return _users.getBookeeper();
     }
 
-    function getRewardSetting() external view 
-        returns (UsersRepo.Reward memory)
-    {
-        return _users.getRewardSetting();
+    function getPlatformRule() external view returns(UsersRepo.Rule memory) {
+        return _users.getPlatformRule();
     }
 
     // ==== Users ====
 
-    function isKey(address key) public view returns (bool) {
+    function isKey(address key) external view returns (bool) {
         return _users.isKey(key);
-    }
-
-    function isCOA(uint256 acct) external view returns (bool) {
-        return _users.isCOA(acct);
     }
 
     function getUser() external view returns (UsersRepo.User memory)
@@ -292,36 +267,30 @@ contract RegCenter is IRegCenter {
         return _users.getUser(msg.sender);
     }
 
+    function getRoyaltyRule(uint author)external view returns (UsersRepo.Key memory) {
+        return _users.getRoyaltyRule(author);
+    }
+
     function getUserNo(address targetAddr, uint fee, uint author) external returns (uint40) {
         return _users.getUserNo(targetAddr, fee, author, msg.sender);
     }
 
-    function getMyUserNo() public view returns(uint40) {
+    function getMyUserNo() external view returns(uint40) {
         return _users.getMyUserNo(msg.sender);
     }
 
     // ==== Docs ====
 
-    function counterOfVersions(uint256 typeOfDoc) public view returns(uint16 seq) {
-        seq = _docs.counterOfVersions(typeOfDoc);
+    function counterOfTypes() external view returns(uint32) {
+        return _docs.counterOfTypes();
     }
 
-    function counterOfDocs(uint256 typeOfDoc, uint256 version) external view returns(uint64 seq) {
-        seq = _docs.counterOfDocs(typeOfDoc, version);
+    function counterOfVersions(uint256 typeOfDoc) external view returns(uint32) {
+        return _docs.counterOfVersions(uint32(typeOfDoc));
     }
 
-    function getDocKeeper () external view returns(address keeper) {
-        keeper = _docs.getKeeper();
-    }
-
-    // ==== SingleCheck ====
-
-    function getTemplate(bytes32 snOfDoc) external view returns (DocsRepo.Doc memory doc) {
-        doc = _docs.getTemplate(snOfDoc);
-    }
-
-    function docExist(bytes32 snOfDoc) external view returns(bool) {
-        return _docs.docExist(snOfDoc);
+    function counterOfDocs(uint256 typeOfDoc, uint256 version) external view returns(uint64) {
+        return _docs.counterOfDocs(uint32(typeOfDoc), uint32(version));
     }
 
     function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc) {
@@ -329,32 +298,24 @@ contract RegCenter is IRegCenter {
     }
 
     function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc) {
-        doc = _docs.getDoc(_docSnOfUser[acct]);
+        require (_users.counterOfUsers() >= acct, "RC.getDocByUserNo: userNo not exist");
+
+        doc.body = _users.users[acct].primeKey.pubKey;
+        require(_docs.docExist(doc.body), "RC.getDocByUserNo: doc not exist");
+
+        doc.head = _docs.heads[doc.body];
     }
 
     function verifyDoc(bytes32 snOfDoc) external view returns(bool flag) {
         flag = _docs.verifyDoc(snOfDoc);
     }
 
-    // ==== BatchQuery ====
-
-    function getAllDocsSN() external view returns(bytes32[] memory) {
-        return _docs.getAllSN();
+    function getVersionsList(uint256 typeOfDoc) external view returns(DocsRepo.Doc[] memory) {
+        return _docs.getVersionsList(uint32(typeOfDoc));
     }
 
-    function getBodiesList(uint256 typeOfDoc, uint256 version) external view returns(address[] memory) {
-        return _docs.getBodiesList(typeOfDoc, version);
+    function getDocsList(bytes32 snOfDoc) external view returns(DocsRepo.Doc[] memory) {
+        return _docs.getDocsList(snOfDoc);
     } 
 
-    function getSNList(uint256 typeOfDoc, uint256 version) external view returns(bytes32[] memory) {
-        return _docs.getSNList(typeOfDoc, version);
-    } 
-
-    function getDocsList(uint256 typeOfDoc, uint256 version) external view returns(DocsRepo.Doc[] memory) {
-        return _docs.getDocsList(typeOfDoc, version);
-    } 
-
-    function getTempsList(uint256 typeOfDoc) external view returns(DocsRepo.Doc[] memory) {
-        return _docs.getTempsList(typeOfDoc);
-    }
 }

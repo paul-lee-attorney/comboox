@@ -110,7 +110,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
                 uint8(IRegCenter.TypeOfDoc.TagAlong)
             );
 
-        require(ITerm(term).isTriggered(ia, deal), "SHAK.CAD: not triggered");
+        require(ITerm(term).isTriggered(ia, deal), "SHAK.execAlongRight: not triggered");
 
         require(
             IAlongs(term).isLinked(deal.head.seller, share.head.shareholder),

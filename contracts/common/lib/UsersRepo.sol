@@ -14,9 +14,10 @@ library UsersRepo {
 
     struct Key {
         address pubKey;
-        uint16 seqOfKey;
-        uint32 dataOfKey;
-        uint48 dateOfKey;        
+        uint16 refund;
+        uint16 discount;
+        uint32 gift; 
+        uint32 coupon;
     }
 
     struct User {
@@ -27,14 +28,15 @@ library UsersRepo {
         Key backupKey;
     }
 
-    struct Reward {
+    struct Rule {
         uint32 eoaRewards;
         uint32 coaRewards;
-        uint32 offAmt;
-        uint16 discRate;
-        uint16 refundRatio;
-        uint64 ceiling;
-        uint64 floor;
+        uint32 ceiling;
+        uint32 floor;
+        uint16 rate;
+        uint16 para;
+        uint16 argu;
+        uint16 seq;
     }
 
     struct Repo {
@@ -71,41 +73,64 @@ library UsersRepo {
     // ##    Opts Setting    ##
     // ########################
 
-    function rewardParser(bytes32 sn) public pure 
-        returns(Reward memory reward) 
+    function ruleParser(bytes32 sn) public pure 
+        returns(Rule memory rule) 
     {
         uint _sn = uint(sn);
 
-        reward = Reward({
+        rule = Rule({
             eoaRewards: uint32(_sn >> 224),
             coaRewards: uint32(_sn >> 192),
-            offAmt: uint32(_sn >> 160),
-            discRate: uint16(_sn >> 144),
-            refundRatio: uint16(_sn >> 128),
-            ceiling: uint64(_sn >> 64),
-            floor: uint64(_sn)
+            ceiling: uint32(_sn >> 160),
+            floor: uint32(_sn >> 128),
+            rate: uint16(_sn >> 112),
+            para: uint16(_sn >> 96),
+            argu: uint16(_sn >> 80),
+            seq: uint16(_sn >> 64)
         });
     }
 
-    function setReward(Repo storage repo, bytes32 snOfReward, address msgSender) 
-        public onlyOwner(repo, msgSender) 
+    function setPlatformRule(Repo storage repo, bytes32 snOfRule, address msgSender) 
+        public onlyOwner(repo, msgSender) onlyPrimeKey(repo, msgSender) 
     {
-        Reward memory rw = rewardParser(snOfReward);
-                
+
+        Rule memory rule = ruleParser(snOfRule);
+
+        require(rule.floor < rule.ceiling, "UR.setPlatformRule: floor heigher than ceiling"); 
+
         User storage opt = repo.users[0];
 
-        opt.counterOfV = rw.offAmt;
         opt.primeKey = Key({
-            pubKey : address(uint160(rw.ceiling)),
-            seqOfKey: rw.discRate,
-            dataOfKey: rw.eoaRewards,
-            dateOfKey: 0
+            pubKey : address(0),
+            refund: rule.rate,
+            discount: rule.para,
+            gift: rule.eoaRewards,
+            coupon: rule.coaRewards
         }); 
+
         opt.backupKey = Key({
-            pubKey : address(uint160(rw.floor)),
-            seqOfKey : rw.refundRatio,
-            dataOfKey : rw.coaRewards,
-            dateOfKey: 0
+            pubKey : address(0),
+            refund: rule.argu,
+            discount: rule.seq,
+            gift: rule.ceiling,
+            coupon: rule.floor
+        });
+    }
+
+    function getPlatformRule(Repo storage repo) public view 
+        returns (Rule memory rule) 
+    {
+        User storage opt = repo.users[0];
+
+        rule = Rule({
+            eoaRewards: opt.primeKey.gift,
+            coaRewards: opt.primeKey.coupon,
+            ceiling: opt.backupKey.gift,
+            floor: opt.backupKey.coupon,
+            rate: opt.primeKey.refund,
+            para: opt.primeKey.discount,
+            argu: opt.backupKey.refund,
+            seq: opt.backupKey.discount
         });
     }
 
@@ -119,6 +144,52 @@ library UsersRepo {
         public onlyKeeper(repo, msgSender) 
     {
         repo.users[1].backupKey.pubKey = newKeeper;
+    }
+
+    // ==== Author Setting ====
+
+    function infoParser(bytes32 info) public pure returns(Key memory)
+    {
+        uint _info = uint(info);
+
+        Key memory out = Key({
+            pubKey: address(0),
+            refund: uint16(_info >> 80),
+            discount: uint16(_info >> 64),
+            gift: uint32(_info >> 32),
+            coupon: uint32(_info)
+        });
+
+        return out;
+    }
+
+    function setRoyaltyRule(
+        Repo storage repo,
+        bytes32 snOfRoyalty,
+        address msgSender
+    ) public onlyPrimeKey(repo, msgSender) {
+
+        Key memory rule = infoParser(snOfRoyalty);
+
+        uint author = getMyUserNo(repo, msgSender);
+        User storage a = repo.users[author];
+
+        a.backupKey.refund = rule.refund;
+        a.backupKey.discount = rule.discount;
+        a.backupKey.gift = rule.gift;
+        a.backupKey.coupon = rule.coupon;
+
+    }
+
+    function getRoyaltyRule(Repo storage repo, uint author)
+        public view returns (Key memory) 
+    {
+        require (author > 0, 'zero author');
+
+        Key memory rule = repo.users[author].backupKey;
+        delete rule.pubKey;
+
+        return rule;
     }
 
     // ##################
@@ -251,8 +322,8 @@ library UsersRepo {
     // ==== reg user ====
 
     function _increaseCounterOfUsers(Repo storage repo) private returns (uint40 seq) {
-        repo.users[0].primeKey.dateOfKey++;
-        seq = uint40(repo.users[0].primeKey.dateOfKey);
+        repo.users[0].balance++;
+        seq = uint40(repo.users[0].balance);
     }
 
     function regUser(Repo storage repo, address msgSender) public {
@@ -263,17 +334,16 @@ library UsersRepo {
 
         repo.userNo[msgSender] = seqOfUser;
 
-        // User memory user = infoParser(info);
         User memory user;
 
         user.primeKey.pubKey = msgSender;
 
-        Reward memory rw = getRewardSetting(repo);
+        Rule memory rule = getPlatformRule(repo);
 
         if (_isContract(msgSender)) {
             user.isCOA = true;
-            user.balance = rw.coaRewards;
-        } else user.balance = rw.eoaRewards;
+            user.balance = rule.coaRewards;
+        } else user.balance = rule.eoaRewards;
 
         repo.users[seqOfUser] = user;
     }
@@ -286,22 +356,19 @@ library UsersRepo {
         return size != 0;
     }
 
-    function updateUserInfo(Repo storage repo, bytes32 info, address msgSender) 
+    function updateUserInfo(Repo storage repo, bytes32 snOfInfo, address msgSender) 
         public onlyPrimeKey(repo, msgSender)
     {
-        uint _info = uint(info);
+        Key memory info = infoParser(snOfInfo);
 
         uint caller = getMyUserNo(repo, msgSender);
-        User storage user = repo.users[caller];
+        Key storage primeKey = repo.users[caller].primeKey;
 
-        user.primeKey.seqOfKey = uint16(_info >> 240);
-        user.primeKey.dataOfKey = uint32(_info >> 208);
-        user.primeKey.dateOfKey = uint48(_info >> 160);
-
-        user.backupKey.seqOfKey = uint16(_info >> 144);
-        user.backupKey.dataOfKey = uint32(_info >> 112);
-        user.backupKey.dateOfKey = uint48(_info >> 64);
-
+        primeKey.refund = info.refund;
+        primeKey.discount = info.discount;
+        primeKey.gift = info.gift;
+        primeKey.coupon = info.coupon;
+        
     }
 
     function setBackupKey(Repo storage repo, address bKey, address msgSender) 
@@ -321,14 +388,14 @@ library UsersRepo {
         repo.userNo[bKey] = caller;
     }
 
-    // ##################
-    // ## Write I/O ##
-    // ##################
+    // ##############
+    // ## Read I/O ##
+    // ##############
 
     // ==== options ====
 
     function counterOfUsers(Repo storage repo) public view returns (uint40) {
-        return uint40(repo.users[0].primeKey.dateOfKey);
+        return uint40(repo.users[0].balance);
     }
 
     function getOwner(Repo storage repo) public view returns (address) {
@@ -339,30 +406,26 @@ library UsersRepo {
         return repo.users[1].backupKey.pubKey;
     }
 
-    function getRewardSetting(Repo storage repo) 
-        public view returns (Reward memory rw)
-    {
-        User memory opt = repo.users[0];
+    // function getRewardSetting(Repo storage repo) 
+    //     public view returns (Reward memory rw)
+    // {
+    //     User memory opt = repo.users[0];
 
-        rw = Reward({
-            eoaRewards: opt.primeKey.dataOfKey,
-            coaRewards: opt.backupKey.dataOfKey,
-            offAmt: opt.counterOfV,
-            discRate: opt.primeKey.seqOfKey,
-            refundRatio: opt.backupKey.seqOfKey,
-            ceiling: uint64(uint160(opt.primeKey.pubKey)),
-            floor: uint64(uint160(opt.backupKey.pubKey)) 
-        });
-    }
+    //     rw = Reward({
+    //         eoaRewards: opt.primeKey.dataOfKey,
+    //         coaRewards: opt.backupKey.dataOfKey,
+    //         offAmt: opt.counterOfV,
+    //         discRate: opt.primeKey.seqOfKey,
+    //         refundRatio: opt.backupKey.seqOfKey,
+    //         ceiling: uint64(uint160(opt.primeKey.pubKey)),
+    //         floor: uint64(uint160(opt.backupKey.pubKey)) 
+    //     });
+    // }
 
     // ==== register ====
 
     function isKey(Repo storage repo, address key) public view returns (bool) {
         return repo.userNo[key] > 0;
-    }
-
-    function isCOA(Repo storage repo, uint256 acct) external view returns (bool) {
-        return repo.users[acct].isCOA;
     }
 
     function getUser(Repo storage repo, address msgSender) 
@@ -376,12 +439,12 @@ library UsersRepo {
     {
         uint40 target = getMyUserNo(repo, targetAddr);
 
-        if (msgSender != targetAddr) {
+        if (msgSender != targetAddr && author > 0) {
             _chargeFee(repo, target, fee, author);
 
             if (tx.origin != targetAddr) 
                 _chargeFee(repo, getMyUserNo(repo, tx.origin), fee, author);
-            // else _awardBonus(repo, msgSender, fee, author);
+            else _refundBonus(repo, msgSender, fee, author);
         }
 
         return target;
@@ -396,38 +459,51 @@ library UsersRepo {
         else revert ("UR.getMyUserNo: not registered");
     }
 
-    // function _awardBonus(Repo storage repo, address querySender, uint fee, uint author) 
-    //     private 
-    // {
-    //     Reward memory rw = getRewardSetting(repo);
+    function _refundBonus(Repo storage repo, address querySender, uint fee, uint author) 
+        private 
+    {
+        Key memory rt = getRoyaltyRule(repo, author);
+        uint sender = repo.userNo[querySender];
 
-    //     uint sender = repo.userNo[querySender];
-    //     if (sender > 0) {
-    //         uint64 bonus = uint64(fee * rw.refundRatio / 10000);
-    //         repo.users[sender].balance += bonus;
-    //         repo.users[author].balance -= bonus;
-    //     }
-    // }
+        if (sender > 0 && author > 0 && (rt.refund > 0 || rt.gift > 0)) {
+            uint32 bonus = uint32(fee) * uint32(rt.refund) / 10000 + rt.gift;
+
+            uint216 balance = repo.users[author].balance;
+
+            bonus = balance > bonus ? bonus : uint32(balance);
+
+            repo.users[author].balance -= bonus;
+            repo.users[sender].balance += bonus;
+        }
+    }
 
     function _chargeFee(Repo storage repo, uint target, uint fee, uint author) 
         private
     {
-        User storage u = repo.users[target];
+        User storage t = repo.users[target];
         User storage a = repo.users[author];
+        User storage o = repo.users[1];
 
-        // Reward memory rw = getRewardSetting(repo);
-
-        uint64 unitPrice = uint64(fee);
+        Rule memory pf = getPlatformRule(repo);
+        Key memory rt =  getRoyaltyRule(repo, author);
         
-        // uint32 coupon = u.counterOfV * rw.discRate + rw.offAmt;
-        // afterReward = (coupon < (unitPrice - rw.floor)) 
-        //     ? (unitPrice - coupon) 
-        //     : rw.floor;
+        uint32 unitPrice = uint32(fee);
+        require(unitPrice >= pf.floor, "UR.chargeFee: unitPrice lower than floor");
 
-        if (u.balance >= unitPrice) {
-            u.balance -= unitPrice;
-            u.counterOfV++;
-            a.balance += unitPrice;
+        uint32 offAmt = t.counterOfV * uint32(rt.discount) * unitPrice / 10000 + rt.coupon;
+        
+        unitPrice = (offAmt < (unitPrice - pf.floor)) 
+            ? (unitPrice - offAmt) 
+            : pf.floor;
+
+        if (unitPrice > pf.ceiling) unitPrice = pf.ceiling;
+
+        if (t.balance >= unitPrice) {
+            t.balance -= unitPrice;
+            t.counterOfV++;
+
+            o.balance += unitPrice * pf.rate / 10000;
+            a.balance += unitPrice * (10000 - pf.rate) / 10000;
         } else revert("RC.chargeFee: insufficient balance");
     }
 }

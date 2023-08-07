@@ -27,21 +27,23 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ######################
 
     function setCompInfo (
-        // bytes32 _regNumHash,
         string memory _name,
         string memory _symbol
     ) external onlyOwner {
-        // regNumHash = _regNumHash;
         nameOfCompany = _name;
         symbolOfCompany = _symbol;
-        // emit SetCompInfo(_name, _symbol);
     }
 
     function createCorpSeal() external onlyDK {
-        IRegCenter _rc = _getRC();
-        _rc.regUser();
-        regNumOfCompany = _rc.getMyUserNo();
-        _rc.setDocSnOfUser();
+        _getRC().regUser();
+    }
+
+    function getCompUser() external view onlyOwner returns (UsersRepo.User memory) {
+        return _getRC().getUser();
+    }
+
+    function fetchPoints(uint amt) external onlyOwner {
+        _getRC().transferPoints(_msgSender(20000), amt);
     }
 
     // ---- Keepers ----
@@ -49,7 +51,6 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     function regKeeper(uint256 title, address keeper) 
     external onlyDK {
         _keepers[title] = keeper;
-        // emit RegKeeper(title, keeper);
     }
 
     function isKeeper(address caller) external view returns (bool) {   
@@ -70,7 +71,6 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function regBook(uint256 title, address book) external onlyDK {
         _books[title] = book;
-        // emit RegBook(title, book);
     } 
 
     function getBook(uint256 title) external view returns (address) {

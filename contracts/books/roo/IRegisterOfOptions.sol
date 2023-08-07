@@ -22,6 +22,8 @@ interface IRegisterOfOptions {
 
     event CreateOpt(uint256 indexed seqOfOpt, bytes32 indexed codeOfOpt);
 
+    event IssueOpt(uint256 indexed seqOfOpt, uint indexed issueDate);
+
     event AddObligorIntoOpt(uint256 indexed seqOfOpt, uint256 indexed obligor);
 
     event RemoveObligorFromOpt(uint256 indexed seqOfOpt, uint256 indexed obligor);
@@ -46,8 +48,7 @@ interface IRegisterOfOptions {
         uint par
     ) external returns(OptionsRepo.Head memory head);
 
-    function issueOption(OptionsRepo.Option memory opt) external 
-        returns(OptionsRepo.Head memory head);
+    function issueOption(OptionsRepo.Option memory opt) external;
 
     function regOptionTerms(address opts) external;
 

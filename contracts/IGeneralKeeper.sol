@@ -8,6 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "./common/lib/RolesRepo.sol";
+import "./common/lib/UsersRepo.sol";
 
 import "./keepers/IROCKeeper.sol";
 import "./keepers/IRODKeeper.sol";
@@ -50,6 +51,10 @@ interface IGeneralKeeper {
 
     function createCorpSeal() external;
 
+    function getCompUser() external view returns (UsersRepo.User memory);
+
+    function fetchPoints(uint amt) external;
+
     function regKeeper(uint256 title, address keeper) external;
 
     function isKeeper(address caller) external view returns (bool flag);
@@ -59,6 +64,9 @@ interface IGeneralKeeper {
     function regBook(uint256 title, address keeper) external;
 
     function getBook(uint256 title) external view returns (address);
+
+
+
 
     // ##################
     // ##  ROCKeeper   ##

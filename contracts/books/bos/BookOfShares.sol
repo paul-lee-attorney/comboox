@@ -126,10 +126,6 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
         require(to != 0, "BOS.TS: shareholder is ZERO");
 
-        _decreaseShareAmt(share, paid, par);
-
-        _getGK().getROM().addMember(to);
-
         SharesRepo.Share memory newShare;
 
         newShare.head = SharesRepo.Head({
@@ -152,6 +148,10 @@ contract BookOfShares is IBookOfShares, AccessControl {
             state: 0,
             para: 0
         });        
+
+        _decreaseShareAmt(share, paid, par);
+
+        _getGK().getROM().addMember(to);
 
         regShare(newShare);
     }

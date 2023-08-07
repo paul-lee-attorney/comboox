@@ -54,7 +54,7 @@ interface IRegCenter {
 
     // ==== Options ====
 
-    event SetReward(bytes32 indexed snOfReward);
+    event SetPlatformRule(bytes32 indexed snOfRule);
 
     event TransferOwnership(address indexed newOwner);
 
@@ -77,7 +77,7 @@ interface IRegCenter {
     event WithdrawPoints(bytes32 indexed headSn);
 
     // ==== Docs ====
-    event SetDocKeeper(address indexed keeper);
+    // event SetDocKeeper(address indexed keeper);
     
     event SetTemplate(uint256 indexed typeOfDoc, uint256 indexed version, address indexed body);
 
@@ -91,8 +91,8 @@ interface IRegCenter {
 
     // ==== Opts Setting ====
 
-    function setReward(bytes32 snOfReward) external;
-
+    function setPlatformRule(bytes32 snOfRule) external;
+    
     // ==== Power transfer ====
 
     function transferOwnership(address newOwner) external;
@@ -133,20 +133,14 @@ interface IRegCenter {
 
     function setBackupKey(address bKey) external;
 
+    function setRoyaltyRule(bytes32 snOfRoyalty) external;
+
     // ==== Doc ====
 
-    function initDocsRepo(address docKeeper) external;
-
-    function turnOverKeyOfDocsRepo(address newKeeper) external;
-
-    function setTemplate(bytes32 snOfDoc, address body) external;
-
-    // ==== use Docs ====
+    function setTemplate(uint typeOfDoc, address body) external;
 
     function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) external 
         returns(DocsRepo.Doc memory doc);
-
-    function setDocSnOfUser() external;
 
     // ==== Comp ====
 
@@ -162,20 +156,15 @@ interface IRegCenter {
 
     function getBookeeper() external view returns (address);
 
-    // ---- Points ----
-
-    function getRewardSetting()
-        external
-        view
-        returns (UsersRepo.Reward memory);
+    function getPlatformRule() external returns(UsersRepo.Rule memory);
 
     // ==== Users ====
 
     function isKey(address key) external view returns (bool);
 
-    function isCOA(uint256 acct) external view returns(bool);
-
     function getUser() external view returns (UsersRepo.User memory);
+
+    function getRoyaltyRule(uint author)external view returns (UsersRepo.Key memory);
 
     function getUserNo(address targetAddr, uint fee, uint author) external returns (uint40);
 
@@ -183,17 +172,11 @@ interface IRegCenter {
 
     // ==== Docs ====
 
-    function counterOfVersions(uint256 typeOfDoc) external view returns(uint16 seq);
+    function counterOfTypes() external view returns(uint32);
+
+    function counterOfVersions(uint256 typeOfDoc) external view returns(uint32 seq);
 
     function counterOfDocs(uint256 typeOfDoc, uint256 version) external view returns(uint64 seq);
-
-    function getDocKeeper () external view returns(address keeper);
-
-    // ==== SingleCheck ====
-
-    function getTemplate(bytes32 snOfDoc) external view returns (DocsRepo.Doc memory doc);
-
-    function docExist(bytes32 snOfDoc) external view returns(bool);
 
     function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc);
 
@@ -201,15 +184,7 @@ interface IRegCenter {
 
     function verifyDoc(bytes32 snOfDoc) external view returns(bool flag);
 
-    // ==== BatchQuery ====
+    function getVersionsList(uint256 typeOfDoc) external view returns(DocsRepo.Doc[] memory);
 
-    function getAllDocsSN() external view returns(bytes32[] memory);
-
-    function getBodiesList(uint256 typeOfDoc, uint256 version) external view returns(address[] memory);
-
-    function getSNList(uint256 typeOfDoc, uint256 version) external view returns(bytes32[] memory);
-
-    function getDocsList(uint256 typeOfDoc, uint256 version) external view returns(DocsRepo.Doc[] memory);
-
-    function getTempsList(uint256 typeOfDoc) external view returns(DocsRepo.Doc[] memory);
+    function getDocsList(bytes32 snOfDoc) external view returns(DocsRepo.Doc[] memory);
 }

@@ -179,16 +179,20 @@ library OptionsRepo {
         opt.body.paid = uint64(paid);
         opt.body.par = uint64(par);
 
-        head = issueOption(repo, opt);
+        // head = issueOption(repo, opt);
+        head = regOption(repo, opt);
     }
 
     function issueOption(
         Repo storage repo,
         Option memory opt
-    ) public returns(Head memory head) {
-        opt.head.issueDate = uint48(block.timestamp);
-        opt.body.state = uint8(StateOfOpt.Issued);
-        head = regOption(repo, opt);
+    ) public returns(uint) {
+        Option storage o = repo.options[opt.head.seqOfOpt];
+
+        o.head.issueDate = uint48(block.timestamp);
+        o.body.state = uint8(StateOfOpt.Issued);
+        // head = regOption(repo, opt);
+        return o.head.issueDate;
     }
 
     function regOption(

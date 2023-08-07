@@ -7,20 +7,16 @@
 
 pragma solidity ^0.8.8;
 
-import "../lib/EnumerableSet.sol";
-
 library DocsRepo {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
-
+    
     struct Head {
-        uint16 typeOfDoc;
-        uint16 version;
+        uint32 typeOfDoc;
+        uint32 version;
         uint64 seqOfDoc;
         uint40 creator;
         uint48 createDate;
         uint16 para;
         uint16 argu;
-        uint32 data;
         uint8 state;        
     }
  
@@ -30,10 +26,9 @@ library DocsRepo {
     }
 
     struct Repo {
-        // typeOfDoc => version => seqOfDoc => Doc
-        mapping(uint256 => mapping(uint256 => mapping(uint256 => Doc))) docs;
-        mapping(address => bytes32) snOfDoc;
-        EnumerableSet.Bytes32Set snList;
+        // typeOfDoc => version => seqOfDoc => address
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => address))) bodies;
+        mapping(address => Head) heads;
     }
 
     //##################
@@ -43,17 +38,9 @@ library DocsRepo {
     function snParser(bytes32 sn) public pure returns(Head memory head) {
         uint _sn = uint(sn);
 
-        head = Head({
-            typeOfDoc: uint16(_sn >> 240),
-            version: uint16(_sn >> 224),
-            seqOfDoc: uint64(_sn >> 160),
-            creator: uint40(_sn >> 120),
-            createDate: uint48(_sn >> 72),
-            para: uint16(_sn >> 56),
-            argu: uint16(_sn >> 40),
-            data: uint32(_sn >> 8),
-            state: uint8(_sn)
-        });
+        head.typeOfDoc = uint32(_sn >> 224);
+        head.version = uint32(_sn >> 192);
+        head.seqOfDoc = uint64(_sn >> 128);
     }
 
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
@@ -61,98 +48,96 @@ library DocsRepo {
                             head.typeOfDoc,
                             head.version,
                             head.seqOfDoc,
-                            head.creator,
-                            head.createDate,
-                            head.para,
-                            head.argu,
-                            head.data,
-                            head.state);  
+                            uint128(0));  
         assembly {
             sn := mload(add(_sn, 0x20))
         }
     }
 
-    function init(Repo storage repo, address msgSender) 
-        public returns(bool flag)
-    {
-        if (getKeeper(repo) == address(0)) {
-            flag = _setKeeper(repo, msgSender);
-        }
-    }
-
-    function turnOverRepoKey(Repo storage repo, address keeper, address msgSender) 
-        public returns (bool flag) 
-    {
-        require(getKeeper(repo) == msgSender, "DR.TORK: not keeper");
-        if (msgSender != keeper) {
-            flag = _setKeeper(repo, keeper);
-        }
-    } 
-
     function setTemplate(
         Repo storage repo,
-        bytes32 snOfDoc, 
+        uint typeOfDoc, 
         address body,
-        address msgSender,
         uint caller
-    ) public returns (Doc memory doc) {
-        doc.head = snParser(snOfDoc);
+    ) public returns (Head memory head) {
+        head.typeOfDoc = uint32(typeOfDoc);
+        head.creator = uint40(caller);
 
-        require(doc.head.typeOfDoc > 0, "DR.ST: zero typeOfDoc");
-        require(msgSender == getKeeper(repo), "DR.ST: not keeper");
+        require(head.typeOfDoc > 0, "DR.setTemplate: zero typeOfDoc");
+        if (head.typeOfDoc > counterOfTypes(repo))
+            head.typeOfDoc = _increaseCounterOfTypes(repo);
 
-        doc.head.creator = uint40(caller);
-        doc.head.version = _increaseCounterOfVersions(repo, doc.head.typeOfDoc);
-        doc.head.createDate = uint48(block.timestamp);
-        doc.body = body;
+        require(head.creator > 0, "DR.ST: zero creator");
+        if (repo.bodies[head.typeOfDoc][1][0] > address(0))
+            require( repo.heads[repo.bodies[head.typeOfDoc][1][0]].creator 
+                == head.creator, "DR.setTemplate: not Template creator");
 
-        if (repo.snList.add(codifyHead(doc.head))) {
-            repo.docs[doc.head.typeOfDoc][doc.head.version][0] = doc;
-        }
+        head.version = _increaseCounterOfVersions(repo, head.typeOfDoc);
+        head.createDate = uint48(block.timestamp);
+
+        repo.bodies[head.typeOfDoc][head.version][0] = body;
+        repo.heads[body] = head;
     }
 
-    function createDoc(Repo storage repo, bytes32 snOfDoc, uint creator)
-        public returns (Doc memory doc)
+    function createDoc(
+        Repo storage repo, 
+        bytes32 snOfDoc,
+        uint40 creator
+    ) public returns (Doc memory doc)
     {
         doc.head = snParser(snOfDoc);
+        doc.head.creator = creator;
 
-        require(doc.head.typeOfDoc > 0, "DR.CD: zero typeOfDoc");
-        require(doc.head.version > 0, "DR.CD: zero version");
-        require(creator > 0, "DR.CD: zero creator");
+        require(doc.head.typeOfDoc > 0, "DR.createDoc: zero typeOfDoc");
+        require(doc.head.version > 0, "DR.createDoc: zero version");
+        require(doc.head.creator > 0, "DR.createDoc: zero creator");
 
-        doc.head.creator = uint40(creator);
+        address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0];
+        require(temp != address(0), "DR.createDoc: template not ready");
 
-        address temp = repo.docs[doc.head.typeOfDoc][doc.head.version][0].body;
-
-        require(temp != address(0), "DR.CD: template not ready");
-    
-        doc.body = _createClone(temp);
-
-        doc.head.seqOfDoc = _increaseCounterOfDocs(repo, doc.head.typeOfDoc, doc.head.version);
+        doc.head.seqOfDoc = _increaseCounterOfDocs(repo, doc.head.typeOfDoc, doc.head.version);            
         doc.head.createDate = uint48(block.timestamp);
 
-        bytes32 sn = codifyHead(doc.head);
-        if (repo.snList.add(sn)) {
-            repo.docs[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc] = doc;
-            repo.snOfDoc[doc.body] = sn;
-        }
+        doc.body = _createClone(temp);
+
+        repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc] = doc.body;
+        repo.heads[doc.body] = doc.head;
+
     }
 
-    function _setKeeper(Repo storage repo, address keeper) private returns (bool flag) {
-        if (keeper > address(0)) {
-            repo.docs[0][0][0].body = keeper;
-            flag = true;
-        }
+    function _increaseCounterOfTypes(Repo storage repo) 
+        private returns(uint32) 
+    {
+        uint32 counter = uint32(uint160(repo.bodies[0][0][0]));
+        counter++;
+        repo.bodies[0][0][0] = address(uint160(counter));
+
+        return counter;
     }
 
-    function _increaseCounterOfVersions(Repo storage repo, uint256 typeOfDoc) private returns(uint16 version) {
-        repo.docs[typeOfDoc][0][0].head.version++;
-        version = repo.docs[typeOfDoc][0][0].head.version;
+    function _increaseCounterOfVersions(
+        Repo storage repo, 
+        uint256 typeOfDoc
+    ) private returns(uint32) {
+
+        uint32 counter = uint32(uint160(repo.bodies[typeOfDoc][0][0]));
+        counter++;
+        repo.bodies[typeOfDoc][0][0] = address(uint160(counter));
+
+        return counter;
     }
 
-    function _increaseCounterOfDocs(Repo storage repo, uint256 typeOfDoc, uint256 version) private returns(uint64 seq) {
-        repo.docs[typeOfDoc][version][0].head.seqOfDoc++;
-        seq = repo.docs[typeOfDoc][version][0].head.seqOfDoc;
+    function _increaseCounterOfDocs(
+        Repo storage repo, 
+        uint256 typeOfDoc, 
+        uint256 version
+    ) private returns(uint64) {
+
+        uint64 counter = uint64(uint160(repo.bodies[typeOfDoc][version][0]));
+        counter++;
+        repo.bodies[typeOfDoc][version][0] = address(uint160(counter));
+
+        return counter;
     }
 
     // ==== CloneFactory ====
@@ -227,90 +212,88 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     //##   read I/O   ##
     //##################
 
-    function counterOfVersions(Repo storage repo, uint256 typeOfDoc) public view returns(uint16 seq) {
-        seq = repo.docs[typeOfDoc][0][0].head.version;
+
+    function counterOfTypes(Repo storage repo) public view returns(uint32) {
+        return uint32(uint160(repo.bodies[0][0][0]));
     }
 
-    function counterOfDocs(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(uint64 seq) {
-        seq = repo.docs[typeOfDoc][version][0].head.seqOfDoc;
+    function counterOfVersions(Repo storage repo, uint typeOfDoc) public view returns(uint32) {
+        return uint32(uint160(repo.bodies[uint32(typeOfDoc)][0][0]));
     }
 
-    function getKeeper (Repo storage repo) public view returns(address keeper) {
-        keeper = repo.docs[0][0][0].body;
+    function counterOfDocs(Repo storage repo, uint typeOfDoc, uint version) public view returns(uint64) {
+        return uint64(uint160(repo.bodies[uint32(typeOfDoc)][uint32(version)][0]));
     }
 
-    // ==== SingleCheck ====
+    function docExist(Repo storage repo, address body) public view returns(bool) {
+        Head memory head = repo.heads[body];
+        if (   body == address(0) 
+            || head.typeOfDoc == 0 
+            || head.version == 0 
+            || head.seqOfDoc == 0
+        ) return false;
+   
+        return repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc] == body;
+    }
 
-    function getTemplate(Repo storage repo, bytes32 snOfDoc) public view returns (Doc memory doc) {
+    function getDoc(
+        Repo storage repo,
+        bytes32 snOfDoc
+    ) public view returns(Doc memory doc) {
+        doc.head = snParser(snOfDoc);
+
+        doc.body = repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc];
+        doc.head = repo.heads[doc.body];
+    }
+
+    function getVersionsList(
+        Repo storage repo,
+        uint typeOfDoc
+    ) public view returns(Doc[] memory)
+    {
+        uint32 len = counterOfVersions(repo, typeOfDoc);
+        Doc[] memory out = new Doc[](len);
+
+        while (len > 0) {
+            Head memory head;
+            head.typeOfDoc = uint32(typeOfDoc);
+            head.version = len;
+
+            out[len - 1] = getDoc(repo, codifyHead(head));
+            len--;
+        }
+
+        return out;
+    }
+
+    function getDocsList(
+        Repo storage repo,
+        bytes32 snOfDoc
+    ) public view returns(Doc[] memory) {
         Head memory head = snParser(snOfDoc);
-        doc = repo.docs[head.typeOfDoc][head.version][0];
-    }
+                
+        uint64 len = counterOfDocs(repo, head.typeOfDoc, head.version);
+        Doc[] memory out = new Doc[](len);
 
-    function docExist(Repo storage repo, bytes32 snOfDoc) public view returns(bool) {
-        return repo.snList.contains(snOfDoc);
-    }
-
-    function getDoc(Repo storage repo, bytes32 snOfDoc) public view returns(Doc memory doc) {
-        if (docExist(repo, snOfDoc)) {
-            Head memory head = snParser(snOfDoc);
-            doc = repo.docs[head.typeOfDoc][head.version][head.seqOfDoc];
-        }
-    }
-
-    function getSN(Repo storage repo, address body) public view returns(bytes32 sn) {
-        sn = repo.snOfDoc[body];
-    }
-
-    function verifyDoc(Repo storage repo, bytes32 snOfDoc) public view returns(bool flag) {
-        address temp = getTemplate(repo, snOfDoc).body;
-        address query = getDoc(repo, snOfDoc).body;
-
-        flag = _isClone(temp, query);
-    }
-
-    // ==== BatchQuery ====
-
-    function getAllSN(Repo storage repo) public view returns(bytes32[] memory) {
-        return repo.snList.values();
-    }
-
-    function getBodiesList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(address[] memory) {
-        uint256 len = counterOfDocs(repo, typeOfDoc, version);
-        address[] memory output = new address[](len);
         while (len > 0) {
-            output[len - 1]=repo.docs[typeOfDoc][version][len].body;
-            len--; 
+            head.seqOfDoc = len;
+            out[len - 1] = getDoc(repo, codifyHead(head));
+            len--;
         }
-        return output;
-    } 
 
-    function getSNList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(bytes32[] memory) {
-        uint256 len = counterOfDocs(repo, typeOfDoc, version);
-        bytes32[] memory output = new bytes32[](len);
-        while (len > 0) {
-            output[len - 1]=codifyHead(repo.docs[typeOfDoc][version][len].head);
-            len--; 
-        }
-        return output;
-    } 
-
-    function getDocsList(Repo storage repo, uint256 typeOfDoc, uint256 version) public view returns(Doc[] memory) {
-        uint256 len = counterOfDocs(repo, typeOfDoc, version);
-        Doc[] memory output = new Doc[](len);
-        while (len > 0) {
-            output[len - 1] = repo.docs[typeOfDoc][version][len];
-            len--; 
-        }
-        return output;
-    } 
-
-    function getTempsList(Repo storage repo, uint256 typeOfDoc) public view returns(Doc[] memory) {
-        uint256 len = counterOfVersions(repo, typeOfDoc);
-        Doc[] memory output = new Doc[](len);
-        while (len > 0) {
-            output[len - 1]=repo.docs[typeOfDoc][len][0];
-            len--; 
-        }
-        return output;
+        return out;
     }
+
+    function verifyDoc(
+        Repo storage repo, 
+        bytes32 snOfDoc
+    ) public view returns(bool) {
+        Head memory head = snParser(snOfDoc);
+
+        address temp = repo.bodies[head.typeOfDoc][head.version][0];
+        address query = repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc];
+
+        return _isClone(temp, query);
+    }
+
 }

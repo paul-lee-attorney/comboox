@@ -44,11 +44,11 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         emit CreateOpt(head.seqOfOpt, OptionsRepo.codifyHead(head));
     }
 
-    function issueOption(OptionsRepo.Option memory opt) external onlyKeeper
-        returns(OptionsRepo.Head memory head) 
+    function issueOption(OptionsRepo.Option memory opt) external onlyKeeper 
     {
-        head = _repo.issueOption(opt);
-        emit CreateOpt(head.seqOfOpt, OptionsRepo.codifyHead(head));
+        uint issueDate = _repo.issueOption(opt);
+
+        emit IssueOpt(opt.head.seqOfOpt, issueDate);
     }
 
     function regOptionTerms(address opts) external onlyKeeper {
@@ -63,10 +63,10 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
             uint256[] memory obligors = 
                 IOptions(opts).getObligorsOfOption(opt.head.seqOfOpt);
 
-            opt.head = _repo.issueOption(opt);
+            opt.head = _repo.regOption(opt);
+            _repo.issueOption(opt);
 
             emit CreateOpt(opt.head.seqOfOpt, OptionsRepo.codifyHead(opt.head));
-
             _repo.records[opt.head.seqOfOpt].addObligorsIntoOption(obligors);
 
             len--;
