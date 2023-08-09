@@ -87,9 +87,9 @@ interface IRegisterOfMembers {
 
     function removeMemberFromGroup(uint256 acct, uint256 root) external;
 
-    // ##################
-    // ##   查询接口   ##
-    // ##################
+    // ##############
+    // ##   Read   ##
+    // ##############
 
     function basedOnPar() external view returns (bool);
 

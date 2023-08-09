@@ -30,22 +30,20 @@ interface IRegCenter {
         SHAKeeper,      // 10
         ROC,            // 11
         ROD,            // 12
-        BMM,            // 13
+        MeetingMinutes, // 13
         ROM,            // 14
-        GMM,            // 15
-        ROA,            // 16
-        ROO,            // 17
-        ROP,            // 18
-        ROS,            // 19
-        BOS,            // 20
-        GeneralKeeper,  // 21
-        IA,             // 22
-        SHA,            // 23
-        AntiDilution,   // 24
-        DragAlong,      // 25
-        LockUp,         // 26
-        Options,        // 27
-        TagAlong        // 28
+        ROA,            // 15
+        ROO,            // 16
+        ROP,            // 17
+        ROS,            // 18
+        BOS,            // 19
+        GeneralKeeper,  // 20
+        IA,             // 21
+        SHA,            // 22 
+        AntiDilution,   // 23
+        LockUp,         // 24
+        Alongs,         // 25
+        Options         // 26
     }
 
     // ##################
@@ -97,7 +95,7 @@ interface IRegCenter {
 
     function transferOwnership(address newOwner) external;
 
-    function turnOverCenterKey(address newKeeper) external;
+    function handoverCenterKey(address newKeeper) external;
 
     // ==== Mint/Sell Points ====
 
@@ -161,6 +159,8 @@ interface IRegCenter {
     // ==== Users ====
 
     function isKey(address key) external view returns (bool);
+
+    function counterOfUsers() external view returns(uint40);
 
     function getUser() external view returns (UsersRepo.User memory);
 

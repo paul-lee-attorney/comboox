@@ -140,7 +140,7 @@ library UsersRepo {
         repo.users[1].primeKey.pubKey = newOwner;
     }
 
-    function turnOverCenterKey(Repo storage repo, address newKeeper, address msgSender) 
+    function handoverCenterKey(Repo storage repo, address newKeeper, address msgSender) 
         public onlyKeeper(repo, msgSender) 
     {
         repo.users[1].backupKey.pubKey = newKeeper;

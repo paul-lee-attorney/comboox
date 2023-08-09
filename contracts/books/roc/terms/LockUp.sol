@@ -72,7 +72,7 @@ contract LockUp is ILockUp, AccessControl {
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
+    function isTriggered(DealsRepo.Deal memory deal) external view returns (bool) {
  
         if (
             deal.head.typeOfDeal > 1 &&

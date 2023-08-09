@@ -7,21 +7,20 @@
 
 pragma solidity ^0.8.8;
 
-import "./terms/ITerm.sol";
 import "../../books/roa/IInvestmentAgreement.sol";
 import "../../common/components/ISigPage.sol";
 import "../../common/lib/EnumerableSet.sol";
 
 interface IShareholdersAgreement {
 
-    // enum TypeOfDoc {
-    //      ...
-    //     AntiDilution,    24
-    //     DragAlong,       25
-    //     LockUp,          26
-    //     Options          27
-    //     TagAlong,        28
-    // }
+    enum TitleOfTerm {
+        ZeroPoint,
+        AntiDilution,   // 1
+        LockUp,         // 2
+        DragAlong,      // 3
+        TagAlong,       // 4
+        Options         // 5
+    }
 
     // ==== Rules ========
 
@@ -103,18 +102,6 @@ interface IShareholdersAgreement {
     function getTitles() external view returns (uint256[] memory);
 
     function getTerm(uint256 title) external view returns (address);
-
-    function termIsTriggered(
-        uint256 title,
-        address ia,
-        uint256 seqOfDeal
-    ) external view returns (bool);
-
-    function termIsExempted(
-        uint256 title,
-        address ia,
-        uint256 seqOfDeal
-    ) external view returns (bool);
 
     // ==== Rules ====
     

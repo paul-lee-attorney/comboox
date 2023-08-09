@@ -7,7 +7,6 @@
 
 pragma solidity ^0.8.8;
 
-import "./ITerm.sol";
 import "../../roa/IInvestmentAgreement.sol";
 
 import "../../../common/lib/ArrayUtils.sol";
@@ -16,7 +15,7 @@ import "../../../common/lib/EnumerableSet.sol";
 import "../../../common/lib/SharesRepo.sol";
 
 
-interface IAntiDilution is ITerm {
+interface IAntiDilution {
 
     struct Benchmark{
         uint16 classOfShare;
@@ -62,5 +61,8 @@ interface IAntiDilution is ITerm {
     function getGiftPaid(address ia, uint256 seqOfDeal, uint256 seqOfShare)
         external view returns (uint64 gift);
 
+    function isTriggered(DealsRepo.Deal memory deal) external view returns (bool);
+
+    function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool);
 
 }

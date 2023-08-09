@@ -70,16 +70,16 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         bytes32 sigHash
     ) external onlyDK withinExecPeriod(ia) {
         IGeneralKeeper _gk = _getGK();
-
         IRegisterOfAgreements _roa = _gk.getROA();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
 
-        require(deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated), 
-            "SHAK.EAR: deal terminated");
+        require(deal.body.state == uint8(DealsRepo.StateOfDeal.Locked), 
+            "SHAK.execAlongs: state not Locked");
 
         _roa.createMockOfIA(ia);
+
         _checkAlongDeal(dragAlong, ia, deal, share, caller);
 
         _roa.execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
@@ -104,28 +104,26 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         address term = dragAlong
             ? _gk.getSHA().getTerm(
-                uint8(IRegCenter.TypeOfDoc.DragAlong)
+                uint8(IShareholdersAgreement.TitleOfTerm.DragAlong)
             )
             : _gk.getSHA().getTerm(
-                uint8(IRegCenter.TypeOfDoc.TagAlong)
+                uint8(IShareholdersAgreement.TitleOfTerm.TagAlong)
             );
 
-        require(ITerm(term).isTriggered(ia, deal), "SHAK.execAlongRight: not triggered");
-
         require(
-            IAlongs(term).isLinked(deal.head.seller, share.head.shareholder),
-            "SHAK.CAD: NOT linked"
+            IAlongs(term).isFollower(deal.head.seller, share.head.shareholder),
+            "SHAK.checkAlongs: NOT linked"
         );
 
+        require(IAlongs(term).isTriggered(ia, deal), "SHAK.checkAlongs: not triggered");
+
         if (dragAlong) {
-            require(caller == deal.head.seller, "SHAK.MAD: caller is not drager of DragAlong");
-            require(IAlongs(term).priceCheck(ia, deal, share, caller),
-                    "SHAK.CAD: price NOT satisfied");
+            require(caller == deal.head.seller, "SHAK.checkAlongs: not drager");
         } else {
             require(caller == share.head.shareholder,
-                    "SHAK.CAD: not shareholder of TagAlong");
+                    "SHAK.checkAlongs: not follower");
             require(!ISigPage(ia).isBuyer(true, caller),
-                    "SHAK.CAD: is Buyer of Deal");
+                    "SHAK.checkAlongs: is Buyer of Deal");
         }
     }
 
@@ -148,7 +146,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         require(caller == deal.body.buyer, "SHAK.AAD: not buyer");
 
-        if (deal.body.state != uint8(DealsRepo.StateOfDeal.Terminated))
+        if (deal.body.state == uint8(DealsRepo.StateOfDeal.Locked))
         {
             DTClaims.Claim memory claim = _roa.getDTClaimForShare(ia, seqOfDeal, seqOfShare);
             SharesRepo.Share memory share = _gk.getBOS().getShare(seqOfShare);
@@ -157,7 +155,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
             ISigPage(ia).regSig(seqOfAlongDeal, claim.claimer, claim.sigDate, claim.sigHash);
             ISigPage(ia).regSig(seqOfAlongDeal, caller, uint48(block.timestamp), sigHash);
-        }        
+        } 
 
     }
 
@@ -168,9 +166,9 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         SharesRepo.Share memory share
     ) private returns (uint256 seqOfAlongDeal) {
         deal.head = DealsRepo.Head({
-            typeOfDeal: claim.typeOfClaim == 0 ? 
-                uint8(DealsRepo.TypeOfDeal.DragAlong) : 
-                uint8(DealsRepo.TypeOfDeal.TagAlong),
+            typeOfDeal: claim.typeOfClaim == 0 
+                ? uint8(DealsRepo.TypeOfDeal.DragAlong) 
+                : uint8(DealsRepo.TypeOfDeal.TagAlong),
             seqOfDeal: 0,
             preSeq: deal.head.seqOfDeal,
             classOfShare: share.head.class,
@@ -219,7 +217,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
                 "SHAK.EAD: is InitSigner");
 
         address ad = _gk.getSHA().getTerm(
-            uint8(IRegCenter.TypeOfDoc.AntiDilution)
+            uint8(IShareholdersAgreement.TitleOfTerm.AntiDilution)
         );
 
         uint64 giftPaid = IAntiDilution(ad).getGiftPaid(ia, seqOfDeal, seqOfShare);

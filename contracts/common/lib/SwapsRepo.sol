@@ -11,7 +11,6 @@ import "../../IGeneralKeeper.sol";
 import "../../books/rom/IRegisterOfMembers.sol";
 import "../../books/bos/IBookOfShares.sol";
 
-import "./EnumerableSet.sol";
 import "./SharesRepo.sol";
 
 library SwapsRepo {

@@ -7,14 +7,15 @@
 
 pragma solidity ^0.8.8;
 
-import "./ITerm.sol";
+// import "./ITerm.sol";
 import "../../../common/lib/EnumerableSet.sol";
 
 import "../../../common/lib/ArrayUtils.sol";
+import "../../../common/lib/DealsRepo.sol";
 import "../../../common/lib/EnumerableSet.sol";
 
 
-interface ILockUp is ITerm {
+interface ILockUp {
 
     // 股票锁定柜
     struct Locker {
@@ -46,4 +47,9 @@ interface ILockUp is ITerm {
         returns (uint48 dueDate, uint256[] memory keyHolders);
 
     function lockedShares() external view returns (uint256[] memory);
+
+    function isTriggered(DealsRepo.Deal memory deal) external view returns (bool);
+
+    function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool);
+
 }

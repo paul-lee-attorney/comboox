@@ -40,8 +40,8 @@ contract ROCKeeper is IROCKeeper, AccessControl {
 
         require(_gk.getROM().isMember(caller), "not MEMBER");
 
-        bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 240) +
-            (version << 224)); 
+        bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 224) +
+            uint224(version << 192)); 
 
         DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, primeKeyOfCaller);
 

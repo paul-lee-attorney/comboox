@@ -35,7 +35,9 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function createCorpSeal() external onlyDK {
-        _getRC().regUser();
+        IRegCenter _rc = _getRC();
+        _rc.regUser();
+        regNumOfCompany = _rc.getMyUserNo();
     }
 
     function getCompUser() external view onlyOwner returns (UsersRepo.User memory) {

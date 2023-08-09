@@ -15,8 +15,6 @@ contract AntiDilution is IAntiDilution, AccessControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
-    
-
     Ruler private _ruler;
 
     // #################
@@ -109,7 +107,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
+    function isTriggered(DealsRepo.Deal memory deal) public view returns (bool) {
 
         if (deal.head.typeOfDeal != uint8(DealsRepo.TypeOfDeal.CapitalIncrease)) 
             return false;
@@ -151,7 +149,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
 
 
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
-        if (!isTriggered(ia, deal)) return true;
+        if (!isTriggered(deal)) return true;
 
         uint seqOfMotion = _getGK().getROA().getHeadOfFile(ia).seqOfMotion;
         

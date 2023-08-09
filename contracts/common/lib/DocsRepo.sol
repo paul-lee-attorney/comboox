@@ -20,14 +20,19 @@ library DocsRepo {
         uint8 state;        
     }
  
+    struct Body {
+        uint64 seq;
+        address addr;
+    }
+
     struct Doc {
         Head head;
         address body;
     }
 
     struct Repo {
-        // typeOfDoc => version => seqOfDoc => address
-        mapping(uint256 => mapping(uint256 => mapping(uint256 => address))) bodies;
+        // typeOfDoc => version => seqOfDoc => Body
+        mapping(uint256 => mapping(uint256 => mapping(uint256 => Body))) bodies;
         mapping(address => Head) heads;
     }
 
@@ -48,7 +53,9 @@ library DocsRepo {
                             head.typeOfDoc,
                             head.version,
                             head.seqOfDoc,
-                            uint128(0));  
+                            head.creator,
+                            head.createDate,
+                            uint40(0));  
         assembly {
             sn := mload(add(_sn, 0x20))
         }
@@ -67,32 +74,32 @@ library DocsRepo {
         if (head.typeOfDoc > counterOfTypes(repo))
             head.typeOfDoc = _increaseCounterOfTypes(repo);
 
-        require(head.creator > 0, "DR.ST: zero creator");
-        if (repo.bodies[head.typeOfDoc][1][0] > address(0))
-            require( repo.heads[repo.bodies[head.typeOfDoc][1][0]].creator 
+        require(head.creator > 0, "DR.setTemplate: zero creator");
+        if (counterOfVersions(repo, typeOfDoc) > 0)
+            require( repo.heads[repo.bodies[head.typeOfDoc][1][0].addr].creator 
                 == head.creator, "DR.setTemplate: not Template creator");
 
         head.version = _increaseCounterOfVersions(repo, head.typeOfDoc);
         head.createDate = uint48(block.timestamp);
 
-        repo.bodies[head.typeOfDoc][head.version][0] = body;
+        repo.bodies[head.typeOfDoc][head.version][0].addr = body;
         repo.heads[body] = head;
     }
 
     function createDoc(
         Repo storage repo, 
         bytes32 snOfDoc,
-        uint40 creator
+        uint creator
     ) public returns (Doc memory doc)
     {
         doc.head = snParser(snOfDoc);
-        doc.head.creator = creator;
+        doc.head.creator = uint40(creator);
 
         require(doc.head.typeOfDoc > 0, "DR.createDoc: zero typeOfDoc");
         require(doc.head.version > 0, "DR.createDoc: zero version");
         require(doc.head.creator > 0, "DR.createDoc: zero creator");
 
-        address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0];
+        address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0].addr;
         require(temp != address(0), "DR.createDoc: template not ready");
 
         doc.head.seqOfDoc = _increaseCounterOfDocs(repo, doc.head.typeOfDoc, doc.head.version);            
@@ -100,7 +107,7 @@ library DocsRepo {
 
         doc.body = _createClone(temp);
 
-        repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc] = doc.body;
+        repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc].addr = doc.body;
         repo.heads[doc.body] = doc.head;
 
     }
@@ -108,23 +115,16 @@ library DocsRepo {
     function _increaseCounterOfTypes(Repo storage repo) 
         private returns(uint32) 
     {
-        uint32 counter = uint32(uint160(repo.bodies[0][0][0]));
-        counter++;
-        repo.bodies[0][0][0] = address(uint160(counter));
-
-        return counter;
+        repo.bodies[0][0][0].seq++;
+        return uint32(repo.bodies[0][0][0].seq);
     }
 
     function _increaseCounterOfVersions(
         Repo storage repo, 
         uint256 typeOfDoc
     ) private returns(uint32) {
-
-        uint32 counter = uint32(uint160(repo.bodies[typeOfDoc][0][0]));
-        counter++;
-        repo.bodies[typeOfDoc][0][0] = address(uint160(counter));
-
-        return counter;
+        repo.bodies[typeOfDoc][0][0].seq++;
+        return uint32(repo.bodies[typeOfDoc][0][0].seq);
     }
 
     function _increaseCounterOfDocs(
@@ -132,12 +132,8 @@ library DocsRepo {
         uint256 typeOfDoc, 
         uint256 version
     ) private returns(uint64) {
-
-        uint64 counter = uint64(uint160(repo.bodies[typeOfDoc][version][0]));
-        counter++;
-        repo.bodies[typeOfDoc][version][0] = address(uint160(counter));
-
-        return counter;
+        repo.bodies[typeOfDoc][version][0].seq++;
+        return repo.bodies[typeOfDoc][version][0].seq;
     }
 
     // ==== CloneFactory ====
@@ -214,15 +210,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
     function counterOfTypes(Repo storage repo) public view returns(uint32) {
-        return uint32(uint160(repo.bodies[0][0][0]));
+        return uint32(repo.bodies[0][0][0].seq);
     }
 
     function counterOfVersions(Repo storage repo, uint typeOfDoc) public view returns(uint32) {
-        return uint32(uint160(repo.bodies[uint32(typeOfDoc)][0][0]));
+        return uint32(repo.bodies[uint32(typeOfDoc)][0][0].seq);
     }
 
     function counterOfDocs(Repo storage repo, uint typeOfDoc, uint version) public view returns(uint64) {
-        return uint64(uint160(repo.bodies[uint32(typeOfDoc)][uint32(version)][0]));
+        return repo.bodies[uint32(typeOfDoc)][uint32(version)][0].seq;
     }
 
     function docExist(Repo storage repo, address body) public view returns(bool) {
@@ -233,7 +229,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             || head.seqOfDoc == 0
         ) return false;
    
-        return repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc] == body;
+        return repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc].addr == body;
     }
 
     function getDoc(
@@ -242,7 +238,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     ) public view returns(Doc memory doc) {
         doc.head = snParser(snOfDoc);
 
-        doc.body = repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc];
+        doc.body = repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc].addr;
         doc.head = repo.heads[doc.body];
     }
 
@@ -290,10 +286,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     ) public view returns(bool) {
         Head memory head = snParser(snOfDoc);
 
-        address temp = repo.bodies[head.typeOfDoc][head.version][0];
-        address query = repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc];
+        address temp = repo.bodies[head.typeOfDoc][head.version][0].addr;
+        address target = repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc].addr;
 
-        return _isClone(temp, query);
+        return _isClone(temp, target);
     }
 
 }

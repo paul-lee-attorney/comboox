@@ -38,8 +38,8 @@ contract RegCenter is IRegCenter {
         emit TransferOwnership(newOwner);
     }
 
-    function turnOverCenterKey(address newKeeper) external {
-        _users.turnOverCenterKey(newKeeper, msg.sender);
+    function handoverCenterKey(address newKeeper) external {
+        _users.handoverCenterKey(newKeeper, msg.sender);
         emit TurnOverCenterKey(newKeeper);
     }
 
@@ -175,7 +175,8 @@ contract RegCenter is IRegCenter {
     // ###############
 
     function setTemplate(uint typeOfDoc, address body) external {
-        DocsRepo.Head memory head = _docs.setTemplate(typeOfDoc, body, _users.getMyUserNo(msg.sender));
+        require(msg.sender == _users.getBookeeper(), "RC.setTemplate: not bookeeper");
+        DocsRepo.Head memory head = _docs.setTemplate(typeOfDoc, body, 1);
         emit SetTemplate(head.typeOfDoc, head.version, body);
     }
 
@@ -197,44 +198,56 @@ contract RegCenter is IRegCenter {
     {
         address primeKeyOfOwner = msg.sender;
         address rc = address(this);
-
-        address gk = _createDocAtLatestVersion(21, primeKeyOfOwner);
+        
+        address gk = _createDocAtLatestVersion(20, primeKeyOfOwner);
         IAccessControl(gk).init(primeKeyOfOwner, rc, rc, gk);
         IGeneralKeeper(gk).createCorpSeal();
 
-        uint i = 10;
-        while (i > 0) {
-            address keeper = _deployDoc(i, primeKeyOfOwner, gk, rc, gk);
-            if (i == 4 || i == 10)
-                _deployDoc(i+10, primeKeyOfOwner, dk, rc, gk); 
-            else _deployDoc(i+10, primeKeyOfOwner, keeper, rc, gk);
-            i--;
-        }
+        address[11] memory keepers = 
+            _deployKeepers(primeKeyOfOwner, rc, gk);
+
+        _deployBooks(keepers, primeKeyOfOwner, rc, gk);
     
         IAccessControl(gk).setDirectKeeper(dk);
     }
 
-    function _deployDoc(
-        uint typeOfDoc, 
+    function _deployKeepers(
         address primeKeyOfOwner, 
-        address dk, 
         address rc,
         address gk
-    ) 
-        private returns (address body) 
-    {
-        body = _createDocAtLatestVersion(typeOfDoc, primeKeyOfOwner);
-        IAccessControl(body).init(primeKeyOfOwner, dk, rc, gk);
-        if (typeOfDoc < 11) IGeneralKeeper(gk).regKeeper(typeOfDoc, body);
-        else IGeneralKeeper(gk).regBook(typeOfDoc - 10, body);
+    ) private returns (address[11] memory keepers) {
+        keepers[0] = primeKeyOfOwner;
+        uint i = 1;
+        while (i < 11) {
+            keepers[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
+            IAccessControl(keepers[i]).init(primeKeyOfOwner, gk, rc, gk);
+            IGeneralKeeper(gk).regKeeper(i, keepers[i]);
+        }
     }
 
+    function _deployBooks(
+        address[11] memory keepers,
+        address primeKeyOfOwner, 
+        address rc,
+        address gk
+    ) private {
+        address[10] memory books;
+        uint8[10] memory types = [11, 12, 13, 14, 13, 15, 16, 17, 18, 19];
+        uint8[10] memory seqOfDK = [1, 2, 3, 0, 5, 6, 7, 8, 9, 0];
+
+        uint i;
+        while (i < 10) {
+            books[i] = _createDocAtLatestVersion(types[types[i]], primeKeyOfOwner);
+            IAccessControl(books[i]).init(primeKeyOfOwner, keepers[seqOfDK[i]], rc, gk);
+            IGeneralKeeper(gk).regBook(i+1, books[i]);
+        }
+    }
 
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
         returns(address body)
     {
         uint256 latest = _docs.counterOfVersions(typeOfDoc);
-        bytes32 snOfDoc = bytes32((typeOfDoc << 224) + (latest << 192));
+        bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(latest << 192));
         body = createDoc(snOfDoc, primeKeyOfOwner).body;
     }
 
@@ -260,6 +273,10 @@ contract RegCenter is IRegCenter {
 
     function isKey(address key) external view returns (bool) {
         return _users.isKey(key);
+    }
+
+    function counterOfUsers() external view returns(uint40) {
+        return _users.counterOfUsers();
     }
 
     function getUser() external view returns (UsersRepo.User memory)
@@ -298,12 +315,14 @@ contract RegCenter is IRegCenter {
     }
 
     function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc) {
-        require (_users.counterOfUsers() >= acct, "RC.getDocByUserNo: userNo not exist");
+        // require (_users.counterOfUsers() >= acct, "RC.getDocByUserNo: userNo not exist");
 
-        doc.body = _users.users[acct].primeKey.pubKey;
-        require(_docs.docExist(doc.body), "RC.getDocByUserNo: doc not exist");
-
-        doc.head = _docs.heads[doc.body];
+        if (_users.counterOfUsers() >= acct) { 
+            doc.body = _users.users[acct].primeKey.pubKey;
+            // require(_docs.docExist(doc.body), "RC.getDocByUserNo: doc not exist");
+            if (_docs.docExist(doc.body)) doc.head = _docs.heads[doc.body];
+            else doc.body = address(0);
+        }
     }
 
     function verifyDoc(bytes32 snOfDoc) external view returns(bool flag) {

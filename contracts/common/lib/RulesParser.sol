@@ -230,9 +230,11 @@ library RulesParser {
         uint16 shareRatioThreshold;
         uint32 rate;
         bool proRata;
-        uint8 typeOfFollowers; // 0-regula 1-restMembers 2-TheClasses
-        uint16[7] classes;
-        uint8 para;
+        uint16 seq;
+        uint16 para;
+        uint16 argu;
+        uint16 ref;
+        uint64 data;
     }
 
     function linkRuleParser(bytes32 sn) public pure returns (LinkRule memory rule) {
@@ -245,17 +247,11 @@ library RulesParser {
             shareRatioThreshold: uint16(_sn >> 168),
             rate: uint32(_sn >> 136),
             proRata: uint8(_sn >> 128) == 1,
-            typeOfFollowers: uint8(_sn >> 120),
-            classes: [
-                uint16(_sn >> 104),
-                uint16(_sn >> 88),
-                uint16(_sn >> 72),
-                uint16(_sn >> 56),
-                uint16(_sn >> 40),
-                uint16(_sn >> 24),
-                uint16(_sn >> 8)
-            ],
-            para: uint8(_sn)
+            seq: uint16(_sn >> 112),
+            para: uint16(_sn >> 96),
+            argu: uint16(_sn >> 80),
+            ref: uint16(_sn >> 64),
+            data: uint64(_sn)
         });
     }
 

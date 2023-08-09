@@ -32,7 +32,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     //##  Write I/O   ##
     //##################
 
-    function createTerm(uint typeOfDoc, uint version)
+    function createTerm(uint title, uint version)
         external
         onlyGC
     {
@@ -40,7 +40,9 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         // uint40 gc = _msgSender(10000);
         address gc = msg.sender;
 
-        bytes32 snOfDoc = bytes32((typeOfDoc << 240) + uint240(version << 224));
+        uint typeOfDoc = title > 3 ? 21 + title : 22 + title;
+
+        bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(version << 192));
 
         IRegCenter _rc = _getRC();
 
@@ -54,15 +56,14 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         );
 
         IAccessControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);
-        // IAccessControl(doc.body).setOwner(owner);
 
-        _terms.terms[typeOfDoc] = doc.body;
-        _terms.seqList.add(typeOfDoc);
+        _terms.terms[title] = doc.body;
+        _terms.seqList.add(title);
     }
 
-    function removeTerm(uint typeOfDoc) external onlyAttorney {
-        if (_terms.seqList.remove(typeOfDoc)) {
-            delete _terms.terms[typeOfDoc];
+    function removeTerm(uint title) external onlyAttorney {
+        if (_terms.seqList.remove(title)) {
+            delete _terms.terms[title];
         }
     }
 
@@ -155,24 +156,6 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     function getTerm(uint256 title) external view titleExist(title) returns (address) {
         return _terms.terms[title];
-    }
-
-    function termIsTriggered(
-        uint256 title,
-        address ia,
-        uint256 seqOfDeal
-    ) public view titleExist(title) returns (bool) {
-        return ITerm(_terms.terms[title]).isTriggered(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
-    }
-
-    function termIsExempted(
-        uint256 title,
-        address ia,
-        uint256 seqOfDeal
-    ) external view titleExist(title) returns (bool) {
-        if (!termIsTriggered(title, ia, seqOfDeal)) return true;
-
-        return ITerm(_terms.terms[title]).isExempted(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal));
     }
 
     // ==== Rules ====

@@ -145,8 +145,8 @@ contract ROPKeeper is IROPKeeper, AccessControl {
 
         _gk.getROP().execPledge(seqOfShare, seqOfPld, caller);
 
-        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 240) +
-            (version << 224)); 
+        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
+            uint224(version << 192)); 
 
         DocsRepo.Doc memory doc = _getRC().createDoc(
             snOfDoc,

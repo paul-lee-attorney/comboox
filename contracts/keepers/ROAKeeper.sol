@@ -45,8 +45,8 @@ contract ROAKeeper is IROAKeeper, AccessControl {
  
         require(_gk.getROM().isMember(caller), "not MEMBER");
         
-        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 240) +
-            (version << 224)); 
+        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
+            uint224(version << 192)); 
 
         DocsRepo.Doc memory doc = _rc.createDoc(
             snOfDoc,
@@ -192,30 +192,11 @@ contract ROAKeeper is IROAKeeper, AccessControl {
             else revert("BOIK.vrCheck: authority overflow");
         }
 
-        _checkSHA(isST, ia, seqOfDeal, _sha);
-        // else _checkSHA(termsForCapitalIncrease, ia, seqOfDeal, _sha);
-    }
-
-    function _checkSHA(
-        bool isST,
-        address ia,
-        uint256 seqOfDeal,
-        IShareholdersAgreement _sha
-    ) private view {
-        uint8[4] memory terms = [ 25, 26, 28, 24 ];
-
-        uint len = isST ? 3 : 4;
-        uint i = isST ? 0 : 3;
-
-        while (i < len) {
-            if (_sha.hasTitle(terms[i])) {
-                require(
-                    _sha.termIsExempted(terms[i], ia, seqOfDeal),
-                    "BOIK.checkSHA: term not exempted"
-                );
-            }
-
-            i++;
+        if (isST && _sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.LockUp))) {
+            address lu = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.LockUp));
+            require(
+                ILockUp(lu).isExempted(ia, IInvestmentAgreement(ia).getDeal(seqOfDeal)),
+                "ROAKeeper.lockUpCheck: not exempted");
         }
     }
 
@@ -227,13 +208,6 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        //交易发起人为买方;
-        // require(
-        //     deal.body.buyer == caller,
-        //     "ROAKeeper.closeDeal: NOT buyer"
-        // );
-
-        //验证hashKey, 执行Deal
         if (IInvestmentAgreement(ia).closeDeal(seqOfDeal, hashKey))
             _getGK().getROA().execFile(ia);
 
