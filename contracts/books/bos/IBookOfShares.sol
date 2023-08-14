@@ -42,7 +42,7 @@ interface IBookOfShares {
 
     function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) external;
 
-    function regShare(SharesRepo.Share memory share) external returns(SharesRepo.Share memory newShare);
+    function addShare(SharesRepo.Share memory share) external;
 
     function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external;
 

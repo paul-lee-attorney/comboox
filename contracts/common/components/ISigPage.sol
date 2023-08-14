@@ -34,7 +34,7 @@ interface ISigPage {
     function signDoc(bool initPage, uint256 caller, bytes32 sigHash) 
         external;    
 
-    function regSig(uint256 seqOfDeal, uint256 signer, uint sigDate, bytes32 sigHash)
+    function regSig(uint256 signer, uint sigDate, bytes32 sigHash)
         external returns(bool flag);
 
     //##################

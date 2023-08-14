@@ -334,7 +334,6 @@ interface IGeneralKeeper {
     function acceptAlongDeal(
         address ia,
         uint256 seqOfDeal,
-        uint256 seqOfShare,
         bytes32 sigHash
     ) external;
 
@@ -359,10 +358,9 @@ interface IGeneralKeeper {
         bytes32 sigHash
     ) external;
 
-    function acceptFirstRefusal(
+    function computeFirstRefusal(
         address ia,
-        uint256 seqOfDeal,
-        bytes32 sigHash
+        uint256 seqOfDeal
     ) external;
 
     // ###############

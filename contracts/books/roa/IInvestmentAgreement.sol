@@ -8,8 +8,9 @@
 pragma solidity ^0.8.8;
 
 import "../../common/lib/DealsRepo.sol";
+import "../../common/components/ISigPage.sol";
 
-interface IInvestmentAgreement {
+interface IInvestmentAgreement is ISigPage {
 
     //##################
     //##    Event     ##

@@ -62,7 +62,7 @@ interface IROAKeeper {
         uint256 caller
     ) external;
 
-    function issueNewShare(address ia, uint256 seqOfDeal) external;
+    function issueNewShare(address ia, uint256 seqOfDeal, uint caller) external;
 
     function terminateDeal(
         address ia,

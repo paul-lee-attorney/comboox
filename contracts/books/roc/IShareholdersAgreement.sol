@@ -11,7 +11,7 @@ import "../../books/roa/IInvestmentAgreement.sol";
 import "../../common/components/ISigPage.sol";
 import "../../common/lib/EnumerableSet.sol";
 
-interface IShareholdersAgreement {
+interface IShareholdersAgreement is ISigPage {
 
     enum TitleOfTerm {
         ZeroPoint,

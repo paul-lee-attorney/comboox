@@ -39,13 +39,6 @@ contract FilesFolder is IFilesFolder, AccessControl {
         emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Circulated));
     }
 
-    function establishFile(
-        address body
-    ) external onlyDK {
-        _repo.establishFile(body);
-        emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Established));
-    }
-
     function proposeFile(
         address body,
         uint64 seqOfMotion
@@ -95,8 +88,12 @@ contract FilesFolder is IFilesFolder, AccessControl {
         return _repo.closingDeadline(body);
     }
 
-    function shaExecDeadline(address body) external view returns (uint48) {
-        return _repo.shaExecDeadline(body);
+    function frExecDeadline(address body) external view returns (uint48) {
+        return _repo.frExecDeadline(body);
+    }
+
+    function dtExecDeadline(address body) external view returns (uint48) {
+        return _repo.dtExecDeadline(body);
     }
 
     function terminateStartpoint(address body) external view returns (uint48) {
@@ -123,22 +120,12 @@ contract FilesFolder is IFilesFolder, AccessControl {
         return _repo.getFile(body);
     } 
 
-    function getSNOfFile(address body)
-        external view returns (bytes32)
-    {
-        return _repo.getSNOfFile(body);
-    }
-
     function getHeadOfFile(address body)
         public view returns (FilesRepo.Head memory head)
     {
         head = _repo.getHeadOfFile(body);
     }
 
-    function getRefOfFile(address body)
-        external view returns (FilesRepo.Ref memory ref) 
-    {
-        ref = _repo.getRefOfFile(body);
-    }
+
 
 }

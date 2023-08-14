@@ -14,7 +14,7 @@ import "../../common/components/FilesFolder.sol";
 contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     using DTClaims for DTClaims.Claims;
     using DTClaims for DTClaims.Head;
-    using EnumerableSet for EnumerableSet.UintSet;
+    // using EnumerableSet for EnumerableSet.UintSet;
     using FRClaims for FRClaims.Claims;
     using FilesRepo for FilesRepo.Repo;
     using TopChain for TopChain.Chain;
@@ -30,51 +30,28 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     //##  Write I/O  ##
     //#################
 
-    // function circulateIA(
-    //     address ia, 
-    //     bytes32 docUrl, 
-    //     bytes32 docHash
-    // ) external onlyDK {
-    //     uint256 typeOfIA = IInvestmentAgreement(ia).getTypeOfIA();
-    //     RulesParser.VotingRule memory vr = 
-    //         _getGK().getSHA().getRule(typeOfIA).votingRuleParser();
-    //     circulateDoc(ia, vr, docUrl, docHash);
-    // }
-
     // ==== FirstRefusal ====
 
-    function execFirstRefusalRight(
+    function claimFirstRefusal(
         address ia,
         uint256 seqOfDeal,
         uint256 caller,
         bytes32 sigHash
-    ) external onlyKeeper returns (bool flag) {
-        FilesRepo.Head memory headOfFile = getHeadOfFile(ia);
-        require(block.timestamp < _repo.shaExecDeadline(ia), 
-            "BOA.EFRR: missed shaExecDeadline");
-
-        if (_frClaims[ia].execFirstRefusalRight(seqOfDeal, caller, sigHash))
-        {
-            emit ExecFirstRefusalRight(ia, seqOfDeal, caller);
-
-            _resetDoc(ia, headOfFile);
-
-            flag = true;
-        }
+    ) external onlyKeeper {
+        require(block.timestamp < _repo.frExecDeadline(ia),
+            "ROA.claimFR: missed frExecDeadline");
+        _frClaims[ia].claimFirstRefusal(seqOfDeal, caller, sigHash);
+        emit ClaimFirstRefusal(ia, seqOfDeal, caller);
     }
 
-    function _resetDoc(address ia, FilesRepo.Head memory headOfFile) private {
-        if (headOfFile.state > uint8(FilesRepo.StateOfFile.Circulated)) {
-            setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Circulated));
-        }
-    }
-
-    function acceptFirstRefusalClaims(
+    function computeFirstRefusal(
         address ia,
         uint256 seqOfDeal
-    ) external onlyKeeper returns (FRClaims.Claim[] memory output) {        
-        emit AcceptFirstRefusalClaims(ia, seqOfDeal);
-        output = _frClaims[ia].acceptFirstRefusalClaims(seqOfDeal, _getGK().getROM());
+    ) external onlyKeeper returns (FRClaims.Claim[] memory output) {
+        require(block.timestamp >= _repo.frExecDeadline(ia),
+            "ROA.computeFR: not reached frExecDeadline");
+        output = _frClaims[ia].computeFirstRefusal(seqOfDeal, _getGK().getROM());
+        emit ComputeFirstRefusal(ia, seqOfDeal);
     }
 
     // ==== DragAlong & TagAlong ====
@@ -88,105 +65,127 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
         uint par,
         uint256 caller,
         bytes32 sigHash
-    ) external onlyKeeper
-    {
-        if (_dtClaims[ia].execAlongRight(dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash))
-        {
-            DTClaims.Head memory head = DTClaims.Head({
-                seqOfDeal: uint16(seqOfDeal),
-                dragAlong: dragAlong,
-                seqOfShare: uint32(seqOfShare),
-                paid: uint64(paid),
-                par: uint64(par),
-                caller: uint40(caller),
-                para: 0,
-                argu: 0
-            });
+    ) external onlyKeeper {
+        require(block.timestamp >= _repo.frExecDeadline(ia),
+            "ROA.execDT: not reached frExecDeadline");
+        require(block.timestamp < _repo.dtExecDeadline(ia),
+            "ROA.execDT: missed dtExecDeadline");
 
+        _dtClaims[ia].execAlongRight(dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
 
-            emit ExecAlongRight(ia, head.codifyHead(), sigHash);
-            _resetDoc(ia, getHeadOfFile(ia));                
-        }
+        DTClaims.Head memory head = DTClaims.Head({
+            seqOfDeal: uint16(seqOfDeal),
+            dragAlong: dragAlong,
+            seqOfShare: uint32(seqOfShare),
+            paid: uint64(paid),
+            par: uint64(par),
+            caller: uint40(caller),
+            para: 0,
+            argu: 0
+        });
+
+        emit ExecAlongRight(ia, head.codifyHead(), sigHash);
+    }
+
+    function acceptAlongClaims(
+        address ia, 
+        uint seqOfDeal
+    ) external onlyKeeper returns(DTClaims.Claim[] memory) {
+        require(block.timestamp >= _repo.dtExecDeadline(ia),
+            "ROA.execDT: not reached frExecDeadline");
+        // require(block.timestamp < _repo.terminateStartpoint(ia),
+        //     "ROA.execDT: missed dtExecDeadline");
+        
+        emit AcceptAlongClaims(ia, seqOfDeal);
+        return _dtClaims[ia].acceptAlongClaims(seqOfDeal);
     }
 
     // ==== Mock ====
 
-    function createMockOfIA(address ia)
-        external
-        onlyKeeper
-        returns (bool)
-    {
-        return _createMockOfIA(ia);
-    }
-
-    function _createMockOfIA(address ia)
-        private
-        returns (bool flag)
-    {        
+    function createMockOfIA(address ia) external onlyKeeper {
         if (_mockOfIA[ia].getNumOfMembers() == 0) {
             _mockOfIA[ia].restoreChain(_getGK().getROM().getSnapshot());
             _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia));
-
-            flag = true;
         }
     }
 
-    function mockDealOfSell (address ia, uint seller, uint amount) 
-        external
-        onlyKeeper
-        returns (bool flag) 
-    {
-        flag = _mockOfIA[ia].mockDealOfSell(seller, amount);
+    function mockDealOfSell(
+        address ia, 
+        uint seller, 
+        uint amount
+    ) external onlyKeeper {
+        _mockOfIA[ia].mockDealOfSell(seller, amount);
     }
 
-    function mockDealOfBuy (address ia, uint buyer, uint groupRep, uint amount) 
-        external
-        onlyKeeper
-        returns (bool flag) 
-    {
-        flag = _mockOfIA[ia].mockDealOfBuy(buyer, groupRep, amount);
+    function mockDealOfBuy(
+        address ia, 
+        uint buyer, 
+        uint groupRep, 
+        uint amount
+    ) external{
+        _mockOfIA[ia].mockDealOfBuy(buyer, groupRep, amount);
     }
 
-    //#################
-    //## Write I/O##
-    //#################
+    //###############
+    //##  Read I/O ##
+    //###############
+
+    // ==== FR Claims ====
+
+    function hasFRClaims(address ia, uint seqOfDeal) external view returns (bool) {
+        return _frClaims[ia].isDeal(seqOfDeal);
+    }
 
     function isFRClaimer(address ia, uint256 acct) external view returns (bool)
     {
-        return _frClaims[ia].isClaimer[acct];
+        return _frClaims[ia].isClaimer(acct);
     }
 
-    function claimsOfFR(address ia, uint256 seqOfDeal)
+    function getSubjectDealsOfFR(address ia) external view returns(uint[] memory) {
+        return _frClaims[ia].getDeals();
+    }
+
+    function getFRClaimsOfDeal(address ia, uint256 seqOfDeal)
         external view returns(FRClaims.Claim[] memory) 
     {
-        return _frClaims[ia].claimsOfFR(seqOfDeal);
+        return _frClaims[ia].getClaimsOfDeal(seqOfDeal);
     }
+
+    function allFRClaimsAccepted(address ia) external view returns (bool) {
+        return _frClaims[ia].allAccepted();
+    }    
+
+    // ==== DT Claims ====
 
     function hasDTClaims(address ia, uint256 seqOfDeal) 
         public view returns(bool)
     {
-        return _dtClaims[ia].deals.contains(seqOfDeal);
+        return _dtClaims[ia].hasClaim(seqOfDeal);
     }
 
-    function getDraggingDeals(address ia) 
+    function getSubjectDealsOfDT(address ia) 
         public view returns(uint256[] memory)
     {
-        return _dtClaims[ia].deals.values();
+        return _dtClaims[ia].getDeals();
     }
 
-    function getDTClaimsForDeal(address ia, uint256 seqOfDeal)
+    function getDTClaimsOfDeal(address ia, uint256 seqOfDeal)
         external view returns(DTClaims.Claim[] memory)
     {
-        require(hasDTClaims(ia, seqOfDeal), "BOA.CODT: no claims found");
-
-        return _dtClaims[ia].claimsOfDT(seqOfDeal);
+        return _dtClaims[ia].getClaimsOfDeal(seqOfDeal);
     }
 
     function getDTClaimForShare(address ia, uint256 seqOfDeal, uint256 seqOfShare)
         external view returns(DTClaims.Claim memory)
     {
-        return _dtClaims[ia].packs[seqOfDeal][2].claims[seqOfShare];
+        return _dtClaims[ia].getClaimForShare(seqOfDeal, seqOfShare);
     }
+
+    function allDTClaimsAccepted(address ia) external view returns(bool) {
+        return _dtClaims[ia].allAccepted();
+    }
+
+    // ==== Mock Results ====
 
     function mockResultsOfIA(address ia)
         external view
@@ -206,5 +205,11 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
 
         groupRep = mock.rootOf(acct);
         ratio = uint16 (mock.votesOfGroup(groupRep) / mock.totalVotes());
+    }
+
+    // ==== allClaimsAccepted ====
+
+    function allClaimsAccepted(address ia) external view returns(bool) {
+        return (_dtClaims[ia].allAccepted() && _frClaims[ia].allAccepted());
     }
 }

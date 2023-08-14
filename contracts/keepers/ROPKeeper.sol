@@ -193,21 +193,17 @@ contract ROPKeeper is IROPKeeper, AccessControl {
     ) private {
         _ia.lockDealSubject(deal.head.seqOfDeal);
         
-        ISigPage(address(_ia)).regSig(
-            deal.head.seqOfDeal,
+        _ia.regSig(
             deal.head.seller,
             uint48(block.timestamp),
             bytes32(0)
         );
 
-        ISigPage(address(_ia)).regSig(
-            deal.head.seqOfDeal,
+        _ia.regSig(
             deal.body.buyer,
             uint48(block.timestamp),
             bytes32(0)
         );
-
-        _getGK().getROA().establishFile(address(_ia));
     }
 
     function _proposeIA(

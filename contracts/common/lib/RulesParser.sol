@@ -11,8 +11,8 @@ library RulesParser {
 
     // ======== GovernanceRule ========
 
-    bytes32 public constant SHA_INIT_GR = 
-        bytes32(uint(0x0000000000000000010000000000000000000000000000000000000000000000));
+    // bytes32 public constant SHA_INIT_GR = 
+    //     bytes32(uint(0x0000000000000000010000000000000000000000000000000000000000000000));
 
     struct GovernanceRule {
         uint16 seqOfRule; 
@@ -60,23 +60,24 @@ library RulesParser {
 
     // ---- VotingRule ----
 
-    bytes32 public constant SHA_INIT_VR = 
-        bytes32(uint(0x00080c08000100001a0b00000100000100000100000000000000000000000000));
+    // bytes32 public constant SHA_INIT_VR = 
+    //     bytes32(uint(0x00080c080100001a0b0000010000000000000100000000000000000000000000));
 
     struct VotingRule{
         uint16 seqOfRule;
         uint8 qtyOfSubRule;
         uint8 seqOfSubRule;
-        uint16 authority;
+        uint8 authority;
         uint16 headRatio;
         uint16 amountRatio;
         bool onlyAttendance;
         bool impliedConsent;
         bool partyAsConsent;
         bool againstShallBuy;
-        uint8 shaExecDays;
-        uint8 shaConfirmDays;
-        uint8 reconsiderDays;
+        uint8 frExecDays;
+        uint8 dtExecDays;
+        uint8 dtConfirmDays;
+        uint8 invExitDays;
         uint8 votePrepareDays;
         uint8 votingDays;
         uint8 execDaysForPutOpt;
@@ -91,16 +92,17 @@ library RulesParser {
             seqOfRule: uint16(_sn >> 240),
             qtyOfSubRule: uint8(_sn >> 232),
             seqOfSubRule: uint8(_sn >> 224),
-            authority: uint16(_sn >> 208),
-            headRatio: uint16(_sn >> 192),
-            amountRatio: uint16(_sn >> 176),
-            onlyAttendance: uint8(_sn >> 168) == 1,
-            impliedConsent: uint8(_sn >> 160) == 1,
-            partyAsConsent: uint8(_sn >> 152) == 1,
-            againstShallBuy: uint8(_sn >> 144) == 1,
-            shaExecDays: uint8(_sn >> 136),
-            shaConfirmDays: uint8(_sn >> 128),
-            reconsiderDays: uint8(_sn >> 120),
+            authority: uint8(_sn >> 216),
+            headRatio: uint16(_sn >> 200),
+            amountRatio: uint16(_sn >> 184),
+            onlyAttendance: uint8(_sn >> 176) == 1,
+            impliedConsent: uint8(_sn >> 168) == 1,
+            partyAsConsent: uint8(_sn >> 160) == 1,
+            againstShallBuy: uint8(_sn >> 152) == 1,
+            frExecDays: uint8(_sn >> 144),
+            dtExecDays: uint8(_sn >> 136),
+            dtConfirmDays: uint8(_sn >> 128),
+            invExitDays: uint8(_sn >> 120),
             votePrepareDays: uint8(_sn >> 112),
             votingDays: uint8(_sn >> 104),
             execDaysForPutOpt: uint8(_sn >> 96),

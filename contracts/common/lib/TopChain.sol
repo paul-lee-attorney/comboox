@@ -616,13 +616,11 @@ library TopChain {
         Chain storage chain, 
         uint256 seller, 
         uint amount
-    ) public returns (bool flag)
-    {
+    ) public {
         changeAmt(chain, seller, amount, false);
         
         if (chain.nodes[seller].amt == 0)
             delNode(chain, seller);
-        flag = true;
     }
 
     function mockDealOfBuy(
@@ -630,7 +628,7 @@ library TopChain {
         uint256 buyer, 
         uint256 group,
         uint amount
-    ) public returns (bool flag) {
+    ) public {
         if (!isMember(chain, buyer))
             addNode(chain, buyer);
 
@@ -638,8 +636,6 @@ library TopChain {
 
         if (rootOf(chain, buyer) != group)
             top2Sub(chain, buyer, group);
-
-        flag = true;
     }
 
 }

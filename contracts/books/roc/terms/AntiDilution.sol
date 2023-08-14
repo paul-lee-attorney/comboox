@@ -12,7 +12,6 @@ import "../../../common/access/AccessControl.sol";
 import "./IAntiDilution.sol";
 
 contract AntiDilution is IAntiDilution, AccessControl {
-    using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
     Ruler private _ruler;
@@ -90,78 +89,31 @@ contract AntiDilution is IAntiDilution, AccessControl {
     function getGiftPaid(address ia, uint256 seqOfDeal, uint256 seqOfShare)
         external
         view
-        returns (uint64 gift)
+        returns (uint64)
     {
         DealsRepo.Deal memory deal = 
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
-            SharesRepo.Share memory share = _getGK().getBOS().getShare(seqOfShare);
 
-        uint64 floorPrice = getFloorPriceOfClass(share.head.class);
+        SharesRepo.Share memory share = 
+            _getGK().getBOS().getShare(seqOfShare);
 
-        require(floorPrice > deal.head.priceOfPaid, "AD.GP: adRule not triggered");
+        require (isTriggered(deal, share.head.class), "AD.getGiftPaid: AD not triggered");
 
-        gift = (share.body.paid * floorPrice) / deal.head.priceOfPaid - share.body.paid;
+        return (share.body.paid * getFloorPriceOfClass(share.head.class) / 
+            deal.head.priceOfPaid - share.body.paid);
     }
 
     // ################
     // ##  Term接口  ##
     // ################
 
-    function isTriggered(DealsRepo.Deal memory deal) public view returns (bool) {
+    function isTriggered(DealsRepo.Deal memory deal, uint class) public view returns (bool) {
 
         if (deal.head.typeOfDeal != uint8(DealsRepo.TypeOfDeal.CapitalIncrease)) 
             return false;
 
-        uint64 floorPrice = getFloorPriceOfClass(deal.head.classOfShare);
-
-        if (deal.head.priceOfPaid < floorPrice) return true;
+        if (deal.head.priceOfPaid < getFloorPriceOfClass(class)) return true;
 
         return false;
-    }
-
-    function _isExempted(uint32 price, uint256[] memory consentParties)
-        private
-        view
-        returns (bool)
-    {
-        IRegisterOfMembers _rom = _getGK().getROM();
-
-        require(
-            consentParties.length != 0,
-            "AD.isExempted: zero consentParties"
-        );
-
-        uint256 len = _ruler.classes.length();
-
-        while (len > 0) {
-            uint16 class = uint16 (_ruler.classes.at(len-1));
-            if (_ruler.marks[class].floorPrice > price) {
-                uint256[] memory members = _rom.getMembersOfClass(class);
-
-                if (members.length > consentParties.length) return false;
-                else if (!members.fullyCoveredBy(consentParties)) return false;
-            }
-                        len--;
-        }
-
-        return true;
-    }
-
-
-    function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
-        if (!isTriggered(deal)) return true;
-
-        uint seqOfMotion = _getGK().getROA().getHeadOfFile(ia).seqOfMotion;
-        
-        uint256[] memory parties = ISigPage(ia).getParties();
-
-        BallotsBox.Case memory consentCase = _getGK().getGMM().getCaseOfAttitude(seqOfMotion, 1);
-
-        uint256[] memory supporters = 
-            consentCase.voters.combine(consentCase.principals).merge(parties);
-        
-        // uint256[] memory consentParties = parties.merge(supporters);        
-
-        return _isExempted(deal.head.priceOfPaid, supporters);
     }
 }

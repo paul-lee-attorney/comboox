@@ -46,6 +46,11 @@ library DTClaims {
         EnumerableSet.UintSet deals;
     }
 
+    modifier dealExist(Claims storage cls, uint seqOfDeal) {
+        require (hasClaim(cls, seqOfDeal), "DTClaims.mf.dealExist: not");
+        _;
+    }
+
     //#################
     //##  Write I/O  ##
     //#################
@@ -89,81 +94,132 @@ library DTClaims {
         uint paid,
         uint par,
         uint256 claimer,
-        // Head memory head,
         bytes32 sigHash
-    ) public returns (bool flag) {
+    ) public {
 
-        uint8 cat = dragAlong ? 0 : 1;
+        uint16 intSeqOfDeal = uint16(seqOfDeal);
+        require(intSeqOfDeal > 0, "DTClaims.exec: zero seqOfDeal");
 
-        Pack storage p = cls.packs[seqOfDeal][cat];
+        Claim memory newClaim = Claim({
+            typeOfClaim: dragAlong ? 0 : 1,
+            seqOfShare: uint32(seqOfShare),
+            paid: uint64(paid),
+            par: uint64(par),
+            claimer: uint40(claimer),
+            sigDate: uint48(block.timestamp),
+            sigHash: sigHash
+        }); 
 
-        if (p.shares.add(seqOfShare)){
+        require(newClaim.seqOfShare > 0, "DTClaims.exec: zero seqOfShare");
 
-            Claim memory newClaim = Claim({
-                    typeOfClaim: cat,
-                    seqOfShare: uint32(seqOfShare),
-                    paid: uint64(paid),
-                    par: uint64(par),
-                    claimer: uint40(claimer),
-                    sigDate: uint48(block.timestamp),
-                    sigHash: sigHash
-                }); 
+        Pack storage p = cls.packs[intSeqOfDeal][newClaim.typeOfClaim];
 
-            p.claims[seqOfShare] = newClaim;
+        if (p.shares.add(newClaim.seqOfShare)){
 
-            cls.deals.add(seqOfDeal);
+            p.claims[newClaim.seqOfShare] = newClaim;
 
-            Pack storage m = cls.packs[seqOfDeal][2];
+            cls.deals.add(intSeqOfDeal);
 
-            if (m.shares.add(seqOfShare))
-            {
-                m.claims[seqOfShare] = newClaim;
-            } else {
-                Claim storage mClaim = m.claims[seqOfShare];
-
-                if (paid > mClaim.paid || par > mClaim.par)
-                {
-                    mClaim.paid = paid > mClaim.paid  ? newClaim.paid :  mClaim.paid;
-                    mClaim.par = par > mClaim.par ? newClaim.par : mClaim.par;
-
-                    Claim memory dClaim = cls.packs[seqOfDeal][0].claims[seqOfShare];
-                    Claim memory tClaim = cls.packs[seqOfDeal][1].claims[seqOfShare];
-
-                    if ((dClaim.paid > tClaim.paid || dClaim.par > tClaim.par) && 
-                        mClaim.typeOfClaim != 0)
-                    {
-                        mClaim.typeOfClaim = 0;
-                        mClaim.claimer = dClaim.claimer;
-                        mClaim.sigDate = dClaim.sigDate;
-                        mClaim.sigHash = dClaim.sigHash;
-                    }
-                }
-            }
-
-            flag = true;
+            _consolidateClaimsOfShare(cls, intSeqOfDeal, newClaim);
         }
     }
 
+    function _consolidateClaimsOfShare(
+        Claims storage cls,
+        uint intSeqOfDeal,
+        Claim memory newClaim
+    ) private {
+        Pack storage m = cls.packs[intSeqOfDeal][2];
+
+        if (m.shares.add(newClaim.seqOfShare)) {
+            m.claims[newClaim.seqOfShare] = newClaim;
+        } else {
+            Claim storage mClaim = m.claims[newClaim.seqOfShare];
+
+            mClaim.paid = newClaim.paid > mClaim.paid  ? newClaim.paid :  mClaim.paid;
+            mClaim.par = newClaim.par > mClaim.par ? newClaim.par : mClaim.par;
+
+            if (mClaim.typeOfClaim == 0){
+
+                Claim memory tClaim = cls.packs[intSeqOfDeal][1].claims[newClaim.seqOfShare];
+
+                mClaim.typeOfClaim = 1;
+                mClaim.claimer = tClaim.claimer;
+                mClaim.sigDate = tClaim.sigDate;
+                mClaim.sigHash = tClaim.sigHash;
+            }
+        }
+    }
+
+    function acceptAlongClaims(
+        Claims storage cls,
+        uint seqOfDeal
+    ) public returns (Claim[] memory) {
+        cls.packs[seqOfDeal][2].claims[0].typeOfClaim = 1;
+        return getClaimsOfDeal(cls, seqOfDeal);
+    }
 
     //  ################################
     //  ##       查询接口              ##
     //  ################################
 
-    function claimsOfDT(Claims storage cls, uint256 seqOfDeal)
-        external view returns (Claim[] memory)
-    {
+    function hasClaim(Claims storage cls, uint seqOfDeal) public view returns(bool) {
+        return cls.deals.contains(seqOfDeal);
+    }
 
-        Pack storage p = cls.packs[seqOfDeal][2];
+    function getDeals(Claims storage cls) public view returns(uint[] memory) {
+        return cls.deals.values();
+    }
 
-        uint256 len = p.shares.length();
+    function getClaimsOfDeal(
+        Claims storage cls,
+        uint seqOfDeal
+    ) public view dealExist(cls, seqOfDeal) returns(Claim[] memory) {
+
+        Pack storage m = cls.packs[seqOfDeal][2];
+
+        uint[] memory sharesList = m.shares.values();
+        uint len = sharesList.length;
+
         Claim[] memory output = new Claim[](len);
-        
+
         while (len > 0) {
-            output[len-1] = p.claims[p.shares.at(len-1)];
-            len--;
+            output[len - 1] = m.claims[sharesList[len - 1]];
+            len --;
         }
 
         return output;
+    }
+
+    function hasShare(
+        Claims storage cls,
+        uint seqOfDeal,
+        uint seqOfShare        
+    ) public view dealExist(cls, seqOfDeal) returns(bool) {
+        return cls.packs[seqOfDeal][2].shares.contains(seqOfShare);
+    }
+
+    function getClaimForShare(
+        Claims storage cls,
+        uint seqOfDeal,
+        uint seqOfShare
+    ) public view returns (Claim memory) {
+        require (hasShare(cls, seqOfDeal, seqOfShare), "DTClaims.getClaimsForShare: not exist");
+        return cls.packs[seqOfDeal][2].claims[seqOfShare];
+    }
+
+    function allAccepted(Claims storage cls) public view returns(bool flag) {
+        uint[] memory dealsList = cls.deals.values();
+        uint len = dealsList.length;
+
+        flag = true;
+        while(len > 0) {
+            if (cls.packs[dealsList[len - 1]][2].claims[0].typeOfClaim == 0) {
+                flag = false;
+                break;
+            }
+            len--;
+        }
     }
 
 }

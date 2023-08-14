@@ -14,8 +14,6 @@ import "../common/access/AccessControl.sol";
 contract GMMKeeper is IGMMKeeper, AccessControl {
     using RulesParser for bytes32;
 
-    
-
     modifier memberExist(uint256 acct) {
         require(_getGK().getROM().isMember(acct), 
             "BOGK.mf: NOT Member");
@@ -44,7 +42,6 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint nominator
     ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
-
         IRegisterOfDirectors _rod = _gk.getROD();
 
         require(_rod.hasNominationRight(seqOfPos, nominator),
@@ -87,16 +84,25 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
 
         uint64 seqOfMotion = 
             _gmm.createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
 
-        address addr = address(uint160(doc));
+        if (seqOfVR < 9) {
 
-        if (seqOfVR < 9 && 
-            ISigPage(addr).isSigner(proposer)
-        ) { 
-            _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
-            seqOfVR == 8 ?
-                _gk.getROC().proposeFile(addr, seqOfMotion) :
+            address addr = address(uint160(doc));
+
+            require(ISigPage(addr).isSigner(proposer), 
+                "GMMK.proposeDoc: not signer");
+
+            require(ISigPage(addr).established(),
+                "GMMK.proposeDoc: not established");
+
+            if (seqOfVR == 8) 
+                _gk.getROC().proposeFile(addr, seqOfMotion);
+            else {
+                require(_gk.getROA().allClaimsAccepted(addr),
+                    "GMMK.proposeDoc: Claims outstanding");
                 _gk.getROA().proposeFile(addr, seqOfMotion);
+            }
         }
     }
 

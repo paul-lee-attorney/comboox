@@ -84,7 +84,7 @@ library SigsRepo {
             p.sellers.add(acct);
         }
 
-        if (p.blanks[acct].seqOfDeals.add(seq))
+        if (p.blanks[uint40(acct)].seqOfDeals.add(uint16(seq)))
             _increaseCounterOfBlanks(p);
     }
 
@@ -126,15 +126,10 @@ library SigsRepo {
             p.blanks[acct].sigHash = sigHash;
 
             _increaseCounterOfSigs(p, p.blanks[acct].seqOfDeals.length());
-
-            // if (counterOfBlanks(p) == counterOfSigs(p))
-            //     p.blanks[0].sig.flag = true;
-
-            // flag = true;   
         }
     }
 
-    function regSig(Page storage p, uint256 seqOfDeal, uint256 acct, uint sigDate, bytes32 sigHash)
+    function regSig(Page storage p, uint256 acct, uint sigDate, bytes32 sigHash)
         public returns (bool flag)
     {
         require(block.timestamp < getSigDeadline(p),
@@ -143,10 +138,7 @@ library SigsRepo {
         require(!established(p),
             "SR.regSig: Doc already established");
 
-        if ((p.buyers.contains(acct) ||
-            p.sellers.contains(acct)) && 
-            p.blanks[acct].seqOfDeals.add(seqOfDeal))
-        {
+        if (p.buyers.contains(acct) || p.sellers.contains(acct)) {
 
             Signature storage sig = p.blanks[acct].sig;
 
@@ -157,9 +149,6 @@ library SigsRepo {
             p.blanks[acct].sigHash = sigHash;
 
             _increaseCounterOfSigs(p, 1);
-
-            // if (counterOfBlanks(p) == counterOfSigs(p))
-            //     p.blanks[0].sig.flag = true;
 
             flag = true;
         }

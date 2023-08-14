@@ -139,8 +139,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint proposer
     ) public onlyDK {
         IGeneralKeeper _gk = _getGK();
+        IShareholdersAgreement _sha = _gk.getSHA();
 
-        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _gk.getSHA(), _gk.getROM(), _gk.getROD(), proposer);
+        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _sha, _gk.getROM(), _gk.getROD(), proposer);
         emit ProposeMotionToGeneralMeeting(seqOfMotion, proposer);
     }
 
@@ -149,8 +150,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller
     ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
+        IShareholdersAgreement _sha = _gk.getSHA();
 
-        _repo.proposeMotionToBoard(seqOfMotion, _gk.getSHA(), _gk.getROD(), caller);
+        _repo.proposeMotionToBoard(seqOfMotion, _sha, _gk.getROD(), caller);
         emit ProposeMotionToBoard(seqOfMotion, caller);
     }
 

@@ -64,7 +64,7 @@ library MotionsRepo {
         Head head;
         Body body;
         RulesParser.VotingRule votingRule;
-        uint256 contents;
+        uint contents;
     }
 
     struct Record {
@@ -90,9 +90,9 @@ library MotionsRepo {
         EnumerableSet.UintSet seqList;
     }
 
-    //##################
+    //#################
     //##  Write I/O  ##
-    //##################
+    //#################
 
     // ==== snParser ====
 
@@ -194,9 +194,7 @@ library MotionsRepo {
     ) public {
 
         RulesParser.GovernanceRule memory gr =
-            address(_sha) == address(0)
-            ? RulesParser.SHA_INIT_GR.governanceRuleParser()
-            : _sha.getRule(0).governanceRuleParser();
+            _sha.getRule(0).governanceRuleParser();
 
         require(_memberProposalRightCheck(repo, seqOfMotion, gr, caller, _rom) ||
             _directorProposalRightCheck(repo, seqOfMotion, caller, gr.proposeHeadRatioOfDirectorsInGM, _rod),
@@ -222,18 +220,16 @@ library MotionsRepo {
             "MR.PM: wrong state");
 
         RulesParser.VotingRule memory vr = 
-            address(_sha) == address(0) 
-            ? RulesParser.SHA_INIT_VR.votingRuleParser()
-            : _sha.getRule(m.head.seqOfVR).votingRuleParser();
+            _sha.getRule(m.head.seqOfVR).votingRuleParser();
 
         uint48 timestamp = uint48(block.timestamp);
 
         Body memory body = Body({
             proposer: uint40(caller),
             proposeDate: timestamp,
-            shareRegDate: timestamp + uint48(vr.reconsiderDays) * 86400,
-            voteStartDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votePrepareDays)) * 86400,
-            voteEndDate: timestamp + (uint48(vr.reconsiderDays) + uint48(vr.votePrepareDays) + uint48(vr.votingDays)) * 86400,
+            shareRegDate: timestamp + uint48(vr.invExitDays) * 86400,
+            voteStartDate: timestamp + uint48(vr.invExitDays + vr.votePrepareDays) * 86400,
+            voteEndDate: timestamp + uint48(vr.invExitDays + vr.votePrepareDays + vr.votingDays) * 86400,
             para: 0,
             state: uint8(StateOfMotion.Proposed)
         });

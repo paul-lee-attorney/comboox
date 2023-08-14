@@ -116,11 +116,16 @@ async function main() {
 	let sha = await deployTool(signers[0], "ShareholdersAgreement", libraries);
 
 	libraries = {
-		"ArrayUtils": libArrayUtils.address,
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address
 	};
 	let ad = await deployTool(signers[0], "AntiDilution", libraries);
+
+	libraries = {
+		"ArrayUtils": libArrayUtils.address,
+		"EnumerableSet": libEnumerableSet.address,
+		"RolesRepo": libRolesRepo.address
+	};
 	let lu = await deployTool(signers[0], "LockUp", libraries);
 
 	libraries = {
@@ -188,7 +193,7 @@ async function main() {
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"DTClaims": libDTClaims.address,
-		"EnumerableSet": libEnumerableSet.address,
+		// "EnumerableSet": libEnumerableSet.address,
 		"FilesRepo": libFilesRepo.address,
 		"FRClaims": libFRClaims.address,
 		"TopChain": libTopChain.address

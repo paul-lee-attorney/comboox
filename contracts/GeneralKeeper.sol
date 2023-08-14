@@ -329,8 +329,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IROAKeeper(_keepers[6]).closeDeal(ia, seqOfDeal, hashKey);
     }
 
-    function issueNewShare(address ia, uint256 seqOfDeal) external onlyDK {
-        IROAKeeper(_keepers[6]).issueNewShare(ia, seqOfDeal);
+    function issueNewShare(address ia, uint256 seqOfDeal) external {
+        IROAKeeper(_keepers[6]).issueNewShare(ia, seqOfDeal, _msgSender(50000));
     }
 
     function transferTargetShare(address ia, uint256 seqOfDeal) external {
@@ -539,10 +539,9 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     function acceptAlongDeal(
         address ia,
         uint256 seqOfDeal,
-        uint256 seqOfShare,
         bytes32 sigHash
     ) external {
-        ISHAKeeper(_keepers[10]).acceptAlongDeal(ia, seqOfDeal, seqOfShare, _msgSender(60000), sigHash);
+        ISHAKeeper(_keepers[10]).acceptAlongDeal(ia, seqOfDeal, _msgSender(60000), sigHash);
     }
 
     // ======== AntiDilution ========
@@ -572,16 +571,14 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         ISHAKeeper(_keepers[10]).execFirstRefusal(seqOfRule, seqOfRightholder, ia, seqOfDeal, _msgSender(60000), sigHash);
     }
 
-    function acceptFirstRefusal(
+    function computeFirstRefusal(
         address ia,
-        uint256 seqOfDeal,
-        bytes32 sigHash
+        uint256 seqOfDeal
     ) external {
-        ISHAKeeper(_keepers[10]).acceptFirstRefusal(
+        ISHAKeeper(_keepers[10]).computeFirstRefusal(
                 ia,
                 seqOfDeal,
-                _msgSender(60000),
-                sigHash
+                _msgSender(60000)
             );
     }
 

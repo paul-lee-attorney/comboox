@@ -39,7 +39,6 @@ interface ISHAKeeper {
     function acceptAlongDeal(
         address ia,
         uint256 seqOfDeal,
-        uint256 seqOfShare,
         uint256 caller,
         bytes32 sigHash
     ) external;
@@ -71,10 +70,9 @@ interface ISHAKeeper {
         bytes32 sigHash
     ) external;
 
-    function acceptFirstRefusal(
+    function computeFirstRefusal(
         address ia,
         uint256 seqOfDeal,
-        uint256 caller,
-        bytes32 sigHash
+        uint256 caller
     ) external;
 }

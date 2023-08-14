@@ -15,6 +15,7 @@ import "./IInvestmentAgreement.sol";
 contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     using DealsRepo for DealsRepo.Repo;
     using SigsRepo for SigsRepo.Page;
+    using RulesParser for bytes32;
 
     DealsRepo.Repo private _repo;
 
@@ -95,15 +96,6 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         flag = _repo.directCloseDeal(seq);
         emit CloseDeal(seq, '');
     }
-
-    // function revokeDeal(uint256 seq, string memory hashKey)
-    //     external
-    //     onlyDK
-    //     returns (bool flag)
-    // {
-    //     flag = _repo.revokeDeal(seq, hashKey);
-    //     emit RevokeDeal(seq, hashKey);
-    // }
 
     function terminateDeal(uint256 seqOfDeal) 
         external onlyKeeper returns(bool flag)

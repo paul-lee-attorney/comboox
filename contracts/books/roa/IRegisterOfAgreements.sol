@@ -22,11 +22,13 @@ interface IRegisterOfAgreements is IFilesFolder {
     //##    Event    ##
     //#################
 
-    event ExecFirstRefusalRight(address indexed ia, uint256 indexed seqOfDeal, uint256 indexed caller);
+    event ClaimFirstRefusal(address indexed ia, uint256 indexed seqOfDeal, uint256 indexed caller);
+
+    event AcceptAlongClaims(address indexed ia, uint indexed seqOfDeal);
 
     event ExecAlongRight(address indexed ia, bytes32 indexed snOfDTClaim, bytes32 sigHash);
 
-    event AcceptFirstRefusalClaims(address indexed ia, uint256 indexed seqOfDeal);
+    event ComputeFirstRefusal(address indexed ia, uint256 indexed seqOfDeal);
 
     //#################
     //##  Write I/O  ##
@@ -36,14 +38,14 @@ interface IRegisterOfAgreements is IFilesFolder {
 
     // function circulateIA(address ia, bytes32 docUrl, bytes32 docHash) external;
 
-    function execFirstRefusalRight(
+    function claimFirstRefusal(
         address ia,
         uint256 seqOfDeal,
         uint256 caller,
         bytes32 sigHash
-    ) external returns (bool flag);
+    ) external;
 
-    function acceptFirstRefusalClaims(
+    function computeFirstRefusal(
         address ia,
         uint256 seqOfDeal
     ) external returns (FRClaims.Claim[] memory output);
@@ -59,17 +61,16 @@ interface IRegisterOfAgreements is IFilesFolder {
         bytes32 sigHash
     ) external;
 
-    function createMockOfIA(address ia)
-        external
-        returns (bool flag);
+    function acceptAlongClaims(
+        address ia, 
+        uint seqOfDeal
+    ) external returns(DTClaims.Claim[] memory);
 
-    function mockDealOfSell (address ia, uint seller, uint amount) 
-        external
-        returns (bool flag); 
+    function createMockOfIA(address ia) external;
 
-    function mockDealOfBuy (address ia, uint buyer, uint groupRep, uint amount) 
-        external
-        returns (bool flag);
+    function mockDealOfSell (address ia, uint seller, uint amount) external; 
+
+    function mockDealOfBuy (address ia, uint buyer, uint groupRep, uint amount) external;
 
     // function addAlongDeal(
     //     address ia,
@@ -82,24 +83,36 @@ interface IRegisterOfAgreements is IFilesFolder {
     //##    读接口    ##
     //##################
 
-    // ======== RegisterOfAgreements ========
+    // ==== FR Claims ====
+
+    function hasFRClaims(address ia, uint seqOfDeal) external view returns (bool);
 
     function isFRClaimer(address ia, uint256 acct) external returns (bool);
 
-    function claimsOfFR(address ia, uint256 seqOfDeal)
-        external returns(FRClaims.Claim[] memory);
+    function getSubjectDealsOfFR(address ia) external view returns(uint[] memory);
+
+    function getFRClaimsOfDeal(address ia, uint256 seqOfDeal)
+        external view returns(FRClaims.Claim[] memory);
+
+    function allFRClaimsAccepted(address ia) external view returns (bool);
+
+    // ==== DT Claims ====
 
     function hasDTClaims(address ia, uint256 seqOfDeal) 
         external view returns(bool);
 
-    function getDraggingDeals(address ia)
+    function getSubjectDealsOfDT(address ia)
         external view returns(uint256[] memory);
 
-    function getDTClaimsForDeal(address ia, uint256 seqOfDeal)
+    function getDTClaimsOfDeal(address ia, uint256 seqOfDeal)
         external view returns(DTClaims.Claim[] memory);
 
     function getDTClaimForShare(address ia, uint256 seqOfDeal, uint256 seqOfShare)
         external view returns(DTClaims.Claim memory);
+
+    function allDTClaimsAccepted(address ia) external view returns(bool);
+
+    // ==== Mock Results ====
 
     function mockResultsOfIA(address ia) 
         external view 
@@ -108,4 +121,9 @@ interface IRegisterOfAgreements is IFilesFolder {
     function mockResultsOfAcct(address ia, uint256 acct) 
         external view 
         returns (uint40 groupRep, uint16 ratio);
+
+    // ==== AllClaimsAccepted ====
+
+    function allClaimsAccepted(address ia) external view returns(bool);
+
 }

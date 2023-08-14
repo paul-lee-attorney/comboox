@@ -107,45 +107,33 @@ library SharesRepo {
             state: 0,
             para: 0
         });
-        newShare = issueShare(repo, share);
-    }
-
-
-    function issueShare(Repo storage repo, Share memory share)
-        public returns (Share memory newShare)
-    {
-        if (!repo.seqList.contains(share.head.seqOfShare) &&
-            share.head.issueDate == 0) 
-            share.head.issueDate = uint48(block.timestamp);
-
         newShare = regShare(repo, share);
     }
 
     function regShare(Repo storage repo, Share memory share)
-        public returns(Share memory newShare)
+        public returns(Share memory)
     {
-        // require(share.body.paid > 0, "SR.RS: zero paid");
         require(share.body.par > 0, "SR.RS: zero par");
         require(share.body.par >= share.body.paid, "SR.RS: paid overflow");
-
         require(share.head.issueDate <= block.timestamp, "SR.RS: future issueDate");
-        // require(share.head.issueDate <= share.body.payInDeadline, "SR.RS: issueDate later than payInDeadline");
-
         require(share.head.shareholder > 0, "SR.RS: zero shareholder");
-
         require(share.head.class > 0, "SR.RS: zero class");
 
         if (!repo.seqList.contains(share.head.seqOfShare)){
             share.head.seqOfShare = _increaseCounterOfShare(repo);
+            
             if (share.head.class > counterOfClasses(repo)) 
                 share.head.class = _increaseCounterOfClass(repo);
+            
+            if (share.head.issueDate == 0)
+                share.head.issueDate = uint48(block.timestamp);
+
             repo.seqList.add(share.head.seqOfShare);
         }
 
-        // bytes32 sn = codifyHead(share.head);
-
         repo.shares[share.head.seqOfShare] = share;
-        newShare = share;
+
+        return share;
     }
 
     // ==== deregist/delete share ====
@@ -215,10 +203,10 @@ library SharesRepo {
 
     function decreaseCleanPaid(Share storage share, uint paid) public
     {
-        require(paid > 0, "SR.SAFS: zero amt");
+        require(paid > 0, "SR.decreaseClean: zero amt");
 
         require(share.body.cleanPaid >= paid, 
-            "SR.SAFS: insufficient cleanPaid");
+            "SR.decreaseClean: insufficient amt");
 
         share.body.cleanPaid -= uint64(paid);
     }

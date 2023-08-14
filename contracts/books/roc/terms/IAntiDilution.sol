@@ -9,11 +9,9 @@ pragma solidity ^0.8.8;
 
 import "../../roa/IInvestmentAgreement.sol";
 
-import "../../../common/lib/ArrayUtils.sol";
 import "../../../common/lib/DealsRepo.sol";
 import "../../../common/lib/EnumerableSet.sol";
 import "../../../common/lib/SharesRepo.sol";
-
 
 interface IAntiDilution {
 
@@ -61,8 +59,5 @@ interface IAntiDilution {
     function getGiftPaid(address ia, uint256 seqOfDeal, uint256 seqOfShare)
         external view returns (uint64 gift);
 
-    function isTriggered(DealsRepo.Deal memory deal) external view returns (bool);
-
-    function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool);
-
+    function isTriggered(DealsRepo.Deal memory deal, uint seqOfShare) external view returns (bool);
 }

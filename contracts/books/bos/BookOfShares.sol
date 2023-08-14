@@ -47,26 +47,44 @@ contract BookOfShares is IBookOfShares, AccessControl {
     function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) 
         external onlyKeeper
     {
-        IRegisterOfMembers _rom = _getGK().getROM();
 
-        SharesRepo.Share memory newShare = 
-            _repo.addShare(shareNumber, payInDeadline, paid, par);
+        SharesRepo.Share memory share;
+        share.head = SharesRepo.snParser(shareNumber);
+        share.body = SharesRepo.Body({
+            payInDeadline: uint48(payInDeadline),
+            paid: uint48(paid),
+            par: uint48(par),
+            cleanPaid: uint48(paid),
+            state: 0,
+            para: 0
+        });
+
+    
+        // IRegisterOfMembers _rom = _getGK().getROM();
+
+        // SharesRepo.Share memory newShare = 
+        //     _repo.addShare(shareNumber, payInDeadline, paid, par);
         
-        require ( newShare.head.issueDate <= newShare.body.payInDeadline, 
+        require ( share.head.issueDate <= payInDeadline, 
             "BOS.issueShare: issueDate later than payInDeadline");
+
+        addShare(share);
+
+        // _rom.addMember(newShare.head.shareholder);
+        // _rom.addShareToMember(newShare);
+        // _rom.capIncrease(paid, par);
+
+        // emit IssueShare(newShare.head.codifyHead(), paid, par);
+    }
+
+    function addShare(SharesRepo.Share memory share) public onlyKeeper {
+
+        SharesRepo.Share memory newShare = _repo.regShare(share);
+        IRegisterOfMembers _rom = _getGK().getROM();
 
         _rom.addMember(newShare.head.shareholder);
         _rom.addShareToMember(newShare);
-        _rom.capIncrease(paid, par);
-
-        emit IssueShare(newShare.head.codifyHead(), paid, par);
-    }
-
-    function regShare(SharesRepo.Share memory share) 
-        public onlyKeeper returns(SharesRepo.Share memory newShare)
-    {
-        newShare = _repo.regShare(share);
-        _getGK().getROM().addShareToMember(newShare);
+        _rom.capIncrease(newShare.body.paid, newShare.body.par);
 
         emit IssueShare(newShare.head.codifyHead(), newShare.body.paid, newShare.body.par);
     }
@@ -151,9 +169,14 @@ contract BookOfShares is IBookOfShares, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _getGK().getROM().addMember(to);
+        IRegisterOfMembers _rom = _getGK().getROM();
 
-        regShare(newShare);
+        _rom.addMember(to);
+
+        newShare = _repo.regShare(newShare);
+
+        _rom.addShareToMember(newShare);
+
     }
 
     // ==== DecreaseCapital ====

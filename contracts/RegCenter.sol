@@ -222,6 +222,7 @@ contract RegCenter is IRegCenter {
             keepers[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
             IAccessControl(keepers[i]).init(primeKeyOfOwner, gk, rc, gk);
             IGeneralKeeper(gk).regKeeper(i, keepers[i]);
+            i++;
         }
     }
 
@@ -237,9 +238,10 @@ contract RegCenter is IRegCenter {
 
         uint i;
         while (i < 10) {
-            books[i] = _createDocAtLatestVersion(types[types[i]], primeKeyOfOwner);
+            books[i] = _createDocAtLatestVersion(types[i], primeKeyOfOwner);
             IAccessControl(books[i]).init(primeKeyOfOwner, keepers[seqOfDK[i]], rc, gk);
             IGeneralKeeper(gk).regBook(i+1, books[i]);
+            i++;
         }
     }
 

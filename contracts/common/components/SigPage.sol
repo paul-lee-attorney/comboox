@@ -61,10 +61,10 @@ contract SigPage is ISigPage, AccessControl {
         }
     }
 
-    function regSig(uint256 seqOfDeal, uint256 signer, uint sigDate, bytes32 sigHash)
+    function regSig(uint256 signer, uint sigDate, bytes32 sigHash)
         external onlyKeeper returns (bool flag)
     {
-        flag = _sigPages[1].regSig(seqOfDeal, signer, sigDate, sigHash);
+        flag = _sigPages[1].regSig(signer, sigDate, sigHash);
     }
 
     //##################

@@ -36,8 +36,6 @@ interface IFilesFolder {
         bytes32 docHash
     ) external;
 
-    function establishFile(address body) external;
-
     function proposeFile(address body, uint64 seqOfMotion) external;
 
     function voteCountingForFile(address body, bool approved) external;
@@ -56,7 +54,9 @@ interface IFilesFolder {
 
     function closingDeadline(address body) external view returns (uint48);
 
-    function shaExecDeadline(address body) external view returns (uint48);
+    function frExecDeadline(address body) external view returns (uint48);
+
+    function dtExecDeadline(address body) external view returns (uint48);
 
     function terminateStartpoint(address body) external view returns (uint48);
 
@@ -74,12 +74,6 @@ interface IFilesFolder {
     function getFile(address body) external view 
         returns (FilesRepo.File memory);
 
-    function getSNOfFile(address body) external view 
-        returns (bytes32);
-
     function getHeadOfFile(address body) external view 
         returns (FilesRepo.Head memory head);
-
-    function getRefOfFile(address body) external view 
-        returns (FilesRepo.Ref memory ref);
 }
