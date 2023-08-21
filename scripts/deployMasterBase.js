@@ -29,20 +29,20 @@ async function main() {
 	const libFRClaims = await deployTool(signers[0], "FRClaims", libraries);
 	const libRolesRepo = await deployTool(signers[0], "RolesRepo", libraries);
 	const libRulesParser = await deployTool(signers[0], "RulesParser", libraries);
+	const libSwapsRepo = await deployTool(signers[0], "SwapsRepo", libraries);
 	const libTopChain = await deployTool(signers[0], "TopChain", libraries);
 
 	libraries = {
-		"EnumerableSet": libEnumerableSet.address
+		"EnumerableSet": libEnumerableSet.address,
 	};	
 	const libCondsRepo = await deployTool(signers[0], "CondsRepo", libraries);
-	const libDealsRepo = await deployTool(signers[0], "DealsRepo", libraries);
 	const libDTClaims = await deployTool(signers[0], "DTClaims", libraries);
 	const libFilesRepo = await deployTool(signers[0], "FilesRepo", libraries);
 	const libLockersRepo = await deployTool(signers[0], "LockersRepo", libraries);
 	const libOfficersRepo = await deployTool(signers[0], "OfficersRepo", libraries);
 	const libPledgesRepo = await deployTool(signers[0], "PledgesRepo", libraries);
 	const libSigsRepo = await deployTool(signers[0], "SigsRepo", libraries);
-	const libSwapsRepo = await deployTool(signers[0], "SwapsRepo", libraries);
+	// const libSwapsRepo = await deployTool(signers[0], "SwapsRepo", libraries);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
@@ -69,8 +69,15 @@ async function main() {
 
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address,
+		"SwapsRepo": libSwapsRepo.address,
+	};	
+	const libDealsRepo = await deployTool(signers[0], "DealsRepo", libraries);
+
+	libraries = {
+		"EnumerableSet": libEnumerableSet.address,
 		"Checkpoints": libCheckpoints.address,
-		"CondsRepo": libCondsRepo.address
+		"CondsRepo": libCondsRepo.address,
+		"SwapsRepo": libSwapsRepo.address,
 	};
 	const libOptionsRepo = await deployTool(signers[0], "OptionsRepo", libraries);
 
@@ -103,7 +110,8 @@ async function main() {
 		"DealsRepo": libDealsRepo.address,
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address,
-		"SigsRepo": libSigsRepo.address
+		"SigsRepo": libSigsRepo.address,
+		"SwapsRepo": libSwapsRepo.address
 	};
 	let ia = await deployTool(signers[0], "InvestmentAgreement", libraries);
 
@@ -153,12 +161,6 @@ async function main() {
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
-		"SwapsRepo": libSwapsRepo.address
-	}	
-	let rosKeeper = await deployTool(signers[0], "ROSKeeper", libraries);
-
-	libraries = {
-		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
 	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries);
@@ -193,7 +195,6 @@ async function main() {
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"DTClaims": libDTClaims.address,
-		// "EnumerableSet": libEnumerableSet.address,
 		"FilesRepo": libFilesRepo.address,
 		"FRClaims": libFRClaims.address,
 		"TopChain": libTopChain.address
@@ -212,7 +213,6 @@ async function main() {
 		"MotionsRepo": libMotionsRepo.address
 	}
 	let mm = await deployTool(signers[0], "MeetingMinutes", libraries);
-	// let gmm = await deployTool(signers[0], "MeetingMinutes", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -222,9 +222,8 @@ async function main() {
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
-		"Checkpoints": libCheckpoints.address,
-		"EnumerableSet": libEnumerableSet.address,
-		"OptionsRepo": libOptionsRepo.address
+		"OptionsRepo": libOptionsRepo.address,
+		"SwapsRepo": libSwapsRepo.address
 	}
 	let roo = await deployTool(signers[0], "RegisterOfOptions", libraries);
 
@@ -239,7 +238,7 @@ async function main() {
 		"LockersRepo": libLockersRepo.address,
 		"SharesRepo": libSharesRepo.address
 	}
-	let bos = await deployTool(signers[0], "BookOfShares", libraries);
+	let ros = await deployTool(signers[0], "RegisterOfShares", libraries);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -250,12 +249,9 @@ async function main() {
 	}
 	let rom = await deployTool(signers[0], "RegisterOfMembers", libraries);
 
-	libraries = {
-		"RolesRepo": libRolesRepo.address,
-		"EnumerableSet": libEnumerableSet.address,
-		"SwapsRepo": libSwapsRepo.address
-	}
-	let ros = await deployTool(signers[0], "RegisterOfSwaps", libraries);
+	libraries = {};
+
+	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
 	await rc.setBackupKey(signers[1].address);
@@ -285,60 +281,57 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 8, ropKeeper.address);
 	console.log("set template for ROPKeeper at address: ", ropKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 9, rosKeeper.address);
-	console.log("set template for ROSKeeper at address: ", rosKeeper.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 10, shaKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 9, shaKeeper.address);
 	console.log("set template for SHAKeeper at address: ", shaKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 11, roc.address);
+	await rc.connect(signers[1]).setTemplate( 10, roc.address);
 	console.log("set template for ROC at address: ", roc.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 12, rod.address);
+	await rc.connect(signers[1]).setTemplate( 11, rod.address);
 	console.log("set template for ROD at address: ", rod.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 13, mm.address);
+	await rc.connect(signers[1]).setTemplate( 12, mm.address);
 	console.log("set template for MM at address: ", mm.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 14, rom.address);
+	await rc.connect(signers[1]).setTemplate( 13, rom.address);
 	console.log("set template for ROM at address: ", rom.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 15, roa.address);
+	await rc.connect(signers[1]).setTemplate( 14, roa.address);
 	console.log("set template for ROA at address: ", roa.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 16, roo.address);
+	await rc.connect(signers[1]).setTemplate( 15, roo.address);
 	console.log("set template for ROO at address: ", roo.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 17, rop.address);
+	await rc.connect(signers[1]).setTemplate( 16, rop.address);
 	console.log("set template for ROP at address: ", rop.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 18, ros.address);
+	await rc.connect(signers[1]).setTemplate( 17, ros.address);
 	console.log("set template for ROS at address: ", ros.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 19, bos.address);
-	console.log("set template for BOS at address: ", bos.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 20, gk.address);
+	await rc.connect(signers[1]).setTemplate( 18, gk.address);
 	console.log("set template for GK at address: ", gk.address, "\n");
 	
-	await rc.connect(signers[1]).setTemplate( 21, ia.address);
+	await rc.connect(signers[1]).setTemplate( 19, ia.address);
 	console.log("set template for IA at address: ", ia.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 22, sha.address);
+	await rc.connect(signers[1]).setTemplate( 20, sha.address);
 	console.log("set template for SHA at address: ", sha.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 23, ad.address);
+	await rc.connect(signers[1]).setTemplate( 21, ad.address);
 	console.log("set template for AD at address: ", ad.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 24, lu.address);
+	await rc.connect(signers[1]).setTemplate( 22, lu.address);
 	console.log("set template for LU at address: ", lu.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 25, al.address);
+	await rc.connect(signers[1]).setTemplate( 23, al.address);
 	console.log("set template for AL at address: ", al.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 26, op.address);
+	await rc.connect(signers[1]).setTemplate( 24, op.address);
 	console.log("set template for OP at address: ", op.address, "\n");
 
+	await rc.connect(signers[1]).setFeedRegistry(mockFeedRegistry.address);
+	console.log("set MOCK feed registry at address: ", mockFeedRegistry.address, "\n");
+	
 	// ==== Reg Users ====
 
 	// await rc.connect(signers[2]).regUser("0x0".padEnd(66, "0"));

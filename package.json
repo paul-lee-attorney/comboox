@@ -10,5 +10,8 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "hardhat": "^2.15.0"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.6.1"
   }
 }
