@@ -106,6 +106,24 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         }
     }
 
+    function proposeToTransferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint proposer
+    ) external memberOrDirector(proposer){
+
+        IGeneralKeeper _gk = _getGK();
+        IMeetingMinutes _gmm = _gk.getGMM();
+
+        uint64 seqOfMotion = 
+            _gmm.createMotionToTransferFund(to, isCBP, amt, expireDate, seqOfVR, executor, proposer);
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
+    }
+
     function createActionOfGM(
         uint seqOfVR,
         address[] memory targets,
@@ -257,6 +275,24 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     }
 
     // ==== execute ====
+
+    function transferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external onlyDK {
+        _getGK().getGMM().transferFund(
+            to,
+            isCBP,
+            amt,
+            expireDate,
+            seqOfMotion,
+            caller
+        );
+    }
 
     function execActionOfGM(
         uint typeOfAction,

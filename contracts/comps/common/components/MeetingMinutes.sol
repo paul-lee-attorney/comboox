@@ -15,8 +15,6 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     using MotionsRepo for MotionsRepo.Repo;
     using RulesParser for bytes32;
 
-    
-
     MotionsRepo.Repo private _repo;
 
     //##################
@@ -92,6 +90,39 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         );
     }
 
+    function createMotionToTransferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint proposer
+    ) external onlyDK returns (uint64) {
+        uint contents = _hashPayment(to, isCBP, amt, expireDate);
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.TransferFund),
+            seqOfVR,
+            proposer,
+            executor,
+            contents
+        );
+    }
+
+    function _hashPayment(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate
+    ) private pure returns(uint) {
+        return 
+            uint256(
+                keccak256(
+                    abi.encode(to, isCBP, amt, expireDate)
+                )
+            );
+    }
+
     function createAction(
         uint seqOfVR,
         address[] memory targets,
@@ -137,7 +168,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint proposer
-    ) public onlyDK {
+    ) external onlyDK {
         IGeneralKeeper _gk = _getGK();
         IShareholdersAgreement _sha = _gk.getSHA();
 
@@ -209,6 +240,27 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         emit ExecResolution(seqOfMotion, caller);
     }
 
+    function transferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external onlyDK {
+
+        require(block.timestamp < expireDate, 
+            "MM.TF: missed deadline");
+
+        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
+            uint8(MotionsRepo.TypeOfMotion.TransferFund), 
+            "MM.TF: wrong typeOfMotion");
+        
+        uint contents = _hashPayment(to, isCBP, amt, expireDate);
+
+        execResolution(seqOfMotion, contents, caller);
+    }
+
     function execAction(
         uint seqOfVR,
         address[] memory targets,
@@ -268,23 +320,6 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     {
         return _repo.getDelegateOf(seqOfMotion, acct);
     }
-
-    // function getLeavesWeightAtDate(
-    //     uint256 seqOfMotion, 
-    //     uint caller,
-    //     uint baseDate
-    // ) external view returns(DelegateMap.LeavesInfo memory info)
-    // {
-    //     info = _repo.getLeavesWeightAtDate(seqOfMotion, caller, baseDate, _getGK().getROM());
-    // }
-
-    // function getLeavesHeadcountOfDirectors(
-    //     uint256 seqOfMotion, 
-    //     uint caller
-    // ) external view returns(uint32 head)
-    // {
-    //     head = _repo.getLeavesHeadcountOfDirectors(seqOfMotion, caller, _getGK().getROD());
-    // }
 
     // ==== motion ====
 

@@ -33,8 +33,6 @@ contract SigPage is ISigPage, AccessControl {
     {
         initPage ? _sigPages[0].setTiming(signingDays, closingDays) :
             _sigPages[1].setTiming(signingDays, closingDays);
-
-        // emit SetTiming(initPage, signingDays, closingDays);
     }
 
     function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)
@@ -164,11 +162,11 @@ contract SigPage is ISigPage, AccessControl {
     function getParties() external view
         returns (uint256[] memory parties)
     {
-        uint256[] memory buyers = getBuyers(true);
-        buyers.merge(getBuyers(false));
+        uint256[] memory buyers = 
+            getBuyers(true).merge(getBuyers(false));
 
-        uint256[] memory sellers = getSellers(true);
-        sellers.merge(getSellers(false));
+        uint256[] memory sellers = 
+            getSellers(true).merge(getSellers(false));
         
         parties = buyers.merge(sellers);
     }

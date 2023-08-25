@@ -67,9 +67,6 @@ interface IInvestmentAgreement is ISigPage {
 
     function directCloseDeal(uint256 seq) external returns (bool flag);
 
-    // function revokeDeal(uint256 seq, string memory hashKey)
-    //     external returns (bool);
-
     function terminateDeal(uint256 seqOfDeal) external returns(bool);
 
     function takeGift(uint256 seq) external returns(bool);
@@ -114,17 +111,11 @@ interface IInvestmentAgreement is ISigPage {
     // ======== InvestmentAgreement ========
     function getTypeOfIA() external view returns (uint8);
 
-    function counterOfDeal() external view returns (uint16);
+    // function counterOfDeal() external view returns (uint16);
 
-    function counterOfClosedDeal() external view returns (uint16);
+    // function counterOfClosedDeal() external view returns (uint16);
 
-    function isDeal(uint256 seq) external view returns (bool);
-
-    function getHeadOfDeal(uint256 seq) external view returns (DealsRepo.Head memory);
-
-    // function getBodyOfDeal(uint256 seq) external view returns (DealsRepo.Body memory);
-
-    // function getHashLockOfDeal(uint256 seq) external view returns (bytes32);
+    // function isDeal(uint256 seq) external view returns (bool);
 
     function getDeal(uint256 seq) external view returns (DealsRepo.Deal memory);
 
@@ -132,14 +123,11 @@ interface IInvestmentAgreement is ISigPage {
 
     // ==== Swap ====
 
-    function counterOfSwaps(uint seqOfDeal)
-        external view returns (uint16);
+    // function counterOfSwaps(uint seqOfDeal)
+    //     external view returns (uint16);
 
-    function sumPaidOfTarget(uint seqOfDeal)
-        external view returns (uint64);
-
-    // function isSwap(uint seqOfDeal, uint256 seqOfSwap)
-    //     external view returns (bool);
+    // function sumPaidOfTarget(uint seqOfDeal)
+    //     external view returns (uint64);
 
     function getSwap(uint seqOfDeal, uint256 seqOfSwap)
         external view returns (SwapsRepo.Swap memory);
@@ -149,6 +137,9 @@ interface IInvestmentAgreement is ISigPage {
 
     function allSwapsClosed(uint seqOfDeal)
         external view returns (bool);
+
+    function checkValueOfSwap(uint seqOfDeal, uint seqOfSwap)
+        external view returns(uint);
 
     function checkValueOfDeal(uint seqOfDeal)
         external view returns (uint);

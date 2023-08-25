@@ -340,6 +340,29 @@ interface IGeneralKeeper {
         uint256 seqOfDeal
     ) external;
 
+    // ############
+    // ##  Fund  ##
+    // ############
+
+    function proposeToTransferFund(
+        bool toBMM,
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor
+    ) external;
+
+    function transferFund(
+        bool fromBMM,
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion
+    ) external;
+
     // ###############
     // ##  Routing  ##
     // ###############

@@ -295,7 +295,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             "SHAK.EFR: frClaimer is seller");
 
         DealsRepo.Head memory headOfDeal = 
-            _ia.getHeadOfDeal(seqOfDeal);
+            _ia.getDeal(seqOfDeal).head;
         
         RulesParser.FirstRefusalRule memory rule = 
             _gk.getSHA().getRule(seqOfFRRule).firstRefusalRuleParser();
@@ -311,7 +311,9 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         _gk.getROA().claimFirstRefusal(ia, seqOfDeal, caller, sigHash);
 
-        _ia.terminateDeal(seqOfDeal); 
+        if (_ia.getDeal(seqOfDeal).body.state != 
+            uint8(DealsRepo.StateOfDeal.Terminated))
+                _ia.terminateDeal(seqOfDeal); 
     }
 
     function computeFirstRefusal(
@@ -329,11 +331,17 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         require(_rom.isMember(caller), "SHAKeeper.computeFR: not member");
 
+        if (deal.head.seqOfShare != 0) {
+            deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FirstRefusal);
+        } else  deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.PreEmptive);
+
+        deal.head.preSeq = deal.head.seqOfDeal;
+        deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
+
         FRClaims.Claim[] memory cls = 
             _gk.getROA().computeFirstRefusal(ia, seqOfDeal);
 
         uint256 len = cls.length;
-
         while (len > 0) {
             _createFRDeal(_ia, deal, cls[len-1], _rom);
             len--;
@@ -348,19 +356,19 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         FRClaims.Claim memory cl,
         IRegisterOfMembers _rom
     ) private {
-        if (deal.head.seqOfShare != 0) {
-            deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FirstRefusal);
-        } else  deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.PreEmptive);
-        
-        deal.head.preSeq = deal.head.seqOfDeal;
+
+        uint64 orgPaid = deal.body.paid;
+        uint64 orgPar = deal.body.par;
         
         deal.body.buyer = cl.claimer;
         deal.body.groupOfBuyer = _rom.groupRep(cl.claimer);
-        deal.body.paid = (deal.body.paid * cl.ratio) / 10000;
-        deal.body.par = (deal.body.par * cl.ratio) / 10000;
-        deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
+        deal.body.paid = (orgPaid * cl.ratio) / 10000;
+        deal.body.par = (orgPar * cl.ratio) / 10000;
 
         _ia.regDeal(deal);
         _ia.regSig(cl.claimer, cl.sigDate, cl.sigHash);
+
+        deal.body.paid = orgPaid;
+        deal.body.par = orgPar;
     }
 }

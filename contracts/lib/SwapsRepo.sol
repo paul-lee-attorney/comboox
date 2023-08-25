@@ -90,7 +90,7 @@ library SwapsRepo {
         require(swap.state == uint8(StateOfSwap.Issued), 
             "SWR.payOffSwap: wrong state");
 
-        require (uint(swap.paidOfTarget) * uint(swap.priceOfDeal) * centPrice <= msgValue, "SWR.payOffSwap: insufficient amt");
+        require (uint(swap.paidOfTarget) * uint(swap.priceOfDeal) * centPrice / 100 <= msgValue, "SWR.payOffSwap: insufficient amt");
 
         swap.state = uint8(StateOfSwap.Closed);
 
@@ -138,13 +138,22 @@ library SwapsRepo {
     function isSwap(Repo storage repo, uint256 seqOfSwap)
         public view returns (bool)
     {
-        return repo.swaps[seqOfSwap].seqOfTarget > 0;
+        return seqOfSwap <= counterOfSwaps(repo);
     }
 
     function getSwap(Repo storage repo, uint256 seqOfSwap)
         public view swapExist(repo, seqOfSwap) returns (Swap memory)
     {
         return repo.swaps[seqOfSwap];
+    }
+
+    function checkValueOfSwap(
+        Repo storage repo,
+        uint seqOfSwap,
+        uint centPrice
+    ) public view returns (uint) {
+        Swap memory swap = getSwap(repo, seqOfSwap);
+        return uint(swap.paidOfTarget) * uint(swap.priceOfDeal) * centPrice / 100;
     }
 
     function getAllSwaps(Repo storage repo)

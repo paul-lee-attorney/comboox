@@ -560,6 +560,71 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
             );
     }
 
+    // ############
+    // ##  Fund  ##
+    // ############
+
+    function proposeToTransferFund(
+        bool toBMM,
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor
+    ) external {
+        if (toBMM)
+            IBMMKeeper(_keepers[3]).proposeToTransferFund(
+                to, 
+                isCBP, 
+                amt, 
+                expireDate, 
+                seqOfVR, 
+                executor, 
+                _msgSender(50000)
+            );
+        else IGMMKeeper(_keepers[5]).proposeToTransferFund(
+                to, 
+                isCBP, 
+                amt, 
+                expireDate, 
+                seqOfVR, 
+                executor, 
+                _msgSender(50000)
+            );
+    }
+
+    function transferFund(
+        bool fromBMM,
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion
+    ) external {
+        if (fromBMM)
+            IBMMKeeper(_keepers[3]).transferFund(
+                to, 
+                isCBP, 
+                amt, 
+                expireDate, 
+                seqOfMotion,
+                _msgSender(50000)
+            );
+        else IGMMKeeper(_keepers[5]).transferFund(
+                to, 
+                isCBP, 
+                amt, 
+                expireDate, 
+                seqOfMotion, 
+                _msgSender(50000)
+            );
+        
+        if (isCBP)
+            _getRC().transfer(to, amt * 10 ** 9);
+        else payable(to).transfer(amt * 10 ** 9);
+    }
+
     // ###############
     // ##  Routing  ##
     // ###############

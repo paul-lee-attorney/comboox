@@ -72,6 +72,27 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         _getGK().getBMM().createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
     }
 
+    function proposeToTransferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint proposer
+    ) external onlyDK directorExist(proposer) {
+
+        IGeneralKeeper _gk = _getGK();
+        IMeetingMinutes _bmm = _gk.getBMM();
+
+        require (amt < _gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold * 10 ** 9,
+            "BMMK.transferFund: amt overflow");
+
+        uint64 seqOfMotion = 
+            _bmm.createMotionToTransferFund(to, isCBP, amt, expireDate, seqOfVR, executor, proposer);
+        _bmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
+    }
+
     // ---- Actions ----
 
     function createAction(
@@ -221,6 +242,24 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         _bmm.voteCounting(quorumFlag, seqOfMotion, base);
     }
 
+    function transferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external onlyDK {
+        _getGK().getBMM().transferFund(
+            to,
+            isCBP,
+            amt,
+            expireDate,
+            seqOfMotion,
+            caller
+        );
+    }
+
     function execAction(
         uint typeOfAction,
         address[] memory targets,
@@ -229,7 +268,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         bytes32 desHash,
         uint256 seqOfMotion,
         uint caller
-    ) external directorExist(caller) returns (uint) {
+    ) external returns (uint) {
         return _getGK().getBMM().execAction(
             typeOfAction,
             targets,

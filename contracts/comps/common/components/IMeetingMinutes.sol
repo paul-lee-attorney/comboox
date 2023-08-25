@@ -63,6 +63,16 @@ interface IMeetingMinutes {
         uint proposer    
     ) external returns(uint64);
 
+    function createMotionToTransferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint proposer
+    ) external returns (uint64);
+
     function createAction(
         uint seqOfVR,
         address[] memory targets,
@@ -114,6 +124,15 @@ interface IMeetingMinutes {
 
     function execResolution(uint256 seqOfMotion, uint256 contents, uint caller)
         external;
+
+    function transferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external;
 
     function execAction(
         uint seqOfVR,

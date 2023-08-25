@@ -15,9 +15,7 @@ library RulesParser {
     //     bytes32(uint(0x0000000000000000010000000000000000000000000000000000000000000000));
 
     struct GovernanceRule {
-        uint16 seqOfRule; 
-        uint8 qtyOfSubRule;
-        uint8 seqOfSubRule;
+        uint32 fundApprovalThreshold; 
         bool basedOnPar;
         uint16 proposeWeightRatioOfGM; 
         uint16 proposeHeadRatioOfMembers; 
@@ -38,9 +36,7 @@ library RulesParser {
         uint _sn = uint(sn);
 
         rule = GovernanceRule({
-            seqOfRule: uint16(_sn >> 240),
-            qtyOfSubRule: uint8(_sn >> 232),
-            seqOfSubRule: uint8(_sn >> 224),
+            fundApprovalThreshold: uint32(_sn >> 224),
             basedOnPar: uint8(_sn >> 216) == 1,
             proposeWeightRatioOfGM: uint16(_sn >> 200),
             proposeHeadRatioOfMembers: uint16(_sn >> 184),

@@ -15,7 +15,6 @@ import "./IInvestmentAgreement.sol";
 contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     using DealsRepo for DealsRepo.Repo;
     using SigsRepo for SigsRepo.Page;
-    // using RulesParser for bytes32;
 
     DealsRepo.Repo private _repo;
 
@@ -124,7 +123,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint paidOfTarget,
         uint seqOfPledge,
         uint caller
-    ) external onlyDK returns(SwapsRepo.Swap memory swap) {
+    ) external onlyKeeper returns(SwapsRepo.Swap memory swap) {
         IGeneralKeeper _gk = _getGK();
 
         swap = _repo.createSwap(seqOfMotion, seqOfDeal, paidOfTarget, 
@@ -139,7 +138,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint seqOfSwap,
         uint msgValue,
         uint centPrice
-    ) external onlyDK returns(SwapsRepo.Swap memory swap){
+    ) external onlyKeeper returns(SwapsRepo.Swap memory swap){
         swap = _repo.payOffSwap(seqOfMotion, seqOfDeal, 
             seqOfSwap, msgValue, centPrice, _getGK().getGMM());
 
@@ -150,10 +149,9 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint seqOfMotion,
         uint seqOfDeal,
         uint seqOfSwap
-    ) external onlyDK returns (SwapsRepo.Swap memory swap){
+    ) external onlyKeeper returns (SwapsRepo.Swap memory swap){
         swap = _repo.terminateSwap(seqOfMotion, seqOfDeal, 
             seqOfSwap, _getGK().getGMM());
-
         emit TerminateSwap(seqOfDeal, seqOfSwap);        
     }
 
@@ -176,31 +174,16 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         return _repo.getTypeOfIA();
     }
 
-    function counterOfDeal() public view returns (uint16) {
-        return _repo.counterOfDeal();
-    }
-
-    function counterOfClosedDeal() public view returns (uint16) {
-        return _repo.counterOfClosedDeal();
-    }
-
-    function isDeal(uint256 seqOfDeal) public view returns (bool) {
-        return _repo.isDeal(seqOfDeal);
-    }
-
-    function getHeadOfDeal(uint256 seq) external view returns (DealsRepo.Head memory)
-    {
-        return _repo.getHeadOfDeal(seq);
-    }
-
-    // function getBodyOfDeal(uint256 seq) external view returns (DealsRepo.Body memory)
-    // {
-    //     return _repo.getBodyOfDeal(seq);
+    // function counterOfDeal() public view returns (uint16) {
+    //     return _repo.counterOfDeal();
     // }
 
-    // function getHashLockOfDeal(uint256 seq) external view returns (bytes32)
-    // {
-    //     return _repo.getHashLockOfDeal(seq);
+    // function counterOfClosedDeal() public view returns (uint16) {
+    //     return _repo.counterOfClosedDeal();
+    // }
+
+    // function isDeal(uint256 seqOfDeal) public view returns (bool) {
+    //     return _repo.isDeal(seqOfDeal);
     // }
     
     function getDeal(uint256 seqOfDeal) external view returns (DealsRepo.Deal memory)
@@ -214,22 +197,16 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
 
     // ==== Swap ====
 
-    function counterOfSwaps(uint seqOfDeal)
-        external view returns (uint16)
-    {
-        return _repo.counterOfSwaps(seqOfDeal);
-    }
-
-    function sumPaidOfTarget(uint seqOfDeal)
-        external view returns (uint64)
-    {
-        return _repo.sumPaidOfTarget(seqOfDeal);
-    }
-
-    // function isSwap(uint seqOfDeal, uint256 seqOfSwap)
-    //     external view returns (bool)
+    // function counterOfSwaps(uint seqOfDeal)
+    //     external view returns (uint16)
     // {
-    //     return _repo.isSwap(seqOfDeal, seqOfSwap);
+    //     return _repo.counterOfSwaps(seqOfDeal);
+    // }
+
+    // function sumPaidOfTarget(uint seqOfDeal)
+    //     external view returns (uint64)
+    // {
+    //     return _repo.sumPaidOfTarget(seqOfDeal);
     // }
 
     function getSwap(uint seqOfDeal, uint256 seqOfSwap)
@@ -251,6 +228,12 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     } 
 
     // ==== Value ====
+
+    function checkValueOfSwap(uint seqOfDeal, uint seqOfSwap)
+        external view returns(uint)
+    {
+        return _repo.checkValueOfSwap(seqOfDeal, seqOfSwap, _getGK().getCentPrice());
+    }
 
     function checkValueOfDeal(uint seqOfDeal)
         external view returns (uint)

@@ -105,6 +105,11 @@ library DealsRepo {
         _;
     }
 
+    modifier dealExist(Repo storage repo, uint seqOfDeal) {
+        require(isDeal(repo, seqOfDeal), "DR.mf.dealExist: not");
+        _;
+    }
+
     //#################
     //##  Write I/O  ##
     //#################
@@ -171,10 +176,10 @@ library DealsRepo {
         require(deal.body.par > 0, "DR.RD: zero par");
         require(deal.body.par >= deal.body.paid, "DR.RD: paid overflow");
 
-        if (!repo.seqList.contains(deal.head.seqOfDeal)) {
-            deal.head.seqOfDeal = _increaseCounterOfDeal(repo);
-            repo.seqList.add(deal.head.seqOfDeal);
-        }
+        // if (!repo.seqList.contains(deal.head.seqOfDeal)) {
+        deal.head.seqOfDeal = _increaseCounterOfDeal(repo);
+        repo.seqList.add(deal.head.seqOfDeal);
+        // }
         repo.deals[deal.head.seqOfDeal] = Deal({
             head: deal.head,
             body: deal.body,
@@ -282,7 +287,7 @@ library DealsRepo {
 
         require(body.state == uint8(StateOfDeal.Locked) ||
             body.state == uint8(StateOfDeal.Cleared)
-            , "IA.TD: wrong stateOfDeal");
+            , "DR.TD: wrong stateOfDeal");
 
         body.state = uint8(StateOfDeal.Terminated);
 
@@ -464,7 +469,7 @@ library DealsRepo {
 
         require((uint(deal.body.paid * deal.head.priceOfPaid) + 
             uint((deal.body.par - deal.body.paid) * deal.head.priceOfPar)) * 
-            centPrice <= msgValue, "DR.payOffApprovedDeal: insufficient amt");
+            centPrice / 100 <= msgValue, "DR.payOffApprovedDeal: insufficient amt");
 
         deal.body.state = uint8(StateOfDeal.Closed);
         
@@ -488,25 +493,29 @@ library DealsRepo {
     }
 
     function isDeal(Repo storage repo, uint256 seqOfDeal) public view returns (bool) {
-        return repo.deals[seqOfDeal].head.seqOfDeal == seqOfDeal;
+        return repo.seqList.contains(seqOfDeal);
     }
 
-    function getHeadOfDeal(Repo storage repo, uint256 seq) external view returns (Head memory)
-    {
-        return repo.deals[seq].head;
-    }
+    // function getHeadOfDeal(Repo storage repo, uint256 seq) 
+    //     external view dealExist(repo, seq) returns (Head memory)
+    // {
+    //     return repo.deals[seq].head;
+    // }
 
-    function getBodyOfDeal(Repo storage repo,  uint256 seq) external view returns (Body memory)
-    {
-        return repo.deals[seq].body;
-    }
+    // function getBodyOfDeal(Repo storage repo,  uint256 seq) 
+    //     external view dealExist(repo, seq) returns (Body memory)
+    // {
+    //     return repo.deals[seq].body;
+    // }
 
-    function getHashLockOfDeal(Repo storage repo, uint256 seq) external view returns (bytes32)
-    {
-        return repo.deals[seq].hashLock;
-    }
+    // function getHashLockOfDeal(Repo storage repo, uint256 seq) 
+    //     external view dealExist(repo, seq) returns (bytes32)
+    // {
+    //     return repo.deals[seq].hashLock;
+    // }
     
-    function getDeal(Repo storage repo, uint256 seq) external view returns (Deal memory)
+    function getDeal(Repo storage repo, uint256 seq) 
+        external view dealExist(repo, seq) returns (Deal memory)
     {
         return repo.deals[seq];
     }
@@ -555,6 +564,15 @@ library DealsRepo {
 
     // ==== Value Calculation ==== 
 
+    function checkValueOfSwap(
+        Repo storage repo,
+        uint seqOfDeal,
+        uint seqOfSwap,
+        uint centPrice
+    ) public view dealExist(repo, seqOfDeal) returns (uint) {
+        return repo.swaps[seqOfDeal].checkValueOfSwap(seqOfSwap, centPrice);
+    }
+
     function checkValueOfDeal(
         Repo storage repo, 
         uint seqOfDeal, 
@@ -564,6 +582,6 @@ library DealsRepo {
 
         return (uint(deal.body.paid * deal.head.priceOfPaid) + 
             uint((deal.body.par - deal.body.paid) * deal.head.priceOfPar)) *
-            centPrice;
+            centPrice / 100;
     }    
 }

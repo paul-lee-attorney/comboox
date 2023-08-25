@@ -26,7 +26,7 @@ library MotionsRepo {
         RemoveOfficer,
         ApproveDoc,
         ApproveAction,
-        ApproveSharePledge
+        TransferFund
     }
 
     enum StateOfMotion {
@@ -330,13 +330,7 @@ library MotionsRepo {
         Record storage r = repo.records[seqOfMotion];
         DelegateMap.Voter storage voter = r.map.voters[acct];
 
-        // uint32 headcount = 1;
-        // uint64 weight = _rom.votesAtDate(acct, m.body.shareRegDate);
-
         r.map.updateLeavesWeightAtDate(acct, m.body.shareRegDate, _rom);
-
-        // weight += voter.repWeight;
-        // headcount = voter.repHead + 1;
 
         _castVote(repo, seqOfMotion, acct, attitude, voter.repHead + 1, voter.weight + voter.repWeight, sigHash);
     }
@@ -355,11 +349,7 @@ library MotionsRepo {
 
         DelegateMap.Voter storage voter = r.map.voters[acct];
 
-        // uint32 headcount = 1;
-        // if (voter.repHead > 0) {
         r.map.updateLeavesHeadcountOfDirectors(acct, _rod);
-        //     headcount += voter.repHead;
-        // }
 
         _castVote(repo, seqOfMotion, acct, attitude, voter.repHead + 1, 0, sigHash);
     }

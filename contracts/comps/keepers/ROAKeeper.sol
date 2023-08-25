@@ -132,7 +132,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Head memory head = 
-            _ia.getHeadOfDeal(seqOfDeal);
+            _ia.getDeal(seqOfDeal).head;
 
         bool isST = (head.seqOfShare != 0);
 
@@ -268,7 +268,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         require(
-            caller == _ia.getHeadOfDeal(seqOfDeal).seller,
+            caller == _ia.getDeal(seqOfDeal).head.seller,
                 "BOIK.TTS: not seller"
         );
 
@@ -304,7 +304,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
                 block.timestamp >= _roa.terminateStartpoint(ia)) || 
             (state == uint8(FilesRepo.StateOfFile.Rejected)) ||
             (state == uint8(FilesRepo.StateOfFile.Approved) &&
-                block.timestamp >= _ia.getHeadOfDeal(seqOfDeal).closingDeadline)
+                block.timestamp >= _ia.getDeal(seqOfDeal).head.closingDeadline)
         ) {
             if (_ia.terminateDeal(seqOfDeal))
                 _roa.terminateFile(ia);

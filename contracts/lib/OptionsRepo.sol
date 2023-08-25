@@ -536,10 +536,7 @@ library OptionsRepo {
         uint seqOfSwap, 
         uint centPrice
     ) public view optExist(repo, seqOfOpt) returns (uint) {
-
-        SwapsRepo.Swap memory swap = getSwap(repo, seqOfOpt, seqOfSwap);
-
-        return uint(swap.paidOfTarget * swap.priceOfDeal) * centPrice;
+        return repo.records[seqOfOpt].swaps.checkValueOfSwap(seqOfSwap, centPrice);
     }
 
 }

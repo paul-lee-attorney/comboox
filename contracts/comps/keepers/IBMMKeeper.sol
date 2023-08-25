@@ -31,7 +31,19 @@ interface IBMMKeeper {
         uint proposer
     ) external;
 
-    // ---- Actions ----
+    // ---- TransferFund ----
+
+    function proposeToTransferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint proposer
+    ) external;
+
+    // ---- Action ----
 
     function createAction(
         uint seqOfVR,
@@ -68,6 +80,15 @@ interface IBMMKeeper {
     function voteCounting(uint256 seqOfMotion) external;
 
     // ==== Exec Motion ====
+
+    function transferFund(
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external;
 
     function execAction(
         uint typeOfAction,

@@ -90,7 +90,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         bytes32[] memory rules = new bytes32[](15);        
 
         // DefualtGovernanceRule
-        rules[0]  = bytes32(uint(0x000001010003e800000d0503e8003213880500241388000000000000140105dc));
+        rules[0]  = bytes32(uint(0x000000000003e800000d0503e8003213880500241388000000000000140105dc));
 
         // DefaultVotingRules
         rules[1]  = bytes32(uint(0x00010c010100001a0b000001000f08070e010100000000000000000000000000));
