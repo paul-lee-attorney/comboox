@@ -186,6 +186,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         require(_gk.getROA().getHeadOfFile(ia).state == 
             uint8(FilesRepo.StateOfFile.Circulated), "SHAK.execAD: wrong file state");
 
+        _ia.requestPriceDiff(seqOfDeal, seqOfShare);
+
         IRegisterOfMembers _rom = _gk.getROM();
 
         IAntiDilution _ad = IAntiDilution(_gk.getSHA().getTerm(

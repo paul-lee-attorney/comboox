@@ -90,6 +90,8 @@ library DealsRepo {
     struct Repo {
         mapping(uint256 => Deal) deals;
         mapping(uint256 => SwapsRepo.Repo) swaps;
+        //seqOfDeal => seqOfShare => bool
+        mapping(uint => mapping(uint => bool)) priceDiffRequested;
         EnumerableSet.UintSet seqList;
     }
 
@@ -453,28 +455,44 @@ library DealsRepo {
         uint msgValue,
         uint centPrice,
         uint caller
-    ) public returns (Deal memory ){
+    ) public returns (bool flag){
 
         Deal storage deal = repo.deals[seqOfDeal];
 
+        require(deal.head.typeOfDeal != uint8(TypeOfDeal.FreeGift),
+            "DR.payApprDeal: free gift");
+
         require(caller == deal.body.buyer,
-            "DR.payOffApprovedDeal: not buyer");
+            "DR.payApprDeal: not buyer");
 
         require(deal.body.state == uint8(StateOfDeal.Locked) ||
             deal.body.state == uint8(StateOfDeal.Cleared) , 
-            "DR.payOffApprovedDeal: wrong state");
+            "DR.payApprDeal: wrong state");
 
         require(block.timestamp < deal.head.closingDeadline,
-            "DR.payOffApprovedDeal: missed closingDeadline");
+            "DR.payApprDeal: missed closingDeadline");
 
         require((uint(deal.body.paid * deal.head.priceOfPaid) + 
             uint((deal.body.par - deal.body.paid) * deal.head.priceOfPar)) * 
-            centPrice / 100 <= msgValue, "DR.payOffApprovedDeal: insufficient amt");
+            centPrice / 100 <= msgValue, "DR.payApprDeal: insufficient amt");
 
         deal.body.state = uint8(StateOfDeal.Closed);
-        
-        return deal;
+
+        _increaseCounterOfClosedDeal(repo);
+
+        flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
+
+    function requestPriceDiff(
+        Repo storage repo,
+        uint seqOfDeal,
+        uint seqOfShare
+    ) public dealExist(repo, seqOfDeal) {
+        require(!repo.priceDiffRequested[seqOfDeal][seqOfShare],
+            "DR.requestPriceDiff: already requested");
+        repo.priceDiffRequested[seqOfDeal][seqOfShare] = true;      
+    }
+
 
     //  ################################
     //  ##       查询接口              ##

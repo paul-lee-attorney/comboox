@@ -160,11 +160,17 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint msgValue,
         uint centPrice,
         uint caller
-    ) external returns (DealsRepo.Deal memory deal){
-        deal = _repo.payOffApprovedDeal(seqOfDeal, msgValue, centPrice, caller);
+    ) external returns (bool flag){
+        flag = _repo.payOffApprovedDeal(seqOfDeal, msgValue, centPrice, caller);
         emit PayOffApprovedDeal(seqOfDeal, msgValue);
     }
 
+    function requestPriceDiff(
+        uint seqOfDeal,
+        uint seqOfShare
+    ) external onlyKeeper {
+        _repo.requestPriceDiff(seqOfDeal, seqOfShare);
+    }
 
     //  #################################
     //  ##       查询接口               ##

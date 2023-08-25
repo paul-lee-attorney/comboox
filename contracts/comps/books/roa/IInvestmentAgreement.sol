@@ -102,7 +102,12 @@ interface IInvestmentAgreement is ISigPage {
         uint msgValue,
         uint centPrice,
         uint caller
-    ) external returns (DealsRepo.Deal memory deal);
+    ) external returns (bool flag);
+
+    function requestPriceDiff(
+        uint seqOfDeal,
+        uint seqOfShare
+    ) external;
 
     //  #####################
     //  ##     查询接口     ##

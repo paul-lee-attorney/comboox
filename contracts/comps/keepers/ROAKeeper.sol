@@ -323,8 +323,12 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
+        if (_ia.payOffApprovedDeal(
+            seqOfDeal, msgValue, _getGK().getCentPrice(), caller
+        )) _getGK().getROA().execFile(ia);
+
         DealsRepo.Deal memory deal = 
-            _ia.payOffApprovedDeal(seqOfDeal, msgValue, _getGK().getCentPrice(), caller);
+            _ia.getDeal(seqOfDeal);
 
         _vrAndSHACheck(_ia, deal.head.seqOfDeal, deal.head.seqOfShare != 0);
 
