@@ -198,6 +198,13 @@ library MembersRepo {
         vote = gm.chain.basedOnPar() ? cp.par : cp.paid;
     }
 
+    function getVotesHistory(
+        Repo storage gm,
+        uint acct
+    ) public view returns (Checkpoints.Checkpoint[] memory) {
+        return gm.members[acct].votesInHand.pointsOfHistory();
+    }
+
     function isClassMember(Repo storage gm, uint256 acct, uint class)
         public view returns (bool flag)
     {

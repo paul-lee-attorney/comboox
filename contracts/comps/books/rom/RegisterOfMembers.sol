@@ -220,6 +220,12 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.votesAtDate(acct, date);
     }
 
+    function getVotesHistory(uint acct)
+        external view returns (Checkpoints.Checkpoint[] memory)
+    {
+        return _repo.getVotesHistory(acct);
+    }
+
     function sharesInHand(uint256 acct)
         external
         view

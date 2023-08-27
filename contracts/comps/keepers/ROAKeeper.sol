@@ -153,7 +153,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         require(
             _roa.getHeadOfFile(address(_ia)).state == uint8(FilesRepo.StateOfFile.Approved),
-            "BOIK.vrAndSHACheck: wrong state"
+            "BOAK.vrAndSHACheck: wrong state"
         );
 
         uint256 typeOfIA = _ia.getTypeOfIA();
@@ -323,14 +323,14 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
-        if (_ia.payOffApprovedDeal(
-            seqOfDeal, msgValue, _getGK().getCentPrice(), caller
-        )) _getGK().getROA().execFile(ia);
-
         DealsRepo.Deal memory deal = 
             _ia.getDeal(seqOfDeal);
 
         _vrAndSHACheck(_ia, deal.head.seqOfDeal, deal.head.seqOfShare != 0);
+
+        if (_ia.payOffApprovedDeal(
+            seqOfDeal, msgValue, _getGK().getCentPrice(), caller
+        )) _getGK().getROA().execFile(ia);
 
         if (deal.head.seqOfShare > 0) {
             _shareTransfer(_ia, deal.head.seqOfDeal);

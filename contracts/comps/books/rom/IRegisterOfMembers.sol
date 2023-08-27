@@ -118,6 +118,9 @@ interface IRegisterOfMembers {
     function votesAtDate(uint256 acct, uint date) external view
         returns (uint64);
 
+    function getVotesHistory(uint acct)
+        external view returns (Checkpoints.Checkpoint[] memory);
+
     function sharesInHand(uint256 acct) external view returns (bytes32[] memory);
 
     function groupRep(uint256 acct) external view returns (uint40);
