@@ -217,7 +217,7 @@ library UsersRepo {
         head = _prepareLockerHead(repo, to, amt, expireDate, msgSender);
         LockersRepo.Body memory body = LockersRepo.Body({
             counterLocker: counterLocker,
-            payload: payload[ :payload.length - 0x40] // cut off last 2x32 bytes for mock hashKey and its length 
+            payload: payload 
         });
         repo.lockers.lockConsideration(head, body, hashLock);
     }

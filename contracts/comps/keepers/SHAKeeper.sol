@@ -349,7 +349,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             len--;
         }
 
-        _ia.signDoc(false, deal.head.seller, sigHashOfSeller);
+        if (deal.head.seqOfShare > 0)
+            _ia.signDoc(false, deal.head.seller, sigHashOfSeller);
     }
 
     function _createFRDeal(

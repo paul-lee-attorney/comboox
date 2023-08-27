@@ -18,8 +18,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     using SharesRepo for SharesRepo.Head;
     using SharesRepo for uint256;
 
-    
-
     SharesRepo.Repo private _repo;
     LockersRepo.Repo private _lockers;
 
@@ -59,7 +57,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             para: 0
         });
 
-    
         // IRegisterOfMembers _rom = _getGK().getROM();
 
         // SharesRepo.Share memory newShare = 
@@ -283,9 +280,9 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         emit SubAmountFromShare(share.head.seqOfShare, paid, par);
      }
 
-    // ##################
+    // #################
     // ##   查询接口   ##
-    // ##################
+    // #################
 
     function counterOfShares() public view returns (uint32) {
         return _repo.counterOfShares();

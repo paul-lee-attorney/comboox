@@ -189,6 +189,9 @@ library SharesRepo {
         share.body.par -= uint64(par);
 
         share.body.cleanPaid -= uint64(paid);
+
+        require(share.body.par >= share.body.paid,
+            "SR.SAFS: par smaller than paid");
     }
 
     function increaseCleanPaid(Share storage share, uint paid) public

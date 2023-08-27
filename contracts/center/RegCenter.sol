@@ -67,14 +67,14 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
     function mintAndLockPoints(
         uint to, 
-        uint amt, 
+        uint amtOfGLee, 
         uint expireDate, 
         bytes32 hashLock
     ) external {   
         LockersRepo.Head memory head = 
             _users.mintAndLockPoints(
                 to, 
-                amt, 
+                amtOfGLee, 
                 expireDate, 
                 hashLock, 
                 msg.sender
@@ -84,7 +84,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
     function lockPoints(
         uint to, 
-        uint amt, 
+        uint amtOfGLee, 
         uint expireDate, 
         bytes32 hashLock
     ) external {
@@ -92,7 +92,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         LockersRepo.Head memory head = 
             _users.lockPoints(
                 to, 
-                amt, 
+                amtOfGLee, 
                 expireDate, 
                 hashLock, 
                 msg.sender
@@ -100,12 +100,12 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         emit LockPoints(LockersRepo.codifyHead(head), hashLock);
 
-        _burn(_users.getUser(msg.sender).primeKey.pubKey, amt);
+        _burn(_users.getUser(msg.sender).primeKey.pubKey, amtOfGLee * 10 ** 9);
     }
 
     function lockConsideration(
         uint to, 
-        uint amt, 
+        uint amtOfGLee, 
         uint expireDate, 
         address counterLocker, 
         bytes calldata payload, 
@@ -115,7 +115,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         LockersRepo.Head memory head =
             _users.lockConsideration(
                 to, 
-                amt, 
+                amtOfGLee, 
                 expireDate, 
                 counterLocker, 
                 payload, 
@@ -125,7 +125,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         emit LockConsideration(LockersRepo.codifyHead(head), counterLocker, payload, hashLock);
 
-        _burn(_users.getUser(msg.sender).primeKey.pubKey, amt);
+        _burn(_users.getUser(msg.sender).primeKey.pubKey, amtOfGLee * 10 ** 9);
     }
 
     function pickupPoints(bytes32 hashLock, string memory hashKey) external
@@ -135,7 +135,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         if (head.value > 0) {
             emit PickupPoints(LockersRepo.codifyHead(head));            
-            _mint(_users.users[head.to].primeKey.pubKey, head.value);
+            _mint(_users.users[head.to].primeKey.pubKey, head.value * 10 ** 9);
         }
     }
 
@@ -146,7 +146,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         if (head.value > 0) {
             emit WithdrawPoints(LockersRepo.codifyHead(head));
-            _mint(_users.users[head.from].primeKey.pubKey, head.value);
+            _mint(_users.users[head.from].primeKey.pubKey, head.value * 10 ** 9);
         }
     }
 

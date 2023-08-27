@@ -105,7 +105,9 @@ library LockersRepo {
                 "LR.pickupPoints: wrong caller");
 
             uint len = key.length;
-            bytes memory payload = abi.encode(locker.body.payload, len, key);
+            bytes memory zero = new bytes(32 - (len % 32));
+
+            bytes memory payload = abi.encodePacked(locker.body.payload, len, key, zero);
             (flag, ) = locker.body.counterLocker.call(payload);
         }
 
