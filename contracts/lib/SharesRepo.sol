@@ -22,7 +22,7 @@ library SharesRepo {
         uint40 shareholder; // 股东代码
         uint32 priceOfPaid; // 发行价格（实缴出资价）
         uint32 priceOfPar; // 发行价格（认缴出资价）
-        uint16 para;
+        uint16 votingWeight; // 表决权重（百分点）
         uint8 argu;
     }
 
@@ -63,7 +63,7 @@ library SharesRepo {
             shareholder: uint40(_sn >> 88),
             priceOfPaid: uint32(_sn >> 56),
             priceOfPar: uint32(_sn >> 24),
-            para: uint16(_sn >> 8),
+            votingWeight: uint16(_sn >> 8),
             argu: uint8(_sn)
         });
     }
@@ -78,7 +78,7 @@ library SharesRepo {
                             head.shareholder, 
                             head.priceOfPaid, 
                             head.priceOfPar, 
-                            head.para, 
+                            head.votingWeight, 
                             head.argu);
 
         assembly {
@@ -118,6 +118,7 @@ library SharesRepo {
         require(share.head.issueDate <= block.timestamp, "SR.RS: future issueDate");
         require(share.head.shareholder > 0, "SR.RS: zero shareholder");
         require(share.head.class > 0, "SR.RS: zero class");
+        require(share.head.votingWeight > 0, "SR.RS: zero votingWeight");
 
         if (!repo.seqList.contains(share.head.seqOfShare)){
             share.head.seqOfShare = _increaseCounterOfShare(repo);

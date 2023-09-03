@@ -56,22 +56,12 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             state: 0,
             para: 0
         });
-
-        // IRegisterOfMembers _rom = _getGK().getROM();
-
-        // SharesRepo.Share memory newShare = 
-        //     _repo.addShare(shareNumber, payInDeadline, paid, par);
         
         require ( share.head.issueDate <= payInDeadline, 
             "BOS.issueShare: issueDate later than payInDeadline");
 
         addShare(share);
 
-        // _rom.addMember(newShare.head.shareholder);
-        // _rom.addShareToMember(newShare);
-        // _rom.capIncrease(paid, par);
-
-        // emit IssueShare(newShare.head.codifyHead(), paid, par);
     }
 
     function addShare(SharesRepo.Share memory share) public onlyKeeper {
@@ -81,7 +71,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         _rom.addMember(newShare.head.shareholder);
         _rom.addShareToMember(newShare);
-        _rom.capIncrease(newShare.body.paid, newShare.body.par);
+        _rom.capIncrease(newShare.head.votingWeight, newShare.body.paid, newShare.body.par);
 
         emit IssueShare(newShare.head.codifyHead(), newShare.body.paid, newShare.body.par);
     }
@@ -116,8 +106,8 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             // require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
 
             _payInCapital(share, head.value);
-            _rom.changeAmtOfMember(share.head.shareholder, head.value, 0, head.value, true);
-            _rom.capIncrease(head.value, 0);
+            _rom.changeAmtOfMember(share.head.shareholder, share.head.votingWeight, head.value, 0, head.value, true);
+            _rom.capIncrease(share.head.votingWeight, head.value, 0);
         }
     }
 
@@ -151,7 +141,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             shareholder: uint40(to),
             priceOfPaid: uint32(priceOfPaid),
             priceOfPar: uint32(priceOfPar),
-            para: 0,
+            votingWeight: share.head.votingWeight,
             argu: 0
         });
 
@@ -187,7 +177,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        _getGK().getROM().capDecrease(paid, par);
+        _getGK().getROM().capDecrease(share.head.votingWeight, paid, par);
     }
 
     // ==== cleanAmt ====
@@ -203,7 +193,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
         share.decreaseCleanPaid(paid);
-        _gk.getROM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, false);
+        _gk.getROM().changeAmtOfMember(share.head.shareholder, share.head.votingWeight, 0, 0, paid, false);
         emit DecreaseCleanPaid(seqOfShare, paid);
     }
 
@@ -218,7 +208,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
         share.increaseCleanPaid(paid);
-        _gk.getROM().changeAmtOfMember(share.head.shareholder, 0, 0, paid, true);
+        _gk.getROM().changeAmtOfMember(share.head.shareholder, share.head.votingWeight, 0, 0, paid, true);
         emit IncreaseCleanPaid(seqOfShare, paid);
     }
 
@@ -263,6 +253,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             _subAmtFromShare(share, paid, par);
             _rom.changeAmtOfMember(
                 share.head.shareholder,
+                share.head.votingWeight,
                 paid,
                 par,
                 paid,

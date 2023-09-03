@@ -67,8 +67,8 @@ library MembersRepo {
 
                 if (cp.paid != cp.par) {
                     if (_basedOnPar)
-                        gm.chain.changeAmt(cur, (cp.par - cp.paid), true);
-                    else gm.chain.changeAmt(cur, (cp.par - cp.paid), false);
+                        gm.chain.changeAmt(cur, (cp.par - cp.paid) * uint(cp.votingWeight) / 100, true);
+                    else gm.chain.changeAmt(cur, (cp.par - cp.paid) * uint(cp.votingWeight) / 100, false);
                 }
 
                 len--;
@@ -115,6 +115,7 @@ library MembersRepo {
     function changeAmtOfMember(
         Repo storage gm,
         uint acct,
+        uint votingWeight,
         uint deltaPaid,
         uint deltaPar,
         uint deltaClean,
@@ -122,27 +123,37 @@ library MembersRepo {
     ) public {
 
         if (deltaPaid > 0 || deltaPar > 0 ) {
-            uint deltaAmt = (gm.chain.basedOnPar()) ? deltaPar : deltaPaid;
-            gm.chain.changeAmt(acct, deltaAmt, increase);
+            uint deltaAmt = gm.chain.basedOnPar() ? deltaPar : deltaPaid;
+            gm.chain.changeAmt(acct, deltaAmt * votingWeight / 100, increase);
         }
 
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.latest();
 
         if (increase) {
+            if (cp.votingWeight != uint16(votingWeight))
+                cp.votingWeight = gm.chain.basedOnPar()
+                    ? uint16((uint64(cp.votingWeight) * cp.par + uint64(votingWeight) * deltaPar) / (cp.par + deltaPar))
+                    : uint16((uint64(cp.votingWeight) * cp.paid + uint64(votingWeight) * deltaPaid) / (cp.paid + deltaPaid));
             cp.paid += uint64(deltaPaid);
             cp.par += uint64(deltaPar);
             cp.cleanPaid += uint64(deltaClean);
         } else {
+            if (cp.votingWeight != uint16(votingWeight))
+                cp.votingWeight = gm.chain.basedOnPar()
+                    ? uint16((uint64(cp.votingWeight) * cp.par - uint64(votingWeight) * deltaPar) / (cp.par - deltaPar))
+                    : uint16((uint64(cp.votingWeight) * cp.paid - uint64(votingWeight) * deltaPaid) / (cp.paid - deltaPaid));
             cp.paid -= uint64(deltaPaid);
             cp.par -= uint64(deltaPar);
             cp.cleanPaid -= uint64(deltaClean);
         }
 
-        gm.members[acct].votesInHand.push(cp.paid, cp.par, cp.cleanPaid);
+        gm.members[acct].votesInHand.push(cp.votingWeight, cp.paid, cp.par, cp.cleanPaid);
+
     }
 
     function changeAmtOfCap(
         Repo storage gm,
+        uint votingWeight,
         uint deltaPaid,
         uint deltaPar,
         bool increase
@@ -150,9 +161,19 @@ library MembersRepo {
         Checkpoints.Checkpoint memory cp = gm.members[0].votesInHand.latest();
 
         if (increase) {
+            if (cp.votingWeight != uint16(votingWeight))
+                cp.votingWeight = gm.chain.basedOnPar()
+                    ? uint16((uint64(cp.votingWeight) * cp.par + uint64(votingWeight) * deltaPar) / (cp.par + deltaPar))
+                    : uint16((uint64(cp.votingWeight) * cp.paid + uint64(votingWeight) * deltaPaid) / (cp.paid + deltaPaid));
+
             cp.paid += uint64(deltaPaid);
             cp.par += uint64(deltaPar);
         } else {
+            if (cp.votingWeight != uint16(votingWeight))
+                cp.votingWeight = gm.chain.basedOnPar()
+                    ? uint16((uint64(cp.votingWeight) * cp.par - uint64(votingWeight) * deltaPar) / (cp.par - deltaPar))
+                    : uint16((uint64(cp.votingWeight) * cp.paid - uint64(votingWeight) * deltaPaid) / (cp.paid - deltaPaid));
+
             cp.paid -= uint64(deltaPaid);
             cp.par -= uint64(deltaPar);
         }
@@ -180,7 +201,7 @@ library MembersRepo {
         Repo storage gm,
         Checkpoints.Checkpoint memory cp
     ) public {
-        gm.members[0].votesInHand.push(cp.paid, cp.par, cp.cleanPaid);
+        gm.members[0].votesInHand.push(cp.votingWeight, cp.paid, cp.par, cp.cleanPaid);
     }
 
     //##################
@@ -195,7 +216,7 @@ library MembersRepo {
         uint date
     ) public view returns (uint64 vote) {
         Checkpoints.Checkpoint memory cp = gm.members[acct].votesInHand.getAtDate(date);
-        vote = gm.chain.basedOnPar() ? cp.par : cp.paid;
+        vote = gm.chain.basedOnPar() ? cp.par * cp.votingWeight / 100 : cp.paid * cp.votingWeight / 100;
     }
 
     function getVotesHistory(

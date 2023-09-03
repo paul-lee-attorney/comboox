@@ -15,23 +15,25 @@ library CondsRepo {
     enum LogOps {
         ZeroPoint,  // 0
         And,           
-        Or,         // 2
+        Or,         
+        Equal,
+        NotEqual,   // 4
+        AndAnd,  
+        OrOr,
         AndOr,
         OrAnd,
-        Equal,
-        NotEqual,   // 6
-        AndAndAnd,  
-        OrOrOr,
-        AndOrOr,
-        OrAndOr,
-        OrOrAnd,
-        AndAndOr,
-        AndOrAnd,
-        OrAndAnd,
-        EqualEqual,
-        EqualNe,
-        NeEqual,
-        NeNe
+        EqEq,
+        NeNe,
+        EqNe,
+        NeEq,
+        AndEq,
+        EqAnd,
+        OrEq,
+        EqOr,
+        AndNe,
+        NeAnd,
+        OrNe,
+        NeOr        
     }
 
     enum ComOps {
@@ -57,7 +59,7 @@ library CondsRepo {
 
     struct Repo {
         mapping(uint256 => Cond) conds;
-        EnumerableSet.Bytes32Set snList;
+        EnumerableSet.Bytes32Set seqList;
     }
 
     // ###############
@@ -109,7 +111,7 @@ library CondsRepo {
     {
         cond.seqOfCond = _increaseCounterOfConds(repo);
         repo.conds[cond.seqOfCond] = cond;
-        repo.snList.add(codifyCond(cond));
+        repo.seqList.add(codifyCond(cond));
         seqOfCond = cond.seqOfCond;
     }
 
@@ -121,7 +123,7 @@ library CondsRepo {
 
     function removeCond(Repo storage repo, uint256 seqOfCond) public returns(bool flag)
     {
-        if (repo.snList.remove(codifyCond(repo.conds[seqOfCond])))
+        if (repo.seqList.remove(codifyCond(repo.conds[seqOfCond])))
         {
             delete repo.conds[seqOfCond];
             flag = true;
@@ -138,7 +140,7 @@ library CondsRepo {
 
     function getConds(Repo storage repo) public view returns(Cond[] memory)
     {
-        uint256 len = repo.snList.length();
+        uint256 len = repo.seqList.length();
         Cond[] memory output = new Cond[](len);
 
         while (len > 0) {
@@ -183,8 +185,6 @@ library CondsRepo {
 
         if (cond.logicOpr == uint8(LogOps.And)) flag = flag1 && flag2;
         else if (cond.logicOpr == uint8(LogOps.Or)) flag = flag1 || flag2;
-        else if (cond.logicOpr == uint8(LogOps.AndOr)) flag = flag1;
-        else if (cond.logicOpr == uint8(LogOps.OrAnd)) flag = flag2;
         else if (cond.logicOpr == uint8(LogOps.Equal)) flag = flag1 == flag2;
         else if (cond.logicOpr == uint8(LogOps.NotEqual)) flag = flag1 != flag2;
         else revert("CR.CCO2: logicOpr overflow");
@@ -204,18 +204,22 @@ library CondsRepo {
         flag2 = checkCond(cond.compOpr2, cond.para2, data2);
         flag3 = checkCond(cond.compOpr3, cond.para3, data3);
 
-        if (cond.logicOpr == uint8(LogOps.AndAndAnd)) flag = flag1 && flag2 && flag3;
-        else if (cond.logicOpr == uint8(LogOps.OrOrOr)) flag = flag1 || flag2 || flag3;
-        else if (cond.logicOpr == uint8(LogOps.AndOrOr)) flag = flag1;
-        else if (cond.logicOpr == uint8(LogOps.OrAndOr)) flag = flag2;
-        else if (cond.logicOpr == uint8(LogOps.OrOrAnd)) flag = flag3;
-        else if (cond.logicOpr == uint8(LogOps.AndAndOr)) flag = flag1 && flag2;
-        else if (cond.logicOpr == uint8(LogOps.AndOrAnd)) flag = flag1 && flag3;
-        else if (cond.logicOpr == uint8(LogOps.OrAndAnd)) flag = flag2 && flag3;
-        else if (cond.logicOpr == uint8(LogOps.EqualEqual)) flag = flag1 == flag2 == flag3;
-        else if (cond.logicOpr == uint8(LogOps.EqualNe)) flag = flag1 == flag2 != flag3;
-        else if (cond.logicOpr == uint8(LogOps.EqualNe)) flag = flag1 != flag2 == flag3;
+        if (cond.logicOpr == uint8(LogOps.AndAnd)) flag = flag1 && flag2 && flag3;
+        else if (cond.logicOpr == uint8(LogOps.OrOr)) flag = flag1 || flag2 || flag3;
+        else if (cond.logicOpr == uint8(LogOps.AndOr)) flag = flag1 && flag2 || flag3;
+        else if (cond.logicOpr == uint8(LogOps.OrAnd)) flag = flag1 || flag2 && flag3;
+        else if (cond.logicOpr == uint8(LogOps.EqEq)) flag = flag1 == flag2 == flag3;
         else if (cond.logicOpr == uint8(LogOps.NeNe)) flag = flag1 != flag2 != flag3;
+        else if (cond.logicOpr == uint8(LogOps.EqNe)) flag = flag1 == flag2 != flag3;
+        else if (cond.logicOpr == uint8(LogOps.NeEq)) flag = flag1 != flag2 == flag3;
+        else if (cond.logicOpr == uint8(LogOps.AndEq)) flag = flag1 && flag2 == flag3;
+        else if (cond.logicOpr == uint8(LogOps.EqAnd)) flag = flag1 == flag2 && flag3;
+        else if (cond.logicOpr == uint8(LogOps.OrEq)) flag = flag1 || flag2 == flag3;
+        else if (cond.logicOpr == uint8(LogOps.EqOr)) flag = flag1 == flag2 || flag3;
+        else if (cond.logicOpr == uint8(LogOps.AndNe)) flag = flag1 && flag2 != flag3;
+        else if (cond.logicOpr == uint8(LogOps.NeAnd)) flag = flag1 != flag2 && flag3;
+        else if (cond.logicOpr == uint8(LogOps.OrNe)) flag = flag1 || flag2 != flag3;
+        else if (cond.logicOpr == uint8(LogOps.NeOr)) flag = flag1 != flag2 || flag3;
         else revert("CR.CCO3: logicOpr overflow");
     }
 }

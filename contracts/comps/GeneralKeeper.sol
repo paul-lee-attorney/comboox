@@ -104,23 +104,23 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##################
 
     function createSHA(uint version) external {
-        IROCKeeper(_keepers[1]).createSHA(version, msg.sender, _msgSender(60000));
+        IROCKeeper(_keepers[1]).createSHA(version, msg.sender, _msgSender(3461140));
     }
 
     function circulateSHA(address body, bytes32 docUrl, bytes32 docHash) external {
-        IROCKeeper(_keepers[1]).circulateSHA(body, docUrl, docHash, _msgSender(30000));
+        IROCKeeper(_keepers[1]).circulateSHA(body, docUrl, docHash, _msgSender(512160));
     }
 
     function signSHA(address sha, bytes32 sigHash) external  {
-        IROCKeeper(_keepers[1]).signSHA(sha, sigHash, _msgSender(20000));
+        IROCKeeper(_keepers[1]).signSHA(sha, sigHash, _msgSender(431910));
     }
 
     function activateSHA(address body) external {
-        IROCKeeper(_keepers[1]).activateSHA(body, _msgSender(50000));
+        IROCKeeper(_keepers[1]).activateSHA(body, _msgSender(2389770));
     }
 
     function acceptSHA(bytes32 sigHash) external {
-        IROCKeeper(_keepers[1]).acceptSHA(sigHash, _msgSender(20000));
+        IROCKeeper(_keepers[1]).acceptSHA(sigHash, _msgSender(431910));
     }
 
     // ###################
@@ -128,23 +128,23 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ###################
 
     function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[2]).takeSeat(seqOfMotion, seqOfPos, _msgSender(70000));
+        IRODKeeper(_keepers[2]).takeSeat(seqOfMotion, seqOfPos, _msgSender(750520));
     }
 
     function removeDirector (uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[2]).removeDirector(seqOfMotion, seqOfPos, _msgSender(70000));        
+        IRODKeeper(_keepers[2]).removeDirector(seqOfMotion, seqOfPos, _msgSender(75052));        
     }
 
     function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[2]).takePosition(seqOfMotion, seqOfPos, _msgSender(70000));
+        IRODKeeper(_keepers[2]).takePosition(seqOfMotion, seqOfPos, _msgSender(750520));
     }
 
     function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[2]).removeOfficer(seqOfMotion, seqOfPos, _msgSender(70000));
+        IRODKeeper(_keepers[2]).removeOfficer(seqOfMotion, seqOfPos, _msgSender(75052));
     }
 
     function quitPosition(uint256 seqOfPos) external {
-        IRODKeeper(_keepers[2]).quitPosition(seqOfPos, _msgSender(20000));
+        IRODKeeper(_keepers[2]).quitPosition(seqOfPos, _msgSender(75052));
     }
 
     // ###################
@@ -152,11 +152,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ###################
 
     function nominateOfficer(uint256 seqOfPos, uint candidate) external {
-        IBMMKeeper(_keepers[3]).nominateOfficer(seqOfPos, candidate, _msgSender(50000));
+        IBMMKeeper(_keepers[3]).nominateOfficer(seqOfPos, candidate, _msgSender(750520));
     }
 
     function createMotionToRemoveOfficer(uint256 seqOfPos) external {
-        IBMMKeeper(_keepers[3]).createMotionToRemoveOfficer(seqOfPos, _msgSender(60000));
+        IBMMKeeper(_keepers[3]).createMotionToRemoveOfficer(seqOfPos, _msgSender(750520));
     }
 
     function createMotionToApproveDoc(uint doc, uint seqOfVR, uint executor) external {
@@ -245,7 +245,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ###################
 
     function nominateDirector(uint256 seqOfPos, uint candidate) external {
-        IGMMKeeper(_keepers[5]).nominateDirector(seqOfPos, candidate, _msgSender(60000));
+        IGMMKeeper(_keepers[5]).nominateDirector(seqOfPos, candidate, _msgSender(686640));
     }
 
     function createMotionToRemoveDirector(uint256 seqOfPos) external {

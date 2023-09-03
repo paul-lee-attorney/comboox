@@ -61,9 +61,9 @@ interface IRegisterOfMembers {
 
     function setVoteBase(bool onPar) external;
 
-    function capIncrease(uint paid, uint par) external;
+    function capIncrease(uint votingWeight, uint paid, uint par) external;
 
-    function capDecrease(uint paid, uint par) external;
+    function capDecrease(uint votingWeight, uint paid, uint par) external;
 
     function setMaxQtyOfMembers(uint max) external;
 
@@ -77,6 +77,7 @@ interface IRegisterOfMembers {
 
     function changeAmtOfMember(
         uint acct,
+        uint votingWeight,
         uint deltaPaid,
         uint deltaPar,
         uint deltaClean,

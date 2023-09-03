@@ -243,7 +243,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
             shareholder: deal.body.buyer,
             priceOfPaid: deal.head.priceOfPaid,
             priceOfPar: deal.head.priceOfPar,
-            para: 0,
+            votingWeight: deal.head.votingWeight,
             argu: 0
         });
 

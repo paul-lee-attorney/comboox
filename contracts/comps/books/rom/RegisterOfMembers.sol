@@ -60,13 +60,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
             emit SetAmtBase(onPar);
     }
 
-    function capIncrease(uint paid, uint par) external onlyBOS {
-        _repo.changeAmtOfCap(paid, par, true);
+    function capIncrease(uint votingWeight, uint paid, uint par) external onlyBOS {
+        _repo.changeAmtOfCap(votingWeight, paid, par, true);
         emit CapIncrease(paid, par);
     }
 
-    function capDecrease(uint paid, uint par) external onlyBOS {
-        _repo.changeAmtOfCap(paid, par, false);
+    function capDecrease(uint votingWeight, uint paid, uint par) external onlyBOS {
+        _repo.changeAmtOfCap(votingWeight, paid, par, false);
         emit CapDecrease(paid, par);
     }
 
@@ -77,13 +77,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
     function addShareToMember(SharesRepo.Share memory share) external onlyBOS {
         if (_repo.addShareToMember(share.head)) {
-            _repo.changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, share.body.cleanPaid, true);
+            _repo.changeAmtOfMember(share.head.shareholder, share.head.votingWeight, share.body.paid, share.body.par, share.body.cleanPaid, true);
             emit AddShareToMember(share.head.seqOfShare, share.head.shareholder);
         }
     }
 
     function removeShareFromMember(SharesRepo.Share memory share) external onlyBOS {
-        changeAmtOfMember(share.head.shareholder, share.body.paid, share.body.par, share.body.cleanPaid, false);
+        changeAmtOfMember(share.head.shareholder, share.head.votingWeight, share.body.paid, share.body.par, share.body.cleanPaid, false);
 
         if (_repo.removeShareFromMember(share.head)) {
             if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) 
@@ -95,6 +95,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
     function changeAmtOfMember(
         uint acct,
+        uint votingWeight,
         uint deltaPaid,
         uint deltaPar,
         uint deltaClean,
@@ -120,6 +121,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
         _repo.changeAmtOfMember(
             acct,
+            votingWeight,
             deltaPaid,
             deltaPar,
             deltaClean,

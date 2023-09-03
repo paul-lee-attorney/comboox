@@ -250,7 +250,7 @@ library OptionsRepo {
         uint d2,
         uint d3
     ) public optExist(repo, seqOfOpt) {
-        repo.records[seqOfOpt].oracles.push(d1, d2, d3);
+        repo.records[seqOfOpt].oracles.push(100, d1, d2, d3);
     }
 
     function execOption(
@@ -284,7 +284,7 @@ library OptionsRepo {
             } else if (opt.cond.logicOpr <= uint8(CondsRepo.LogOps.NotEqual)) {
                 require(opt.cond.checkCondsOfTwo(cp.paid, cp.par), 
                     "OR.EO: conds not satisfied");                
-            } else if (opt.cond.logicOpr <= uint8(CondsRepo.LogOps.NeNe)) {
+            } else if (opt.cond.logicOpr <= uint8(CondsRepo.LogOps.NeOr)) {
                 require(opt.cond.checkCondsOfThree(cp.paid, cp.par, cp.cleanPaid), 
                     "OR.EO: conds not satisfied");   
             } else revert("OR.EO: logical operator overflow");

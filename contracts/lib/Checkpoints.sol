@@ -11,6 +11,7 @@ library Checkpoints {
 
     struct Checkpoint {
         uint48 timestamp;
+        uint16 votingWeight;
         uint64 paid;
         uint64 par;
         uint64 cleanPaid;
@@ -27,6 +28,7 @@ library Checkpoints {
 
     function push(
         History storage self,
+        uint weight,
         uint paid,
         uint par,
         uint cleanPaid
@@ -38,6 +40,7 @@ library Checkpoints {
 
         Checkpoint memory point = Checkpoint({
             timestamp: timestamp,
+            votingWeight: uint16(weight),
             paid: uint64(paid),
             par: uint64(par),
             cleanPaid: uint64(cleanPaid)

@@ -67,7 +67,7 @@ library DealsRepo {
         uint32 priceOfPaid;
         uint32 priceOfPar;
         uint48 closingDeadline;
-        uint16 para;
+        uint16 votingWeight;
     }
 
     struct Body {
@@ -129,7 +129,7 @@ library DealsRepo {
             priceOfPaid: uint32(_sn >> 96),
             priceOfPar: uint32(_sn >> 64),
             closingDeadline: uint48(_sn >> 16),
-            para: uint16(_sn) 
+            votingWeight: uint16(_sn) 
         });
 
     } 
@@ -145,7 +145,7 @@ library DealsRepo {
                             head.priceOfPaid,
                             head.priceOfPaid,
                             head.closingDeadline,
-                            head.para);        
+                            head.votingWeight);        
         assembly {
             sn := mload(add(_sn, 0x20))
         }

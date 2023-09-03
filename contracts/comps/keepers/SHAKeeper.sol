@@ -120,11 +120,12 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             _createAlongDeal(_ia, claim, deal, share);
 
             _ia.regSig(deal.head.seller, claim.sigDate, claim.sigHash);
+            _ia.regSig(caller, uint48(block.timestamp), sigHash);
 
             len--;
         }
 
-        _ia.signDoc(false, caller, sigHash);
+        // _ia.signDoc(false, caller, sigHash);
 
     }
 
@@ -146,7 +147,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             priceOfPaid: deal.head.priceOfPaid,
             priceOfPar: deal.head.priceOfPar,
             closingDeadline: deal.head.closingDeadline,
-            para: 0
+            votingWeight: share.head.votingWeight
         });
 
         deal.body = DealsRepo.Body({
@@ -188,8 +189,6 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         _ia.requestPriceDiff(seqOfDeal, seqOfShare);
 
-        IRegisterOfMembers _rom = _gk.getROM();
-
         IAntiDilution _ad = IAntiDilution(_gk.getSHA().getTerm(
             uint8(IShareholdersAgreement.TitleOfTerm.AntiDilution)
         ));
@@ -206,8 +205,25 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         deal.head.priceOfPar = 0;
 
         deal.body.buyer = tShare.head.shareholder;
-        deal.body.groupOfBuyer = _rom.groupRep(tShare.head.shareholder);
         deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
+
+        _deductShares(obligors, _gk, _ia, deal, giftPaid, _ros, sigHash);
+
+    }
+
+    function _deductShares(
+        uint[] memory obligors,
+        IGeneralKeeper _gk,
+        IInvestmentAgreement _ia,
+        DealsRepo.Deal memory deal,
+        uint64 giftPaid,
+        IRegisterOfShares _ros,
+        bytes32 sigHash
+    ) private {
+
+        IRegisterOfMembers _rom = _gk.getROM();
+
+        deal.body.groupOfBuyer = _rom.groupRep(deal.body.buyer);
 
         for (uint256 i = 0; i < obligors.length; i++) {
             bytes32[] memory sharesInHand = _rom.sharesInHand(obligors[i]);
@@ -219,23 +235,24 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
                     deal,
                     uint(sharesInHand[j]) >> 224,
                     giftPaid,
-                    _ros
+                    _ros,
+                    sigHash
                 );
 
                 if (giftPaid == 0) break;
             }
             if (giftPaid == 0) break;
         }
-
-        _ia.signDoc(false, deal.body.buyer, sigHash);
     }
+
 
     function _createGift(
         IInvestmentAgreement _ia,
         DealsRepo.Deal memory deal,
         uint256 seqOfShare,
         uint64 giftPaid,
-        IRegisterOfShares _ros
+        IRegisterOfShares _ros,
+        bytes32 sigHash
     ) private returns (uint64 result) {        
         SharesRepo.Share memory cShare = _ros.getShare(seqOfShare);
 
@@ -254,6 +271,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             
             _ia.regDeal(deal);
             _ia.regSig(deal.head.seller, uint48(block.timestamp), bytes32(uint(deal.head.seqOfShare)));
+            _ia.regSig(deal.body.buyer, uint48(block.timestamp), sigHash);
 
             _ros.decreaseCleanPaid(cShare.head.seqOfShare, lockAmount);
         }
@@ -345,19 +363,20 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         uint256 len = cls.length;
         while (len > 0) {
-            _createFRDeal(_ia, deal, cls[len-1], _rom);
+            _createFRDeal(_ia, deal, cls[len-1], _rom, sigHashOfSeller);
             len--;
         }
 
-        if (deal.head.seqOfShare > 0)
-            _ia.signDoc(false, deal.head.seller, sigHashOfSeller);
+        // if (deal.head.seqOfShare > 0)
+        //     _ia.signDoc(false, deal.head.seller, sigHashOfSeller);
     }
 
     function _createFRDeal(
         IInvestmentAgreement _ia,
         DealsRepo.Deal memory deal,
         FRClaims.Claim memory cl,
-        IRegisterOfMembers _rom
+        IRegisterOfMembers _rom,
+        bytes32 sigHashOfSeller
     ) private {
 
         uint64 orgPaid = deal.body.paid;
@@ -370,6 +389,9 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         _ia.regDeal(deal);
         _ia.regSig(cl.claimer, cl.sigDate, cl.sigHash);
+
+        if (deal.head.seller > 0)
+            _ia.regSig(deal.head.seller, uint48(block.timestamp), sigHashOfSeller);
 
         deal.body.paid = orgPaid;
         deal.body.par = orgPar;

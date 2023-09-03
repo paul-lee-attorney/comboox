@@ -103,7 +103,7 @@ library FRClaims {
                 cl.ratio = cl.weight * 10000 / p.sumOfWeight;
                 i++; 
             }
-        }
+        } else revert("FRClaims: already created");
 
         output = p.claims;
     }
