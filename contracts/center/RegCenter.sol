@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -309,13 +309,17 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         uint40 target = _users.getUserNo(targetAddr);
 
         if (msg.sender != targetAddr && author > 0) {
+
+            require(_docs.docExist(msg.sender), 
+                "RC.getUserNo: msgSender not registered ");
+            
             UsersRepo.Key memory rr = _users.getRoyaltyRule(author);
             address authorAddr = _users.users[author].primeKey.pubKey; 
 
             _chargeFee(targetAddr, fee, authorAddr, rr);
 
-            if (tx.origin != targetAddr) 
-                _chargeFee(tx.origin, fee, authorAddr, rr);
+            // if (tx.origin != targetAddr) 
+            //     _chargeFee(tx.origin, fee, authorAddr, rr);
         }
 
         return target;

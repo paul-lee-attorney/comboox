@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -20,7 +20,7 @@ contract Alongs is IAlongs, AccessControl {
     // ###############
 
     function addDragger(bytes32 rule, uint256 dragger) external onlyAttorney {
-        _repo.addDragger(rule, dragger, _getGK().getROM());
+        _repo.addDragger(rule, dragger, _gk.getROM());
     }
 
     function removeDragger(uint256 dragger) external onlyAttorney {
@@ -40,17 +40,17 @@ contract Alongs is IAlongs, AccessControl {
     // ################
 
     function isDragger(uint256 dragger) external view returns (bool) {
-        return _repo.isDragger(dragger, _getGK().getROM());
+        return _repo.isDragger(dragger, _gk.getROM());
     }
 
     function getLinkRule(uint256 dragger) external view returns (RulesParser.LinkRule memory) {
-        return _repo.getLinkRule(dragger, _getGK().getROM());
+        return _repo.getLinkRule(dragger, _gk.getROM());
     }
 
     function isFollower(uint256 dragger, uint256 follower)
         external view returns (bool)
     {
-        return _repo.isFollower(dragger, follower, _getGK().getROM());
+        return _repo.isFollower(dragger, follower, _gk.getROM());
     }
 
     function getDraggers() external view returns (uint256[] memory) {
@@ -58,13 +58,13 @@ contract Alongs is IAlongs, AccessControl {
     }
 
     function getFollowers(uint256 dragger) external view returns (uint256[] memory) {
-        return _repo.getFollowers(dragger, _getGK().getROM());
+        return _repo.getFollowers(dragger, _gk.getROM());
     }
 
     function priceCheck(
         DealsRepo.Deal memory deal
     ) public view returns (bool) {
-        return _repo.priceCheck(deal, _getGK().getROS(), _getGK().getROM());
+        return _repo.priceCheck(deal, _gk.getROS(), _gk.getROM());
     }
 
     // #############
@@ -72,7 +72,7 @@ contract Alongs is IAlongs, AccessControl {
     // #############
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfMembers _rom = _gk.getROM();
         IRegisterOfAgreements _roa = _gk.getROA();
         

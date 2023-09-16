@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -29,7 +29,7 @@ library RulesParser {
         uint48 establishedDate;    
         uint8 businessTermInYears;
         uint8 typeOfComp;
-        uint16 annualPenaltyRateForLatePayInCap; 
+        uint16 minVoteRatioOnChain;
     }
 
     function governanceRuleParser(bytes32 sn) public pure returns (GovernanceRule memory rule) {
@@ -50,7 +50,7 @@ library RulesParser {
             establishedDate: uint48(_sn >> 32),
             businessTermInYears: uint8(_sn >> 24),
             typeOfComp: uint8(_sn >> 16),
-            annualPenaltyRateForLatePayInCap: uint16(_sn)
+            minVoteRatioOnChain: uint16(_sn)
         });
     }
 
@@ -216,8 +216,37 @@ library RulesParser {
         });
     }    
 
+    // ---- ListingRule ----
 
+    struct ListingRule {
+        uint16 seqOfRule;
+        uint16 titleOfIssuer;
+        uint16 classOfShare;
+        uint64 maxTotalPar;
+        uint16 titleOfVerifier;
+        uint16 maxQtyOfInvestors;
+        uint32 ceilingPrice;
+        uint32 floorPrice;
+        uint16 lockupDays;
+        uint32 offPrice;
+    }
 
+    function listingRuleParser(bytes32 sn) public pure returns(ListingRule memory rule) {
+        uint _sn = uint(sn);
+        
+        rule = ListingRule({
+            seqOfRule: uint16(_sn >> 240),
+            titleOfIssuer: uint16(_sn >> 224),
+            classOfShare: uint16(_sn >> 208),
+            maxTotalPar: uint64(_sn >> 144),
+            titleOfVerifier: uint16(_sn >> 128), 
+            maxQtyOfInvestors: uint16(_sn >> 112),
+            ceilingPrice: uint32(_sn >> 80),
+            floorPrice: uint32(_sn >> 48),
+            lockupDays: uint16(_sn >> 32),
+            offPrice: uint32(_sn)
+        });
+    }    
 
     // ======== LinkRule ========
 

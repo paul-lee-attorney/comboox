@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -23,109 +23,114 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     //##   Modifier   ##
     //##################
 
-    modifier onlyBOS() {
-        require(
-            msg.sender == address(_getGK().getROS()),
-            "ROM.mf.OBOS: msgSender is not BOS"
-        );
+    modifier onlyROS() {
+        require(msg.sender == address(_gk.getROS()),
+            "ROM.onlyROS: not");
         _;
     }
 
-    modifier memberExist(uint256 acct) {
-        require(isMember(acct), "ROM.memberExist: NOT Member");
-        _;
-    }
-
-    modifier groupExist(uint256 group) {
-        require(isGroupRep(group), "ROM.groupExist: NOT group");
-        _;
-    }
-
-    //##################
+    //#################
     //##  Write I/O  ##
-    //##################
+    //#################
 
-    function setMaxQtyOfMembers(uint max) external onlyDK {
+    // ---- Options Setting ----
+
+    function setMaxQtyOfMembers(uint max) external onlyKeeper {
         _repo.chain.setMaxQtyOfMembers(max);
         emit SetMaxQtyOfMembers(max);
     }
 
-    function setVoteBase(bool onPar) external onlyKeeper {
-        if (_repo.chain.setVoteBase(onPar)) 
-            emit SetVoteBase(onPar);
+    function setMinVoteRatioOnChain(uint min) external onlyKeeper {
+        _repo.chain.setMaxQtyOfMembers(min);
+        emit SetMinVoteRatioOnChain(min);
     }
 
-    function setAmtBase(bool onPar) external onlyKeeper {
-        if (_repo.setAmtBase(onPar)) 
-            emit SetAmtBase(onPar);
+    function setVoteBase(bool _basedOnPar) external onlyKeeper {
+        if (_repo.setVoteBase(_basedOnPar)) 
+            emit SetVoteBase(_basedOnPar);
     }
 
-    function capIncrease(uint votingWeight, uint paid, uint par) external onlyBOS {
-        _repo.changeAmtOfCap(votingWeight, paid, par, true);
-        emit CapIncrease(paid, par);
+    function capIncrease(
+        uint votingWeight, 
+        uint paid, 
+        uint par, 
+        bool isIncrease
+    ) external onlyROS {
+
+        _repo.increaseAmtOfCap(votingWeight, paid, par, isIncrease);
+
+        if (isIncrease) emit CapIncrease(votingWeight, paid, par);
+        else emit CapDecrease(votingWeight, paid, par);
     }
 
-    function capDecrease(uint votingWeight, uint paid, uint par) external onlyBOS {
-        _repo.changeAmtOfCap(votingWeight, paid, par, false);
-        emit CapDecrease(paid, par);
+    function addMember(uint256 acct) external onlyROS {
+        _repo.chain.addNode(acct);
+        emit AddMember(acct, _repo.chain.qtyOfMembers());
     }
 
-    function addMember(uint256 acct) external onlyBOS {
-        if (_repo.chain.addNode(acct)) 
-            emit AddMember(acct, _repo.chain.getNumOfMembers());
+    function addShareToMember(
+        SharesRepo.Share memory share
+    ) external onlyROS {
+
+        _repo.addShareToMember(share.head);
+
+        _repo.increaseAmtOfMember(
+            share.head.shareholder, 
+            share.head.votingWeight, 
+            share.body.paid, 
+            share.body.par, 
+            share.body.cleanPaid, 
+            true
+        );
+        
+        emit AddShareToMember(share.head.seqOfShare, share.head.shareholder);
     }
 
-    function addShareToMember(SharesRepo.Share memory share) external onlyBOS {
-        if (_repo.addShareToMember(share.head)) {
-            _repo.changeAmtOfMember(share.head.shareholder, share.head.votingWeight, share.body.paid, share.body.par, share.body.cleanPaid, true);
-            emit AddShareToMember(share.head.seqOfShare, share.head.shareholder);
-        }
+    function removeShareFromMember(
+        SharesRepo.Share memory share
+    ) external onlyROS {
+
+        _repo.increaseAmtOfMember(
+            share.head.shareholder, 
+            share.head.votingWeight, 
+            share.body.paid, 
+            share.body.par, 
+            share.body.cleanPaid, 
+            false
+        );
+
+        _repo.removeShareFromMember(share.head);
+
+        if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) 
+            _repo.delMember(share.head.shareholder);
+
+        emit RemoveShareFromMember(share.head.seqOfShare, share.head.shareholder);        
     }
 
-    function removeShareFromMember(SharesRepo.Share memory share) external onlyBOS {
-        changeAmtOfMember(share.head.shareholder, share.head.votingWeight, share.body.paid, share.body.par, share.body.cleanPaid, false);
-
-        if (_repo.removeShareFromMember(share.head)) {
-            if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) 
-                _repo.delMember(share.head.shareholder);
-
-            emit RemoveShareFromMember(share.head.seqOfShare, share.head.shareholder);
-        }
-    }
-
-    function changeAmtOfMember(
+    function increaseAmtOfMember(
         uint acct,
         uint votingWeight,
         uint deltaPaid,
         uint deltaPar,
         uint deltaClean,
-        bool increase
-    ) public onlyBOS {
-        if (!increase) {
-            Checkpoints.Checkpoint memory clip = _repo.members[acct].votesInHand.latest();
-            require(
-                clip.paid >= deltaPaid &&
-                clip.par >= deltaPar &&
-                clip.cleanPaid >= deltaClean,
-                "ROM.CAOM: insufficient amount"
-            );
-        }
+        bool isIncrease
+    ) public onlyROS {
+
+        _repo.increaseAmtOfMember(
+            acct,
+            votingWeight,
+            deltaPaid,
+            deltaPar,
+            deltaClean,
+            isIncrease
+        );
 
         emit ChangeAmtOfMember(
             acct,
             deltaPaid,
             deltaPar,
             deltaClean,
-            increase
-        );
-
-        _repo.changeAmtOfMember(
-            acct,
-            votingWeight,
-            deltaPaid,
-            deltaPar,
-            deltaClean,
-            increase
+            isIncrease
         );
     }
 
@@ -133,30 +138,134 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         external
         onlyKeeper
     {
-        if (_repo.chain.top2Sub(acct, root)) 
-            emit AddMemberToGroup(acct, root);
+        _repo.chain.top2Sub(acct, root);
+        emit AddMemberToGroup(acct, root);
     }
 
-    function removeMemberFromGroup(uint256 acct, uint256 root)
+    function removeMemberFromGroup(uint256 acct)
         external
         onlyKeeper
     {
-        require(
-            root == _repo.chain.rootOf(acct),
-            "ROM.RMFG: Root is not groupRep of Acct"
-        );
-
+        uint root = _repo.chain.rootOf(acct);
         uint256 next = _repo.chain.nextNode(acct);
 
-        if (_repo.chain.sub2Top(acct)) {
-            emit RemoveMemberFromGroup(acct, root);
-            if (acct == root) emit ChangeGroupRep(root, next);
-        }
+        _repo.chain.sub2Top(acct);
+        emit RemoveMemberFromGroup(acct, root);
+        if (acct == root) emit ChangeGroupRep(root, next);
     }
 
     // ##################
     // ##   查询接口    ##
     // ##################
+
+    // ---- membersList ----
+
+    function isMember(uint256 acct) external view returns (bool) {
+        return _repo.isMember(acct);
+    }
+
+    function qtyOfMembers() external view returns (uint) {
+        return _repo.qtyOfMembers();
+    }
+
+    function membersList() external view returns (uint256[] memory) {
+        return _repo.membersList();
+    }
+
+    function sortedMembersList() external view returns (uint256[] memory) {
+        return _repo.chain.sortedMembersList();
+    }
+
+    function qtyOfTopMembers() external view returns (uint) {
+        return _repo.chain.qtyOfTopMembers();
+    }
+
+    function topMembersList() external view returns (uint[] memory) {
+        return _repo.chain.topMembersList();
+    }
+
+    // ---- Cap & Equity ----
+
+    function ownersEquity() 
+        external view 
+        returns(Checkpoints.Checkpoint memory) 
+    {
+        return _repo.ownersEquity();
+    }
+
+    function capAtDate(uint date)
+        external view
+        returns (Checkpoints.Checkpoint memory)
+    {
+        return _repo.capAtDate(date); 
+    }
+
+   function sharesClipOfMember(uint256 acct)
+        external view
+        returns (Checkpoints.Checkpoint memory)
+    {
+        return _repo.sharesClipOfMember(acct);
+    }
+
+    function votesInHand(uint256 acct)
+        external
+        view
+        returns (uint64)
+    {
+        require(_repo.isMember(acct), "ROM.votesInHand: not member");
+        return _repo.chain.nodes[acct].amt;
+    }
+
+    function votesAtDate(uint256 acct, uint date)
+        external view
+        returns (uint64)
+    {
+        return _repo.votesAtDate(acct, date);
+    }
+
+    function votesHistory(uint acct)
+        external view 
+        returns (Checkpoints.Checkpoint[] memory)
+    {
+        return _repo.votesHistory(acct);
+    }
+
+    // ---- ShareNum ----
+
+    function qtyOfSharesInHand(uint acct)
+        external view returns(uint)
+    {
+        return _repo.qtyOfSharesInHand(acct);
+    }
+    
+    function sharesInHand(uint256 acct)
+        external view
+        returns (bytes32[] memory)
+    {
+        return _repo.sharesInHand(acct);
+    }
+
+    // ---- Class ---- 
+
+    function isClassMember(uint256 acct, uint class)
+        external view returns(bool)
+    {
+        return _repo.isClassMember(acct, class);
+    }
+
+    function qtyOfClassMember(uint class)
+        external view returns(uint) 
+    {
+        return _repo.qtyOfClassMember(class);
+    }
+
+    function membersOfClass(uint class)
+        external view returns(uint256[] memory)
+    {
+        return _repo.membersOfClass(class);
+    }
+
+    // ---- TopChain ----
 
     function basedOnPar() external view returns (bool) {
         return _repo.chain.basedOnPar();
@@ -166,133 +275,30 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.chain.maxQtyOfMembers();
     }
 
-    function ownersEquity() external view returns(Checkpoints.Checkpoint memory cap) {
-        return _repo.members[0].votesInHand.latest();
-    }
-
-    function capAtDate(uint date)
-        external
-        view
-        returns (Checkpoints.Checkpoint memory cap)
-    {
-        cap = _repo.members[0].votesInHand.getAtDate(date); 
+    function minVoteRatioOnChain() external view returns (uint32) {
+        return _repo.chain.minVoteRatioOnChain();
     }
 
     function totalVotes() external view returns (uint64) {
         return _repo.chain.totalVotes();
     }
 
-    function sharesList() external view returns (bytes32[] memory) {
-        return _repo.members[0].sharesInHand.values();
-    }
-
-    function isSNOfShare(bytes32 sharenumber) external view returns (bool) {
-        return _repo.members[0].sharesInHand.contains(sharenumber);
-    }
-
-    function isMember(uint256 acct) public view returns (bool) {
-        return _repo.chain.isMember(acct);
-    }
-
-    // ==== Member ====
-
-    function sharesClipOfMember(uint256 acct)
-        external
-        view
-        memberExist(acct)
-        returns (Checkpoints.Checkpoint memory clip)
-    {
-        clip = _repo.members[acct].votesInHand.latest();
-    }
-
-    function votesInHand(uint256 acct)
-        external
-        view
-        memberExist(acct)
-        returns (uint64)
-    {
-        return _repo.chain.nodes[acct].amt;
-    }
-
-    function votesAtDate(uint256 acct, uint date)
-        external
-        view
-        returns (uint64)
-    {
-        return _repo.votesAtDate(acct, date);
-    }
-
-    function getVotesHistory(uint acct)
-        external view returns (Checkpoints.Checkpoint[] memory)
-    {
-        return _repo.getVotesHistory(acct);
-    }
-
-    function sharesInHand(uint256 acct)
-        external
-        view
-        memberExist(acct)
-        returns (bytes32[] memory list)
-    {
-        list = _repo.members[acct].sharesInHand.values();
-    }
-
-    function getNumOfMembers() external view returns (uint32) {
-        return _repo.chain.getNumOfMembers();
-    }
-
-    function membersList() external view returns (uint256[] memory) {
-        return _repo.chain.membersList();
-    }
-
-    function affiliated(uint256 acct1, uint256 acct2)
-        external
-        view
-        memberExist(acct1)
-        memberExist(acct2)
-        returns (bool)
-    {
-        return _repo.chain.affiliated(acct1, acct2);
-    }
-
-    function isClassMember(uint256 acct, uint class)
-        external view returns(bool flag)
-    {
-        flag = _repo.isClassMember(acct, class);
-    }
-
-    function getMembersOfClass(uint class)
-        external view returns(uint256[] memory members)
-    {
-        members = _repo.getMembersOfClass(class);
-    }
-
     // ==== group ====
-
-    function groupRep(uint256 acct) external view returns (uint40) {
-        return _repo.chain.rootOf(acct);
-    }
-
-    function isGroupRep(uint256 acct) public view returns (bool) {
-
-        return _repo.chain.rootOf(acct) == acct;
-    }
-
-    function qtyOfGroups() external view returns (uint256) {
-        return _repo.chain.qtyOfBranches();
-    }
 
     function controllor() external view returns (uint40) {
         return _repo.chain.head();
     }
 
-    function votesOfController() external view returns (uint64) {
-        uint40 head = _repo.chain.head();
-        return _repo.chain.nodes[head].sum;
+    function groupRep(uint256 acct) external view returns (uint40) {
+        return _repo.chain.rootOf(acct);
     }
 
     function votesOfGroup(uint256 acct) external view returns (uint64) {
         return _repo.chain.votesOfGroup(acct);
+    }
+
+    function deepOfGroup(uint256 acct) external view returns (uint256) {
+        return _repo.chain.deepOfBranch(acct);
     }
 
     function membersOfGroup(uint256 acct)
@@ -303,13 +309,25 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.chain.membersOfGroup(acct);
     }
 
-    function deepOfGroup(uint256 acct) external view returns (uint256) {
-        return _repo.chain.deepOfBranch(acct);
+    function qtyOfGroupsOnChain() external view returns (uint32) {
+        return _repo.chain.qtyOfBranches();
+    }
+
+    function qtyOfGroups() external view returns (uint256) {
+        return _repo.chain.qtyOfGroups();
+    }
+
+    function affiliated(uint256 acct1, uint256 acct2)
+        external
+        view
+        returns (bool)
+    {
+        return _repo.chain.affiliated(acct1, acct2);
     }
 
     // ==== snapshot ====
 
-    function getSnapshot() external view returns (TopChain.Node[] memory) {
+    function getSnapshot() external view returns (TopChain.Node[] memory, TopChain.Para memory) {
         return _repo.chain.getSnapshot();
     }
 }

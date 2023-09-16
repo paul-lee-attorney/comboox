@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -26,9 +26,9 @@ interface IRegisterOfShares {
 
     event DeregisterShare(uint256 indexed seqOfShare);
 
-    event UpdateStateOfShare(uint256 indexed seqOfShare, uint indexed state);
+    // event UpdateStateOfShare(uint256 indexed seqOfShare, uint indexed state);
 
-    // event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
+    event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
 
     event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
 
@@ -52,6 +52,8 @@ interface IRegisterOfShares {
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 
+    function payInCapital(uint seqOfShare, uint amt) external;
+
     function transferShare(
         uint256 seqOfShare,
         uint paid,
@@ -71,35 +73,59 @@ interface IRegisterOfShares {
 
     // ==== State & PaidInDeadline ====
 
-    function updateStateOfShare(uint256 seqOfShare, uint state) external;
+    // function updateStateOfShare(uint256 seqOfShare, uint state) external;
 
-    // function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
+    function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
 
     // ##################
     // ##   查询接口   ##
     // ##################
 
-    // ==== RegisterOfShares ====
-
     function counterOfShares() external view returns (uint32);
 
     function counterOfClasses() external view returns (uint16);
 
-    function isShare(uint256 seqOfShare) external view returns (bool);
+    // ==== SharesRepo ====
 
-    function getHeadOfShare(uint256 seqOfShare) external view 
-        returns (SharesRepo.Head memory head);
+    function isShare(
+        uint256 seqOfShare
+    ) external view returns (bool);
 
-    function getBodyOfShare(uint256 seqOfShare) external view 
-        returns (SharesRepo.Body memory body);
+    function getShare(
+        uint256 seqOfShare
+    ) external view returns (
+        SharesRepo.Share memory
+    );
 
-    function getShare(uint256 seqOfShare) external view
-        returns (SharesRepo.Share memory share);
+    function getQtyOfShares() external view returns (uint);
 
-    function getLocker(bytes32 hashLock) external view returns (LockersRepo.Locker memory locker);
+    function getSeqListOfShares() external view returns (uint[] memory);
+
+    function getSharesList() external view returns (SharesRepo.Share[] memory);
+
+    // ---- Class ----    
+
+    function getQtyOfSharesInClass(
+        uint classOfShare
+    ) external view returns (uint);
+
+    function getSeqListOfClass(
+        uint classOfShare
+    ) external view returns (uint[] memory);
+
+    function getInfoOfClass(
+        uint classOfShare
+    ) external view returns (SharesRepo.Share memory);
+
+    function getSharesOfClass(
+        uint classOfShare
+    ) external view returns (SharesRepo.Share[] memory);
+
+    // ==== PayInCapital ====
+
+    function getLocker(
+        bytes32 hashLock
+    ) external view returns (LockersRepo.Locker memory);
 
     function getLocksList() external view returns (bytes32[] memory);
-
-    function getSharesOfClass(uint class) external view
-        returns (uint256[] memory seqList);
 }

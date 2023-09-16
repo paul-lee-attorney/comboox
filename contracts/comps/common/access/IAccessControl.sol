@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -95,8 +95,6 @@ interface IAccessControl {
     // ##################
 
     function getOwner() external view returns (address);
-
-    function getDK() external view returns (address);
 
     function isFinalized() external view returns (bool);
 

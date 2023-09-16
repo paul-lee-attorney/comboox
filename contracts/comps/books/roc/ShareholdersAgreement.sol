@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -42,15 +42,13 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
         bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(version << 192));
 
-        IRegCenter _rc = _getRC();
-
         DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, gc);        
 
         IAccessControl(doc.body).init(
             address(this),
             address(this),
             address(_rc),
-            address(_getGK())
+            address(_gk)
         );
 
         IAccessControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);

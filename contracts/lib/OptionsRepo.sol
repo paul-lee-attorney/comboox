@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -318,7 +318,7 @@ library OptionsRepo {
 
         Record storage rcd = repo.records[opt.head.seqOfOpt];
 
-        SharesRepo.Head memory headOfTarget = _ros.getHeadOfShare(swap.seqOfTarget);
+        SharesRepo.Head memory headOfTarget = _ros.getShare(swap.seqOfTarget).head;
 
         require(opt.head.classOfShare == headOfTarget.class, 
             "OR.createSwap: wrong target class");
@@ -330,13 +330,13 @@ library OptionsRepo {
 
             require(opt.body.rightholder == headOfTarget.shareholder, 
                 "OR.createSwap: rightholder not targetholder");
-            require(rcd.obligors.contains(_ros.getHeadOfShare(swap.seqOfPledge).shareholder), 
+            require(rcd.obligors.contains(_ros.getShare(swap.seqOfPledge).head.shareholder), 
                 "OR.createSwap: pledge shareholder not obligor");
 
             swap.isPutOpt = true;
 
         } else { // Call Opt
-            require(opt.body.rightholder == _ros.getHeadOfShare(swap.seqOfPledge).shareholder, 
+            require(opt.body.rightholder == _ros.getShare(swap.seqOfPledge).head.shareholder, 
                 "OR.createSwap: pledge shareholder not rightholder");
 
             require(rcd.obligors.contains(headOfTarget.shareholder), 
@@ -352,7 +352,7 @@ library OptionsRepo {
 
         if (opt.head.typeOfOpt % 2 == 1) {            
             swap.paidOfPledge = (swap.priceOfDeal - headOfTarget.priceOfPaid) * 
-                swap.paidOfTarget / _ros.getHeadOfShare(swap.seqOfPledge).priceOfPaid;
+                swap.paidOfTarget / _ros.getShare(swap.seqOfPledge).head.priceOfPaid;
         }
 
         return rcd.swaps.regSwap(swap);

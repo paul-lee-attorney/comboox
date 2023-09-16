@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -96,7 +96,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         uint seqOfPledge,
         uint caller
     ) external onlyKeeper returns (SwapsRepo.Swap memory swap) {
-        swap = _repo.createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, caller, _getGK().getROS());
+        swap = _repo.createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, caller, _gk.getROS());
         emit RegSwap(seqOfOpt, SwapsRepo.codifySwap(swap));
     }
 
@@ -236,7 +236,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     function checkValueOfSwap(uint seqOfOpt, uint seqOfSwap)
         external view returns (uint)
     {
-        return _repo.checkValueOfSwap(seqOfOpt, seqOfSwap, _getGK().getCentPrice());
+        return _repo.checkValueOfSwap(seqOfOpt, seqOfSwap, _gk.getCentPrice());
     }
 
 }

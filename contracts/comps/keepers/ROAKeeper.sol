@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -28,9 +28,6 @@ contract ROAKeeper is IROAKeeper, AccessControl {
     // #############################
 
     function createIA(uint version, address primeKeyOfCaller, uint caller) external onlyDK {
- 
-        IRegCenter _rc = _getRC();
-        IGeneralKeeper _gk = _getGK();
  
         require(_gk.getROM().isMember(caller), "not MEMBER");
         
@@ -69,7 +66,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         uint16 signingDays = _ia.getSigningDays();
         uint16 closingDays = _ia.getClosingDays();
 
-        IGeneralKeeper _gk = _getGK();
+        
 
         RulesParser.VotingRule memory vr = 
             _gk.getSHA().getRule(_ia.getTypeOfIA()).votingRuleParser();
@@ -86,7 +83,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK onlyPartyOf(ia, caller) {
-        IRegisterOfAgreements _roa = _getGK().getROA();
+        IRegisterOfAgreements _roa = _gk.getROA();
 
         require(
             _roa.getHeadOfFile(ia).state == uint8(FilesRepo.StateOfFile.Circulated),
@@ -109,7 +106,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
             if (deal.head.seller == caller) {
                 if (IInvestmentAgreement(ia).lockDealSubject(seq)) {
-                    _getGK().getROS().decreaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
+                    _gk.getROS().decreaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
                 }
             } else if (
                 deal.body.buyer == caller &&
@@ -137,7 +134,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         bool isST = (head.seqOfShare != 0);
 
         if (isST) require(caller == head.seller, "BOIK.PTC: not seller");
-        else require(_getGK().getROD().isDirector(caller), "BOIK.PTC: not director");
+        else require(_gk.getROD().isDirector(caller), "BOIK.PTC: not director");
 
         _vrAndSHACheck(_ia, seqOfDeal, isST);
 
@@ -145,7 +142,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
     }
 
     function _vrAndSHACheck(IInvestmentAgreement _ia, uint256 seqOfDeal, bool isST) private view {
-        IGeneralKeeper _gk = _getGK();
+        
 
         IMeetingMinutes _bmm = _gk.getBMM();
         IMeetingMinutes _gmm = _gk.getGMM();
@@ -198,7 +195,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
         if (_ia.closeDeal(deal.head.seqOfDeal, hashKey))
-            _getGK().getROA().execFile(ia);
+            _gk.getROA().execFile(ia);
 
         if (deal.head.seqOfShare > 0) 
             _shareTransfer(_ia, deal.head.seqOfDeal);
@@ -206,17 +203,23 @@ contract ROAKeeper is IROAKeeper, AccessControl {
     }
 
     function _shareTransfer(IInvestmentAgreement _ia, uint256 seqOfDeal) private {
-        IRegisterOfShares _ros = _getGK().getROS();
+        
+        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfMembers _rom = _gk.getROM();
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
         _ros.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _ros.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, 
             deal.body.buyer, deal.head.priceOfPaid, deal.head.priceOfPar);
+
+        if (deal.body.buyer != deal.body.groupOfBuyer && 
+            deal.body.groupOfBuyer != _rom.groupRep(deal.body.buyer)) 
+                _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal, uint caller) public onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         require(_gk.getROD().isDirector(caller) ||
@@ -231,8 +234,11 @@ contract ROAKeeper is IROAKeeper, AccessControl {
     }
 
     function _issueNewShare(IInvestmentAgreement _ia, uint seqOfDeal) private {
-        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
+        
+        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfMembers _rom = _gk.getROM();
 
+        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
         SharesRepo.Share memory share;
 
         share.head = SharesRepo.Head({
@@ -256,7 +262,11 @@ contract ROAKeeper is IROAKeeper, AccessControl {
             para: 0
         });
 
-        _getGK().getROS().addShare(share);
+        _ros.addShare(share);
+        
+        if (deal.body.buyer != deal.body.groupOfBuyer &&
+            deal.body.groupOfBuyer != _rom.groupRep(deal.body.buyer))
+                _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
     }
 
 
@@ -276,7 +286,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         _vrAndSHACheck(_ia, seqOfDeal, true);
 
         if (_ia.directCloseDeal(seqOfDeal))
-            _getGK().getROA().execFile(ia);
+            _gk.getROA().execFile(ia);
 
         _shareTransfer(_ia, seqOfDeal);
     }
@@ -286,7 +296,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         uint256 seqOfDeal,
         uint256 caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfAgreements _roa = _gk.getROA();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
@@ -319,8 +329,8 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         uint seqOfDeal,
         uint msgValue,
         uint caller
-    ) external onlyDK returns (uint) {
-
+    ) external onlyDK {
+        
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = 
@@ -329,15 +339,14 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         _vrAndSHACheck(_ia, deal.head.seqOfDeal, deal.head.seqOfShare != 0);
 
         if (_ia.payOffApprovedDeal(
-            seqOfDeal, msgValue, _getGK().getCentPrice(), caller
-        )) _getGK().getROA().execFile(ia);
+            seqOfDeal, msgValue, _gk.getCentPrice(), caller
+        )) _gk.getROA().execFile(ia);
 
         if (deal.head.seqOfShare > 0) {
+            _gk.saveToCoffer(deal.head.seller, msgValue);
             _shareTransfer(_ia, deal.head.seqOfDeal);
-            return deal.head.seller;
         } else {
             _issueNewShare(_ia, deal.head.seqOfDeal);
-            return 0;
         }
     }
     

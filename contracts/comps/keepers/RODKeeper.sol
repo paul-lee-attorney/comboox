@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -21,7 +21,7 @@ contract RODKeeper is IRODKeeper, AccessControl {
     //##################
 
     modifier directorExist(uint256 acct) {
-        require(_getGK().getROD().isDirector(acct), 
+        require(_gk.getROD().isDirector(acct), 
             "BODK.DE: not director");
         _;
     }
@@ -37,7 +37,7 @@ contract RODKeeper is IRODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller 
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IMeetingMinutes _gmm = _gk.getGMM();
         
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -53,7 +53,7 @@ contract RODKeeper is IRODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IMeetingMinutes _gmm = _gk.getGMM();
 
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -71,7 +71,7 @@ contract RODKeeper is IRODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller 
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IMeetingMinutes _bmm = _gk.getBMM();
     
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -87,7 +87,7 @@ contract RODKeeper is IRODKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IMeetingMinutes _bmm = _gk.getBMM();
 
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -103,7 +103,7 @@ contract RODKeeper is IRODKeeper, AccessControl {
     function quitPosition(uint256 seqOfPos, uint caller)
         external onlyDK 
     {
-        _getGK().getROD().quitPosition(seqOfPos, caller);
+        _gk.getROD().quitPosition(seqOfPos, caller);
     }
 
 

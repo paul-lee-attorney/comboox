@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -169,7 +169,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint256 seqOfMotion,
         uint proposer
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IShareholdersAgreement _sha = _gk.getSHA();
 
         _repo.proposeMotionToGeneralMeeting(seqOfMotion, _sha, _gk.getROM(), _gk.getROD(), proposer);
@@ -180,7 +180,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint seqOfMotion,
         uint caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IShareholdersAgreement _sha = _gk.getSHA();
 
         _repo.proposeMotionToBoard(seqOfMotion, _sha, _gk.getROD(), caller);
@@ -194,7 +194,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint delegate, 
         uint principal
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
 
         _repo.entrustDelegate(seqOfMotion, delegate, principal, _gk.getROM(), _gk.getROD());
         emit EntrustDelegate(seqOfMotion, delegate, principal);
@@ -208,7 +208,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _getGK().getROM());
+        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROM());
         emit CastVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -218,7 +218,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _getGK().getROD());
+        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROD());
         emit CastVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 

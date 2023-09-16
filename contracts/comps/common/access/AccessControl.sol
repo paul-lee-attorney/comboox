@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -17,8 +17,8 @@ contract AccessControl is IAccessControl {
     RolesRepo.Repo private _roles;
 
     address private _dk;
-    IRegCenter private _rc;
-    IGeneralKeeper private _gk;
+    IRegCenter internal _rc;
+    IGeneralKeeper internal _gk;
 
     // ################
     // ##  Modifier  ##
@@ -150,17 +150,17 @@ contract AccessControl is IAccessControl {
         return _roles.getOwner();
     }
 
-    function getDK() external view returns (address) {
-        return _dk;
-    }
+    // function getDK() external view returns (address) {
+    //     return _dk;
+    // }
 
-    function _getRC() internal view returns (IRegCenter) {
-        return _rc;
-    }
+    // function _rc internal view returns (IRegCenter) {
+    //     return _rc;
+    // }
 
-    function _getGK() internal view returns (IGeneralKeeper) {
-        return _gk;
-    }
+    // function _gk internal view returns (IGeneralKeeper) {
+    //     return _gk;
+    // }
 
     function isFinalized() public view returns (bool) {
         return _roles.state == 2;

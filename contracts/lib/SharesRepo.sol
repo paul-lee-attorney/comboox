@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 pragma solidity ^0.8.8;
 
-import "./ArrayUtils.sol";
 import "./EnumerableSet.sol";
 
 library SharesRepo {
     using EnumerableSet for EnumerableSet.UintSet;
-    using ArrayUtils for uint256[];
 
     struct Head {
+        uint16 class; // 股票类别/轮次编号
         uint32 seqOfShare; // 股票序列号
         uint32 preSeq; // 前序股票序列号（股转时原标的股序列号）
-        uint16 class; // 股票类别/轮次编号
         uint48 issueDate; // 股票签发日期（秒时间戳）
         uint40 shareholder; // 股东代码
         uint32 priceOfPaid; // 发行价格（实缴出资价）
@@ -41,10 +39,29 @@ library SharesRepo {
         Body body;
     }
 
-    struct Repo {
-        // seqOfShare => Share
-        mapping(uint256 => Share) shares;
+    struct Class{
+        Share info;
         EnumerableSet.UintSet seqList;
+    }
+
+    struct Repo {
+        // seqOfClass => Class
+        mapping(uint256 => Class) classes;
+        // seqOfShare => Share
+        mapping(uint => Share) shares;
+    }
+
+    //####################
+    //##    Modifier    ##
+    //####################
+
+    modifier shareExist(
+        Repo storage repo,
+        uint seqOfShare
+    ) {
+        require(isShare(repo, seqOfShare),
+            "SR.shareExist: not");
+        _;
     }
 
     //#################
@@ -56,9 +73,9 @@ library SharesRepo {
         uint _sn = uint(sn);
         
         head = Head({
-            seqOfShare: uint32(_sn >> 224),
-            preSeq: uint32(_sn >> 192),
-            class: uint16(_sn >> 176),
+            class: uint16(_sn >> 240),
+            seqOfShare: uint32(_sn >> 208),
+            preSeq: uint32(_sn >> 176),
             issueDate: uint48(_sn >> 128),
             shareholder: uint40(_sn >> 88),
             priceOfPaid: uint32(_sn >> 56),
@@ -70,16 +87,18 @@ library SharesRepo {
 
     function codifyHead(Head memory head) public pure returns (bytes32 sn)
     {
-        bytes memory _sn = abi.encodePacked(
-                            head.seqOfShare, 
-                            head.preSeq, 
-                            head.class, 
-                            head.issueDate, 
-                            head.shareholder, 
-                            head.priceOfPaid, 
-                            head.priceOfPar, 
-                            head.votingWeight, 
-                            head.argu);
+        bytes memory _sn = 
+            abi.encodePacked(
+                head.class, 
+                head.seqOfShare, 
+                head.preSeq, 
+                head.issueDate, 
+                head.shareholder, 
+                head.priceOfPaid, 
+                head.priceOfPar, 
+                head.votingWeight, 
+                head.argu
+            );
 
         assembly {
             sn := mload(add(_sn, 0x20))
@@ -89,47 +108,70 @@ library SharesRepo {
 
     // ==== issue/regist share ====
 
-    function addShare(
-        Repo storage repo, 
+    function createShare(
         bytes32 sharenumber, 
         uint payInDeadline, 
         uint paid, 
         uint par
-    ) public returns (Share memory newShare) {
+    ) public pure returns (Share memory share) {
 
-        Share memory share;
         share.head = snParser(sharenumber);
+
         share.body = Body({
             payInDeadline: uint48(payInDeadline),
-            paid: uint48(paid),
-            par: uint48(par),
-            cleanPaid: uint48(paid),
+            paid: uint64(paid),
+            par: uint64(par),
+            cleanPaid: uint64(paid),
             state: 0,
             para: 0
         });
+    }
+
+    function addShare(Repo storage repo, Share memory share)
+        public returns(Share memory newShare) 
+    {
         newShare = regShare(repo, share);
+
+        Share storage info = repo.classes[newShare.head.class].info;
+
+        if (info.head.issueDate == 0) {
+            repo.classes[newShare.head.class].info = newShare;
+        } else {
+            increaseEquityOfClass(
+                repo, 
+                true, 
+                newShare.head.class, 
+                newShare.body.paid, 
+                newShare.body.par,
+                newShare.body.paid
+            );
+        }
     }
 
     function regShare(Repo storage repo, Share memory share)
         public returns(Share memory)
     {
-        require(share.body.par > 0, "SR.RS: zero par");
-        require(share.body.par >= share.body.paid, "SR.RS: paid overflow");
-        require(share.head.issueDate <= block.timestamp, "SR.RS: future issueDate");
-        require(share.head.shareholder > 0, "SR.RS: zero shareholder");
-        require(share.head.class > 0, "SR.RS: zero class");
-        require(share.head.votingWeight > 0, "SR.RS: zero votingWeight");
+        require(share.head.class > 0, "SR.regShare: zero class");
+        require(share.body.par > 0, "SR.regShare: zero par");
+        require(share.body.par >= share.body.paid, "SR.regShare: paid overflow");
+        require(share.head.issueDate <= block.timestamp, "SR.regShare: future issueDate");
+        require(share.head.issueDate <= share.body.payInDeadline, "SR.regShare: issueDate later than payInDeadline");
+        require(share.head.shareholder > 0, "SR.regShare: zero shareholder");
+        require(share.head.votingWeight > 0, "SR.regShare: zero votingWeight");
 
-        if (!repo.seqList.contains(share.head.seqOfShare)){
-            share.head.seqOfShare = _increaseCounterOfShare(repo);
-            
-            if (share.head.class > counterOfClasses(repo)) 
-                share.head.class = _increaseCounterOfClass(repo);
-            
+        if (share.head.class > counterOfClasses(repo))
+            share.head.class = _increaseCounterOfClasses(repo);
+
+        Class storage class = repo.classes[share.head.class];
+
+        if (!class.seqList.contains(share.head.seqOfShare)) {
+            share.head.seqOfShare = _increaseCounterOfShares(repo);
+                        
             if (share.head.issueDate == 0)
                 share.head.issueDate = uint48(block.timestamp);
 
-            repo.seqList.add(share.head.seqOfShare);
+            class.seqList.add(share.head.seqOfShare);
+            repo.classes[0].seqList.add(share.head.seqOfShare);
         }
 
         repo.shares[share.head.seqOfShare] = share;
@@ -137,132 +179,260 @@ library SharesRepo {
         return share;
     }
 
-    // ==== deregist/delete share ====
-
-    function deregShare(Repo storage repo, uint256 seqOfShare) 
-        public returns(bool flag)
-    {
-        if (repo.seqList.remove(seqOfShare)) {
-            delete repo.shares[seqOfShare];
-            flag = true;
-        }
-    }
-
     // ==== counters ====
 
-    function _increaseCounterOfShare(Repo storage repo) 
-        private returns(uint32 seqOfShare)
-    {
-        repo.shares[0].head.seqOfShare++;
-        seqOfShare = repo.shares[0].head.seqOfShare;
+    function _increaseCounterOfShares(
+        Repo storage repo
+    ) private returns(uint32) {
+        do {
+            unchecked {
+                repo.shares[0].head.seqOfShare++;                
+            }
+        } while (isShare(repo, repo.shares[0].head.seqOfShare) || 
+            repo.shares[0].head.seqOfShare == 0);
+
+        return repo.shares[0].head.seqOfShare;
     }
 
-    function _increaseCounterOfClass(Repo storage repo) 
-        private returns(uint16 seqOfShare)
+    function _increaseCounterOfClasses(Repo storage repo) 
+        private returns(uint16)
     {
         repo.shares[0].head.class++;
-        seqOfShare = repo.shares[0].head.class;
+        return repo.shares[0].head.class;
     }
 
     // ==== amountChange ====
 
-    function payInCapital(Share storage share, uint amt) public
-    {
-        require(amt > 0, "SR.PIC: zero amount");
+    function payInCapital(
+        Repo storage repo,
+        uint seqOfShare,
+        uint amt
+    ) public shareExist(repo, seqOfShare) {
 
-        // require(block.timestamp <= share.body.payInDeadline, 
-        //     "SR.PIC: missed deadline");
+        Share storage share = repo.shares[seqOfShare];
 
+        uint64 deltaPaid = uint64(amt);
 
-        require(share.body.paid + amt <= share.body.par, 
-            "SR.PIC: payIn amount overflow");
+        require(deltaPaid > 0, "SR.payInCap: zero amt");
 
-        share.body.paid += uint64(amt);
-        share.body.cleanPaid += uint64(amt);
+        require(block.timestamp <= share.body.payInDeadline, 
+            "SR.payInCap: missed deadline");
+
+        require(share.body.paid + deltaPaid <= share.body.par, 
+            "SR.payInCap: amt overflow");
+
+        share.body.paid += deltaPaid;
+        share.body.cleanPaid += deltaPaid;
+
+        increaseEquityOfClass(
+            repo, 
+            true, 
+            share.head.class,
+            deltaPaid, 
+            0,
+            deltaPaid
+        );
     }
 
-    function subAmtFromShare(Share storage share, uint paid, uint par) public
-    {
-        require(par > 0, "SR.SAFS: zero par");
-        require(share.body.cleanPaid >= paid, "SR.SAFS: insufficient cleanPaid");
+    function subAmtFromShare(
+        Repo storage repo,
+        uint seqOfShare,
+        uint paid, 
+        uint par
+    ) public shareExist(repo, seqOfShare) {
 
-        share.body.paid -= uint64(paid);
-        share.body.par -= uint64(par);
+        Share storage share = repo.shares[seqOfShare];
+        Class storage class = repo.classes[share.head.class];
 
-        share.body.cleanPaid -= uint64(paid);
+        uint64 deltaPaid = uint64(paid);
+        uint64 deltaPar = uint64(par);
 
-        require(share.body.par >= share.body.paid,
-            "SR.SAFS: par smaller than paid");
+        require(deltaPar > 0, "SR.subAmt: zero par");
+        require(share.body.cleanPaid >= deltaPaid, "SR.subAmt: insufficient cleanPaid");
+
+        if (deltaPar == share.body.par) {            
+            class.seqList.remove(seqOfShare);
+            repo.classes[0].seqList.remove(seqOfShare);
+            delete repo.shares[seqOfShare];
+        } else {
+            share.body.paid -= deltaPaid;
+            share.body.par -= deltaPar;
+            share.body.cleanPaid -= deltaPaid;
+
+            require(share.body.par >= share.body.paid,
+                "SR.subAmt: result paid overflow");
+        }
     }
 
-    function increaseCleanPaid(Share storage share, uint paid) public
-    {
-        require(paid > 0, "SR.SAFS: zero amt");
+    function increaseCleanPaid(
+        Repo storage repo,
+        bool isIncrease,
+        uint seqOfShare,
+        uint paid
+    ) public shareExist(repo, seqOfShare) {
 
-        require(share.body.cleanPaid + paid <= share.body.paid, 
-            "SR.SAFS: paid overflow");
+        Share storage share = repo.shares[seqOfShare];
 
-        share.body.cleanPaid += uint64(paid);
+        uint64 deltaClean = uint64(paid);
+
+        require(deltaClean > 0, "SR.incrClean: zero amt");
+
+        if (isIncrease && share.body.cleanPaid + deltaClean <= share.body.paid) 
+            share.body.cleanPaid += deltaClean;
+        else if(!isIncrease && share.body.cleanPaid >= deltaClean)
+            share.body.cleanPaid -= deltaClean;
+        else revert("SR.incrClean: clean overflow");
+
+        increaseEquityOfClass(
+            repo, 
+            isIncrease, 
+            share.head.class, 
+            0, 
+            0, 
+            deltaClean
+        );
+
     }
 
-    function decreaseCleanPaid(Share storage share, uint paid) public
-    {
-        require(paid > 0, "SR.decreaseClean: zero amt");
+    // ---- EquityOfClass ----
 
-        require(share.body.cleanPaid >= paid, 
-            "SR.decreaseClean: insufficient amt");
+    function increaseEquityOfClass(
+        Repo storage repo,
+        bool isIncrease,
+        uint classOfShare,
+        uint deltaPaid,
+        uint deltaPar,
+        uint deltaCleanPaid
+    ) public {
 
-        share.body.cleanPaid -= uint64(paid);
+        Body storage equity = repo.classes[classOfShare].info.body;
+
+        if (isIncrease) {
+            equity.paid += uint64(deltaPaid);
+            equity.par += uint64(deltaPar);
+            equity.cleanPaid += uint64(deltaCleanPaid);
+        } else {
+            equity.paid -= uint64(deltaPaid);
+            equity.par -= uint64(deltaPar);
+            equity.cleanPaid -= uint64(deltaCleanPaid);            
+        }
     }
 
-    // ==== update head of Share ====
+    function updatePayInDeadline(
+        Repo storage repo,
+        uint seqOfShare,
+        uint deadline
+    ) public shareExist(repo, seqOfShare) {
 
-    function updatePayInDeadline(Share storage share, uint deadline) public 
-    {
-        require (block.timestamp < deadline, "SR.UPID: missed deadline");
-        require (block.timestamp < share.body.payInDeadline, 
-            "SR.UPID: missed payInDeadline");
+        Share storage share = repo.shares[seqOfShare];
 
-        share.body.payInDeadline = uint48(deadline);
+        uint48 newLine = uint48(deadline);
+
+        require (block.timestamp < newLine, 
+            "SR.updatePayInDeadline: not future");
+
+        share.body.payInDeadline = newLine;
     }
 
     //####################
-    //##    查询接口     ##
+    //##    Read I/O    ##
     //####################
 
-    function counterOfShares(Repo storage repo) public view returns(uint32 seqOfShare)
-    {
-        seqOfShare = repo.shares[0].head.seqOfShare;
+    // ---- Counter ----
+
+    function counterOfShares(
+        Repo storage repo
+    ) public view returns(uint32) {
+        return repo.shares[0].head.seqOfShare;
     }
 
-    function counterOfClasses(Repo storage repo) public view returns(uint16 seqOfShare)
-    {
-        seqOfShare = repo.shares[0].head.class;
+    function counterOfClasses(
+        Repo storage repo
+    ) public view returns(uint16) {
+        return repo.shares[0].head.class;
     }
 
-    function sharesOfClass(Repo storage repo, uint class) 
-        public view returns (uint256[] memory seqList)
-    {
-        require (class > 0, "SR.SOC: zero class");
-        require (class <= counterOfClasses(repo), "SR.SOC: class overflow");
+    // ---- Share ----
 
-        uint[] memory list = repo.seqList.values();
+    function isShare(
+        Repo storage repo, 
+        uint seqOfShare
+    ) public view returns(bool) {
+        return repo.classes[0].seqList.contains(seqOfShare);
+    }
 
-        uint256 len = list.length;
-        uint256[] memory output = new uint256[](len);
- 
-        uint256 ptr;
-        while (len > 0) {
-            uint256 classOfItem = repo.shares[list[len-1]].head.class;
+    function getShare(
+        Repo storage repo, 
+        uint seqOfShare
+    ) public view shareExist(repo, seqOfShare) returns (
+        Share memory
+    ) {
+        return repo.shares[seqOfShare];
+    }
 
-            if (classOfItem == class) {
-                output[ptr] = list[len-1];
-                ptr++;
-            }
+    function getQtyOfShares(
+        Repo storage repo
+    ) public view returns(uint) {
+        return repo.classes[0].seqList.length();
+    }
 
+    function getSeqListOfShares(
+        Repo storage repo
+    ) public view returns(uint[] memory) {
+        return repo.classes[0].seqList.values();
+    }
+
+    function getSharesList(
+        Repo storage repo
+    ) public view returns(Share[] memory) {
+        uint[] memory seqList = repo.classes[0].seqList.values();
+        return _getShares(repo, seqList);
+    }
+
+    // ---- Class ----    
+
+    function getQtyOfSharesInClass(
+        Repo storage repo, 
+        uint classOfShare
+    ) public view returns (uint) {
+        return repo.classes[classOfShare].seqList.length();
+    }
+
+    function getSeqListOfClass(
+        Repo storage repo, 
+        uint classOfShare
+    ) public view returns (uint[] memory) {
+        return repo.classes[classOfShare].seqList.values();
+    }
+
+    function getInfoOfClass(
+        Repo storage repo,
+        uint classOfShare
+    ) public view returns (Share memory) {
+        return repo.classes[classOfShare].info;
+    }
+
+    function getSharesOfClass(
+        Repo storage repo, 
+        uint classOfShare
+    ) public view returns (Share[] memory) {
+        uint[] memory seqList = 
+            repo.classes[classOfShare].seqList.values();
+        return _getShares(repo, seqList);
+    }
+
+    function _getShares(
+        Repo storage repo,
+        uint[] memory seqList
+    ) private view returns(Share[] memory list) {
+
+        uint len = seqList.length;
+        list = new Share[](len);
+
+        while(len > 0) {
+            list[len - 1] = repo.shares[seqList[len - 1]];
             len--;
         }
-
-        seqList = output.resize(ptr);
     }
+
 }

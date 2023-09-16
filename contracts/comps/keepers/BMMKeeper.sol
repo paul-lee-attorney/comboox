@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -21,7 +21,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
     //##################
 
     modifier directorExist(uint256 acct) {
-        require(_getGK().getROD().isDirector(acct), 
+        require(_gk.getROD().isDirector(acct), 
             "BODK.DE: not director");
         _;
     }
@@ -39,7 +39,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint candidate,
         uint nominator
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfDirectors _rod = _gk.getROD();
         
         require(_rod.hasNominationRight(seqOfPos, nominator),
@@ -52,7 +52,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint256 seqOfPos,
         uint nominator
     ) external onlyDK directorExist(nominator) {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfDirectors _rod = _gk.getROD();
         
         require(_rod.hasNominationRight(seqOfPos, nominator),
@@ -69,7 +69,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK directorExist(proposer) {
-        _getGK().getBMM().createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
+        _gk.getBMM().createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
     }
 
     function proposeToTransferFund(
@@ -82,7 +82,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint proposer
     ) external onlyDK directorExist(proposer) {
 
-        IGeneralKeeper _gk = _getGK();
+        
         IMeetingMinutes _bmm = _gk.getBMM();
 
         require (amt < _gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold * 10 ** 9,
@@ -104,7 +104,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK directorExist(proposer){
-        _getGK().getBMM().createAction(
+        _gk.getBMM().createAction(
             seqOfVR,
             targets,
             values,
@@ -123,14 +123,14 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint caller
     ) external onlyDK directorExist(caller) {
         _avoidanceCheck(seqOfMotion, caller);
-        _getGK().getBMM().entrustDelegate(seqOfMotion, delegate, caller);
+        _gk.getBMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
     function proposeMotionToBoard (
         uint seqOfMotion,
         uint caller
     ) external onlyDK directorExist(caller) {
-        _getGK().getBMM().proposeMotionToBoard(seqOfMotion, caller);
+        _gk.getBMM().proposeMotionToBoard(seqOfMotion, caller);
     }
 
     function castVote(
@@ -140,11 +140,11 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint256 caller
     ) external onlyDK {
         _avoidanceCheck(seqOfMotion, caller);
-        _getGK().getBMM().castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
+        _gk.getBMM().castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
     function _avoidanceCheck(uint256 seqOfMotion, uint256 caller) private view {
-        IGeneralKeeper _gk = _getGK();
+        
 
         MotionsRepo.Motion memory motion = _gk.getBMM().getMotion(seqOfMotion);
 
@@ -172,7 +172,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
     function voteCounting(uint256 seqOfMotion)
         external onlyDK
     {
-        IGeneralKeeper _gk = _getGK();
+        
 
         IRegisterOfDirectors _rod = _gk.getROD();
         IMeetingMinutes _bmm = _gk.getBMM();
@@ -250,7 +250,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint seqOfMotion,
         uint caller
     ) external onlyDK {
-        _getGK().getBMM().transferFund(
+        _gk.getBMM().transferFund(
             to,
             isCBP,
             amt,
@@ -269,7 +269,7 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         uint256 seqOfMotion,
         uint caller
     ) external returns (uint) {
-        return _getGK().getBMM().execAction(
+        return _gk.getBMM().execAction(
             typeOfAction,
             targets,
             values,

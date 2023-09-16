@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -124,7 +124,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint seqOfPledge,
         uint caller
     ) external onlyKeeper returns(SwapsRepo.Swap memory swap) {
-        IGeneralKeeper _gk = _getGK();
+        
 
         swap = _repo.createSwap(seqOfMotion, seqOfDeal, paidOfTarget, 
             seqOfPledge, caller, _gk.getROS(), _gk.getGMM());
@@ -140,7 +140,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint centPrice
     ) external onlyKeeper returns(SwapsRepo.Swap memory swap){
         swap = _repo.payOffSwap(seqOfMotion, seqOfDeal, 
-            seqOfSwap, msgValue, centPrice, _getGK().getGMM());
+            seqOfSwap, msgValue, centPrice, _gk.getGMM());
 
         emit PayOffSwap(seqOfDeal, seqOfSwap, msgValue);
     }
@@ -151,7 +151,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint seqOfSwap
     ) external onlyKeeper returns (SwapsRepo.Swap memory swap){
         swap = _repo.terminateSwap(seqOfMotion, seqOfDeal, 
-            seqOfSwap, _getGK().getGMM());
+            seqOfSwap, _gk.getGMM());
         emit TerminateSwap(seqOfDeal, seqOfSwap);        
     }
 
@@ -238,12 +238,12 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function checkValueOfSwap(uint seqOfDeal, uint seqOfSwap)
         external view returns(uint)
     {
-        return _repo.checkValueOfSwap(seqOfDeal, seqOfSwap, _getGK().getCentPrice());
+        return _repo.checkValueOfSwap(seqOfDeal, seqOfSwap, _gk.getCentPrice());
     }
 
     function checkValueOfDeal(uint seqOfDeal)
         external view returns (uint)
     {
-        return _repo.checkValueOfDeal(seqOfDeal, _getGK().getCentPrice());
+        return _repo.checkValueOfDeal(seqOfDeal, _gk.getCentPrice());
     }
 }

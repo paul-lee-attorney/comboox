@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -22,99 +22,110 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     LockersRepo.Repo private _lockers;
 
     //##################
-    //##   Modifier   ##
-    //##################
-
-    modifier shareExist(uint256 seqOfShare) {
-        require(isShare(seqOfShare), "BOS.mf.SE: seqOfShare NOT exist");
-        _;
-    }
-
-    modifier notFreezed(uint256 seqOfShare) {
-        require(_repo.shares[seqOfShare].body.state == 0, 
-            "BOS.mf.NF: share is freezed");
-        _;
-    }
-
-    //##################
     //##  Write I/O  ##
     //##################
 
     // ==== IssueShare ====
 
-    function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) 
-        external onlyKeeper
-    {
+    function issueShare(
+        bytes32 shareNumber, 
+        uint payInDeadline, 
+        uint paid, 
+        uint par
+    ) external onlyKeeper {
 
-        SharesRepo.Share memory share;
-        share.head = SharesRepo.snParser(shareNumber);
-        share.body = SharesRepo.Body({
-            payInDeadline: uint48(payInDeadline),
-            paid: uint48(paid),
-            par: uint48(par),
-            cleanPaid: uint48(paid),
-            state: 0,
-            para: 0
-        });
-        
-        require ( share.head.issueDate <= payInDeadline, 
-            "BOS.issueShare: issueDate later than payInDeadline");
+        SharesRepo.Share memory share =
+            SharesRepo.createShare(shareNumber, payInDeadline, paid, par);
 
         addShare(share);
-
     }
 
-    function addShare(SharesRepo.Share memory share) public onlyKeeper {
+    function addShare(
+        SharesRepo.Share memory share
+    ) public onlyKeeper {
 
-        SharesRepo.Share memory newShare = _repo.regShare(share);
-        IRegisterOfMembers _rom = _getGK().getROM();
+        IRegisterOfMembers _rom = _gk.getROM();
 
-        _rom.addMember(newShare.head.shareholder);
-        _rom.addShareToMember(newShare);
-        _rom.capIncrease(newShare.head.votingWeight, newShare.body.paid, newShare.body.par);
+        share = _repo.addShare(share);
 
-        emit IssueShare(newShare.head.codifyHead(), newShare.body.paid, newShare.body.par);
+        _rom.addMember(share.head.shareholder);
+        _rom.capIncrease(
+            share.head.votingWeight,
+            share.body.paid,
+            share.body.par,
+            true
+        );
+        _rom.addShareToMember(share);
+
+        emit IssueShare(
+            share.head.codifyHead(), 
+            share.body.paid, 
+            share.body.par
+        );
     }
 
     // ==== PayInCapital ====
 
-    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) 
-        external onlyDK
-    {
-        SharesRepo.Share storage share = _repo.shares[seqOfShare];
+    function setPayInAmt(
+        uint seqOfShare, 
+        uint amt, 
+        uint expireDate, 
+        bytes32 hashLock
+    ) external onlyDK {
 
-        LockersRepo.Head memory head = LockersRepo.Head({
-            from: share.head.seqOfShare,
-            to: share.head.shareholder,
-            expireDate: uint48(expireDate),
-            value: uint128(amt)
-        });
+        SharesRepo.Share storage share = 
+            _repo.shares[seqOfShare];
+
+        LockersRepo.Head memory head = 
+            LockersRepo.Head({
+                from: share.head.seqOfShare,
+                to: share.head.shareholder,
+                expireDate: uint48(expireDate),
+                value: uint128(amt)
+            });
 
         _lockers.lockPoints(head, hashLock);
+
         emit SetPayInAmt(LockersRepo.codifyHead(head), hashLock);
     }
 
-    function requestPaidInCapital(bytes32 hashLock, string memory hashKey) 
-        external onlyDK
-    {
-        IRegisterOfMembers _rom = _getGK().getROM();
+    function requestPaidInCapital(
+        bytes32 hashLock, 
+        string memory hashKey
+    ) external onlyDK {
 
         LockersRepo.Head memory head = 
             _lockers.pickupPoints(hashLock, hashKey, 0);
+
         if (head.value > 0) {
-            SharesRepo.Share storage share = _repo.shares[head.from];
-            // require(share.head.shareholder == caller, "BOS.RPIC: not shareholder");
+ 
+            SharesRepo.Share storage share = 
+                _repo.shares[head.from];
 
             _payInCapital(share, head.value);
-            _rom.changeAmtOfMember(share.head.shareholder, share.head.votingWeight, head.value, 0, head.value, true);
-            _rom.capIncrease(share.head.votingWeight, head.value, 0);
         }
     }
 
-    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
+    function withdrawPayInAmt(
+        bytes32 hashLock, 
+        uint seqOfShare
+    ) external onlyDK {
+
         LockersRepo.Head memory head = 
             _lockers.withdrawDeposit(hashLock, seqOfShare);
+
         emit WithdrawPayInAmt(head.from, head.value);
+    }
+
+    function payInCapital(
+        uint seqOfShare, 
+        uint amt
+    ) external onlyDK {
+
+        SharesRepo.Share storage share = 
+            _repo.shares[seqOfShare];
+
+        _payInCapital(share, amt);
     }
 
     // ==== TransferShare ====
@@ -126,16 +137,17 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint to,
         uint priceOfPaid,
         uint priceOfPar
-    ) external onlyKeeper shareExist(seqOfShare) notFreezed(seqOfShare) {
-        SharesRepo.Share storage share = _repo.shares[seqOfShare];
+    ) external onlyKeeper {
 
-        require(to != 0, "BOS.TS: shareholder is ZERO");
+        IRegisterOfMembers _rom = _gk.getROM();
+
+        SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
         SharesRepo.Share memory newShare;
 
         newShare.head = SharesRepo.Head({
             seqOfShare: 0,
-            preSeq: share.head.seqOfShare,            
+            preSeq: share.head.seqOfShare,
             class: share.head.class,
             issueDate: uint48(block.timestamp),
             shareholder: uint40(to),
@@ -156,14 +168,11 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         _decreaseShareAmt(share, paid, par);
 
-        IRegisterOfMembers _rom = _getGK().getROM();
-
         _rom.addMember(to);
 
         newShare = _repo.regShare(newShare);
 
         _rom.addShareToMember(newShare);
-
     }
 
     // ==== DecreaseCapital ====
@@ -172,86 +181,162 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint256 seqOfShare,
         uint paid,
         uint par
-    ) external onlyDK shareExist(seqOfShare) notFreezed(seqOfShare) {
-        SharesRepo.Share storage share = _repo.shares[seqOfShare];        
+    ) external onlyDK {
+        
+        SharesRepo.Share storage share = 
+            _repo.shares[seqOfShare];
+
+        _repo.increaseEquityOfClass(
+            false,
+            share.head.class,
+            paid,
+            par,
+            paid
+        );
+
+        _gk.getROM().capIncrease(
+            share.head.votingWeight,            
+            paid, 
+            par,
+            false
+        );
 
         _decreaseShareAmt(share, paid, par);
-
-        _getGK().getROM().capDecrease(share.head.votingWeight, paid, par);
     }
 
     // ==== cleanAmt ====
 
-    function decreaseCleanPaid(uint256 seqOfShare, uint paid)
-        external shareExist(seqOfShare) notFreezed(seqOfShare)
-    {
-        IGeneralKeeper _gk = _getGK();
+    function decreaseCleanPaid(
+        uint256 seqOfShare, 
+        uint paid
+    ) external {
+
+        
 
         require(msg.sender == address(_gk.getROP()) ||
-        _gk.isKeeper(msg.sender), "BOS.DCP: neither keeper nor ROP");
+            _gk.isKeeper(msg.sender), 
+            "ROS.decrClean: access denied");
 
-        SharesRepo.Share storage share = _repo.shares[seqOfShare];
+        _repo.increaseCleanPaid(
+            false,
+            seqOfShare,
+            paid
+        );
 
-        share.decreaseCleanPaid(paid);
-        _gk.getROM().changeAmtOfMember(share.head.shareholder, share.head.votingWeight, 0, 0, paid, false);
+        SharesRepo.Share storage share = 
+            _repo.shares[seqOfShare];
+
+        _gk.getROM().increaseAmtOfMember(
+            share.head.shareholder, 
+            share.head.votingWeight, 
+            0, 
+            0, 
+            paid, 
+            false
+        );
+
         emit DecreaseCleanPaid(seqOfShare, paid);
     }
 
-    function increaseCleanPaid(uint256 seqOfShare, uint paid)
-        external shareExist(seqOfShare) notFreezed(seqOfShare)
-    {
-        IGeneralKeeper _gk = _getGK();
+    function increaseCleanPaid(
+        uint256 seqOfShare, 
+        uint paid
+    ) external {
+
+        
 
         require(msg.sender == address(_gk.getROP()) ||
-        _gk.isKeeper(msg.sender), "BOS.DCA: neither keeper nor ROP");
+            _gk.isKeeper(msg.sender), "ROS.DCA: neither keeper nor ROP");
 
-        SharesRepo.Share storage share = _repo.shares[seqOfShare];
+        _repo.increaseCleanPaid(
+            true,
+            seqOfShare,
+            paid
+        );
 
-        share.increaseCleanPaid(paid);
-        _gk.getROM().changeAmtOfMember(share.head.shareholder, share.head.votingWeight, 0, 0, paid, true);
+        SharesRepo.Share storage share = 
+            _repo.shares[seqOfShare];
+
+        _gk.getROM().increaseAmtOfMember(
+            share.head.shareholder, 
+            share.head.votingWeight, 
+            0, 
+            0, 
+            paid, 
+            true
+        );
+
         emit IncreaseCleanPaid(seqOfShare, paid);
     }
 
     // ==== State & PaidInDeadline ====
 
-    function updateStateOfShare(uint256 seqOfShare, uint state)
-        external onlyDK shareExist(seqOfShare)
-    {
-        emit UpdateStateOfShare(seqOfShare, state);
-        _repo.shares[seqOfShare].body.state = uint8(state);
-    }
-
-    // function updatePaidInDeadline(uint256 seqOfShare, uint deadline)
-    //     external onlyDK shareExist(seqOfShare)
+    // function updateStateOfShare(uint256 seqOfShare, uint state)
+    //     external onlyDK 
     // {
-    //     _repo.shares[seqOfShare].updatePayInDeadline(deadline);
-    //     emit UpdatePaidInDeadline(seqOfShare, deadline);
+    //     emit UpdateStateOfShare(seqOfShare, state);
+    //     _repo.shares[seqOfShare].body.state = uint8(state);
     // }
+
+    function updatePaidInDeadline(
+        uint256 seqOfShare, 
+        uint deadline
+    ) external onlyDK {
+
+        _repo.updatePayInDeadline(seqOfShare, deadline);
+
+        emit UpdatePaidInDeadline(seqOfShare, deadline);
+    }
 
     // ==== private funcs ====
 
-    function _deregisterShare(uint256 seqOfShare) private {
-        if (_repo.deregShare(seqOfShare))
-            emit DeregisterShare(seqOfShare);
-    }
+    function _payInCapital(
+        SharesRepo.Share storage share, 
+        uint amount
+    ) private {
 
-    function _payInCapital(SharesRepo.Share storage share, uint amount) private 
-    {
-        share.payInCapital(amount);
+        IRegisterOfMembers _rom = _gk.getROM();
+
+        _repo.payInCapital(share.head.seqOfShare, amount);
+
+        _rom.capIncrease(
+            share.head.votingWeight,
+            amount, 
+            0,
+            true
+        );
+
+        _rom.increaseAmtOfMember(
+            share.head.shareholder, 
+            share.head.votingWeight, 
+            amount, 
+            0, 
+            amount, 
+            true
+        );
+
         emit PayInCapital(share.head.seqOfShare, amount);
     }
 
-    function _decreaseShareAmt(SharesRepo.Share storage share, uint paid, uint par) 
-        private 
-    {
-        IRegisterOfMembers _rom = _getGK().getROM();
+    function _decreaseShareAmt(
+        SharesRepo.Share storage share, 
+        uint paid, 
+        uint par
+    ) private {
+
+        IRegisterOfMembers _rom = _gk.getROM();
+
+        _repo.subAmtFromShare(share.head.seqOfShare, paid, par);
 
         if (par == share.body.par) {
+
             _rom.removeShareFromMember(share);
-            _repo.deregShare(share.head.seqOfShare);
+
+            emit DeregisterShare(share.head.seqOfShare);
+
         } else {
-            _subAmtFromShare(share, paid, par);
-            _rom.changeAmtOfMember(
+
+            _rom.increaseAmtOfMember(
                 share.head.shareholder,
                 share.head.votingWeight,
                 paid,
@@ -259,67 +344,86 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
                 paid,
                 false
             );
+
+            emit SubAmountFromShare(share.head.seqOfShare, paid, par);
         }
     }
-
-    function _subAmtFromShare(
-        SharesRepo.Share storage share,
-        uint paid,
-        uint par
-    ) private {
-        share.subAmtFromShare(paid, par);
-        emit SubAmountFromShare(share.head.seqOfShare, paid, par);
-     }
 
     // #################
     // ##   查询接口   ##
     // #################
 
-    function counterOfShares() public view returns (uint32) {
+    function counterOfShares() external view returns (uint32) {
         return _repo.counterOfShares();
     }
 
-    function counterOfClasses() public view returns (uint16) {
+    function counterOfClasses() external view returns (uint16) {
         return _repo.counterOfClasses();
     }
 
     // ==== SharesRepo ====
 
-    function isShare(uint256 seqOfShare) public view returns (bool) {
-        return _repo.shares[seqOfShare].head.issueDate > 0;
+    function isShare(
+        uint256 seqOfShare
+    ) external view returns (bool) {
+        return _repo.isShare(seqOfShare);
     }
 
-    function getHeadOfShare(uint256 seqOfShare) external view 
-        shareExist(seqOfShare) returns (SharesRepo.Head memory head)
-    {
-        head = _repo.shares[seqOfShare].head;
+    function getShare(
+        uint256 seqOfShare
+    ) external view returns (
+        SharesRepo.Share memory
+    ) {
+        return _repo.getShare(seqOfShare);
     }
 
-    function getBodyOfShare(uint256 seqOfShare) external view
-        shareExist(seqOfShare) returns (SharesRepo.Body memory body)
-    {
-        body = _repo.shares[seqOfShare].body;
+    function getQtyOfShares() external view returns (uint) {
+        return _repo.getQtyOfShares();
     }
 
-    function getShare(uint256 seqOfShare) external view shareExist(seqOfShare)
-        returns (SharesRepo.Share memory share)
-    {
-        share = _repo.shares[seqOfShare];
+    function getSeqListOfShares() external view returns (uint[] memory) {
+        return _repo.getSeqListOfShares();
+    }
+
+    function getSharesList() external view returns (SharesRepo.Share[] memory) {
+        return _repo.getSharesList();
+    }
+
+    // ---- Class ----    
+
+    function getQtyOfSharesInClass(
+        uint classOfShare
+    ) external view returns (uint) {
+        return _repo.getQtyOfSharesInClass(classOfShare);
+    }
+
+    function getSeqListOfClass(
+        uint classOfShare
+    ) external view returns (uint[] memory) {
+        return _repo.getSeqListOfClass(classOfShare);
+    }
+
+    function getInfoOfClass(
+        uint classOfShare
+    ) external view returns (SharesRepo.Share memory) {
+        return _repo.getInfoOfClass(classOfShare);
+    }
+
+    function getSharesOfClass(
+        uint classOfShare
+    ) external view returns (SharesRepo.Share[] memory) {
+        return _repo.getSharesOfClass(classOfShare);
     }
 
     // ==== PayInCapital ====
 
-    function getLocker(bytes32 hashLock) external view returns (LockersRepo.Locker memory locker) {
-        locker = _lockers.getLocker(hashLock);
+    function getLocker(
+        bytes32 hashLock
+    ) external view returns (LockersRepo.Locker memory) {
+        return _lockers.getLocker(hashLock);
     }
 
     function getLocksList() external view returns (bytes32[] memory) {
         return _lockers.getSnList();
-    }
-
-    function getSharesOfClass(uint class) external view
-        returns (uint256[] memory seqList)
-    {
-        return _repo.sharesOfClass(class);
     }
 }

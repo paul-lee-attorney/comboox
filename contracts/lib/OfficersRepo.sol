@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -327,6 +327,9 @@ library OfficersRepo {
         if (title == uint8(TitleOfOfficers.Shareholder))
             return _rom.isMember(acct);
 
+        if (title == uint8(TitleOfOfficers.Director))
+            return isDirector(repo, acct);
+        
         Position[] memory list = getFullPosInfoInHand(repo, acct);
         uint len = list.length;
         while (len > 0) {

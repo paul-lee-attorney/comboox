@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -13,6 +13,14 @@ import "./DealsRepo.sol";
 
 library TopChain {
 
+    enum CatOfNode {
+        IndepMemberInQueue, // 0
+        GroupRepInQueue,    // 1
+        GroupMember,        // 2
+        IndepMemberOnChain, // 3 
+        GroupRepOnChain     // 4
+    }
+
     struct Node {
         uint40 prev;
         uint40 next;
@@ -22,22 +30,35 @@ library TopChain {
         uint8 cat;
     }
 
+    struct Para {
+        uint40 tail;
+        uint40 head;
+        uint32 maxQtyOfMembers;
+        uint16 minVoteRatioOnChain;
+        uint32 qtyOfSticks;
+        uint32 qtyOfBranches;
+        uint32 qtyOfMembers;
+        uint16 para;
+        uint16 argu;
+    }
+
     struct Chain {
         // usrNo => Node
         mapping(uint256 => Node) nodes;
+        Para para;
     }
 
     /* Node[0] {
         prev: tail;
         next: head;
-        ptr: qtyOfMembers;
-        amt: maxQtyOfMembers;
+        ptr: pending;
+        amt: pending;
         sum: totalVotes;
         cat: basedOnPar;
     } */
 
     //#################
-    //##    修饰器    ##
+    //##   Modifier  ##
     //#################
 
     modifier memberExist(Chain storage chain, uint256 acct) {
@@ -48,217 +69,278 @@ library TopChain {
     //#################
     //##  Write I/O  ##
     //#################
-
-    // ==== Setting ====
+    
+    // ==== Options ====
 
     function setMaxQtyOfMembers(Chain storage chain, uint max) public {
-        chain.nodes[0].amt = uint32(max);
+        chain.para.maxQtyOfMembers = uint32(max);
     }
 
-    function setVoteBase(Chain storage chain, bool onPar)
-        public
-        returns (bool flag)
-    {
-        if (onPar != basedOnPar(chain)) {
-            chain.nodes[0].cat = onPar ? 1 : 0;
-            flag = true;
-        }
+    function setMinVoteRatioOnChain(Chain storage chain, uint min) public {
+        require(min < 5000, "minVoteRatioOnChain: overflow");
+        chain.para.minVoteRatioOnChain = uint16(min);
+    }
+
+    function setVoteBase(
+        Chain storage chain, 
+        bool _basedOnPar
+    ) public {
+        chain.nodes[0].cat = _basedOnPar ? 1 : 0;
     }
 
     // ==== Node ====
 
-    function addNode(Chain storage chain, uint256 acct)
-        public
-        returns (bool flag)
-    {
+    function addNode(Chain storage chain, uint acct) public {
+
+        require(acct > 0, "TC.addNode: zero acct");
+
         Node storage n = chain.nodes[acct];
 
         if (n.ptr == 0) {
-            require(
-                getNumOfMembers(chain) < maxQtyOfMembers(chain),
-                "TC.addNode: getNumOfMembers overflow"
+            require( maxQtyOfMembers(chain) == 0 ||
+                qtyOfMembers(chain) < maxQtyOfMembers(chain),
+                "TC.addNode: no vacance"
             );
-
-            _increaseQtyOfMembers(chain);
 
             n.ptr = uint40(acct);
 
-            // append to tail
-            n.prev = chain.nodes[0].prev;
-            chain.nodes[n.prev].next = uint40(acct);
-            chain.nodes[0].prev = uint40(acct);
-
-            flag = true;
+            _appendToQueue(chain, n, n.ptr);
+            _increaseQtyOfMembers(chain);
         }
     }
 
-    function delNode(Chain storage chain, uint256 acct)
-        public
-        returns (bool flag)
-    {
-        if (_carveOut(chain, acct)) {
-            delete chain.nodes[acct];
-            _decreaseQtyOfMembers(chain);
-            flag = true;
-        }
+    function delNode(Chain storage chain, uint acct) public {
+        _carveOut(chain, acct);
+        delete chain.nodes[acct];
+        _decreaseQtyOfMembers(chain);        
     }
 
     // ==== ChangeAmt ====
 
-    function changeAmt(Chain storage chain, uint256 acct, uint deltaAmt, bool increase) 
-        public memberExist(chain, acct) returns (bool flag) 
-    {
-        Node storage n = chain.nodes[acct];
-
-        if (increase) {
-            n.amt += uint64(deltaAmt);
-            n.sum += uint64(deltaAmt);
-
-            _increaseTotalVotes(chain, deltaAmt);
-        } else {
-            n.amt -= uint64(deltaAmt);
-            n.sum -= uint64(deltaAmt);
-
-            _decreaseTotalVotes(chain, deltaAmt);
-        }
-
-        if (n.cat == 2) {
-            Node storage r = chain.nodes[n.ptr];
-
-            if (increase) r.sum += uint64(deltaAmt);
-            else r.sum -= uint64(deltaAmt);
-
-            flag = _move(chain, n.ptr, increase);
-        } else flag = _move(chain, acct, increase);
+    function increaseTotalVotes(
+        Chain storage chain,
+        uint deltaAmt, 
+        bool isIncrease
+    ) public {
+        uint40 amt = uint40(deltaAmt);
+        if (isIncrease) _increaseTotalVotes(chain, amt);
+        else _decreaseTotalVotes(chain, amt);
     }
 
-    // ==== jumpChain ====
+    function increaseAmt(
+        Chain storage chain, 
+        uint256 acct, 
+        uint deltaAmt, 
+        bool isIncrease
+    ) public memberExist(chain, acct) {
+
+        uint64 amt = uint64(deltaAmt);
+
+        Node storage n = chain.nodes[acct];
+
+        if (isIncrease) {
+            n.amt += amt;
+            n.sum += amt;
+        } else {
+            n.amt -= amt;
+            n.sum -= amt;
+        }
+
+        if (n.cat == uint8(CatOfNode.GroupMember)) {
+
+            Node storage r = chain.nodes[n.ptr];
+
+            if (isIncrease) {
+
+                r.sum += amt;
+                
+                if (r.cat == uint8(CatOfNode.GroupRepOnChain)) 
+                    _move(chain, n.ptr, isIncrease);
+                else if (_onChainTest(chain, r))
+                    _upChainAndMove(chain, r, n.ptr);
+
+            } else {
+
+                r.sum -= amt;
+                
+                if (r.cat == uint8(CatOfNode.GroupRepOnChain)) {
+
+                    if (!_onChainTest(chain, r)) 
+                        _offChain(chain, r, n.ptr);
+                    else _move(chain, n.ptr, isIncrease);
+
+                }
+            }
+
+        } else if (_isOnChain(n)) {
+
+            if (isIncrease) _move(chain, n.ptr, isIncrease);
+            else {
+                if (!_onChainTest(chain, n)) 
+                    _offChain(chain, n, n.ptr);
+                else _move(chain, n.ptr, isIncrease);
+            }
+        
+        } else if(isIncrease && _onChainTest(chain, n))
+            _upChainAndMove(chain, n, n.ptr);
+
+    }
+
+    // ==== Grouping ====
 
     function top2Sub(
         Chain storage chain,
         uint256 acct,
         uint256 root
-    )
-        public
-        memberExist(chain, acct)
-        memberExist(chain, root)
-        returns (bool flag)
-    {
-        require(acct != root, "TC.T2S: self grouping");
+    ) public memberExist(chain, root) {
 
-        require(chain.nodes[acct].cat == 0, "TC.T2S: already in a branch");
-
-        require(chain.nodes[root].cat < 2, "TC.T2S: leaf as root");
-
-        flag = _carveOut(chain, acct) && _vInsert(chain, acct, root);
-    }
-
-    function sub2Top(Chain storage chain, uint256 acct)
-        public
-        memberExist(chain, acct)
-        returns (bool flag)
-    {
         Node storage n = chain.nodes[acct];
+        Node storage r = chain.nodes[root];
 
-        require(n.cat > 0, "TC.S2T: not in a branch");
+        require(acct != root, "TC.T2S: self grouping");
+        require(_isIndepMember(n), "TC.T2S: not indepMember");
+        require(_notGroupMember(r), "TC.T2S: leaf as root");
 
-        if (_carveOut(chain, acct)) {
-            n.cat = 0;
-            n.sum = n.amt;
-
-            (uint256 prev, uint256 next) = getPos(
-                chain,
-                n.sum,
-                chain.nodes[0].prev,
-                0,
-                true
-            );
-
-            flag = _hInsert(chain, acct, prev, next);
-        }
+        _carveOut(chain, n.ptr);
+        _vInsert(chain, n.ptr, uint40(root));
     }
 
-    // ==== restoreChain ====
+    function sub2Top(Chain storage chain, uint256 acct) public {
 
-    function restoreChain(Chain storage chain, Node[] memory snapshot)
-        public
-    {
-        // copy parasOfTopChain
-        chain.nodes[0] = snapshot[0];
+        Node storage n = chain.nodes[acct];
+        require(_isInGroup(n), "TC.S2T: not in a branch");
 
-        uint256 acct = snapshot[0].next;
-        uint256 i = 1;
+        _carveOut(chain, acct);
 
-        while (acct > 0) {
-            chain.nodes[acct] = snapshot[i];
-            acct = nextNode(chain, acct);
-            i++;
-        }
+        n.sum = n.amt;
+        n.ptr = uint40(acct);
+
+        if (_onChainTest(chain, n)) _upChainAndMove(chain, n, n.ptr);
+        else _appendToQueue(chain, n, n.ptr);
     }
 
     // ==== CarveOut ====
 
-    function _branchOff(Chain storage chain, uint256 root)
-        private
-        returns (bool flag)
-    {
+    function _branchOff(Chain storage chain, uint256 root) private {
         Node storage r = chain.nodes[root];
 
-        chain.nodes[r.prev].next = r.next;
-        chain.nodes[r.next].prev = r.prev;
+        if (r.cat > 2) {
 
-        flag = true;
+            chain.nodes[r.next].prev = r.prev;
+            chain.nodes[r.prev].next = r.next;
+
+            _decreaseQtyOfBranches(chain);
+
+        } else {
+
+            if (r.prev > 0 && r.next > 0) {
+                chain.nodes[r.next].prev = r.prev;
+                chain.nodes[r.prev].next = r.next;
+            }else if (r.prev == 0 && r.next == 0) {
+                chain.para.tail = 0;
+                chain.para.head = 0;
+            }else if (r.next == 0) {
+                chain.para.tail = r.prev;
+                chain.nodes[r.prev].next = 0;
+            } else if (r.prev == 0) {
+                chain.nodes[r.next].prev = 0;
+                chain.para.head = r.next;
+            }
+
+            _decreaseQtyOfSticks(chain);
+
+        }
     }
 
-    function _carveOut(Chain storage chain, uint256 acct)
+    function _carveOut(Chain storage chain, uint acct)
         private
         memberExist(chain, acct)
-        returns (bool flag)
     {
         Node storage n = chain.nodes[acct];
 
-        if (n.cat == 0) {
-            flag = _branchOff(chain, acct);
-        } else if (n.cat == 1) {
-            chain.nodes[n.prev].next = n.ptr;
-            chain.nodes[n.next].prev = n.ptr;
+        if (_isIndepMember(n)) {
+
+            _branchOff(chain, acct);
+        
+        } else if (_isGroupRep(n)) {
+
+            if (n.cat == uint8(CatOfNode.GroupRepOnChain) || (n.prev > 0 && n.next > 0)) {
+
+                chain.nodes[n.prev].next = n.ptr;
+                chain.nodes[n.next].prev = n.ptr;
+
+            } else {
+
+                if (n.prev == 0 && n.next == 0) {
+                    chain.para.tail = n.ptr;
+                    chain.para.head = n.ptr;
+                } else if (n.next == 0) {
+                    chain.para.tail = n.ptr;
+                    chain.nodes[n.prev].next = n.ptr;
+                } else if (n.prev == 0) {
+                    chain.nodes[n.next].prev = n.ptr;
+                    chain.para.head = n.ptr;
+                }
+
+            }
 
             Node storage d = chain.nodes[n.ptr];
 
             d.ptr = d.next;
             d.prev = n.prev;
             d.next = n.next;
-            d.cat = 1;
+
+            if (d.ptr > 0) {
+                uint40 cur = d.ptr;
+                while (cur > 0) {
+                    chain.nodes[cur].ptr = n.ptr;
+                    cur = chain.nodes[cur].next;
+                }
+                d.cat = n.cat;
+            } else {
+                d.ptr = n.ptr;
+                d.cat = n.cat == uint8(CatOfNode.GroupRepInQueue) 
+                    ? uint8(CatOfNode.IndepMemberInQueue) 
+                    : uint8(CatOfNode.IndepMemberOnChain);
+            }
 
             d.sum = n.sum - n.amt;
 
-            uint40 cur = d.ptr;
-            while (cur > 0) {
-                chain.nodes[cur].ptr = n.ptr;
-                cur = chain.nodes[cur].next;
-            }
+            _offChainCheck(chain, d, n.ptr);
 
-            _move(chain, n.ptr, false);
+        } else if (_isGroupMember(n)) {
 
-            flag = true;
-        } else if (n.cat == 2) {
             Node storage u = chain.nodes[n.prev];
 
             if (n.next > 0) chain.nodes[n.next].prev = n.prev;
 
-            if (u.cat == 2) u.next = n.next;
+            if (u.cat == uint8(CatOfNode.GroupMember)) u.next = n.next;
             else if (n.next > 0) {
                 u.ptr = n.next;
             } else {
                 u.ptr = n.ptr;
-                u.cat = 0;
+                u.cat = u.cat == uint8(CatOfNode.GroupRepInQueue) 
+                    ? uint8(CatOfNode.IndepMemberInQueue) 
+                    : uint8(CatOfNode.IndepMemberOnChain);
             }
 
-            chain.nodes[n.ptr].sum -= n.amt;
+            Node storage r = chain.nodes[n.ptr];
 
-            _move(chain, n.ptr, false);
+            r.sum -= n.amt;
 
-            flag = true;
+            _offChainCheck(chain, r, n.ptr);
+
+        }
+    }
+
+    function _offChainCheck(
+        Chain storage chain,
+        Node storage r,
+        uint40 acct
+    ) private {
+        if (_isOnChain(r)) {
+            if (_onChainTest(chain, r)) _move(chain, acct, false);
+            else _offChain(chain, r, acct);                
         }
     }
 
@@ -269,7 +351,7 @@ library TopChain {
         uint acct,
         uint prev,
         uint next
-    ) private returns (bool flag) {
+    ) private {
         Node storage n = chain.nodes[acct];
 
         chain.nodes[prev].next = uint40(acct);
@@ -277,37 +359,38 @@ library TopChain {
 
         chain.nodes[next].prev = uint40(acct);
         n.next = uint40(next);
-
-        flag = true;
     }
 
     function _vInsert(
         Chain storage chain,
-        uint acct,
-        uint root
-    ) private returns (bool flag) {
+        uint40 acct,
+        uint40 root
+    ) private {
         Node storage n = chain.nodes[acct];
         Node storage r = chain.nodes[root];
 
-        if (r.cat == 0) {
-            r.cat = 1;
-
+        if (_isIndepMember(r)) {
+            r.cat = r.cat == uint8(CatOfNode.IndepMemberInQueue) 
+                ? uint8(CatOfNode.GroupRepInQueue) 
+                : uint8(CatOfNode.GroupRepOnChain);
             n.next = 0;
-        } else if (r.cat == 1) {
+        } else if (_isGroupRep(r)) {
             n.next = r.ptr;
-            chain.nodes[n.next].prev = uint40(acct);
+            chain.nodes[n.next].prev = acct;
         }
 
-        n.prev = uint40(root);
-        n.ptr = uint40(root);
-        n.cat = 2;
+        n.prev = root;
+        n.ptr = root;
 
-        r.ptr = uint40(acct);
+        n.cat = uint8(CatOfNode.GroupMember);
+
+        r.ptr = acct;
         r.sum += n.amt;
 
-        _move(chain, root, true);
-
-        flag = true;
+        if (_isOnChain(r)) _move(chain, root, true);
+        else if (_onChainTest(chain, r)) {
+            _upChainAndMove(chain, r, root);
+        }
     }
 
     // ==== Move ====
@@ -316,7 +399,7 @@ library TopChain {
         Chain storage chain,
         uint acct,
         bool increase
-    ) private returns (bool flag) {
+    ) private {
         Node storage n = chain.nodes[acct];
 
         (uint256 prev, uint256 next) = getPos(
@@ -328,26 +411,172 @@ library TopChain {
         );
 
         if (next != n.next || prev != n.prev) {
-            flag = _branchOff(chain, acct) && _hInsert(chain, acct, prev, next);
+            _branchOff(chain, acct); 
+            _hInsert(chain, acct, prev, next);
         }
     }
 
-    // ==== node[0] setting ====
+    // ==== Chain & Queue ====
+
+    function _appendToQueue(
+        Chain storage chain,
+        Node storage n,
+        uint40 acct
+    ) private {
+
+        if (chain.para.qtyOfSticks > 0) {
+            chain.nodes[chain.para.tail].next = acct;
+        } else {
+            chain.para.head = acct;
+        }
+
+        n.prev = chain.para.tail;
+        n.next = 0;
+
+        chain.para.tail = acct;
+
+        if (n.cat == uint8(CatOfNode.IndepMemberOnChain)) 
+            n.cat = uint8(CatOfNode.IndepMemberInQueue);
+        else if (n.cat == uint8(CatOfNode.GroupRepOnChain)) 
+            n.cat = uint8(CatOfNode.GroupRepInQueue);
+
+        _increaseQtyOfSticks(chain);
+    }
+
+    function _appendToChain(
+        Chain storage chain,
+        Node storage n,
+        uint40 acct
+    ) private {
+        n.prev = chain.nodes[0].prev;
+        chain.nodes[n.prev].next = acct;
+        chain.nodes[0].prev = acct;
+        n.next = 0;
+
+        if (n.cat == uint8(CatOfNode.IndepMemberInQueue)) 
+            n.cat = uint8(CatOfNode.IndepMemberOnChain);
+        else if (n.cat == uint8(CatOfNode.GroupRepInQueue)) 
+            n.cat = uint8(CatOfNode.GroupRepOnChain);
+
+        _increaseQtyOfBranches(chain);
+    }
+
+    function _onChainTest(
+        Chain storage chain,
+        Node storage r
+    ) private view returns(bool) {
+        return uint(r.sum) * 10000 >= uint(totalVotes(chain)) * minVoteRatioOnChain(chain);
+    }
+
+    function _upChainAndMove(
+        Chain storage chain,
+        Node storage n,
+        uint40 acct
+    ) private {
+        _trimChain(chain);
+        _appendToChain(chain, n, acct);
+        _move(chain, acct, true);
+
+    }
+
+    function _trimChain(
+        Chain storage chain
+    ) private {
+        uint40 cur = chain.nodes[0].prev;
+        Node storage t = chain.nodes[cur];
+
+        while(cur > 0 && !_onChainTest(chain, t)) {            
+            uint40 prev = t.prev;
+            _offChain(chain, t, cur);
+            cur = prev;
+        }
+    }
+
+    function _offChain(
+        Chain storage chain,
+        Node storage n,
+        uint40 acct
+    ) private {
+        _branchOff(chain, acct);
+        _appendToQueue(chain, n, acct);                            
+    }
+
+    // ---- Categories Of Node ----
+
+    function _isOnChain(
+        Node storage n
+    ) private view returns (bool) {
+        return n.cat > 2;
+    }
+
+    function _isInQueue(
+        Node storage n
+    ) private view returns (bool) {
+        return n.cat < 2;
+    }
+
+    function _isIndepMember(
+        Node storage n
+    ) private view returns (bool) {
+        return n.cat % 3 == 0;
+    }
+
+    function _isInGroup(
+        Node storage n
+    ) private view returns (bool) {
+        return n.cat % 3 > 0;
+    }
+
+    function _isGroupRep(
+        Node storage n
+    ) private view returns (bool) {
+        return n.cat % 3 == 1;
+    }
+
+    function _isGroupMember(
+        Node storage n
+    ) private view returns (bool) {
+        return n.cat == uint8(CatOfNode.GroupMember);
+    }
+
+    function _notGroupMember(
+        Node storage n
+    ) private view returns (bool) {
+        return n.cat % 3 < 2;
+    }
+
+    // ==== setting ====
+
+    function _increaseQtyOfBranches(Chain storage chain) private {
+        chain.para.qtyOfBranches++;
+    }
 
     function _increaseQtyOfMembers(Chain storage chain) private {
-        chain.nodes[0].ptr++;
+        chain.para.qtyOfMembers++;
+    }
+
+    function _increaseQtyOfSticks(Chain storage chain) private {
+        chain.para.qtyOfSticks++;
+    }
+
+    function _increaseTotalVotes(Chain storage chain, uint64 deltaAmt) private {
+        chain.nodes[0].sum += deltaAmt;
+    }
+
+    function _decreaseQtyOfBranches(Chain storage chain) private {
+        chain.para.qtyOfBranches--;
     }
 
     function _decreaseQtyOfMembers(Chain storage chain) private {
-        chain.nodes[0].ptr--;
+        chain.para.qtyOfMembers--;
     }
 
-    function _increaseTotalVotes(Chain storage chain, uint deltaAmt) private {
-        chain.nodes[0].sum += uint64(deltaAmt);
+    function _decreaseQtyOfSticks(Chain storage chain) private {
+        chain.para.qtyOfSticks--;
     }
 
-    function _decreaseTotalVotes(Chain storage chain, uint deltaAmt) private {
-        chain.nodes[0].sum -= uint64(deltaAmt);
+    function _decreaseTotalVotes(Chain storage chain, uint64 deltaAmt) private {
+        chain.nodes[0].sum -= deltaAmt;
     }
 
     //##################
@@ -372,8 +601,30 @@ library TopChain {
         return chain.nodes[0].next;
     }
 
-    function getNumOfMembers(Chain storage chain) public view returns (uint32) {
-        return uint32(chain.nodes[0].ptr);
+    function totalVotes(Chain storage chain) public view returns (uint64) {
+        return chain.nodes[0].sum;
+    }
+
+    function basedOnPar(Chain storage chain) public view returns (bool) {
+        return chain.nodes[0].cat == 1;
+    }
+
+    // ---- Para ----
+
+    function headOfQueue(Chain storage chain)
+        public
+        view
+        returns (uint40)
+    {
+        return  chain.para.head;
+    }
+
+    function tailOfQueue(Chain storage chain)
+        public
+        view
+        returns (uint40)
+    {
+        return  chain.para.tail;
     }
 
     function maxQtyOfMembers(Chain storage chain)
@@ -381,15 +632,40 @@ library TopChain {
         view
         returns (uint32)
     {
-        return uint32(chain.nodes[0].amt);
+        return chain.para.maxQtyOfMembers; 
     }
 
-    function totalVotes(Chain storage chain) public view returns (uint64) {
-        return chain.nodes[0].sum;
+    function minVoteRatioOnChain(Chain storage chain)
+        public
+        view
+        returns (uint16)
+    {
+        uint16 min = chain.para.minVoteRatioOnChain;
+        return min > 0 ? min : 500; 
     }
 
-    function basedOnPar(Chain storage chain) public view returns (bool) {
-        return chain.nodes[0].cat == 1;
+    function qtyOfBranches(Chain storage chain) public view returns (uint32) {
+        return chain.para.qtyOfBranches;
+    }
+
+    function qtyOfGroups(Chain storage chain) public view returns (uint32) {
+        return chain.para.qtyOfBranches + chain.para.qtyOfSticks;
+    }
+
+    function qtyOfTopMembers(Chain storage chain) 
+        public view 
+        returns(uint qty) 
+    {
+        uint cur = chain.nodes[0].next;
+
+        while(cur > 0) {
+            qty++;
+            cur = nextNode(chain, cur);
+        }
+    }
+
+    function qtyOfMembers(Chain storage chain) public view returns (uint32) {
+        return chain.para.qtyOfMembers;
     }
 
     // ==== locate position ====
@@ -416,25 +692,21 @@ library TopChain {
     }
 
     function nextNode(Chain storage chain, uint256 acct)
-        public
-        view
-        returns (uint256 next)
+        public view returns (uint256 next)
     {
         Node storage n = chain.nodes[acct];
 
-        if (n.cat == 0) {
+        if (_isIndepMember(n)) {
             next = n.next;
-        } else if (n.cat == 1) {
+        } else if (_isGroupRep(n)) {
             next = n.ptr;
-        } else if (n.cat == 2) {
+        } else if (_isGroupMember(n)) {
             next = (n.next > 0) ? n.next : chain.nodes[n.ptr].next;
         }
     }
 
     function getNode(Chain storage chain, uint256 acct)
-        public
-        view
-        returns (Node memory n)
+        public view returns (Node memory n)
     {
         n = chain.nodes[acct];
     }
@@ -448,20 +720,7 @@ library TopChain {
         returns (uint40 group)
     {
         Node storage n = chain.nodes[acct];
-        group = (n.cat < 2) ? uint40(acct) : n.ptr;
-    }
-
-    function qtyOfBranches(Chain storage chain)
-        public
-        view
-        returns (uint256 len)
-    {
-        uint256 cur = head(chain);
-
-        while (cur > 0) {
-            len++;
-            cur = chain.nodes[cur].next;
-        }
+        group = (n.cat == uint8(CatOfNode.GroupMember)) ? n.ptr : uint40(acct) ;
     }
 
     function deepOfBranch(Chain storage chain, uint256 acct)
@@ -472,8 +731,8 @@ library TopChain {
     {
         Node storage n = chain.nodes[acct];
 
-        if (n.cat == 0) deep = 1;
-        else if (n.cat == 1) deep = _deepOfBranch(chain, acct);
+        if (_isIndepMember(n)) deep = 1;
+        else if (_isGroupRep(n)) deep = _deepOfBranch(chain, acct);
         else deep = _deepOfBranch(chain, n.ptr);
     }
 
@@ -504,12 +763,19 @@ library TopChain {
     function membersOfGroup(Chain storage chain, uint256 acct)
         public
         view
-        returns (uint256[] memory)
+        returns (uint256[] memory list)
     {
-        uint256 start = rootOf(chain, acct);
+        uint256 cur = rootOf(chain, acct);
         uint256 len = deepOfBranch(chain, acct);
 
-        return _subList(chain, start, len);
+        list = new uint256[](len);
+        uint256 i = 0;
+
+        while (i < len) {
+            list[i] = cur;
+            cur = nextNode(chain, cur);
+            i++;
+        }
     }
 
     function affiliated(
@@ -531,59 +797,114 @@ library TopChain {
 
     // ==== members ====
 
-    function membersList(Chain storage chain)
-        public
-        view
-        returns (uint256[] memory)
+    function topMembersList(Chain storage chain)
+        public view
+        returns (uint256[] memory list)
     {
-        uint256 len = getNumOfMembers(chain);
-        uint256 start = chain.nodes[0].next;
+        uint256 len = qtyOfTopMembers(chain);
+        list = new uint[](len);
 
-        return _subList(chain, start, len);
+        len = 0;
+        uint cur = chain.nodes[0].next;
+
+        _seqListOfQueue(chain, list, cur, len);
     }
 
-    function _subList(
+    function sortedMembersList(Chain storage chain)
+        public
+        view
+        returns (uint256[] memory list)
+    {
+        uint256 len = qtyOfMembers(chain);
+        list = new uint[](len);
+
+        uint cur = chain.nodes[0].next;
+        len = 0;
+
+        len = _seqListOfQueue(chain, list, cur, len);
+
+        cur = chain.para.head;
+        _seqListOfQueue(chain, list, cur, len);
+    }
+
+    function _seqListOfQueue(
         Chain storage chain,
-        uint256 start,
-        uint256 len
-    ) private view returns (uint256[] memory) {
-        uint256[] memory list = new uint256[](len);
-        uint256 i = 0;
-
-        uint256 next = start;
-
-        while (i < len) {
-            list[i] = next;
-            next = nextNode(chain, next);
+        uint[] memory list,
+        uint cur,
+        uint i
+    ) private view returns (uint) {
+        while (cur > 0) {
+            list[i] = cur;
+            cur = nextNode(chain, cur);
             i++;
         }
-
-        return list;
+        return i;
     }
 
-    // ==== backup ====
+    // ==== Backup / Restore ====
 
     function getSnapshot(Chain storage chain)
-        public
-        view
-        returns (Node[] memory)
+        public view
+        returns (Node[] memory list, Para memory para)
     {
-        uint256 len = getNumOfMembers(chain);
+        para = chain.para;
 
-        Node[] memory list = new Node[](len + 1);
+        uint256 len = qtyOfMembers(chain);
+        list = new Node[](len + 1);
 
         list[0] = chain.nodes[0];
 
         uint256 cur = chain.nodes[0].next;
-        uint256 i = 1;
+        len = 1;
+        len = _backupNodes(chain, list, cur, len);
 
-        while (i <= len) {
+        cur = para.head;
+        _backupNodes(chain, list, cur, len);
+    }
+
+    function _backupNodes(
+        Chain storage chain,
+        Node[] memory list,
+        uint cur,
+        uint i
+    ) private view returns (uint) {
+        while (cur > 0) {
             list[i] = chain.nodes[cur];
             cur = nextNode(chain, cur);
             i++;
         }
+        return i;
+    }
 
-        return list;
+    function restoreChain(
+        Chain storage chain, 
+        Node[] memory list, 
+        Para memory para
+    ) public {
+
+        chain.nodes[0] = list[0];
+        chain.para = para;
+
+        uint256 cur = list[0].next;
+        uint256 i = 1;
+        i = _restoreNodes(chain, list, cur, i);
+
+        cur = para.head;
+        _restoreNodes(chain, list, cur, i);
+    }
+
+    function _restoreNodes(
+        Chain storage chain,
+        Node[] memory list,
+        uint cur,
+        uint i
+    ) private returns (uint) {
+        while (cur > 0) {
+            chain.nodes[cur] = list[i];
+            cur = nextNode(chain, cur);
+            i++;
+        }
+        return i;
     }
 
     // ==== MockDeals ====
@@ -616,7 +937,7 @@ library TopChain {
         uint256 seller, 
         uint amount
     ) public {
-        changeAmt(chain, seller, amount, false);
+        increaseAmt(chain, seller, amount, false);
         
         if (chain.nodes[seller].amt == 0)
             delNode(chain, seller);
@@ -628,13 +949,11 @@ library TopChain {
         uint256 group,
         uint amount
     ) public {
-        if (!isMember(chain, buyer))
-            addNode(chain, buyer);
+        addNode(chain, buyer);
 
-        changeAmt(chain, buyer, amount, true);
+        increaseAmt(chain, buyer, amount, true);
 
         if (rootOf(chain, buyer) != group)
             top2Sub(chain, buyer, group);
     }
-
 }

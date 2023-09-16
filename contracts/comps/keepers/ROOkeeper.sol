@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -23,13 +23,13 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint d2,
         uint d3
     ) external onlyDK {
-        _getGK().getROO().updateOracle(seqOfOpt, d1, d2, d3);
+        _gk.getROO().updateOracle(seqOfOpt, d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt, uint256 caller)
         external onlyDK
     {
-        _getGK().getROO().execOption(seqOfOpt, caller);
+        _gk.getROO().execOption(seqOfOpt, caller);
     }
 
     function createSwap(
@@ -39,7 +39,7 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint seqOfPledge,
         uint256 caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfOptions _roo = _gk.getROO(); 
         IRegisterOfShares _ros = _gk.getROS();
         
@@ -56,14 +56,14 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint256 seqOfSwap,
         uint msgValue,
         uint caller
-    ) external onlyDK returns(uint40) {
-        IGeneralKeeper _gk = _getGK();
+    ) external onlyDK {
+        
         IRegisterOfShares _ros = _gk.getROS();
 
         SwapsRepo.Swap memory swap =
-            _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap, msgValue, _getGK().getCentPrice());
+            _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap, msgValue, _gk.getCentPrice());
 
-        uint buyer = _ros.getHeadOfShare(swap.seqOfPledge).shareholder;
+        uint buyer = _ros.getShare(swap.seqOfPledge).head.shareholder;
         
         require (caller == buyer, "ROOK.payOffSwap: wrong payer");
 
@@ -73,7 +73,10 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         if (swap.isPutOpt)
             _ros.increaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);
 
-        return _ros.getHeadOfShare(swap.seqOfTarget).shareholder;
+        _gk.saveToCoffer(
+            _ros.getShare(swap.seqOfTarget).head.shareholder, 
+            msgValue
+        );
     }
 
     function terminateSwap(
@@ -81,13 +84,13 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint256 seqOfSwap,
         uint caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
     
         SwapsRepo.Swap memory swap = 
             _gk.getROO().terminateSwap(seqOfOpt, seqOfSwap);
 
         IRegisterOfShares _ros = _gk.getROS();
-        uint seller = _ros.getHeadOfShare(swap.seqOfTarget).shareholder;
+        uint seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
 
         require (caller == seller, "ROOK.terminateSwap: wrong ");
 
@@ -110,11 +113,11 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint caller
     ) external onlyDK {
 
-        // IGeneralKeeper _gk = _getGK();
-        IRegisterOfShares _ros = _getGK().getROS();
+        // 
+        IRegisterOfShares _ros = _gk.getROS();
 
         SwapsRepo.Swap memory swap =
-            IInvestmentAgreement(ia).createSwap(_getGK().getROA().getFile(ia).head.seqOfMotion, 
+            IInvestmentAgreement(ia).createSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
                 seqOfDeal, paidOfTarget, seqOfPledge, caller);
         
         _ros.decreaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
@@ -127,8 +130,8 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint seqOfSwap,
         uint msgValue,
         uint caller
-    ) external onlyDK returns(uint) {
-        IGeneralKeeper _gk = _getGK();
+    ) external onlyDK {
+        
         IRegisterOfShares _ros = _gk.getROS();
 
         SwapsRepo.Swap memory swap = 
@@ -138,14 +141,17 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         _ros.increaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         _ros.increaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);
 
-        uint40 buyer = _ros.getHeadOfShare(swap.seqOfPledge).shareholder;
+        uint40 buyer = _ros.getShare(swap.seqOfPledge).head.shareholder;
 
         require(caller == buyer, "ROAK.payOffRD: not buyer");
 
         _ros.transferShare(swap.seqOfTarget, swap.paidOfTarget, swap.paidOfTarget, 
             buyer, swap.priceOfDeal, swap.priceOfDeal);
 
-        return buyer;
+        _gk.saveToCoffer(
+            _ros.getShare(swap.seqOfTarget).head.shareholder, 
+            msgValue
+        );
     }
 
     function pickupPledgedShare(
@@ -154,14 +160,14 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint seqOfSwap,
         uint caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfShares _ros = _gk.getROS();
 
         SwapsRepo.Swap memory swap = 
             IInvestmentAgreement(ia).terminateSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
                 seqOfDeal, seqOfSwap);
 
-        uint40 seller = _ros.getHeadOfShare(swap.seqOfTarget).shareholder;
+        uint40 seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
 
         require(caller == seller, "ROAK.pickupPledgedShare: not seller");
 

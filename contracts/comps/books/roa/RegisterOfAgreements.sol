@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -49,7 +49,7 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {
         require(block.timestamp >= _repo.frExecDeadline(ia),
             "ROA.computeFR: not reached frExecDeadline");
-        output = _frClaims[ia].computeFirstRefusal(seqOfDeal, _getGK().getROM());
+        output = _frClaims[ia].computeFirstRefusal(seqOfDeal, _gk.getROM());
         emit ComputeFirstRefusal(ia, seqOfDeal);
     }
 
@@ -102,8 +102,10 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     // ==== Mock ====
 
     function createMockOfIA(address ia) external onlyKeeper {
-        if (_mockOfIA[ia].getNumOfMembers() == 0) {
-            _mockOfIA[ia].restoreChain(_getGK().getROM().getSnapshot());
+        if (_mockOfIA[ia].qtyOfMembers() == 0) {
+            (TopChain.Node[] memory list, TopChain.Para memory para) = 
+                _gk.getROM().getSnapshot();
+            _mockOfIA[ia].restoreChain(list, para);
             _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia));
         }
     }

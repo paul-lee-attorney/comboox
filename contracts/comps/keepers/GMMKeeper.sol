@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -15,13 +15,13 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     using RulesParser for bytes32;
 
     modifier memberExist(uint256 acct) {
-        require(_getGK().getROM().isMember(acct), 
+        require(_gk.getROM().isMember(acct), 
             "BOGK.mf: NOT Member");
         _;
     }
 
     modifier memberOrDirector(uint256 acct) {
-        IGeneralKeeper _gk = _getGK();
+        
 
         require(_gk.getROM().isMember(acct) ||
             _gk.getROD().isDirector(acct), 
@@ -41,7 +41,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint candidate,
         uint nominator
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfDirectors _rod = _gk.getROD();
 
         require(_rod.hasNominationRight(seqOfPos, nominator),
@@ -59,7 +59,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint256 seqOfPos,
         uint caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
 
         IRegisterOfDirectors _rod = _gk.getROD();
 
@@ -79,7 +79,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK memberExist(proposer) {
-        IGeneralKeeper _gk = _getGK();
+        
         IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
@@ -116,7 +116,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint proposer
     ) external memberOrDirector(proposer){
 
-        IGeneralKeeper _gk = _getGK();
+        
         IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
@@ -133,7 +133,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint executor,
         uint proposer
     ) external onlyDK memberOrDirector(proposer) {
-        _getGK().getGMM().createAction(
+        _gk.getGMM().createAction(
             seqOfVR,
             targets,
             values,
@@ -152,14 +152,14 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint caller
     ) external onlyDK {
         _avoidanceCheck(seqOfMotion, caller);
-        _getGK().getGMM().entrustDelegate(seqOfMotion, delegate, caller);
+        _gk.getGMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint caller
     ) external onlyKeeper {
-        _getGK().getGMM().proposeMotionToGeneralMeeting(seqOfMotion, caller);
+        _gk.getGMM().proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
 
     function castVoteOfGM(
@@ -169,11 +169,11 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint256 caller
     ) external onlyDK {
         _avoidanceCheck(seqOfMotion, caller);
-        _getGK().getGMM().castVoteInGeneralMeeting(seqOfMotion, attitude, sigHash, caller);
+        _gk.getGMM().castVoteInGeneralMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
     function _avoidanceCheck(uint256 seqOfMotion, uint256 caller) private view {
-        MotionsRepo.Motion memory motion = _getGK().getGMM().getMotion(seqOfMotion);
+        MotionsRepo.Motion memory motion = _gk.getGMM().getMotion(seqOfMotion);
 
         if (motion.head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) 
@@ -187,7 +187,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     // ==== VoteCounting ====
 
     function voteCountingOfGM(uint256 seqOfMotion) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
 
         IRegisterOfMembers _rom = _gk.getROM();
         IMeetingMinutes _gmm = _gk.getGMM();
@@ -209,7 +209,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
             base.totalHead = (case0.sumOfHead - case3.sumOfHead);
             base.totalWeight = (case0.sumOfWeight - case3.sumOfWeight);
         } else {
-            base.totalHead = (_rom.getNumOfMembers() - case3.sumOfHead);
+            base.totalHead = uint32(_rom.qtyOfMembers() - case3.sumOfHead);
             base.totalWeight = (votesOfMembers - case3.sumOfWeight); 
             if (motion.votingRule.impliedConsent) {
                 base.supportHead = (base.totalHead - case0.sumOfHead);
@@ -284,7 +284,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint seqOfMotion,
         uint caller
     ) external onlyDK {
-        _getGK().getGMM().transferFund(
+        _gk.getGMM().transferFund(
             to,
             isCBP,
             amt,
@@ -303,7 +303,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint256 seqOfMotion,
         uint caller
     ) external returns (uint){
-        return _getGK().getGMM().execAction(
+        return _gk.getGMM().execAction(
             typeOfAction,
             targets,
             values,

@@ -27,6 +27,8 @@ async function main() {
 	const libDocsRepo = await deployTool(signers[0], "DocsRepo", libraries);
 	const libEnumerableSet = await deployTool(signers[0], "EnumerableSet", libraries);
 	const libFRClaims = await deployTool(signers[0], "FRClaims", libraries);
+	const libGoldChain = await deployTool(signers[0], "GoldChain", libraries);
+	const libOrdersRepo = await deployTool(signers[0], "OrdersRepo", libraries);
 	const libRolesRepo = await deployTool(signers[0], "RolesRepo", libraries);
 	const libRulesParser = await deployTool(signers[0], "RulesParser", libraries);
 	const libSwapsRepo = await deployTool(signers[0], "SwapsRepo", libraries);
@@ -190,6 +192,14 @@ async function main() {
 	}
 	let ropKeeper = await deployTool(signers[0], "ROPKeeper", libraries);
 
+	libraries = {
+		"RolesRepo": libRolesRepo.address,
+		"GoldChain": libGoldChain.address,
+		
+	}
+	let rocKeeper = await deployTool(signers[0], "ROCKeeper", libraries);
+
+
 	// ==== Books ====
 
 	libraries = {
@@ -248,6 +258,13 @@ async function main() {
 		"TopChain": libTopChain.address
 	}
 	let rom = await deployTool(signers[0], "RegisterOfMembers", libraries);
+
+	libraries = {
+		"RolesRepo": libRolesRepo.address,
+		"OrdersRepo": libOrdersRepo.address,
+		"GoldChain": libGoldChain.address,
+	}
+	let loo = await deployTool(signers[0], "ListOfOrders", libraries);
 
 	libraries = {};
 

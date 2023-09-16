@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2022 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -22,11 +22,18 @@ interface IROMKeeper {
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 
+    function payInCapital(
+        uint seqOfShare, 
+        uint amt, 
+        uint msgValue, 
+        uint caller
+    ) external;
+
     function decreaseCapital(
         uint256 seqOfShare,
         uint paid,
         uint par
     ) external;
 
-    // function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
+    function updatePaidInDeadline(uint256 seqOfShare, uint line) external;
 }

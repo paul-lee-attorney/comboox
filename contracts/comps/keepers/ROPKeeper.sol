@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -26,7 +26,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint execDays,
         uint256 caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfShares _ros = _gk.getROS();
 
         PledgesRepo.Head memory head = snOfPld.snParser();
@@ -53,7 +53,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint amt,
         uint256 caller
     ) external onlyDK {
-        _getGK().getROP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
+        _gk.getROP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
     }
 
     function refundDebt(
@@ -62,7 +62,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint amt,
         uint256 caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
 
         PledgesRepo.Pledge memory pld = 
             _gk.getROP().refundDebt(seqOfShare, seqOfPld, amt, caller);
@@ -76,7 +76,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint extDays,
         uint256 caller
     ) external onlyDK {
-        _getGK().getROP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
+        _gk.getROP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
     }
 
     function lockPledge(
@@ -85,7 +85,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         bytes32 hashLock,
         uint256 caller
     ) external onlyDK {        
-        _getGK().getROP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
+        _gk.getROP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
     }
 
     function releasePledge(
@@ -93,7 +93,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfPld, 
         string memory hashKey
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
 
         uint64 paid = _gk.getROP().releasePledge(seqOfShare, seqOfPld, hashKey);
         _gk.getROS().increaseCleanPaid(seqOfShare, paid);
@@ -115,7 +115,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
             _createIA(deal.head.seqOfShare, seqOfPld, version, primeKeyOfCaller, caller)
         );
 
-        IGeneralKeeper _gk = _getGK();
+        
 
         PledgesRepo.Pledge memory pld = 
             _gk.getROP().getPledge(deal.head.seqOfShare, seqOfPld);
@@ -141,14 +141,14 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         address primeKeyOfCaller,
         uint caller        
     ) private returns(address) {
-        IGeneralKeeper _gk = _getGK();
+        
 
         _gk.getROP().execPledge(seqOfShare, seqOfPld, caller);
 
         bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
             uint224(version << 192)); 
 
-        DocsRepo.Doc memory doc = _getRC().createDoc(
+        DocsRepo.Doc memory doc = _rc.createDoc(
             snOfDoc,
             primeKeyOfCaller
         );
@@ -156,7 +156,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         IAccessControl(doc.body).init(
             address(this),
             address(this),
-            address(_getRC()),
+            address(_rc),
             address(_gk)
         );
 
@@ -173,7 +173,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
 
         _ia.finalizeIA();
 
-        IGeneralKeeper _gk = _getGK();
+        
 
         RulesParser.VotingRule memory vr = 
             RulesParser.votingRuleParser(_gk.getSHA().getRule(deal.head.typeOfDeal));
@@ -211,7 +211,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         DealsRepo.Deal memory deal,
         uint caller
     ) private {
-        IGeneralKeeper _gk = _getGK();
+        
 
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -228,7 +228,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfPld,
         uint256 caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
 
         IRegisterOfPledges _rop = _gk.getROP();
 

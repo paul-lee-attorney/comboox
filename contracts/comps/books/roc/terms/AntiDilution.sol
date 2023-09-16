@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -95,7 +95,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         SharesRepo.Share memory share = 
-            _getGK().getROS().getShare(seqOfShare);
+            _gk.getROS().getShare(seqOfShare);
 
         require (isTriggered(deal, share.head.class), "AD.getGiftPaid: AD not triggered");
 

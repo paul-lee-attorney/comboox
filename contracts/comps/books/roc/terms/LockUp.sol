@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -104,14 +104,14 @@ contract LockUp is ILockUp, AccessControl {
 
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
         
-        uint seqOfMotion = _getGK().getROA().getHeadOfFile(ia).seqOfMotion;
+        uint seqOfMotion = _gk.getROA().getHeadOfFile(ia).seqOfMotion;
                
-        // uint256[] memory consentParties = _getGK().getGMM().
+        // uint256[] memory consentParties = _gk.getGMM().
         //     getCaseOfAttitude(seqOfMotion,1).voters;
 
         uint256[] memory parties = ISigPage(ia).getParties();
 
-        BallotsBox.Case memory consentCase = _getGK().getGMM().getCaseOfAttitude(seqOfMotion, 1);
+        BallotsBox.Case memory consentCase = _gk.getGMM().getCaseOfAttitude(seqOfMotion, 1);
 
         uint256[] memory supporters = 
             consentCase.voters.combine(consentCase.principals).merge(parties);

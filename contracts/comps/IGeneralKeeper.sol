@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -12,7 +12,6 @@ import "./common/components/IMeetingMinutes.sol";
 import "../lib/RolesRepo.sol";
 import "../lib/UsersRepo.sol";
 
-
 import "./keepers/IROCKeeper.sol";
 import "./keepers/IRODKeeper.sol";
 import "./keepers/IBMMKeeper.sol";
@@ -22,6 +21,7 @@ import "./keepers/IROAKeeper.sol";
 import "./keepers/IROOKeeper.sol";
 import "./keepers/IROPKeeper.sol";
 import "./keepers/ISHAKeeper.sol";
+import "./keepers/ILOOKeeper.sol";
 
 import "./books/roa/IRegisterOfAgreements.sol";
 import "./books/roc/IRegisterOfConstitution.sol";
@@ -30,6 +30,7 @@ import "./books/rom/IRegisterOfMembers.sol";
 import "./books/roo/IRegisterOfOptions.sol";
 import "./books/rop/IRegisterOfPledges.sol";
 import "./books/ros/IRegisterOfShares.sol";
+import "./books/loo/IListOfOrders.sol";
 
 interface IGeneralKeeper {
 
@@ -64,6 +65,8 @@ interface IGeneralKeeper {
     function getCompUser() external view returns (UsersRepo.User memory);
 
     function getCentPrice() external view returns(uint);
+
+    function saveToCoffer(uint acct, uint value) external;
 
     function pickupDeposit() external;
 
@@ -153,8 +156,9 @@ interface IGeneralKeeper {
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 
-    function decreaseCapital(uint256 seqOfShare, uint paid, uint par) 
-    external;
+    function payInCapital(uint seqOfShare, uint amt) external payable;
+
+    // function decreaseCapital(uint256 seqOfShare, uint paid, uint par) external;
 
     // ###################
     // ##   GMMKeeper   ##
@@ -363,6 +367,32 @@ interface IGeneralKeeper {
         uint seqOfMotion
     ) external;
 
+    // #################
+    // ##  LOOKeeper  ##
+    // #################
+
+    function regInvestor(uint groupRep, bytes32 idHash,uint seqOfLR) external;
+
+    function approveInvestor(uint userNo, uint seqOfLR) external;
+
+    function placeInitialOffer(
+        uint classOfShare,
+        uint execHours,
+        uint paid,
+        uint price,
+        uint seqOfLR
+    ) external;
+
+    function placePutOrder(
+        uint seqOfShare,
+        uint execHours,
+        uint paid,
+        uint price,
+        uint seqOfLR
+    ) external;
+
+    function placeCallOrder(uint classOfShare, uint paid, uint price) external payable;
+    
     // ###############
     // ##  Routing  ##
     // ###############
@@ -387,5 +417,5 @@ interface IGeneralKeeper {
 
     function getROS() external view returns (IRegisterOfShares);
 
-    // function getBOS() external view returns (IBookOfShares);
+    function getLOO() external view returns (IListOfOrders);
 }

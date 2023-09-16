@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2022 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2022 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 

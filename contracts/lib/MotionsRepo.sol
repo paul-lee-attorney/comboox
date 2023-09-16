@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -264,7 +264,7 @@ library MotionsRepo {
                 return true;
 
         if (gr.proposeHeadRatioOfMembers > 0 &&
-            (voter.repHead + 1) * 10000 / _rom.getNumOfMembers() >= 
+            (voter.repHead + 1) * 10000 / _rom.qtyOfMembers() >= 
                 gr.proposeHeadRatioOfMembers)
                     return true;
         

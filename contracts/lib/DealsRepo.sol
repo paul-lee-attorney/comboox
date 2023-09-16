@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -398,7 +398,7 @@ library DealsRepo {
             state: uint8(SwapsRepo.StateOfSwap.Issued)
         });
 
-        SharesRepo.Head memory headOfPledge = _ros.getHeadOfShare(swap.seqOfPledge);
+        SharesRepo.Head memory headOfPledge = _ros.getShare(swap.seqOfPledge).head;
 
         require(_gmm.getBallot(seqOfMotion, _gmm.getDelegateOf(seqOfMotion, 
             headOfPledge.shareholder)).attitude == 2,
@@ -407,7 +407,7 @@ library DealsRepo {
         require (deal.body.paid >= repo.swaps[seqOfDeal].sumPaidOfTarget() +
             swap.paidOfTarget, "DR.createSwap: paidOfTarget overflow");
 
-        swap.paidOfPledge = (swap.priceOfDeal - _ros.getHeadOfShare(swap.seqOfTarget).priceOfPaid) * 
+        swap.paidOfPledge = (swap.priceOfDeal - _ros.getShare(swap.seqOfTarget).head.priceOfPaid) * 
             swap.paidOfTarget / headOfPledge.priceOfPaid;
 
         return repo.swaps[seqOfDeal].regSwap(swap);
@@ -472,9 +472,9 @@ library DealsRepo {
         require(block.timestamp < deal.head.closingDeadline,
             "DR.payApprDeal: missed closingDeadline");
 
-        require((uint(deal.body.paid * deal.head.priceOfPaid) + 
-            uint((deal.body.par - deal.body.paid) * deal.head.priceOfPar)) * 
-            centPrice / 100 <= msgValue, "DR.payApprDeal: insufficient amt");
+        require((uint(deal.body.paid) * deal.head.priceOfPaid + 
+            uint(deal.body.par - deal.body.paid) * deal.head.priceOfPar) * 
+            centPrice / 100 <= msgValue, "DR.payApprDeal: insufficient msgValue");
 
         deal.body.state = uint8(StateOfDeal.Closed);
 

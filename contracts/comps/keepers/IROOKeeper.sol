@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -38,7 +38,7 @@ interface IROOKeeper {
         uint256 seqOfSwap,
         uint msgValue,
         uint caller
-    ) external returns(uint40);
+    ) external;
 
     function terminateSwap(
         uint256 seqOfOpt, 
@@ -62,7 +62,7 @@ interface IROOKeeper {
         uint seqOfSwap,
         uint msgValue,
         uint caller
-    ) external returns(uint);
+    ) external;
 
     function pickupPledgedShare(
         address ia,

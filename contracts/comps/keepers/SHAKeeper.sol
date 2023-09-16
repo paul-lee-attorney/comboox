@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -26,7 +26,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfAgreements _roa = _gk.getROA();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
@@ -57,7 +57,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint paid,
         uint par
     ) private view {
-        IGeneralKeeper _gk = _getGK();
+        
  
         IAlongs _al = dragAlong
             ? IAlongs(_gk.getSHA().
@@ -82,7 +82,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         }
 
         if(_al.getLinkRule(deal.head.seller).proRata) {
-            IRegisterOfMembers _rom = _getGK().getROM();
+            IRegisterOfMembers _rom = _gk.getROM();
             
             if (_rom.basedOnPar())
                 require ( par <= 
@@ -100,7 +100,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfAgreements _roa = _gk.getROA();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -163,7 +163,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         _ia.regDeal(deal);
 
-        _getGK().getROS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
+        _gk.getROS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
     }
 
     // ======== AntiDilution ========
@@ -175,7 +175,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfShares _ros = _gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -283,7 +283,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfDeal,
         uint caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfShares _ros = _gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -308,7 +308,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         bytes32 sigHash
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         require(!_ia.isSeller(true, caller), 
@@ -341,7 +341,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfDeal,
         uint256 caller
     ) external onlyDK {
-        IGeneralKeeper _gk = _getGK();
+        
         IRegisterOfMembers _rom = _gk.getROM();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 

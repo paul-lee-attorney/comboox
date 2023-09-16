@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2023 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -149,12 +149,12 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
 
     function hasTitle(uint acct, uint title) external view returns (bool flag)
     {
-        flag = _repo.hasTitle(acct, title, _getGK().getROM());
+        flag = _repo.hasTitle(acct, title, _gk.getROM());
     }
 
     function hasNominationRight(uint seqOfPos, uint acct) external view returns (bool)
     {
-        return _repo.hasNominationRight(seqOfPos, acct, _getGK().getROM());
+        return _repo.hasNominationRight(seqOfPos, acct, _gk.getROM());
     }
 
     // ==== seatsCalculator ====
