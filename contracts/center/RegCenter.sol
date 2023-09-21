@@ -342,22 +342,28 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         UsersRepo.Rule memory pr = _users.getPlatformRule();
         
         // uint40 fee = uint40(fee);
-        require(fee >= pr.floor, "RC.chargeFee: lower than floor");
 
-        uint offAmt = t.primeKey.coupon * rr.discount * fee / 10000 + rr.coupon;
+        uint floorPrice = uint(pr.floor) * 10 ** 9;
+
+        require(fee >= floorPrice, "RC.chargeFee: lower than floor");
+
+        uint offAmt = t.primeKey.coupon * rr.discount * fee / 10000 + rr.coupon * 10 ** 9;
         
-        fee = (offAmt < (fee - pr.floor)) 
+        fee = (offAmt < (fee - floorPrice)) 
             ? (fee - offAmt) 
-            : pr.floor;
+            : floorPrice;
+
+        uint giftAmt = uint(rr.gift) * 10 ** 9;
 
         if (ownerAddr == authorAddr || pr.rate == 0)
-            if (fee > rr.gift)
-                _transfer(t.primeKey.pubKey, authorAddr, uint(fee - rr.gift) * 10 ** 9);
+            if (fee > giftAmt)
+                _transfer(t.primeKey.pubKey, authorAddr, fee - giftAmt);
         else {
-            _transfer(t.primeKey.pubKey, ownerAddr, uint(fee * pr.rate) * 10 ** 5);
+            _transfer(t.primeKey.pubKey, ownerAddr, fee * pr.rate / 10000);
+            
             uint balaceAmt = fee * (10000 - pr.rate) / 10000;
-            if ( balaceAmt > rr.gift)
-                _transfer(t.primeKey.pubKey, authorAddr, uint(balaceAmt - rr.gift) * 10 ** 9);
+            if ( balaceAmt > giftAmt)
+                _transfer(t.primeKey.pubKey, authorAddr, balaceAmt - giftAmt);
         }
 
         t.primeKey.coupon++;
