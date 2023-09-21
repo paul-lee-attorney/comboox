@@ -12,13 +12,17 @@ import "../../common/access/AccessControl.sol";
 
 contract ListOfOrders is IListOfOrders, AccessControl {
     using OrdersRepo for OrdersRepo.Repo;
+    using OrdersRepo for OrdersRepo.Deal;
     using GoldChain for GoldChain.Chain;
+    using GoldChain for GoldChain.Node;
 
     OrdersRepo.Repo private _repo;
 
     //#################
     //##  Write I/O  ##
     //#################
+
+    // ==== Investor ====
 
     function regInvestor(
         uint userNo,
@@ -37,45 +41,94 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         emit ApproveInvestor(userNo, verifier);
     }        
 
-    function placePutOrder(
-        uint offeror,
+    function revokeInvestor(
+        uint userNo,
+        uint verifier
+    ) external onlyDK {
+        _repo.revokeInvestor(userNo, verifier);
+        emit RevokeInvestor(userNo, verifier);
+    }
+
+    // ==== Order ====
+
+    function placeSellOrder(
         uint classOfShare,
         uint seqOfShare,
-        uint execHours,
+        uint votingWeight,
         uint paid,
-        uint price
+        uint price,
+        uint execHours,
+        bool sortFromHead
     ) external onlyDK {
-        GoldChain.Order memory order = 
-            _repo.placePutOrder(
-                offeror, 
-                classOfShare, 
-                seqOfShare, 
-                execHours, 
-                paid, 
-                price
-            );
+        bytes32 sn = _repo.placeSellOrder(
+            classOfShare, 
+            seqOfShare,
+            votingWeight,
+            paid, 
+            price,
+            execHours,
+            sortFromHead 
+        );
 
-        emit PlacePutOrder(GoldChain.codifyOrder(order), order.expireDate);
-    }    
+        emit PlaceSellOrder(sn);
+    }
 
-    function placeCallOrder(
-        uint offeror,
+    function withdrawSellOrder(
+        uint classOfShare,
+        uint seqOfOrder
+    ) external onlyDK returns(GoldChain.Node memory order) {
+
+        order = _repo.withdrawSellOrder(
+            classOfShare, 
+            seqOfOrder
+        );
+
+        emit WithdrawSellOrder(order.codifyNode());
+    }
+
+
+    function placeBuyOrder(
+        uint caller,
         uint classOfShare,
         uint paid,
         uint price
     ) external onlyDK returns (
         OrdersRepo.Deal[] memory deals, 
-        GoldChain.Order memory call
+        GoldChain.Node[] memory expired
     ) {
-        (deals, call) = _repo.placeCallOrder(
-            offeror,
-            classOfShare,
-            paid,
-            price
-        );
+        OrdersRepo.Deal memory balance;
 
-        emit PlaceCallOrder(GoldChain.codifyOrder(call), call.paid);
+        (deals, balance, expired) = 
+            _repo.placeBuyOrder(
+                caller,
+                classOfShare,
+                paid,
+                price
+            );
+
+        emit PlaceBuyOrder(caller, classOfShare, paid, price);
+
+        uint len = deals.length;
+        while (len > 0) {
+            emit Deal(deals[len - 1].codifyDeal());
+            len--;
+        }
+
+        len = expired.length;
+        while (len > 0) {
+            emit OfferExpired(expired[len - 1].codifyNode());
+            len--;
+        }
+        
+        if (balance.paid > 0)
+            emit GetBalance(balance.codifyDeal());
+
     }
+
+    // function removeDeals() external onlyDK {
+    //     _repo.removeDeals();
+    // }
+
 
     //################
     //##  Read I/O  ##
@@ -101,128 +154,81 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         return _repo.getQtyOfInvestors();
     }
 
-    function getInvList() 
+    function investorList() 
         external view returns(uint[] memory) 
     {
-        return _repo.getInvList();
+        return _repo.investorList();
     }
 
-    function getInvestorsList() 
+    function investorInfoList() 
         external view returns(OrdersRepo.Investor[] memory) 
     {
-        return _repo.getInvestorsList();
+        return _repo.investorInfoList();
     }
 
-    // ==== Deals ====
+    // ==== Chain ====
 
-    function getCounterOfDeals(
-        uint classOfShare  
-    ) external view returns(uint32) {   
-        return _repo.getCounterOfDeals(classOfShare);
-    }
-
-    function getDeal(
-        uint classOfShare,
-        uint seqOfDeal
-    ) external view returns(OrdersRepo.Deal memory ) {   
-        return _repo.getDeal(classOfShare, seqOfDeal);
-    }
-
-    function getDealsList(
-        uint classOfShare,
-        uint lastDealSeq,
-        uint len
-    ) external view returns(OrdersRepo.Deal[] memory ) {
-        return _repo.getDealsList(classOfShare, lastDealSeq, len);
-    }
-
-    // ==== List ====
-
-    function getHeadSeqOfList(
-        uint classOfShare,
-        bool isPut
+    function counterOfOffers(
+        uint classOfShare
     ) external view returns (uint32) {
-        
-        GoldChain.Chain storage chain = isPut
-            ? _repo.ordersOfClass[classOfShare].putOrders
-            : _repo.ordersOfClass[classOfShare].callOrders;
-
-        return chain.getHeadSeqOfList();
+        return _repo.ordersOfClass[classOfShare].counter();
     }
 
-    function getTailSeqOfList(
-        uint classOfShare,
-        bool isPut
+    function headOfList(
+        uint classOfShare
     ) external view returns (uint32) {
-
-        GoldChain.Chain storage chain = isPut
-            ? _repo.ordersOfClass[classOfShare].putOrders
-            : _repo.ordersOfClass[classOfShare].callOrders;
-
-        return chain.getTailSeqOfList();
+        return _repo.ordersOfClass[classOfShare].head();
     }
 
-    function getLengthOfList(
-        uint classOfShare,
-        bool isPut
+    function tailOfList(
+        uint classOfShare
+    ) external view returns (uint32) {
+        return _repo.ordersOfClass[classOfShare].tail();
+    }
+
+    function lengthOfList(
+        uint classOfShare
     ) external view returns (uint) {
-
-        GoldChain.Chain storage chain = isPut
-            ? _repo.ordersOfClass[classOfShare].putOrders
-            : _repo.ordersOfClass[classOfShare].callOrders;
-
-        return chain.getLengthOfList();
+        return _repo.ordersOfClass[classOfShare].length();
     }
 
-    function getList(
-        uint classOfShare,
-        bool isPut
-    ) external view returns (GoldChain.Order[] memory) {
+    function getSeqList(
+        uint classOfShare
+    ) external view returns (uint[] memory) {
+        return _repo.ordersOfClass[classOfShare].getSeqList();
+    }
 
-        GoldChain.Chain storage chain = isPut
-            ? _repo.ordersOfClass[classOfShare].putOrders
-            : _repo.ordersOfClass[classOfShare].callOrders;
-
-        return chain.getList();
+    function getChain(
+        uint classOfShare
+    ) external view returns (GoldChain.NodeWrap[] memory) {
+        return _repo.ordersOfClass[classOfShare].getChain();
     }
 
     // ==== Order ====
 
-    function getCounterOfOrders(
+    function isOrder(
         uint classOfShare,
-        bool isPut
-    ) external view returns (uint32) {
-
-        GoldChain.Chain storage chain = isPut
-            ? _repo.ordersOfClass[classOfShare].putOrders
-            : _repo.ordersOfClass[classOfShare].callOrders;
-
-        return chain.getCounterOfOrders();
+        uint seqOfOrder
+    ) external view returns (bool) {
+        return _repo.ordersOfClass[classOfShare].isNode(seqOfOrder);
     }
     
     function getOrder(
         uint classOfShare,
-        bool isPut,
         uint seqOfOrder
-    ) external view returns (GoldChain.Order memory ) {
-        
-        GoldChain.Chain storage chain = isPut
-            ? _repo.ordersOfClass[classOfShare].putOrders
-            : _repo.ordersOfClass[classOfShare].callOrders;
-
-        return chain.getOrder(seqOfOrder);
+    ) external view returns (GoldChain.Node memory ) {
+        return _repo.ordersOfClass[classOfShare].
+            getNode(seqOfOrder);
     }
 
-    function getChain(
-        uint classOfShare,
-        bool isPut
-    ) external view returns (GoldChain.Order[] memory) {
+    // ==== Class ====
 
-        GoldChain.Chain storage chain = isPut
-            ? _repo.ordersOfClass[classOfShare].putOrders
-            : _repo.ordersOfClass[classOfShare].callOrders;
+    function isClass(uint classOfShare) external view returns(bool) {
+        return _repo.isClass(classOfShare);
+    }
 
-        return chain.getChain();        
+    function getClassesList() external view returns(uint[] memory) {
+        return _repo.getClassesList();
     }
 
 }

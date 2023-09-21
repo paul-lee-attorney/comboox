@@ -12,7 +12,6 @@ import "./IRegisterOfMembers.sol";
 import "../../common/access/AccessControl.sol";
 
 contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
-    using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
@@ -64,8 +63,8 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     function addMember(uint256 acct) external onlyROS {
-        _repo.chain.addNode(acct);
-        emit AddMember(acct, _repo.chain.qtyOfMembers());
+        if (_repo.addMember(acct))
+            emit AddMember(acct, _repo.chain.qtyOfMembers());
     }
 
     function addShareToMember(
@@ -200,11 +199,18 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.capAtDate(date); 
     }
 
-   function sharesClipOfMember(uint256 acct)
+   function equityOfMember(uint256 acct)
         external view
         returns (Checkpoints.Checkpoint memory)
     {
-        return _repo.sharesClipOfMember(acct);
+        return _repo.equityOfMember(acct);
+    }
+
+   function equityAtDate(uint256 acct, uint date)
+        external view
+        returns (Checkpoints.Checkpoint memory)
+    {
+        return _repo.equityAtDate(acct, date);
     }
 
     function votesInHand(uint256 acct)
@@ -259,10 +265,10 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.qtyOfClassMember(class);
     }
 
-    function membersOfClass(uint class)
+    function getMembersOfClass(uint class)
         external view returns(uint256[] memory)
     {
-        return _repo.membersOfClass(class);
+        return _repo.getMembersOfClass(class);
     }
 
     // ---- TopChain ----
@@ -283,11 +289,23 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.chain.totalVotes();
     }
 
-    // ==== group ====
-
     function controllor() external view returns (uint40) {
         return _repo.chain.head();
     }
+
+    function tailOfChain() external view returns (uint40) {
+        return _repo.chain.tail();
+    }
+
+    function headOfQueue() external view returns (uint40) {
+        return _repo.chain.headOfQueue();
+    }
+
+    function tailOfQueue() external view returns (uint40) {
+        return _repo.chain.tailOfQueue();
+    }
+
+    // ==== group ====
 
     function groupRep(uint256 acct) external view returns (uint40) {
         return _repo.chain.rootOf(acct);

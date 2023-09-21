@@ -47,6 +47,13 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         IRegisterOfMembers _rom = _gk.getROM();
 
         share = _repo.addShare(share);
+        _repo.increaseEquityOfClass(
+            true,
+            share.head.class,
+            share.body.paid,
+            share.body.par,
+            0
+        );
 
         _rom.addMember(share.head.shareholder);
         _rom.capIncrease(
@@ -191,7 +198,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             share.head.class,
             paid,
             par,
-            paid
+            0
         );
 
         _gk.getROM().capIncrease(
@@ -210,8 +217,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint256 seqOfShare, 
         uint paid
     ) external {
-
-        
 
         require(msg.sender == address(_gk.getROP()) ||
             _gk.isKeeper(msg.sender), 
@@ -242,8 +247,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint256 seqOfShare, 
         uint paid
     ) external {
-
-        
 
         require(msg.sender == address(_gk.getROP()) ||
             _gk.isKeeper(msg.sender), "ROS.DCA: neither keeper nor ROP");
@@ -288,6 +291,30 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         emit UpdatePaidInDeadline(seqOfShare, deadline);
     }
 
+    // ==== EquityOfClass ====
+
+    function increaseEquityOfClass(
+        bool isIncrease,
+        uint classOfShare,
+        uint deltaPaid,
+        uint deltaPar,
+        uint deltaCleanPaid
+    ) external onlyKeeper {
+        _repo.increaseEquityOfClass(
+            isIncrease,
+            classOfShare,
+            deltaPaid,
+            deltaPar,
+            deltaCleanPaid
+        );
+
+        uint amt = (deltaPaid << 128) + uint128(deltaPar << 64) + uint64(deltaCleanPaid);
+
+        emit IncreaseEquityOfClass(isIncrease, classOfShare, amt);
+    }
+
+
+
     // ==== private funcs ====
 
     function _payInCapital(
@@ -298,6 +325,13 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         IRegisterOfMembers _rom = _gk.getROM();
 
         _repo.payInCapital(share.head.seqOfShare, amount);
+        _repo.increaseEquityOfClass(
+            true,
+            share.head.class,
+            amount,
+            0,
+            0
+        );
 
         _rom.capIncrease(
             share.head.votingWeight,

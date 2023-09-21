@@ -177,6 +177,10 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         _users.setBackupKey(bKey, msg.sender);
     }
 
+    function upgradeBackupToPrime() external {
+        _users.upgradeBackupToPrime(msg.sender);
+    }
+
     function setRoyaltyRule(bytes32 snOfRoyalty) external {
         _users.setRoyaltyRule(snOfRoyalty, msg.sender);
     }
@@ -213,11 +217,11 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         address primeKeyOfOwner = msg.sender;
         address rc = address(this);
         
-        address gk = _createDocAtLatestVersion(18, primeKeyOfOwner);
+        address gk = _createDocAtLatestVersion(20, primeKeyOfOwner);
         IAccessControl(gk).init(primeKeyOfOwner, rc, rc, gk);
         IGeneralKeeper(gk).createCorpSeal();
 
-        address[10] memory keepers = 
+        address[11] memory keepers = 
             _deployKeepers(primeKeyOfOwner, rc, gk);
 
         _deployBooks(keepers, primeKeyOfOwner, rc, gk);
@@ -229,10 +233,10 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         address primeKeyOfOwner, 
         address rc,
         address gk
-    ) private returns (address[10] memory keepers) {
+    ) private returns (address[11] memory keepers) {
         keepers[0] = primeKeyOfOwner;
         uint i = 1;
-        while (i < 10) {
+        while (i < 11) {
             keepers[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
             IAccessControl(keepers[i]).init(primeKeyOfOwner, gk, rc, gk);
             IGeneralKeeper(gk).regKeeper(i, keepers[i]);
@@ -241,17 +245,17 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
     }
 
     function _deployBooks(
-        address[10] memory keepers,
+        address[11] memory keepers,
         address primeKeyOfOwner, 
         address rc,
         address gk
     ) private {
-        address[9] memory books;
-        uint8[9] memory types = [10, 11, 12, 13, 12, 14, 15, 16, 17];
-        uint8[9] memory seqOfDK = [1, 2, 3, 0, 5, 6, 7, 8, 0];
+        address[10] memory books;
+        uint8[10] memory types = [11, 12, 13, 14, 13, 15, 16, 17, 18, 19];
+        uint8[10] memory seqOfDK = [1, 2, 3, 0, 5, 6, 7, 8, 0, 10];
 
         uint i;
-        while (i < 9) {
+        while (i < 10) {
             books[i] = _createDocAtLatestVersion(types[i], primeKeyOfOwner);
             IAccessControl(books[i]).init(primeKeyOfOwner, keepers[seqOfDK[i]], rc, gk);
             IGeneralKeeper(gk).regBook(i+1, books[i]);
@@ -337,22 +341,23 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         UsersRepo.Rule memory pr = _users.getPlatformRule();
         
-        uint40 unitPrice = uint40(fee);
-        require(unitPrice >= pr.floor, "RC.chargeFee: unitPrice lower than floor");
+        // uint40 fee = uint40(fee);
+        require(fee >= pr.floor, "RC.chargeFee: lower than floor");
 
-        uint40 offAmt = t.primeKey.coupon * uint40(rr.discount) * unitPrice / 10000 + rr.coupon;
+        uint offAmt = t.primeKey.coupon * rr.discount * fee / 10000 + rr.coupon;
         
-        unitPrice = (offAmt < (unitPrice - pr.floor)) 
-            ? (unitPrice - offAmt) 
+        fee = (offAmt < (fee - pr.floor)) 
+            ? (fee - offAmt) 
             : pr.floor;
 
         if (ownerAddr == authorAddr || pr.rate == 0)
-            if (unitPrice > rr.gift)
-                _transfer(t.primeKey.pubKey, authorAddr, uint(unitPrice - rr.gift) * 10 ** 9);
+            if (fee > rr.gift)
+                _transfer(t.primeKey.pubKey, authorAddr, uint(fee - rr.gift) * 10 ** 9);
         else {
-            _transfer(t.primeKey.pubKey, ownerAddr, uint(unitPrice * pr.rate) * 10 ** 5);
-            if (unitPrice > rr.gift)
-                _transfer(t.primeKey.pubKey, authorAddr, uint((unitPrice - rr.gift) * (10000 - pr.rate)) * 10 ** 5);
+            _transfer(t.primeKey.pubKey, ownerAddr, uint(fee * pr.rate) * 10 ** 5);
+            uint balaceAmt = fee * (10000 - pr.rate) / 10000;
+            if ( balaceAmt > rr.gift)
+                _transfer(t.primeKey.pubKey, authorAddr, uint(balaceAmt - rr.gift) * 10 ** 9);
         }
 
         t.primeKey.coupon++;

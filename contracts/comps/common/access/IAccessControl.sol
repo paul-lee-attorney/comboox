@@ -96,6 +96,8 @@ interface IAccessControl {
 
     function getOwner() external view returns (address);
 
+    function getDK() external view returns (address);
+
     function isFinalized() external view returns (bool);
 
     function getRoleAdmin(bytes32 role) external view returns (address);

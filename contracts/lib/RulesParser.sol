@@ -228,7 +228,8 @@ library RulesParser {
         uint32 ceilingPrice;
         uint32 floorPrice;
         uint16 lockupDays;
-        uint32 offPrice;
+        uint16 offPrice;
+        uint16 votingWeight;
     }
 
     function listingRuleParser(bytes32 sn) public pure returns(ListingRule memory rule) {
@@ -244,7 +245,8 @@ library RulesParser {
             ceilingPrice: uint32(_sn >> 80),
             floorPrice: uint32(_sn >> 48),
             lockupDays: uint16(_sn >> 32),
-            offPrice: uint32(_sn)
+            offPrice: uint16(_sn >> 16),
+            votingWeight: uint16(_sn)
         });
     }    
 

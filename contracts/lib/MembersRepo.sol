@@ -7,14 +7,12 @@
 
 pragma solidity ^0.8.8;
 
-import "./ArrayUtils.sol";
 import "./Checkpoints.sol";
 import "./EnumerableSet.sol";
 import "./SharesRepo.sol";
 import "./TopChain.sol";
 
 library MembersRepo {
-    using ArrayUtils for uint256[];
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -42,14 +40,11 @@ library MembersRepo {
         cat: basedOnPar;
     } */
 
-    struct Class {
-        EnumerableSet.UintSet membersList;
-    }
-
     struct Repo {
         TopChain.Chain chain;
         mapping(uint256 => Member) members;
-        mapping(uint => Class) classes;
+        // class => membersList
+        mapping(uint => EnumerableSet.UintSet) membersOfClass;
     }
 
     //###############
@@ -78,7 +73,7 @@ library MembersRepo {
 
         if (repo.chain.basedOnPar() != _basedOnPar) {
             uint256[] memory members = 
-                repo.classes[0].membersList.values();
+                repo.membersOfClass[0].values();
             uint256 len = members.length;
 
             while (len > 0) {
@@ -104,6 +99,16 @@ library MembersRepo {
 
     // ==== Member ====
 
+    function addMember(
+        Repo storage repo, 
+        uint acct
+    ) public returns (bool flag) {
+        if (repo.membersOfClass[0].add(acct)) {
+            repo.chain.addNode(acct);
+            flag = true;
+        }
+    }
+
     function delMember(
         Repo storage repo, 
         uint acct
@@ -115,11 +120,11 @@ library MembersRepo {
         uint len = classes.length;
         
         while (len > 0) {
-            repo.classes[classes[len - 1]].membersList.remove(acct);
+            repo.membersOfClass[classes[len - 1]].remove(acct);
             len--;
         }
 
-        repo.classes[0].membersList.remove(acct);
+        repo.membersOfClass[0].remove(acct);
 
         delete repo.members[acct];
     }
@@ -133,7 +138,7 @@ library MembersRepo {
 
         if (member.sharesInHand.add(head.codifyHead())
             && member.classesBelonged.add(head.class))
-                repo.classes[head.class].membersList.add(head.shareholder);
+                repo.membersOfClass[head.class].add(head.shareholder);
     }
 
     function removeShareFromMember(
@@ -160,7 +165,7 @@ library MembersRepo {
             }
 
             if(!flag) {
-                repo.classes[head.class].membersList.remove(head.shareholder);
+                repo.membersOfClass[head.class].remove(head.shareholder);
                 member.classesBelonged.remove(head.class);
             }
         }
@@ -193,16 +198,6 @@ library MembersRepo {
         Checkpoints.Checkpoint memory cp = 
             repo.members[acct].votesInHand.latest();
 
-        if (isIncrease) {
-            cp.paid += uint64(deltaPaid);
-            cp.par += uint64(deltaPar);
-            cp.cleanPaid += uint64(deltaClean);
-        } else {
-            cp.paid -= uint64(deltaPaid);
-            cp.par -= uint64(deltaPar);
-            cp.cleanPaid -= uint64(deltaClean);
-        }
-
         if (cp.votingWeight != votingWeight)
             cp.votingWeight = _calWeight(
                 repo, 
@@ -212,6 +207,16 @@ library MembersRepo {
                 deltaPar, 
                 isIncrease
             );
+
+        if (isIncrease) {
+            cp.paid += uint64(deltaPaid);
+            cp.par += uint64(deltaPar);
+            cp.cleanPaid += uint64(deltaClean);
+        } else {
+            cp.paid -= uint64(deltaPaid);
+            cp.par -= uint64(deltaPar);
+            cp.cleanPaid -= uint64(deltaClean);
+        }
 
         repo.members[acct].votesInHand.push(
             cp.votingWeight, 
@@ -231,14 +236,6 @@ library MembersRepo {
         Checkpoints.Checkpoint memory cp = 
             repo.members[0].votesInHand.latest();
 
-        if (isIncrease) {
-            cp.paid += uint64(deltaPaid);
-            cp.par += uint64(deltaPar);
-        } else {
-            cp.paid -= uint64(deltaPaid);
-            cp.par -= uint64(deltaPar);
-        }
-
         if (cp.votingWeight != votingWeight)
             cp.votingWeight = _calWeight(
                 repo, 
@@ -248,6 +245,14 @@ library MembersRepo {
                 deltaPar, 
                 isIncrease
             );
+
+        if (isIncrease) {
+            cp.paid += uint64(deltaPaid);
+            cp.par += uint64(deltaPar);
+        } else {
+            cp.paid -= uint64(deltaPaid);
+            cp.par -= uint64(deltaPar);
+        }
 
         updateOwnersEquity(repo, cp);
 
@@ -296,19 +301,19 @@ library MembersRepo {
         Repo storage repo,
         uint acct
     ) public view returns(bool) {
-        return repo.classes[0].membersList.contains(acct);
+        return repo.membersOfClass[0].contains(acct);
     }
     
     function qtyOfMembers(
         Repo storage repo
     ) public view returns(uint) {
-        return repo.classes[0].membersList.length();
+        return repo.membersOfClass[0].length();
     }
 
     function membersList(
         Repo storage repo
     ) public view returns(uint[] memory) {
-        return repo.classes[0].membersList.values();
+        return repo.membersOfClass[0].values();
     }
 
     // ---- Votes ----
@@ -326,11 +331,23 @@ library MembersRepo {
         return repo.members[0].votesInHand.getAtDate(date);
     }
 
-    function sharesClipOfMember(
+    function equityOfMember(
         Repo storage repo,
         uint acct
-    ) public view memberExist(repo, acct) returns(Checkpoints.Checkpoint memory) {
+    ) public view memberExist(repo, acct) returns(
+        Checkpoints.Checkpoint memory
+    ) {
         return repo.members[acct].votesInHand.latest();
+    }
+
+    function equityAtDate(
+        Repo storage repo,
+        uint acct,
+        uint date
+    ) public view memberExist(repo, acct) returns(
+        Checkpoints.Checkpoint memory
+    ) {
+        return repo.members[acct].votesInHand.getAtDate(date);
     }
 
     function votesAtDate(
@@ -368,14 +385,14 @@ library MembersRepo {
         Repo storage repo, 
         uint class
     ) public view returns(uint256) {
-        return repo.classes[class].membersList.length();
+        return repo.membersOfClass[class].length();
     }
 
-    function membersOfClass(
+    function getMembersOfClass(
         Repo storage repo, 
         uint class
     ) public view returns(uint256[] memory) {
-        return repo.classes[class].membersList.values();
+        return repo.membersOfClass[class].values();
     }
 
     // ---- Share ----

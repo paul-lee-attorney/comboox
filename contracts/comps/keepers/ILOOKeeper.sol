@@ -22,11 +22,17 @@ interface ILOOKeeper {
     function regInvestor(
         uint userNo,
         uint groupRep,
-        bytes32 idHash,
-        uint seqOfLR
+        bytes32 idHash
+        // uint seqOfLR
     ) external;
 
     function approveInvestor(
+        uint userNo,
+        uint caller,
+        uint seqOfLR
+    ) external;
+
+    function revokeInvestor(
         uint userNo,
         uint caller,
         uint seqOfLR
@@ -41,16 +47,30 @@ interface ILOOKeeper {
         uint seqOfLR
     ) external;
 
-    function placePutOrder(
+    function withdrawInitialOffer(
+        uint caller,
+        uint classOfShare,
+        uint seqOfOrder,
+        uint seqOfLR
+    ) external;
+
+    function placeSellOrder(
         uint caller,
         uint seqOfShare,
         uint execHours,
         uint paid,
         uint price,
-        uint seqOfLR
+        uint seqOfLR,
+        bool sortFromHead
     ) external;
 
-    function placeCallOrder(
+    function withdrawSellOrder(
+        uint caller,
+        uint classOfShare,
+        uint seqOfOrder
+    ) external;
+
+    function placeBuyOrder(
         uint caller,
         uint classOfShare,
         uint paid,

@@ -158,10 +158,10 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function payOffApprovedDeal(
         uint seqOfDeal,
         uint msgValue,
-        uint centPrice,
+        // uint centPrice,
         uint caller
     ) external returns (bool flag){
-        flag = _repo.payOffApprovedDeal(seqOfDeal, msgValue, centPrice, caller);
+        flag = _repo.payOffApprovedDeal(seqOfDeal, caller);
         emit PayOffApprovedDeal(seqOfDeal, msgValue);
     }
 

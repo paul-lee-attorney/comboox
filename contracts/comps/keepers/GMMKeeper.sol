@@ -106,6 +106,22 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         }
     }
 
+    function proposeToDistributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint proposer
+    ) external memberOrDirector(proposer){
+
+        IMeetingMinutes _gmm = _gk.getGMM();
+
+        uint64 seqOfMotion = 
+            _gmm.createMotionToDistributeProfits(amt, expireDate, seqOfVR, executor, proposer);
+            
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);
+    }
+
     function proposeToTransferFund(
         address to,
         bool isCBP,
@@ -121,6 +137,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
 
         uint64 seqOfMotion = 
             _gmm.createMotionToTransferFund(to, isCBP, amt, expireDate, seqOfVR, executor, proposer);
+
         _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
     }
 
@@ -275,6 +292,41 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
     }
 
     // ==== execute ====
+
+    function distributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external onlyDK {
+
+        IRegisterOfMembers _rom = _gk.getROM();
+
+        _gk.getGMM().distributeProfits(
+            amt,
+            expireDate,
+            seqOfMotion,
+            caller
+        );
+
+        uint[] memory members = _rom.membersList();
+        uint len = members.length;
+
+        uint totalEquity = _rom.basedOnPar()
+            ? _rom.ownersEquity().par
+            : _rom.ownersEquity().paid ;
+
+        while (len > 0) {
+            uint member = members[len - 1];
+            uint equityOfMember = _rom.basedOnPar()
+                ? _rom.equityOfMember(member).par
+                : _rom.equityOfMember(member).paid;
+
+            _gk.saveToCoffer(member, equityOfMember * amt / totalEquity);
+
+            len--;
+        }
+    }
 
     function transferFund(
         address to,

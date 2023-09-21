@@ -100,7 +100,7 @@ interface IInvestmentAgreement is ISigPage {
     function payOffApprovedDeal(
         uint seqOfDeal,
         uint msgValue,
-        uint centPrice,
+        // uint centPrice,
         uint caller
     ) external returns (bool flag);
 

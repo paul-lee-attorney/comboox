@@ -115,10 +115,10 @@ library CondsRepo {
         seqOfCond = cond.seqOfCond;
     }
 
-    function _increaseCounterOfConds(Repo storage repo) private returns(uint32 seqOfCond)
+    function _increaseCounterOfConds(Repo storage repo) private returns(uint32)
     {
         repo.conds[0].seqOfCond++;
-        seqOfCond = repo.conds[0].seqOfCond;
+        return repo.conds[0].seqOfCond;
     }
 
     function removeCond(Repo storage repo, uint256 seqOfCond) public returns(bool flag)

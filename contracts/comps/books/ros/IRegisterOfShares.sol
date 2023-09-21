@@ -38,6 +38,8 @@ interface IRegisterOfShares {
 
     event WithdrawPayInAmt(uint indexed seqOfShare, uint indexed amount);
 
+    event IncreaseEquityOfClass(bool indexed isIncrease, uint indexed class, uint indexed amt);
+
     //##################
     //##  Write I/O  ##
     //##################
@@ -76,6 +78,16 @@ interface IRegisterOfShares {
     // function updateStateOfShare(uint256 seqOfShare, uint state) external;
 
     function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
+
+    // ==== EquityOfClass ====
+
+    function increaseEquityOfClass(
+        bool isIncrease,
+        uint classOfShare,
+        uint deltaPaid,
+        uint deltaPar,
+        uint deltaCleanPaid
+    ) external;
 
     // ##################
     // ##   查询接口   ##

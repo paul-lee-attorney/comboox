@@ -90,6 +90,23 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         );
     }
 
+    function createMotionToDistributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint proposer
+    ) external onlyDK returns (uint64) {
+        uint contents = _hashPayment(address(0), false, amt, expireDate);
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.DistributeProfits),
+            seqOfVR,
+            proposer,
+            executor,
+            contents
+        );
+    }
+
     function createMotionToTransferFund(
         address to,
         bool isCBP,
@@ -239,6 +256,26 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         _repo.execResolution(seqOfMotion, contents, caller);
         emit ExecResolution(seqOfMotion, caller);
     }
+
+    function distributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external onlyDK {
+
+        require(block.timestamp < expireDate, 
+            "MM.distrProf: missed deadline");
+
+        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
+            uint8(MotionsRepo.TypeOfMotion.DistributeProfits), 
+            "MM.distrProf: wrong typeOfMotion");
+        
+        uint contents = _hashPayment(address(0), false, amt, expireDate);
+
+        execResolution(seqOfMotion, contents, caller);
+    }
+
 
     function transferFund(
         address to,

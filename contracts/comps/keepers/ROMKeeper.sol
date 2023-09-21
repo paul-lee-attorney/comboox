@@ -15,8 +15,6 @@ import "./IROMKeeper.sol";
 
 contract ROMKeeper is IROMKeeper, AccessControl {
 
-    
-
     // ###################
     // ##   ROMKeeper   ##
     // ###################

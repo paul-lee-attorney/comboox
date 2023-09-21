@@ -64,12 +64,6 @@ interface IGeneralKeeper {
 
     function getCompUser() external view returns (UsersRepo.User memory);
 
-    function getCentPrice() external view returns(uint);
-
-    function saveToCoffer(uint acct, uint value) external;
-
-    function pickupDeposit() external;
-
     function regKeeper(uint256 title, address keeper) external;
 
     function isKeeper(address caller) external view returns (bool flag);
@@ -348,6 +342,25 @@ interface IGeneralKeeper {
     // ##  Fund  ##
     // ############
 
+    function getCentPrice() external view returns(uint);
+
+    function saveToCoffer(uint acct, uint value) external;
+
+    function pickupDeposit() external;
+
+    function proposeToDistributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor
+    ) external;
+
+    function distributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion
+    ) external; 
+
     function proposeToTransferFund(
         bool toBMM,
         address to,
@@ -371,9 +384,11 @@ interface IGeneralKeeper {
     // ##  LOOKeeper  ##
     // #################
 
-    function regInvestor(uint groupRep, bytes32 idHash,uint seqOfLR) external;
+    function regInvestor(uint groupRep, bytes32 idHash) external;
 
     function approveInvestor(uint userNo, uint seqOfLR) external;
+
+    function revokeInvestor(uint userNo, uint seqOfLR) external;
 
     function placeInitialOffer(
         uint classOfShare,
@@ -383,15 +398,27 @@ interface IGeneralKeeper {
         uint seqOfLR
     ) external;
 
-    function placePutOrder(
+    function withdrawInitialOffer(
+        uint classOfShare,
+        uint seqOfOrder,
+        uint seqOfLR
+    ) external;
+
+    function placeSellOrder(
         uint seqOfShare,
         uint execHours,
         uint paid,
         uint price,
-        uint seqOfLR
+        uint seqOfLR,
+        bool sortFromHead
     ) external;
 
-    function placeCallOrder(uint classOfShare, uint paid, uint price) external payable;
+    function withdrawSellOrder(
+        uint classOfShare,
+        uint seqOfOrder
+    ) external;    
+
+    function placeBuyOrder(uint classOfShare, uint paid, uint price) external payable;
     
     // ###############
     // ##  Routing  ##
@@ -418,4 +445,7 @@ interface IGeneralKeeper {
     function getROS() external view returns (IRegisterOfShares);
 
     function getLOO() external view returns (IListOfOrders);
+
+    function totalDeposits() external view returns(uint);
+
 }

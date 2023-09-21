@@ -26,7 +26,8 @@ library MotionsRepo {
         RemoveOfficer,
         ApproveDoc,
         ApproveAction,
-        TransferFund
+        TransferFund,
+        DistributeProfits
     }
 
     enum StateOfMotion {
@@ -445,9 +446,10 @@ library MotionsRepo {
         uint executor
     ) public {
         Motion storage m = repo.motions[seqOfMotion];
-        require (m.contents == contents, "MR.ER: wrong contents");
+        require (m.contents == contents, 
+            "MR.execResolution: wrong contents");
         require (m.body.state == uint8(StateOfMotion.Passed), 
-            "MR.ER: motion not passed");
+            "MR.execResolution: wrong state");
         require (m.head.executor == uint40(executor), "MR.ER: not executor");
 
         m.body.state = uint8(StateOfMotion.Executed);

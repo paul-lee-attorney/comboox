@@ -116,9 +116,12 @@ interface IRegisterOfMembers {
         external view
         returns (Checkpoints.Checkpoint memory);
 
-   function sharesClipOfMember(uint256 acct)
+   function equityOfMember(uint256 acct)
         external view
         returns (Checkpoints.Checkpoint memory);
+
+    function equityAtDate(uint acct, uint date) 
+        external view returns(Checkpoints.Checkpoint memory);
 
     function votesInHand(uint256 acct)
         external view returns (uint64);
@@ -148,7 +151,7 @@ interface IRegisterOfMembers {
     function qtyOfClassMember(uint class)
         external view returns(uint);
 
-    function membersOfClass(uint class)
+    function getMembersOfClass(uint class)
         external view returns(uint256[] memory);
  
     // ---- TopChain ----
@@ -161,9 +164,15 @@ interface IRegisterOfMembers {
 
     function totalVotes() external view returns (uint64);
 
-    // ==== group ====
-
     function controllor() external view returns (uint40);
+
+    function tailOfChain() external view returns (uint40);
+
+    function headOfQueue() external view returns (uint40);
+
+    function tailOfQueue() external view returns (uint40);
+
+    // ==== group ====
 
     function groupRep(uint256 acct) external view returns (uint40);
 

@@ -138,10 +138,6 @@ contract AccessControl is IAccessControl {
         emit LockContents();
     }
 
-    // #################
-    // ##  verify ID  ##
-    // #################
-
     // ##############
     // ##   Read   ##
     // ##############
@@ -150,17 +146,9 @@ contract AccessControl is IAccessControl {
         return _roles.getOwner();
     }
 
-    // function getDK() external view returns (address) {
-    //     return _dk;
-    // }
-
-    // function _rc internal view returns (IRegCenter) {
-    //     return _rc;
-    // }
-
-    // function _gk internal view returns (IGeneralKeeper) {
-    //     return _gk;
-    // }
+    function getDK() external view returns (address) {
+        return _dk;
+    }
 
     function isFinalized() public view returns (bool) {
         return _roles.state == 2;

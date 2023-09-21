@@ -33,6 +33,14 @@ interface IGMMKeeper {
 
     function proposeDocOfGM(uint doc, uint seqOfVR, uint executor,  uint proposer) external;
 
+    function proposeToDistributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor,
+        uint caller
+    ) external;
+
     function proposeToTransferFund(
         address to,
         bool isCBP,
@@ -66,6 +74,14 @@ interface IGMMKeeper {
     ) external;
 
     function voteCountingOfGM(uint256 seqOfMotion) external;
+
+    function distributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        uint caller
+    ) external;
+
 
     function transferFund(
         address to,

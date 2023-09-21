@@ -29,21 +29,23 @@ interface IRegCenter is IERC20, IPriceConsumer{
         ROOKeeper,      // 7
         ROPKeeper,      // 8
         SHAKeeper,      // 9
-        ROC,            // 10
-        ROD,            // 11
-        MeetingMinutes, // 12
-        ROM,            // 13
-        ROA,            // 14
-        ROO,            // 15
-        ROP,            // 16
-        ROS,            // 17
-        GeneralKeeper,  // 18
-        IA,             // 19
-        SHA,            // 20 
-        AntiDilution,   // 21
-        LockUp,         // 22
-        Alongs,         // 23
-        Options         // 24
+        LOOKeeper,      // 10
+        ROC,            // 11
+        ROD,            // 12
+        MeetingMinutes, // 13
+        ROM,            // 14
+        ROA,            // 15
+        ROO,            // 16
+        ROP,            // 17
+        ROS,            // 18
+        LOO,            // 19
+        GeneralKeeper,  // 20
+        IA,             // 21
+        SHA,            // 22 
+        AntiDilution,   // 23
+        LockUp,         // 24
+        Alongs,         // 25
+        Options         // 26
     }
 
     // ##################
@@ -130,6 +132,8 @@ interface IRegCenter is IERC20, IPriceConsumer{
     function regUser() external;
 
     function setBackupKey(address bKey) external;
+
+    function upgradeBackupToPrime() external;
 
     function setRoyaltyRule(bytes32 snOfRoyalty) external;
 

@@ -54,15 +54,15 @@ library Checkpoints {
         }
     }
 
-    //##################
-    //##    读接口    ##
-    //##################
-
     function _increaseCounter(History storage self)
         public
     {
         self.checkpoints[0].timestamp++;
     }
+
+    //##################
+    //##    读接口    ##
+    //##################
 
     function counterOfPoints(History storage self)
         public view returns (uint256)

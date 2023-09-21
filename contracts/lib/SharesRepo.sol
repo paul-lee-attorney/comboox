@@ -134,18 +134,9 @@ library SharesRepo {
 
         Share storage info = repo.classes[newShare.head.class].info;
 
-        if (info.head.issueDate == 0) {
-            repo.classes[newShare.head.class].info = newShare;
-        } else {
-            increaseEquityOfClass(
-                repo, 
-                true, 
-                newShare.head.class, 
-                newShare.body.paid, 
-                newShare.body.par,
-                newShare.body.paid
-            );
-        }
+        if (info.head.issueDate == 0) 
+            repo.classes[newShare.head.class].info.head = 
+                newShare.head;
     }
 
     function regShare(Repo storage repo, Share memory share)
@@ -184,14 +175,17 @@ library SharesRepo {
     function _increaseCounterOfShares(
         Repo storage repo
     ) private returns(uint32) {
+
+        Head storage h = repo.shares[0].head;
+
         do {
             unchecked {
-                repo.shares[0].head.seqOfShare++;                
+                h.seqOfShare++;                
             }
-        } while (isShare(repo, repo.shares[0].head.seqOfShare) || 
-            repo.shares[0].head.seqOfShare == 0);
+        } while (isShare(repo, h.seqOfShare) || 
+            h.seqOfShare == 0);
 
-        return repo.shares[0].head.seqOfShare;
+        return h.seqOfShare;
     }
 
     function _increaseCounterOfClasses(Repo storage repo) 
@@ -224,14 +218,6 @@ library SharesRepo {
         share.body.paid += deltaPaid;
         share.body.cleanPaid += deltaPaid;
 
-        increaseEquityOfClass(
-            repo, 
-            true, 
-            share.head.class,
-            deltaPaid, 
-            0,
-            deltaPaid
-        );
     }
 
     function subAmtFromShare(
@@ -282,16 +268,6 @@ library SharesRepo {
         else if(!isIncrease && share.body.cleanPaid >= deltaClean)
             share.body.cleanPaid -= deltaClean;
         else revert("SR.incrClean: clean overflow");
-
-        increaseEquityOfClass(
-            repo, 
-            isIncrease, 
-            share.head.class, 
-            0, 
-            0, 
-            deltaClean
-        );
-
     }
 
     // ---- EquityOfClass ----
@@ -358,7 +334,7 @@ library SharesRepo {
         Repo storage repo, 
         uint seqOfShare
     ) public view returns(bool) {
-        return repo.classes[0].seqList.contains(seqOfShare);
+        return repo.shares[seqOfShare].head.issueDate > 0;
     }
 
     function getShare(

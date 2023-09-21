@@ -9,225 +9,286 @@ pragma solidity ^0.8.8;
 
 library GoldChain {
 
-    enum StateOfOrder {
-        Active,
-        Closed,
-        Terminated
-    }
-
-    struct Order {
-        uint32 seqOfOrder;
+    struct Node {
         uint32 prev;
         uint32 next;
         uint32 seqOfShare;
-        uint16 classOfShare;
-        uint40 offeror;
         uint64 paid;
         uint32 price;
-        uint16 execHours;
         uint48 expireDate;
-        uint32 seqOfDeal;
-        uint8 state;
+        uint16 votingWeight;
     }
 
-    /* Orders[0] {
-        seqOfOrder: counter;
+    struct NodeWrap {
+        uint32 seq;
+        Node node;
+    }
+
+    /* nodes[0] {
         prev: tail;
         next: head;
-        seqOfShare: lengthOfList;
+        seqOfShare: counter;
+        price: length;
     } */
 
     struct Chain {
-        mapping (uint => Order) orders;
+        mapping (uint => Node) nodes;
+    }
+
+    //#################
+    //##  Modifier   ##
+    //#################
+
+    modifier nodeExist(
+        Chain storage chain,
+        uint seq
+    ) {
+        require(isNode(chain, seq),
+            "GC.nodeExist: not");
+        _;
     }
 
     //#################
     //##  Write I/O  ##
     //#################
 
-    function codifyOrder(Order memory order) public pure returns(bytes32 sn)
-    {
-        bytes memory _sn = abi.encodePacked(
-            order.seqOfOrder,
-            order.seqOfShare,
-            order.classOfShare,
-            order.offeror,
-            order.paid,
-            order.price
-        );
+    function parseSn(
+        bytes32 sn
+    ) public pure returns(Node memory node) {
+
+        uint _sn = uint(sn);
+
+        node.prev = uint32(_sn >> 224);
+        node.next = uint32(_sn >> 192);
+        node.seqOfShare = uint32(_sn >> 160);
+        node.paid = uint64(_sn >> 96);
+        node.price = uint32(_sn >> 64);
+        node.expireDate = uint48(_sn >> 16);
+        node.votingWeight = uint16(_sn);
+    }
+
+    function codifyNode(
+        Node memory node
+    ) public pure returns(bytes32 sn) {
+
+        bytes memory _sn = 
+            abi.encodePacked(
+                node.prev,
+                node.next,
+                node.seqOfShare,
+                node.paid,
+                node.price,
+                node.expireDate,
+                node.votingWeight
+            );
 
         assembly {
             sn := mload(add(_sn, 0x20))
         }                
     }
 
-    function createOrder(
+    function createNode(
         Chain storage chain,
         uint seqOfShare,
-        uint classOfShare,
-        uint offeror,
-        uint execHours,
+        uint votingWeight,
         uint paid,
-        uint price
-    ) public returns (uint32 seqOfOrder) {
+        uint price,
+        uint execHours,
+        bool sortFromHead
+    ) public returns (bytes32 sn) {
 
-        Order memory order = Order({
-            seqOfOrder: _increaseCounterOfOrders(chain),
+        require (uint64(paid) > 0, 'GC.createOffer: zero paid');
+
+        uint32 seq = _increaseCounter(chain);
+
+        Node memory node = Node({
             prev: 0,
             next: 0,
             seqOfShare: uint32(seqOfShare),
-            classOfShare: uint16(classOfShare),
-            offeror: uint40(offeror),
             paid: uint64(paid),
             price: uint32(price),
-            execHours: uint16(execHours),
             expireDate: uint48(block.timestamp) + uint48(execHours) * 3600,
-            seqOfDeal: 0,
-            state: 0            
+            votingWeight: uint16(votingWeight)
         });
 
-        // require (order.offeror > 0, 'GC.createOrder: zero offeror');
-        require (order.paid > 0, 'GC.createOrder: zero paid');
-        // require (order.price > 0, 'GC.createOrder: zero price');
+        _increaseLength(chain);
 
-        chain.orders[seqOfOrder] = order;
+        chain.nodes[seq] = node;
+
+        _upChain(chain, seq, sortFromHead);
+
+        sn = codifyNode(node);
     }
 
-    function _increaseCounterOfOrders(
-        Chain storage chain
-    ) public returns (uint32) {
-        chain.orders[0].seqOfOrder++;
-        return chain.orders[0].seqOfOrder;
-    }
-
-    function upList(
+    function _upChain(
         Chain storage chain,
-        bool isPutOrder,
-        uint32 seqOfOrder
-    ) public returns(Order memory listedOrder) {
+        uint32 seq,
+        bool sortFromHead
+    ) private {
 
-        Order storage order = chain.orders[seqOfOrder];
+        Node storage n = chain.nodes[seq];
 
-        uint32 seqOfNode = getHeadSeqOfList(chain);
-        Order memory node = chain.orders[seqOfNode];
+        (uint prev, uint next) = 
+            _getPos(
+                chain, 
+                n.price, 
+                sortFromHead ? 0 : tail(chain), 
+                sortFromHead ? head(chain) : 0, 
+                sortFromHead
+            );
 
-        if (seqOfNode == 0) {
+        n.prev = uint32(prev);
+        n.next = uint32(next);
 
-            chain.orders[0].next = seqOfOrder;
-            chain.orders[0].prev = seqOfOrder;
+        chain.nodes[prev].next = seq;
+        chain.nodes[next].prev = seq;
+    }
 
+    function _getPos(
+        Chain storage chain,
+        uint price,
+        uint prev,
+        uint next,
+        bool sortFromHead
+    ) public view returns(uint, uint) {
+        if (sortFromHead) {
+            while(next > 0 && chain.nodes[next].price <= price) {
+                prev = next;
+                next = chain.nodes[next].next;
+            }
         } else {
-
-            do {
-                if (isPutOrder) {
-                    if (node.price > order.price) break;
-                } else {
-                    if (node.price < order.price) break;
-                }
-                node = chain.orders[node.next];
-            } while (node.offeror > 0);
-
-            order.prev = node.prev;
-            order.next = chain.orders[node.prev].next;
-
-            chain.orders[node.prev].next = seqOfOrder;
-            chain.orders[order.next].prev = seqOfOrder;
+            while(prev > 0 && chain.nodes[prev].price > price) {
+                next = prev;
+                prev = chain.nodes[prev].prev;
+            }
         }
+        return (prev, next);
+    }
+    
+    function offChain(
+        Chain storage chain,
+        uint seq
+    ) public nodeExist(chain, seq) returns(Node memory node) {
 
-        chain.orders[0].seqOfShare++;
+        node = chain.nodes[seq];
 
-        listedOrder = chain.orders[seqOfOrder];
+        chain.nodes[node.prev].next = node.next;
+        chain.nodes[node.next].prev = node.prev;
+
+        delete chain.nodes[seq];
+        _decreaseLength(chain);
     }
 
-    function offList(
-        Chain storage chain,
-        uint32 seqOfOrder
-    ) public returns(uint32 next){
+    function _increaseCounter(
+        Chain storage chain
+    ) private returns (uint32) {
 
-        Order storage order = chain.orders[seqOfOrder];
+        Node storage n = chain.nodes[0];
 
-        require(order.state > uint8(StateOfOrder.Active), 
-            "GC.offChain: wrong state");
+        do {
+            unchecked {
+                n.seqOfShare++;        
+            }
+        } while(isNode(chain, n.seqOfShare) ||
+            n.seqOfShare == 0);
 
-        next = order.next;
+        return n.seqOfShare;
+    }
 
-        chain.orders[order.prev].next = next;
-        chain.orders[next].prev = order.prev;
+    function _increaseLength(
+        Chain storage chain
+    ) private {
+        chain.nodes[0].price++;
+    }
 
-        order.prev = 0;
-        order.next = 0;
-
-        chain.orders[0].seqOfShare--;
+    function _decreaseLength(
+        Chain storage chain
+    ) private {
+        chain.nodes[0].price--;
     }
 
     //#################
     //##  Read I/O  ##
     //#################
 
-    // ==== List ====
+    // ==== Node[0] ====
 
-    function getHeadSeqOfList(
+    function counter(
         Chain storage chain
     ) public view returns (uint32) {
-        return chain.orders[0].next;
+        return chain.nodes[0].seqOfShare;
     }
 
-    function getTailSeqOfList(
+    function length(
         Chain storage chain
     ) public view returns (uint32) {
-        return chain.orders[0].prev;
+        return chain.nodes[0].price;
     }
 
-    function getLengthOfList(
+    function head(
         Chain storage chain
-    ) public view returns (uint) {
-        return chain.orders[0].seqOfShare;
+    ) public view returns (uint32) {
+        return chain.nodes[0].next;
     }
 
-    function getList(
+    function tail(
         Chain storage chain
-    ) public view returns (Order[] memory) {
-        uint len = getLengthOfList(chain);
-        Order[] memory output = new Order[](len);
+    ) public view returns (uint32) {
+        return chain.nodes[0].prev;
+    }
 
-        Order memory node = chain.orders[getTailSeqOfList(chain)];
+    // ==== Node ====
+    
+    function isNode(
+        Chain storage chain,
+        uint seq
+    ) public view returns(bool) {
+        return chain.nodes[seq].expireDate > 0;
+    } 
+
+    function getNode(
+        Chain storage chain,
+        uint seq
+    ) public view nodeExist(chain, seq) returns(
+        Node memory 
+    ) {
+        return chain.nodes[seq];
+    }
+
+    // ==== Chain ====
+
+    function getSeqList(
+        Chain storage chain
+    ) public view returns (uint[] memory) {
+        uint len = length(chain);
+        uint[] memory list = new uint[](len);
+
+        Node memory node = chain.nodes[0];
 
         while (len > 0) {
-            output[len-1] = node;
+            list[len-1] = node.prev;
+            node = chain.nodes[node.prev];
             len--;
-            node = chain.orders[node.prev];
         }
 
-        return output;
-    }
-
-    // ==== Order ====
-
-    function getCounterOfOrders(
-        Chain storage chain
-    ) public view returns (uint32) {
-        return chain.orders[0].seqOfOrder;
-    }
-    
-    function getOrder(
-        Chain storage chain,
-        uint seqOfOrder
-    ) public view returns (Order memory ) {
-        return chain.orders[seqOfOrder];
+        return list;
     }
 
     function getChain(
         Chain storage chain
-    ) public view returns (Order[] memory) {
-        uint len = getCounterOfOrders(chain);
-        Order[] memory output = new Order[](len);
+    ) public view returns (NodeWrap[] memory) {
+        uint len = length(chain);
+        NodeWrap[] memory list = new NodeWrap[](len);
+
+        Node memory node = chain.nodes[0];
 
         while (len > 0) {
-            output[len-1] = chain.orders[len];
+            list[len-1].seq = node.prev;
+            node = chain.nodes[node.prev];
+            list[len-1].node = node;
             len--;
         }
 
-        return output;
+        return list;
     }
-
 }

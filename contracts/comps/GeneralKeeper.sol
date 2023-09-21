@@ -46,40 +46,18 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         return _rc.getUser();
     }
 
-    function getCentPrice() external view returns(uint) {
-        return _rc.getCentPriceInWei(_info.currency);
-    }
-
-    // ---- Eth ----
-
-    function saveToCoffer(uint acct, uint value) external {
-        require (
-                msg.sender == _keepers[6] ||
-                msg.sender == _keepers[7] ||
-                msg.sender == _keepers[10], 
-            "GK.setCofferAmt: not LOOKeeper");
-
-        _coffers[acct] += value;
-    }
-
-    function pickupDeposit() external {
-        uint caller = _msgSender();
-        uint value = _coffers[caller];
-
-        if (value > 0) {
-            _coffers[caller] = 0;
-            payable(msg.sender).transfer(value);
-        } else revert("GK.pickupDeposit: no balance");
-    }
 
     // ---- Keepers ----
 
-    function regKeeper(uint256 title, address keeper) 
-    external onlyDK {
+    function regKeeper(
+        uint256 title, 
+        address keeper
+    ) external onlyDK {
         _keepers[title] = keeper;
     }
 
     function isKeeper(address caller) external view returns (bool) {   
+
         uint256 len = 10;
 
         while (len > 0) {
@@ -364,7 +342,6 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IROAKeeper(_keepers[6]).transferTargetShare(ia, seqOfDeal, _msgSender());
     }
 
-
     function terminateDeal(address ia, uint256 seqOfDeal) external {
         IROAKeeper(_keepers[6]).terminateDeal(ia, seqOfDeal, _msgSender());
     }
@@ -572,6 +549,69 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##  Fund  ##
     // ############
 
+    function getCentPrice() external view returns(uint) {
+        return _rc.getCentPriceInWei(_info.currency);
+    }
+
+    function saveToCoffer(uint acct, uint value) external {
+
+        require (
+                msg.sender == _keepers[5] ||
+                msg.sender == _keepers[6] ||
+                msg.sender == _keepers[7] ||
+                msg.sender == _keepers[10], 
+            "GK.saveToCoffer: not correct Keeper");
+
+        require(address(this).balance >= _coffers[0] + value,
+            "GK.saveToCoffer: insufficient Eth");
+
+        _coffers[acct] += value;
+        _coffers[0] += value;
+    }
+
+    function pickupDeposit() external {
+ 
+        uint caller = _msgSender();
+        uint value = _coffers[caller];
+
+        if (value > 0) {
+
+            _coffers[caller] = 0;
+            _coffers[0] -= value;
+
+            payable(msg.sender).transfer(value);
+
+        } else revert("GK.pickupDeposit: no balance");
+    }
+
+    function proposeToDistributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfVR,
+        uint executor
+    ) external {
+        IGMMKeeper(_keepers[5]).proposeToDistributeProfits(
+            amt, 
+            expireDate, 
+            seqOfVR, 
+            executor, 
+            _msgSender()
+        );
+    }
+
+    function distributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion
+    ) external {
+        IGMMKeeper(_keepers[5]).distributeProfits(
+            amt,
+            expireDate, 
+            seqOfMotion,
+            _msgSender()
+        );
+    }
+
     function proposeToTransferFund(
         bool toBMM,
         address to,
@@ -627,22 +667,30 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
                 seqOfMotion, 
                 _msgSender()
             );
-        
+
         if (isCBP)
             _rc.transfer(to, amt);
-        else payable(to).transfer(amt);
+        else {
+            require (address(this).balance >= _coffers[0] + amt,
+                "GK.transferFund: insufficient balance");
+            payable(to).transfer(amt);
+        }
     }
 
     // #################
     // ##  LOOKeeper  ##
     // #################
 
-    function regInvestor(uint groupRep, bytes32 idHash,uint seqOfLR) external {
-        ILOOKeeper(_keepers[10]).regInvestor(_msgSender(), groupRep, idHash, seqOfLR);
+    function regInvestor(uint groupRep, bytes32 idHash) external {
+        ILOOKeeper(_keepers[10]).regInvestor(_msgSender(), groupRep, idHash);
     }
 
     function approveInvestor(uint userNo, uint seqOfLR) external {
         ILOOKeeper(_keepers[10]).approveInvestor(userNo, _msgSender(),seqOfLR);        
+    }
+
+    function revokeInvestor(uint userNo, uint seqOfLR) external {
+        ILOOKeeper(_keepers[10]).revokeInvestor(userNo, _msgSender(),seqOfLR);        
     }
 
     function placeInitialOffer(
@@ -662,25 +710,51 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         );
     }
 
-    function placePutOrder(
+    function withdrawInitialOffer(
+        uint classOfShare,
+        uint seqOfOrder,
+        uint seqOfLR
+    ) external {
+        ILOOKeeper(_keepers[10]).withdrawInitialOffer(
+            _msgSender(),
+            classOfShare,
+            seqOfOrder,
+            seqOfLR
+        );        
+    }
+
+    function placeSellOrder(
         uint seqOfShare,
         uint execHours,
         uint paid,
         uint price,
-        uint seqOfLR
+        uint seqOfLR,
+        bool sortFromHead
     ) external {
-        ILOOKeeper(_keepers[10]).placePutOrder(
+        ILOOKeeper(_keepers[10]).placeSellOrder(
             _msgSender(),
             seqOfShare,
             execHours,
             paid,
             price,
-            seqOfLR
+            seqOfLR,
+            sortFromHead
         );
     }
 
-    function placeCallOrder(uint classOfShare, uint paid, uint price) external payable {
-        ILOOKeeper(_keepers[10]).placeCallOrder(
+    function withdrawSellOrder(
+        uint classOfShare,
+        uint seqOfOrder
+    ) external {
+        ILOOKeeper(_keepers[10]).withdrawSellOrder(
+            _msgSender(),
+            classOfShare,
+            seqOfOrder
+        );        
+    }
+
+    function placeBuyOrder(uint classOfShare, uint paid, uint price) external payable {
+        ILOOKeeper(_keepers[10]).placeBuyOrder(
             _msgSender(),
             classOfShare,
             paid,
@@ -736,4 +810,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     function getLOO() external view returns (IListOfOrders ) {
         return IListOfOrders(_books[10]);
     }
+
+    // ---- Eth ----
+
+    function totalDeposits() external view returns(uint) {
+        return _coffers[0];
+    }
+
 }

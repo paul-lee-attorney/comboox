@@ -7,15 +7,13 @@
 
 pragma solidity ^0.8.8;
 
-import "../comps/books/rom/IRegisterOfMembers.sol";
-import "../comps/books/roc/IShareholdersAgreement.sol";
-
 import "./GoldChain.sol";
-import "./RulesParser.sol";
+import "./EnumerableSet.sol";
 
 library OrdersRepo {
+    using EnumerableSet for EnumerableSet.UintSet;
     using GoldChain for GoldChain.Chain;
-    using RulesParser for bytes32;
+    using GoldChain for GoldChain.Node;
 
     enum StateOfInvestor {
         Pending,
@@ -35,30 +33,88 @@ library OrdersRepo {
     }
 
     struct Deal {
-        uint32 seqOfDeal;
+        uint16 classOfShare;
         uint32 seqOfShare;
         uint40 buyer;
         uint40 groupRep;
         uint64 paid;
         uint32 price;
-        uint8 state;
-    }
-
-    struct Orders {
-        GoldChain.Chain putOrders;
-        GoldChain.Chain callOrders;
-        mapping(uint256 => Deal) deals;
+        uint16 votingWeight;
     }
 
     struct Repo {
-        mapping(uint256 => Orders) ordersOfClass;
+        // class => Chain
+        mapping(uint256 => GoldChain.Chain) ordersOfClass;
+        EnumerableSet.UintSet classesList;
         mapping(uint256 => Investor) investors;
-        uint[] invList;
+        uint[] investorsList;
+        // ---- tempArry ----
+        GoldChain.Node[] expired;
+        Deal[] deals;
+    }
+
+    //################
+    //##  Modifier  ##
+    //################
+
+    modifier investorExist(
+        Repo storage repo,
+        uint acct
+    ) {
+        require(isInvestor(repo, acct),
+            "OR.investorExist: not");
+        _;
+    }
+
+    modifier classExist(
+        Repo storage repo,
+        uint classOfShare
+    ) {
+        require (isClass(repo, classOfShare),
+            "OR.classExist: not");
+        _;
     }
 
     //#################
     //##  Write I/O  ##
     //#################
+
+    // ==== Codify & Parse ====
+
+    function parseSn(bytes32 sn) public pure returns(
+        Deal memory deal
+    ) {
+        uint _sn = uint(sn);
+
+        deal.classOfShare = uint16(_sn >> 240);
+        deal.seqOfShare = uint32(_sn >> 208);
+        deal.buyer = uint40(_sn >> 168);
+        deal.groupRep = uint40(_sn >> 128);
+        deal.paid = uint64(_sn >> 64);
+        deal.price = uint32(_sn >> 32);
+        deal.votingWeight = uint16(_sn >> 16);
+    }
+
+    function codifyDeal(
+        Deal memory deal
+    ) public pure returns(bytes32 sn) {
+        bytes memory _sn = 
+            abi.encodePacked(
+                deal.classOfShare,
+                deal.seqOfShare,
+                deal.buyer,
+                deal.groupRep,
+                deal.paid,
+                deal.price,
+                deal.votingWeight
+            );
+
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }                        
+    }
+
+    // ==== Investor ====
 
     function regInvestor(
         Repo storage repo,
@@ -74,183 +130,198 @@ library OrdersRepo {
         require(user > 0,
             "OR.regInvestor: zero userNo");
 
-        Investor memory investor = Investor({
-            userNo: user,
-            groupRep: uint40(groupRep),
-            regDate: uint48(block.timestamp),
-            verifier: 0,
-            approveDate: 0,
-            data: 0,
-            state: uint8(StateOfInvestor.Pending),
-            idHash: idHash
-        });
+        Investor storage investor = repo.investors[user];
+        
+        investor.userNo = user;
+        investor.groupRep = uint40(groupRep);
+        investor.regDate = uint48(block.timestamp);
+        investor.idHash = idHash;
 
-        repo.investors[user] = investor;
+        if (!isInvestor(repo, userNo)) {
+            repo.investorsList.push(user);
+        } else {
 
-        if (!isInvestor(repo, userNo))
-            repo.invList.push(user);
+            if (investor.state == uint8(StateOfInvestor.Approved))
+                _decreaseQtyOfInvestors(repo);
+
+            investor.state = uint8(StateOfInvestor.Pending);
+        }
     }
 
     function approveInvestor(
         Repo storage repo,
-        uint userNo,
+        uint acct,
         uint verifier
-    ) public {        
-        uint40 user = uint40(userNo);
-        uint40 authority = uint40(verifier);
+    ) public investorExist(repo, acct) {
 
-        Investor storage investor = repo.investors[user];
+        Investor storage investor = repo.investors[acct];
 
-        require(investor.regDate > 0,
-            "OR,approveInvestor: investor not registered");
+        require(investor.state != uint8(StateOfInvestor.Approved),
+            "OR,apprInv: wrong state");
 
-        require(investor.state == 0,
-            "OR,approveInvestor: wrong state");
-
-        investor.verifier = authority;
+        investor.verifier = uint40(verifier);
         investor.approveDate = uint48(block.timestamp);
         investor.state = uint8(StateOfInvestor.Approved);
+
+        _increaseQtyOfInvestors(repo);
     }
 
-    function placePutOrder(
+    function revokeInvestor(
         Repo storage repo,
-        uint offeror,
+        uint acct,
+        uint verifier
+    ) public {
+
+        Investor storage investor = repo.investors[acct];
+
+        require(investor.state == uint8(StateOfInvestor.Approved),
+            "OR,revokeInvestor: wrong state");
+
+        investor.verifier = uint40(verifier);
+        investor.approveDate = uint48(block.timestamp);
+        investor.state = uint8(StateOfInvestor.Revoked);
+
+        _decreaseQtyOfInvestors(repo);
+    }
+
+    
+
+    // ==== Order ====
+
+    function placeSellOrder(
+        Repo storage repo,
         uint classOfShare,
         uint seqOfShare,
+        uint votingWeight,
+        uint paid,
+        uint price,
         uint execHours,
-        uint paid,
-        uint price
-    ) public returns (GoldChain.Order memory order) {
-        // require (_rom.isMember(offeror), 'OR.placePut: not member');
+        bool sortFromHead
+    ) public returns (bytes32 sn) {
+
+        repo.classesList.add(classOfShare);
 
         GoldChain.Chain storage chain = 
-            repo.ordersOfClass[classOfShare].putOrders;
+            repo.ordersOfClass[classOfShare];
 
-        uint32 seqOfOrder = chain.createOrder(
+        sn = chain.createNode(
             seqOfShare,
-            classOfShare,
-            offeror,
-            execHours,
+            votingWeight,
             paid,
-            price
+            price,
+            execHours,
+            sortFromHead
         );
-
-        order = chain.upList(true, seqOfOrder);
     }
 
-    function placeCallOrder(
+    function withdrawSellOrder(
         Repo storage repo,
-        uint offeror,
+        uint classOfShare,
+        uint seqOfOrder
+    ) public classExist(repo, classOfShare) 
+        returns (GoldChain.Node memory) 
+    {
+        return repo.ordersOfClass[classOfShare].offChain(seqOfOrder);
+    }
+
+    function placeBuyOrder(
+        Repo storage repo,
+        uint acct,
         uint classOfShare,
         uint paid,
         uint price
-    ) public returns (Deal[] memory deals, GoldChain.Order memory call) {
+    ) public classExist(repo, classOfShare) returns (
+        Deal[] memory deals,
+        Deal memory call,
+        GoldChain.Node[] memory expired
+    ) {
 
-        require(uint16(classOfShare) > 0, "OR.placeCall: zero class");
-        require(isInvestor(repo, offeror),"OR.placeCall: investor not registered");
-
-        GoldChain.Chain storage chain = 
-            repo.ordersOfClass[uint16(classOfShare)].callOrders;
-
-        uint32 seqOfCall = chain.createOrder(
-            0,
-            classOfShare,
-            offeror,
-            0,
-            paid,
-            price
-        );
-
-        uint numOfDeals = 
-            _checkPutList(repo, uint16(classOfShare), seqOfCall);
-        
-        deals = getDealsList(repo, classOfShare, getCounterOfDeals(repo, classOfShare), numOfDeals);
-        call = chain.getOrder(seqOfCall);
-    }
-
-    function _checkPutList(
-        Repo storage repo,
-        uint classOfShare,
-        uint seqOfCall
-    ) private returns (uint numOfDeals) {
-
-        GoldChain.Order storage call = 
-            repo.ordersOfClass[classOfShare].callOrders.orders[seqOfCall];
-
-        Investor memory investor = getInvestor(repo, call.offeror);
+        Investor memory investor = 
+            getInvestor(repo, acct);
 
         require (investor.state == uint8(StateOfInvestor.Approved),
-            "OR.createDeal: wrong stateOfInvestor");
+            "OR.placeBuyOrder: wrong stateOfInvestor");
+
+        call.classOfShare = uint16(classOfShare);        
+        call.paid = uint64(paid);
+        call.price = uint32(price);
+        call.buyer = investor.userNo;
+        call.groupRep = investor.groupRep;                
+
+        _checkOffers(repo, call);
+        
+        deals = repo.deals;
+        delete repo.deals;
+
+        expired = repo.expired;
+        delete repo.expired;
+    }
+
+    function _checkOffers(
+        Repo storage repo,
+        Deal memory call
+    ) private {
 
         GoldChain.Chain storage chain = 
-            repo.ordersOfClass[classOfShare].putOrders;
+            repo.ordersOfClass[call.classOfShare];
 
-        uint32 seqOfPut = chain.getHeadSeqOfList();
+        uint32 seqOfOffer = chain.head();
 
-        while(seqOfPut > 0 && call.paid > 0) {
+        while(seqOfOffer > 0 && call.paid > 0) {
 
-            GoldChain.Order storage put 
-                = chain.orders[seqOfPut];
+            GoldChain.Node memory offer = chain.nodes[seqOfOffer];
 
-            if (put.expireDate <= block.timestamp) {
-                put.state = uint8(GoldChain.StateOfOrder.Terminated);
-                seqOfPut = chain.offList(seqOfPut);
+            if (offer.expireDate <= block.timestamp) {
+
+                seqOfOffer = offer.next;
+                repo.expired.push(
+                    chain.offChain(seqOfOffer)
+                );
                 continue;
             }
             
-            if (put.price <= call.price) {
+            if (offer.price <= call.price) {
 
-                bool paidAsPut = put.paid <= call.paid;
+                bool paidAsPut = offer.paid <= call.paid;
 
                 Deal memory deal = Deal({
-                    seqOfDeal: _increaseCounterOfDeals(repo, classOfShare),
-                    seqOfShare: put.seqOfShare,
-                    buyer: investor.userNo,
-                    groupRep: investor.groupRep,
-                    paid: paidAsPut ? put.paid : call.paid,
-                    price: put.price,
-                    state: 0
+                    classOfShare: call.classOfShare,
+                    seqOfShare: offer.seqOfShare,
+                    buyer: call.buyer,
+                    groupRep: call.groupRep,
+                    paid: paidAsPut ? offer.paid : call.paid,
+                    price: offer.price,
+                    votingWeight: offer.votingWeight
                 });
 
-                repo.ordersOfClass[classOfShare].deals[deal.seqOfDeal] = deal;
+                repo.deals.push(deal);
 
                 if (paidAsPut) {
-                    put.seqOfDeal = deal.seqOfDeal;
-                    put.state = uint8(GoldChain.StateOfOrder.Closed);
-
-                    chain.offList(seqOfPut);
+                    chain.offChain(seqOfOffer);
                 } else {
-                    put.paid -= deal.paid;
-
-                    uint32 splitPut = chain.createOrder(
-                        put.seqOfShare,
-                        put.classOfShare,
-                        put.offeror,
-                        0,
-                        deal.paid,
-                        put.price
-                    );
-                    chain.orders[splitPut].seqOfDeal = deal.seqOfDeal;
-                    chain.orders[splitPut].state = uint8(GoldChain.StateOfOrder.Closed);
+                    chain.nodes[seqOfOffer].paid -= deal.paid;
                 }
 
                 call.paid -= deal.paid;
 
-                numOfDeals++;
-
-                seqOfPut = put.next;
+                seqOfOffer = offer.next;
 
             } else break;
         }
     }
 
-    function _increaseCounterOfDeals(
-        Repo storage repo,
-        uint classOfShare
-    ) private returns (uint32) {
-        repo.ordersOfClass[classOfShare].deals[0].seqOfDeal++;
-        return repo.ordersOfClass[classOfShare].deals[0].seqOfDeal;
+    function _increaseQtyOfInvestors(
+        Repo storage repo
+    ) private {
+        repo.investors[0].verifier++;
     }
+
+    function _decreaseQtyOfInvestors(
+        Repo storage repo
+    ) private {
+        repo.investors[0].verifier--;
+    }
+
 
     //################
     //##  Read I/O  ##
@@ -260,76 +331,73 @@ library OrdersRepo {
 
     function isInvestor(
         Repo storage repo,
-        uint userNo
+        uint acct
     ) public view returns(bool) {
-        return repo.investors[userNo].regDate > 0;
+        return repo.investors[acct].regDate > 0;
     }
 
     function getInvestor(
         Repo storage repo,
-        uint userNo
-    ) public view returns(Investor memory) {
-        return repo.investors[userNo];
+        uint acct
+    ) public view investorExist(repo, acct) returns(Investor memory) {
+        return repo.investors[acct];
     }
 
     function getQtyOfInvestors(
         Repo storage repo
     ) public view returns(uint) {
-        return repo.invList.length;
+        return repo.investors[0].verifier;
     }
 
-    function getInvList(
+    function investorList(
         Repo storage repo
     ) public view returns(uint[] memory) {
-        return repo.invList;
+        return repo.investorsList;
     }
 
-    function getInvestorsList(
+    function investorInfoList(
         Repo storage repo
-    ) public view returns(Investor[] memory) {
-        uint[] memory invList = repo.invList;
-        uint len = invList.length;
-        Investor[] memory list = new Investor[](len);
+    ) public view returns(Investor[] memory list) {
+        uint[] memory seqList = repo.investorsList;
+        uint len = seqList.length;
+
+        list = new Investor[](len);
 
         while (len > 0) {
-            list[len - 1] = repo.investors[invList[len - 1]];
+            list[len - 1] = repo.investors[seqList[len - 1]];
             len--;
         }
 
         return list;
     }
 
-    // ==== Deals ====
+    // ==== Class ====
 
-    function getCounterOfDeals(
+    function isClass(
         Repo storage repo,
-        uint classOfShare  
-    ) public view returns(uint32) {   
-        return repo.ordersOfClass[classOfShare].deals[0].seqOfDeal;
+        uint classOfShare
+    ) public view returns (bool) {
+        return repo.classesList.contains(classOfShare);
     }
 
-    function getDeal(
-        Repo storage repo,
-        uint classOfShare,
-        uint seqOfDeal
-    ) public view returns(Deal memory ) {   
-        return repo.ordersOfClass[classOfShare].deals[seqOfDeal];
+    function getClassesList(
+        Repo storage repo    
+    ) public view returns (uint[] memory) {
+        return repo.classesList.values();
     }
 
-    function getDealsList(
-        Repo storage repo,
-        uint classOfShare,
-        uint lastDealSeq,
-        uint len
-    ) public view returns(Deal[] memory ) {
-        Deal[] memory list = new Deal[](len);
+    // ==== TempArrays ====
 
-        while (len > 0) {
-            list[len - 1] = getDeal(repo, classOfShare, lastDealSeq + 1 - len);
-            len--;
-        }
+    function getExpired(
+        Repo storage repo
+    ) public view returns (GoldChain.Node[] memory) {
+        return repo.expired;
+    }
 
-        return list;
+    function getDeals(
+        Repo storage repo
+    ) public view returns(Deal[] memory) {
+        return repo.deals;
     }
 
 }

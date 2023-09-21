@@ -338,9 +338,12 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         _vrAndSHACheck(_ia, deal.head.seqOfDeal, deal.head.seqOfShare != 0);
 
-        if (_ia.payOffApprovedDeal(
-            seqOfDeal, msgValue, _gk.getCentPrice(), caller
-        )) _gk.getROA().execFile(ia);
+        require((deal.body.paid * deal.head.priceOfPaid + 
+            (deal.body.par - deal.body.paid) * deal.head.priceOfPar) * 
+            _gk.getCentPrice() / 100 <= msgValue, "ROAK.payApprDeal: insufficient msgValue");
+
+        if (_ia.payOffApprovedDeal(seqOfDeal, msgValue, caller)) 
+            _gk.getROA().execFile(ia);
 
         if (deal.head.seqOfShare > 0) {
             _gk.saveToCoffer(deal.head.seller, msgValue);

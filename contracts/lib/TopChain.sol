@@ -224,7 +224,7 @@ library TopChain {
     function _branchOff(Chain storage chain, uint256 root) private {
         Node storage r = chain.nodes[root];
 
-        if (r.cat > 2) {
+        if (_isOnChain(r)) {
 
             chain.nodes[r.next].prev = r.prev;
             chain.nodes[r.prev].next = r.next;
@@ -435,10 +435,7 @@ library TopChain {
 
         chain.para.tail = acct;
 
-        if (n.cat == uint8(CatOfNode.IndepMemberOnChain)) 
-            n.cat = uint8(CatOfNode.IndepMemberInQueue);
-        else if (n.cat == uint8(CatOfNode.GroupRepOnChain)) 
-            n.cat = uint8(CatOfNode.GroupRepInQueue);
+        if (_isOnChain(n)) n.cat -= 3;
 
         _increaseQtyOfSticks(chain);
     }
@@ -453,10 +450,7 @@ library TopChain {
         chain.nodes[0].prev = acct;
         n.next = 0;
 
-        if (n.cat == uint8(CatOfNode.IndepMemberInQueue)) 
-            n.cat = uint8(CatOfNode.IndepMemberOnChain);
-        else if (n.cat == uint8(CatOfNode.GroupRepInQueue)) 
-            n.cat = uint8(CatOfNode.GroupRepOnChain);
+        if (_isInQueue(n)) n.cat += 3;
 
         _increaseQtyOfBranches(chain);
     }
@@ -474,6 +468,7 @@ library TopChain {
         uint40 acct
     ) private {
         _trimChain(chain);
+        _branchOff(chain, acct);
         _appendToChain(chain, n, acct);
         _move(chain, acct, true);
 
@@ -482,12 +477,15 @@ library TopChain {
     function _trimChain(
         Chain storage chain
     ) private {
-        uint40 cur = chain.nodes[0].prev;
-        Node storage t = chain.nodes[cur];
 
-        while(cur > 0 && !_onChainTest(chain, t)) {            
+        uint40 cur = chain.nodes[0].prev;
+        
+        while (cur > 0) {
+            Node storage t = chain.nodes[cur];
             uint40 prev = t.prev;
-            _offChain(chain, t, cur);
+            if (!_onChainTest(chain, t))
+                _offChain(chain, t, cur);
+            else break;
             cur = prev;
         }
     }

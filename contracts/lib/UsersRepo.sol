@@ -319,6 +319,16 @@ library UsersRepo {
         repo.userNo[bKey] = caller;
     }
 
+    function upgradeBackupToPrime(
+        Repo storage repo,
+        address msgSender
+    ) public {
+        User storage user = repo.users[getUserNo(repo, msgSender)];
+        (user.primeKey.pubKey, user.backupKey.pubKey) =
+            (user.backupKey.pubKey, user.primeKey.pubKey);
+    }
+
+
     // ##############
     // ## Read I/O ##
     // ##############

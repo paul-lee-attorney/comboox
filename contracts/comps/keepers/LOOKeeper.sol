@@ -25,21 +25,10 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
     function regInvestor(
         uint caller,
         uint groupRep,
-        bytes32 idHash,
-        uint seqOfLR
+        bytes32 idHash
     ) external onlyDK {
         
         IListOfOrders _loo = _gk.getLOO();
-
-        RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
-
-        require(lr.maxQtyOfInvestors == 0 || 
-            _loo.getQtyOfInvestors() < lr.maxQtyOfInvestors,
-            "LOOK.regInv: qty overflow");
-
-        require(groupRep == 0 || _gk.getROM().isMember(groupRep),
-            "LOOK.regInv: groupRep not member");
 
         _loo.regInvestor(caller, groupRep, idHash);
     }
@@ -49,15 +38,35 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         uint caller,
         uint seqOfLR
     ) external onlyDK {
-        
+
+        IListOfOrders _loo = _gk.getLOO();
 
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
         require(_gk.getROD().hasTitle(caller, lr.titleOfVerifier),
-            "LOOK.approveInv: wrong titl");
+            "LOOK.apprInv: no rights");
+
+        require(lr.maxQtyOfInvestors == 0 ||
+            _loo.getQtyOfInvestors() < lr.maxQtyOfInvestors,
+            "LOOK.apprInv: no quota");
 
         _gk.getLOO().approveInvestor(userNo, caller);
+    }
+
+    function revokeInvestor(
+        uint userNo,
+        uint caller,
+        uint seqOfLR
+    ) external onlyDK {
+
+        RulesParser.ListingRule memory lr = 
+            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+
+        require(_gk.getROD().hasTitle(caller, lr.titleOfVerifier),
+            "LOOK.revokeInv: wrong titl");
+
+        _gk.getLOO().revokeInvestor(userNo, caller);
     }
 
     function placeInitialOffer(
@@ -68,6 +77,8 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         uint price,
         uint seqOfLR
     ) external onlyDK {
+
+        IRegisterOfShares _ros = _gk.getROS();
         
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
@@ -81,29 +92,61 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         require(uint32(price) >= lr.floorPrice,
             "LOOK.placeIO: lower than floor");
 
-        require(uint32(price) <= lr.ceilingPrice,
+        require(lr.ceilingPrice == 0 ||
+            uint32(price) <= lr.ceilingPrice,
             "LOOK.placeIO: higher than ceiling");
 
-        require (_gk.getROS().getInfoOfClass(classOfShare).body.par +
+        require (_ros.getInfoOfClass(classOfShare).body.cleanPaid +
             paid <= lr.maxTotalPar, "LOOK.placeIO: paid overflow");
 
-        _gk.getLOO().placePutOrder(
-            caller,
+        _gk.getLOO().placeSellOrder(
             classOfShare,
+            lr.votingWeight,
             0,
-            execHours,
             paid,
-            price
+            price,
+            execHours,
+            true
         );
+
+        _ros.increaseEquityOfClass(true, classOfShare, 0, 0, paid);
     }
 
-    function placePutOrder(
+    function withdrawInitialOffer(
+        uint caller,
+        uint classOfShare,
+        uint seqOfOrder,
+        uint seqOfLR
+    ) external onlyDK {
+
+        IListOfOrders _loo = _gk.getLOO();
+        IRegisterOfShares _ros = _gk.getROS();
+
+        GoldChain.Node memory order = 
+            _loo.getOrder(classOfShare, seqOfOrder);
+
+        require(order.seqOfShare == 0,
+            "LOOK.withdrawInitOrder: not initOrder");
+
+        RulesParser.ListingRule memory lr =
+            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+        
+        require(_gk.getROD().hasTitle(caller, lr.titleOfIssuer),
+            "LOOK.withdrawInitOrder: has no title");
+
+        order = _loo.withdrawSellOrder(classOfShare, seqOfOrder);
+
+        _ros.increaseEquityOfClass(false, classOfShare, 0, 0, order.paid);
+    }
+
+    function placeSellOrder(
         uint caller,
         uint seqOfShare,
         uint execHours,
         uint paid,
         uint price,
-        uint seqOfLR
+        uint seqOfLR,
+        bool sortFromHead
     ) external onlyDK {
         
         IRegisterOfShares _ros = _gk.getROS();
@@ -119,7 +162,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         require(share.head.shareholder == caller,
             "LOOK.placePut: not shareholder");
         
-        require(price >= lr.offPrice,
+        require(uint32(price) >= lr.offPrice,
             "LOOK.placePut: lower than offPrice");
 
         require(lr.lockupDays == 0 ||
@@ -128,17 +171,44 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
 
         _ros.decreaseCleanPaid(seqOfShare, paid);
 
-        _gk.getLOO().placePutOrder(
-            caller,
+        _gk.getLOO().placeSellOrder(
             share.head.class,
             seqOfShare,
-            execHours,
+            share.head.votingWeight,
             paid,
-            price
+            price,
+            execHours,
+            sortFromHead
         );
     }
 
-    function placeCallOrder(
+    function withdrawSellOrder(
+        uint caller,
+        uint classOfShare,
+        uint seqOfOrder
+    ) external onlyDK {
+
+        IListOfOrders _loo = _gk.getLOO();
+        IRegisterOfShares _ros = _gk.getROS();
+
+        GoldChain.Node memory order = 
+            _loo.getOrder(classOfShare, seqOfOrder);
+
+        require(order.seqOfShare > 0,
+            "LOOK.withdrawSellOrder: zero seqOfShare");
+
+        SharesRepo.Share memory share =
+            _ros.getShare(order.seqOfShare);
+        
+        require(share.head.shareholder == caller,
+            "LOOK.withdrawSellOrder: not shareholder");
+        
+        order = _loo.withdrawSellOrder(classOfShare, seqOfOrder);
+
+        _ros.increaseCleanPaid(order.seqOfShare, order.paid);
+    }
+
+    function placeBuyOrder(
         uint caller,
         uint classOfShare,
         uint paid,
@@ -150,12 +220,11 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         IRegisterOfMembers _rom = _gk.getROM();
         uint centPrice = _gk.getCentPrice();
 
-
         require(paid * price * centPrice / 100 <= msgValue,
             "LOOK.placeCall: insufficient value");
         
-        (OrdersRepo.Deal[] memory deals, GoldChain.Order memory call) = 
-            _gk.getLOO().placeCallOrder(
+        (OrdersRepo.Deal[] memory deals, GoldChain.Node[] memory expired) = 
+            _gk.getLOO().placeBuyOrder(
                 caller,
                 classOfShare,
                 paid,
@@ -193,7 +262,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
                     shareholder: deal.buyer,
                     priceOfPaid: deal.price,
                     priceOfPar: deal.price,
-                    votingWeight: 100,
+                    votingWeight: deal.votingWeight,
                     argu: 0
                 });
 
@@ -212,10 +281,19 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
             if (deal.groupRep != deal.buyer && 
                 deal.groupRep != _rom.groupRep(deal.buyer))
                     _rom.addMemberToGroup(deal.buyer, deal.groupRep);
+            
+            // _loo.removeDeals();
         }
 
         if (msgValue > 0) 
-            _gk.saveToCoffer(call.offeror, msgValue);
+            _gk.saveToCoffer(caller, msgValue);
+
+        len = expired.length;
+        while (len > 0) {
+            GoldChain.Node memory offer = expired[len - 1];
+            _ros.increaseCleanPaid(offer.seqOfShare, offer.paid);
+            len--;
+        }
 
     }
 
