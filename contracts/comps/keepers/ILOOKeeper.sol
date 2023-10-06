@@ -56,7 +56,7 @@ interface ILOOKeeper {
 
     function placeSellOrder(
         uint caller,
-        uint seqOfShare,
+        uint seqOfClass,
         uint execHours,
         uint paid,
         uint price,

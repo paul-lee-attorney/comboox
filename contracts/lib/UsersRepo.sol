@@ -40,6 +40,16 @@ library UsersRepo {
         LockersRepo.Repo lockers;       
     }
 
+    // platformRule: Rule({
+    //     eoaRewards: users[0].primeKey.gift,
+    //     coaRewards: users[0].backupKey.gift,
+    //     floor: users[0].backupKey.coupon,
+    //     rate: users[0].primeKey.discount,
+    //     para: users[0].backupKey.discount
+    // });
+
+    // counterOfUers: users[0].primeKey.coupon;
+
     // ####################
     // ##    Modifier    ##
     // ####################

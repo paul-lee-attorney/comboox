@@ -189,14 +189,20 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
     // ##    Docs   ##
     // ###############
 
-    function setTemplate(uint typeOfDoc, address body) external {
+    function setTemplate(uint typeOfDoc, address body, uint author) external {
         require(msg.sender == getBookeeper(), 
             "RC.setTemplate: not bookeeper");
         
         DocsRepo.Head memory head = 
-            _docs.setTemplate(typeOfDoc, body, 1);
+            _docs.setTemplate(typeOfDoc, body, author, _users.getUserNo(msg.sender));
 
         emit SetTemplate(head.typeOfDoc, head.version, body);
+    }
+
+    function transferIPR(uint typeOfDoc, uint version, uint transferee) external {
+        _docs.transferIPR(typeOfDoc, version, transferee, _users.getUserNo(msg.sender));
+
+        emit TransferIPR(typeOfDoc, version, transferee);
     }
 
     function createDoc(
@@ -222,7 +228,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         IGeneralKeeper(gk).createCorpSeal();
 
         address[11] memory keepers = 
-            _deployKeepers(primeKeyOfOwner, rc, gk);
+            _deployKeepers(primeKeyOfOwner, dk, rc, gk);
 
         _deployBooks(keepers, primeKeyOfOwner, rc, gk);
     
@@ -231,10 +237,11 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
     function _deployKeepers(
         address primeKeyOfOwner, 
+        address dk,
         address rc,
         address gk
     ) private returns (address[11] memory keepers) {
-        keepers[0] = primeKeyOfOwner;
+        keepers[0] = dk;
         uint i = 1;
         while (i < 11) {
             keepers[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
@@ -349,19 +356,19 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         uint offAmt = t.primeKey.coupon * rr.discount * fee / 10000 + rr.coupon * 10 ** 9;
         
-        fee = (offAmt < (fee - floorPrice)) 
-            ? (fee - offAmt) 
+        fee = (offAmt < (fee - floorPrice))
+            ? (fee - offAmt)
             : floorPrice;
 
         uint giftAmt = uint(rr.gift) * 10 ** 9;
 
-        if (ownerAddr == authorAddr || pr.rate == 0)
+        if (ownerAddr == authorAddr || pr.rate == 2000) {
             if (fee > giftAmt)
                 _transfer(t.primeKey.pubKey, authorAddr, fee - giftAmt);
-        else {
-            _transfer(t.primeKey.pubKey, ownerAddr, fee * pr.rate / 10000);
+        } else {
+            _transfer(t.primeKey.pubKey, ownerAddr, fee * (2000 - pr.rate) / 10000);
             
-            uint balaceAmt = fee * (10000 - pr.rate) / 10000;
+            uint balaceAmt = fee * (8000 + pr.rate) / 10000;
             if ( balaceAmt > giftAmt)
                 _transfer(t.primeKey.pubKey, authorAddr, balaceAmt - giftAmt);
         }
@@ -389,6 +396,14 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
     function docExist(address body) public view returns(bool) {
         return _docs.docExist(body);
+    }
+
+    function getAuthor(uint typeOfDoc, uint version) external view returns(uint40) {
+        return _docs.getAuthor(typeOfDoc, version);
+    }
+
+    function getAuthorByBody(address body) external view returns(uint40) {
+        return _docs.getAuthorByBody(body);
     }
 
     function getHeadByBody(address body) public view returns (DocsRepo.Head memory ) {

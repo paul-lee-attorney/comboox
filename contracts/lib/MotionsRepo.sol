@@ -248,6 +248,11 @@ library MotionsRepo {
     ) private returns(bool) {
         if (!_rom.isMember(caller)) return false;
 
+        Motion memory motion = repo.motions[seqOfMotion];
+        if (motion.head.typeOfMotion == uint8(TypeOfMotion.ApproveDoc) ||
+            motion.head.typeOfMotion == uint8(TypeOfMotion.ElectOfficer))
+            return true;
+
         uint totalVotes = _rom.totalVotes();
 
         if (gr.proposeWeightRatioOfGM > 0 &&

@@ -187,15 +187,15 @@ library FilesRepo {
         address body
     ) public onlyRegistered(repo, body) {
 
-        require(repo.files[body].head.state == uint8(StateOfFile.Approved),
+        File storage file = repo.files[body];
+
+        require(file.head.state == uint8(StateOfFile.Approved),
             "FR.EF: Doc not approved");
 
         uint48 timestamp = uint48(block.timestamp);
 
         require(timestamp < closingDeadline(repo, body), 
             "FR.EF: missed closingDeadline");
-
-        File storage file = repo.files[body];
 
         file.head.state = uint8(StateOfFile.Closed);
     }

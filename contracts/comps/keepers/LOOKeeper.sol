@@ -101,8 +101,8 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
 
         _gk.getLOO().placeSellOrder(
             classOfShare,
-            lr.votingWeight,
             0,
+            lr.votingWeight,
             paid,
             price,
             execHours,
@@ -141,7 +141,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
 
     function placeSellOrder(
         uint caller,
-        uint seqOfShare,
+        uint seqOfClass,
         uint execHours,
         uint paid,
         uint price,
@@ -154,26 +154,67 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
-        SharesRepo.Share memory share = _ros.getShare(seqOfShare);
+        require(seqOfClass == lr.classOfShare,
+            "LOOK.placePut: wrong class");
 
-        require(lr.classOfShare == share.head.class,
-            "LOOK.placePut: wrong classOfShare");
-
-        require(share.head.shareholder == caller,
-            "LOOK.placePut: not shareholder");
-        
         require(uint32(price) >= lr.offPrice,
             "LOOK.placePut: lower than offPrice");
 
-        require(lr.lockupDays == 0 ||
-            share.head.issueDate + uint48(lr.lockupDays) * 86400 < block.timestamp,
-            "LOOK.placePut: still in lockup");
+        uint[] memory sharesInhand = 
+            _gk.getROM().sharesInClass(caller, lr.classOfShare);
 
-        _ros.decreaseCleanPaid(seqOfShare, paid);
+        uint len = sharesInhand.length;
+
+        while (len > 0 && paid > 0) {
+
+            SharesRepo.Share memory share = 
+                _ros.getShare(sharesInhand[len - 1]);
+            len--;
+
+            if(lr.lockupDays == 0 ||
+                share.head.issueDate + 
+                uint48(lr.lockupDays) * 86400 < block.timestamp) 
+            {
+                if (share.body.cleanPaid > 0) {
+                    if (paid >= share.body.cleanPaid) {
+                        _createSellOrder(
+                            share, 
+                            share.body.cleanPaid, 
+                            price, 
+                            execHours, 
+                            sortFromHead, 
+                            _ros
+                        );
+                        paid -=share.body.cleanPaid;
+                    } else {
+                        _createSellOrder(
+                            share, 
+                            paid, 
+                            price, 
+                            execHours, 
+                            sortFromHead, 
+                            _ros
+                        );
+                        break;
+                    }
+                } 
+            }
+        }
+    }
+
+    function _createSellOrder(
+        SharesRepo.Share memory share, 
+        uint paid,
+        uint price,
+        uint execHours,
+        bool sortFromHead,
+        IRegisterOfShares _ros
+    ) private {
+        _ros.decreaseCleanPaid(share.head.seqOfShare, paid);
 
         _gk.getLOO().placeSellOrder(
             share.head.class,
-            seqOfShare,
+            share.head.seqOfShare,
             share.head.votingWeight,
             paid,
             price,
@@ -234,6 +275,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         uint len = deals.length;
         while (len > 0) {
             OrdersRepo.Deal memory deal = deals[len - 1];
+            len--;
 
             uint valueOfDeal = deal.paid * deal.price * centPrice / 100;
 
@@ -291,8 +333,11 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         len = expired.length;
         while (len > 0) {
             GoldChain.Node memory offer = expired[len - 1];
-            _ros.increaseCleanPaid(offer.seqOfShare, offer.paid);
             len--;
+            if (offer.seqOfShare > 0)
+                _ros.increaseCleanPaid(offer.seqOfShare, offer.paid);
+            else 
+                _ros.increaseEquityOfClass(false, classOfShare, 0, 0, offer.paid);
         }
 
     }

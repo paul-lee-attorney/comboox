@@ -86,7 +86,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##################
 
     function _msgSender() private returns (uint40 usr) {
-        usr = _rc.getUserNo(msg.sender, gasleft(), 1);
+        usr = _rc.getUserNo(
+            msg.sender, 
+            gasleft() * 10 ** 10, 
+            _rc.getAuthorByBody(address(this))
+        );
     }
 
     // ##################
@@ -724,7 +728,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function placeSellOrder(
-        uint seqOfShare,
+        uint seqOfClass,
         uint execHours,
         uint paid,
         uint price,
@@ -733,7 +737,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     ) external {
         ILOOKeeper(_keepers[10]).placeSellOrder(
             _msgSender(),
-            seqOfShare,
+            seqOfClass,
             execHours,
             paid,
             price,
@@ -813,8 +817,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     // ---- Eth ----
 
+    function depositOfMine(uint user) external view returns(uint) {
+        return _coffers[user];
+    }
+
     function totalDeposits() external view returns(uint) {
         return _coffers[0];
     }
-
 }

@@ -150,13 +150,16 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
+        require(share.head.shareholder != to,
+            "ROS.transferShare: self deal");
+
         SharesRepo.Share memory newShare;
 
         newShare.head = SharesRepo.Head({
             seqOfShare: 0,
             preSeq: share.head.seqOfShare,
             class: share.head.class,
-            issueDate: uint48(block.timestamp),
+            issueDate: 0,
             shareholder: uint40(to),
             priceOfPaid: uint32(priceOfPaid),
             priceOfPar: uint32(priceOfPar),
@@ -360,8 +363,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         IRegisterOfMembers _rom = _gk.getROM();
 
-        _repo.subAmtFromShare(share.head.seqOfShare, paid, par);
-
         if (par == share.body.par) {
 
             _rom.removeShareFromMember(share);
@@ -381,6 +382,8 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
             emit SubAmountFromShare(share.head.seqOfShare, paid, par);
         }
+
+        _repo.subAmtFromShare(share.head.seqOfShare, paid, par);
     }
 
     // #################

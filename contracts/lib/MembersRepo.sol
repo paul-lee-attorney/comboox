@@ -14,14 +14,15 @@ import "./TopChain.sol";
 
 library MembersRepo {
     using Checkpoints for Checkpoints.History;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    // using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
-    using SharesRepo for SharesRepo.Head;
+    // using SharesRepo for SharesRepo.Head;
     using TopChain for TopChain.Chain;
 
     struct Member {
         Checkpoints.History votesInHand;
-        EnumerableSet.Bytes32Set sharesInHand;
+        // class => seqList
+        mapping(uint => EnumerableSet.UintSet) sharesOfClass;
         EnumerableSet.UintSet classesBelonged;
     }
 
@@ -34,8 +35,8 @@ library MembersRepo {
     /* Node[0] {
         prev: tail;
         next: head;
-        ptr: qtyOfMembers;
-        amt: maxQtyOfMembers;
+        ptr: pending;
+        amt: pending;
         sum: totalVotes;
         cat: basedOnPar;
     } */
@@ -136,7 +137,8 @@ library MembersRepo {
 
         Member storage member = repo.members[head.shareholder];
 
-        if (member.sharesInHand.add(head.codifyHead())
+        if (member.sharesOfClass[0].add(head.seqOfShare)
+            && member.sharesOfClass[head.class].add(head.seqOfShare)
             && member.classesBelonged.add(head.class))
                 repo.membersOfClass[head.class].add(head.shareholder);
     }
@@ -149,22 +151,10 @@ library MembersRepo {
         Member storage member = 
             repo.members[head.shareholder];
         
-        if (member.sharesInHand.remove(head.codifyHead())) {
+        if (member.sharesOfClass[head.class].remove(head.seqOfShare)
+            && member.sharesOfClass[0].remove(head.seqOfShare)) {
 
-            bytes32[] memory snList = 
-                member.sharesInHand.values();
-            uint len = snList.length;
-            bool flag;
-
-            while (len > 0) {
-                if (SharesRepo.snParser(snList[len - 1]).class == head.class) {
-                    flag = true; 
-                    break;
-                }
-                len--;
-            }
-
-            if(!flag) {
+            if(member.sharesOfClass[head.class].length() == 0) {
                 repo.membersOfClass[head.class].remove(head.shareholder);
                 member.classesBelonged.remove(head.class);
             }
@@ -381,6 +371,13 @@ library MembersRepo {
         return repo.members[acct].classesBelonged.contains(class);
     }
 
+    function classesBelonged(
+        Repo storage repo, 
+        uint256 acct
+    ) public view memberExist(repo, acct) returns (uint[] memory) {
+        return repo.members[acct].classesBelonged.values();
+    }
+
     function qtyOfClassMember(
         Repo storage repo, 
         uint class
@@ -401,14 +398,36 @@ library MembersRepo {
         Repo storage repo, 
         uint acct
     ) public view memberExist(repo, acct) returns(uint) {
-        return repo.members[acct].sharesInHand.length();
+        return repo.members[acct].sharesOfClass[0].length();
     }
 
     function sharesInHand(
         Repo storage repo, 
         uint acct
-    ) public view memberExist(repo, acct) returns(bytes32[] memory) {
-        return repo.members[acct].sharesInHand.values();
+    ) public view memberExist(repo, acct) returns(uint[] memory) {
+        return repo.members[acct].sharesOfClass[0].values();
     }
+
+    function qtyOfSharesInClass(
+        Repo storage repo, 
+        uint acct,
+        uint class
+    ) public view memberExist(repo, acct) returns(uint) {
+        require(isClassMember(repo, acct, class), 
+            "MR.qtyOfSharesInClass: not class member");
+        return repo.members[acct].sharesOfClass[class].length();
+    }
+
+    function sharesInClass(
+        Repo storage repo, 
+        uint acct,
+        uint class
+    ) public view memberExist(repo, acct) returns(uint[] memory) {
+        require(isClassMember(repo, acct, class),
+            "MR.sharesInClass: not class member");
+        return repo.members[acct].sharesOfClass[class].values();
+    }
+
+
 
 }

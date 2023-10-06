@@ -49,7 +49,6 @@ async function main() {
 	const libOfficersRepo = await deployTool(signers[0], "OfficersRepo", libraries);
 	const libPledgesRepo = await deployTool(signers[0], "PledgesRepo", libraries);
 	const libSigsRepo = await deployTool(signers[0], "SigsRepo", libraries);
-	// const libSwapsRepo = await deployTool(signers[0], "SwapsRepo", libraries);
 
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address
@@ -59,7 +58,6 @@ async function main() {
 	libraries = {
 		"Checkpoints": libCheckpoints.address,
 		"EnumerableSet": libEnumerableSet.address,
-		"SharesRepo": libSharesRepo.address,
 		"TopChain": libTopChain.address
 	};
 	const libMembersRepo = await deployTool(signers[0], "MembersRepo", libraries);
@@ -196,7 +194,7 @@ async function main() {
 	}
 	let ropKeeper = await deployTool(signers[0], "ROPKeeper", libraries);
 
-	// ==== Books ====
+	==== Books ====
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -209,7 +207,6 @@ async function main() {
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
-		// "MotionsRepo": libMotionsRepo.address,
 		"OfficersRepo": libOfficersRepo.address
 	}
 	let rod = await deployTool(signers[0], "RegisterOfDirectors", libraries);
@@ -248,7 +245,6 @@ async function main() {
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
-		"EnumerableSet": libEnumerableSet.address,
 		"MembersRepo": libMembersRepo.address,
 		"TopChain": libTopChain.address
 	}
@@ -261,90 +257,88 @@ async function main() {
 	}
 	let loo = await deployTool(signers[0], "ListOfOrders", libraries);
 
-	libraries = {};
-
-	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
+	// let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
 	await rc.setBackupKey(signers[1].address);
 	console.log("set up bookeeper: ", await rc.getBookeeper(), "\n");
 
-	await rc.connect(signers[1]).setTemplate( 1, rocKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 1, rocKeeper.address, 1);
 	console.log("set template for ROCKeeper at address: ", rocKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 2, rodKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 2, rodKeeper.address, 1);
 	console.log("set template for RODKeeper at address: ", rodKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 3, bmmKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 3, bmmKeeper.address, 1);
 	console.log("set template for BMMKeeper at address: ", bmmKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 4, romKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 4, romKeeper.address, 1);
 	console.log("set template for ROMKeeper at address: ", romKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 5, gmmKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 5, gmmKeeper.address, 1);
 	console.log("set template for GMMKeeper at address: ", gmmKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 6, roaKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 6, roaKeeper.address, 1);
 	console.log("set template for ROAKeeper at address: ", roaKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 7, rooKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 7, rooKeeper.address, 1);
 	console.log("set template for ROOKeeper at address: ", rooKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 8, ropKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 8, ropKeeper.address, 1);
 	console.log("set template for ROPKeeper at address: ", ropKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 9, shaKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 9, shaKeeper.address, 1);
 	console.log("set template for SHAKeeper at address: ", shaKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 10, looKeeper.address);
+	await rc.connect(signers[1]).setTemplate( 10, looKeeper.address, 1);
 	console.log("set template for LOOKeeper at address: ", looKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 11, roc.address);
+	await rc.connect(signers[1]).setTemplate( 11, roc.address, 1);
 	console.log("set template for ROC at address: ", roc.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 12, rod.address);
+	await rc.connect(signers[1]).setTemplate( 12, rod.address, 1);
 	console.log("set template for ROD at address: ", rod.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 13, mm.address);
+	await rc.connect(signers[1]).setTemplate( 13, mm.address, 1);
 	console.log("set template for MM at address: ", mm.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 14, rom.address);
+	await rc.connect(signers[1]).setTemplate( 14, rom.address, 1);
 	console.log("set template for ROM at address: ", rom.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 15, roa.address);
+	await rc.connect(signers[1]).setTemplate( 15, roa.address, 1);
 	console.log("set template for ROA at address: ", roa.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 16, roo.address);
+	await rc.connect(signers[1]).setTemplate( 16, roo.address, 1);
 	console.log("set template for ROO at address: ", roo.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 17, rop.address);
+	await rc.connect(signers[1]).setTemplate( 17, rop.address, 1);
 	console.log("set template for ROP at address: ", rop.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 18, ros.address);
+	await rc.connect(signers[1]).setTemplate( 18, ros.address, 1);
 	console.log("set template for ROS at address: ", ros.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 19, loo.address);
+	await rc.connect(signers[1]).setTemplate( 19, loo.address, 1);
 	console.log("set template for LOO at address: ", loo.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 20, gk.address);
+	await rc.connect(signers[1]).setTemplate( 20, gk.address, 1);
 	console.log("set template for GK at address: ", gk.address, "\n");
 	
-	await rc.connect(signers[1]).setTemplate( 21, ia.address);
+	await rc.connect(signers[1]).setTemplate( 21, ia.address, 1);
 	console.log("set template for IA at address: ", ia.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 22, sha.address);
+	await rc.connect(signers[1]).setTemplate( 22, sha.address, 1);
 	console.log("set template for SHA at address: ", sha.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 23, ad.address);
+	await rc.connect(signers[1]).setTemplate( 23, ad.address, 1);
 	console.log("set template for AD at address: ", ad.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 24, lu.address);
+	await rc.connect(signers[1]).setTemplate( 24, lu.address, 1);
 	console.log("set template for LU at address: ", lu.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 25, al.address);
+	await rc.connect(signers[1]).setTemplate( 25, al.address, 1);
 	console.log("set template for AL at address: ", al.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 26, op.address);
+	await rc.connect(signers[1]).setTemplate( 26, op.address, 1);
 	console.log("set template for OP at address: ", op.address, "\n");
 
 	await rc.connect(signers[1]).setFeedRegistry(mockFeedRegistry.address);

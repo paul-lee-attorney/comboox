@@ -107,8 +107,15 @@ contract ROCKeeper is IROCKeeper, AccessControl {
             for (uint i; i<members.length; i++)
                 require (_sha.isSigner(members[i]), 
                     "ROCK.actSHA: member not sign");
-            _roc.setStateOfFile(sha, uint8(FilesRepo.StateOfFile.Closed));            
-        } else _roc.execFile(sha);
+            _roc.setStateOfFile(sha, uint8(FilesRepo.StateOfFile.Closed));
+        } else {
+            _gk.getGMM().execResolution(
+                _roc.getHeadOfFile(sha).seqOfMotion,
+                uint(uint160(sha)),
+                caller
+            );
+            _roc.execFile(sha);
+        }
 
         _roc.changePointer(sha);
 

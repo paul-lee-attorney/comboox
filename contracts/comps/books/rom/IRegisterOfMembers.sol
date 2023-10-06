@@ -8,7 +8,7 @@
 pragma solidity ^0.8.8;
 
 import "../../../lib/Checkpoints.sol";
-import "../../../lib/EnumerableSet.sol"; 
+// import "../../../lib/EnumerableSet.sol"; 
 import "../../../lib/MembersRepo.sol";
 import "../../../lib/SharesRepo.sol";
 import "../../../lib/TopChain.sol";
@@ -141,12 +141,21 @@ interface IRegisterOfMembers {
     
     function sharesInHand(uint256 acct)
         external view
-        returns (bytes32[] memory);
+        returns (uint[] memory);
 
     // ---- Class ---- 
 
+    function qtyOfSharesInClass(uint acct, uint class)
+        external view returns(uint);
+
+    function sharesInClass(uint256 acct, uint class)
+        external view returns (uint[] memory);
+
     function isClassMember(uint256 acct, uint class)
         external view returns(bool);
+
+    function classesBelonged(uint acct)
+        external view returns(uint[] memory);
 
     function qtyOfClassMember(uint class)
         external view returns(uint);

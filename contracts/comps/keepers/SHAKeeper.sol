@@ -225,23 +225,31 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         deal.body.groupOfBuyer = _rom.groupRep(deal.body.buyer);
 
-        for (uint256 i = 0; i < obligors.length; i++) {
-            bytes32[] memory sharesInHand = _rom.sharesInHand(obligors[i]);
+        uint i = obligors.length;
 
-            for (uint256 j = 0; j < sharesInHand.length; j++) {
+        while (i > 0) {
+            
+            uint[] memory sharesInHand = _rom.sharesInHand(obligors[i - 1]);
+
+            uint j = sharesInHand.length;
+
+            while (j > 0) {
 
                 giftPaid = _createGift(
                     _ia,
                     deal,
-                    uint(sharesInHand[j]) >> 224,
+                    sharesInHand[j - 1],
                     giftPaid,
                     _ros,
                     sigHash
                 );
 
                 if (giftPaid == 0) break;
+                j--;
             }
+
             if (giftPaid == 0) break;
+            i--;
         }
     }
 

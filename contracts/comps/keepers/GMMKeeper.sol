@@ -84,6 +84,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
 
         uint64 seqOfMotion = 
             _gmm.createMotionToApproveDoc(doc, seqOfVR, executor, proposer);
+            
         _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
 
         if (seqOfVR < 9) {
@@ -96,9 +97,9 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
             require(ISigPage(addr).established(),
                 "GMMK.proposeDoc: not established");
 
-            if (seqOfVR == 8) 
+            if (seqOfVR == 8) {
                 _gk.getROC().proposeFile(addr, seqOfMotion);
-            else {
+            } else {
                 require(_gk.getROA().allClaimsAccepted(addr),
                     "GMMK.proposeDoc: Claims outstanding");
                 _gk.getROA().proposeFile(addr, seqOfMotion);

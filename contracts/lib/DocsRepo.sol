@@ -13,11 +13,9 @@ library DocsRepo {
         uint32 typeOfDoc;
         uint32 version;
         uint64 seqOfDoc;
+        uint40 author;
         uint40 creator;
         uint48 createDate;
-        uint16 para;
-        uint16 argu;
-        uint8 state;        
     }
  
     struct Body {
@@ -46,6 +44,7 @@ library DocsRepo {
         head.typeOfDoc = uint32(_sn >> 224);
         head.version = uint32(_sn >> 192);
         head.seqOfDoc = uint64(_sn >> 128);
+        head.author = uint40(_sn >> 88);
     }
 
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
@@ -53,9 +52,9 @@ library DocsRepo {
                             head.typeOfDoc,
                             head.version,
                             head.seqOfDoc,
+                            head.author,
                             head.creator,
-                            head.createDate,
-                            uint40(0));  
+                            head.createDate);  
         assembly {
             sn := mload(add(_sn, 0x20))
         }
@@ -65,19 +64,23 @@ library DocsRepo {
         Repo storage repo,
         uint typeOfDoc, 
         address body,
+        uint author,
         uint caller
     ) public returns (Head memory head) {
         head.typeOfDoc = uint32(typeOfDoc);
+        head.author = uint40(author);
         head.creator = uint40(caller);
 
+        require(body != address(0), "DR.setTemplate: zero address");
         require(head.typeOfDoc > 0, "DR.setTemplate: zero typeOfDoc");
         if (head.typeOfDoc > counterOfTypes(repo))
             head.typeOfDoc = _increaseCounterOfTypes(repo);
 
+        require(head.author > 0, "DR.setTemplate: zero author");
         require(head.creator > 0, "DR.setTemplate: zero creator");
-        if (counterOfVersions(repo, typeOfDoc) > 0)
-            require( repo.heads[repo.bodies[head.typeOfDoc][1][0].addr].creator 
-                == head.creator, "DR.setTemplate: not Template creator");
+        // if (counterOfVersions(repo, typeOfDoc) > 0)
+        //     require( repo.heads[repo.bodies[head.typeOfDoc][1][0].addr].creator 
+        //         == head.creator, "DR.setTemplate: not Template creator");
 
         head.version = _increaseCounterOfVersions(repo, head.typeOfDoc);
         head.createDate = uint48(block.timestamp);
@@ -102,6 +105,7 @@ library DocsRepo {
         address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0].addr;
         require(temp != address(0), "DR.createDoc: template not ready");
 
+        doc.head.author = repo.heads[temp].author;
         doc.head.seqOfDoc = _increaseCounterOfDocs(repo, doc.head.typeOfDoc, doc.head.version);            
         doc.head.createDate = uint48(block.timestamp);
 
@@ -110,6 +114,18 @@ library DocsRepo {
         repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc].addr = doc.body;
         repo.heads[doc.body] = doc.head;
 
+    }
+
+    function transferIPR(
+        Repo storage repo,
+        uint typeOfDoc,
+        uint version,
+        uint transferee,
+        uint caller 
+    ) public {
+        require (caller == getAuthor(repo, typeOfDoc, version),
+            "DR.transferIPR: not author");
+        repo.heads[repo.bodies[typeOfDoc][version][0].addr].author = uint40(transferee);
     }
 
     function _increaseCounterOfTypes(Repo storage repo) 
@@ -219,6 +235,25 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     function counterOfDocs(Repo storage repo, uint typeOfDoc, uint version) public view returns(uint64) {
         return repo.bodies[uint32(typeOfDoc)][uint32(version)][0].seq;
+    }
+
+    function getAuthor(
+        Repo storage repo,
+        uint typeOfDoc,
+        uint version
+    ) public view returns(uint40) {
+        address temp = repo.bodies[typeOfDoc][version][0].addr;
+        require(temp != address(0), "getAuthor: temp not exist");
+
+        return repo.heads[temp].author;
+    }
+
+    function getAuthorByBody(
+        Repo storage repo,
+        address body
+    ) public view returns(uint40) {
+        Head memory head = getHeadByBody(repo, body);
+        return getAuthor(repo, head.typeOfDoc, head.version);
     }
 
     function docExist(Repo storage repo, address body) public view returns(bool) {

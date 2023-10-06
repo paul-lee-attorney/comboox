@@ -405,7 +405,7 @@ interface IGeneralKeeper {
     ) external;
 
     function placeSellOrder(
-        uint seqOfShare,
+        uint seqOfClass,
         uint execHours,
         uint paid,
         uint price,
@@ -446,6 +446,7 @@ interface IGeneralKeeper {
 
     function getLOO() external view returns (IListOfOrders);
 
+    function depositOfMine(uint user) external view returns(uint);
+    
     function totalDeposits() external view returns(uint);
-
 }

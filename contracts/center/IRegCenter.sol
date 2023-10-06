@@ -83,6 +83,8 @@ interface IRegCenter is IERC20, IPriceConsumer{
     
     event SetTemplate(uint256 indexed typeOfDoc, uint256 indexed version, address indexed body);
 
+    event TransferIPR(uint indexed typeOfDoc, uint indexed version, uint indexed transferee);
+
     event CreateDoc(bytes32 indexed snOfDoc, address indexed body);
 
     // event CreateComp(uint256 version, uint indexed seqOfDoc, uint indexed creator, address indexed generalKeeper);
@@ -139,7 +141,7 @@ interface IRegCenter is IERC20, IPriceConsumer{
 
     // ==== Doc ====
 
-    function setTemplate(uint typeOfDoc, address body) external;
+    function setTemplate(uint typeOfDoc, address body, uint author) external;
 
     function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) external 
         returns(DocsRepo.Doc memory doc);
@@ -183,6 +185,10 @@ interface IRegCenter is IERC20, IPriceConsumer{
     function counterOfDocs(uint256 typeOfDoc, uint256 version) external view returns(uint64 seq);
 
     function docExist(address body) external view returns(bool);
+
+    function getAuthor(uint typeOfDoc, uint version) external view returns(uint40);
+
+    function getAuthorByBody(address body) external view returns(uint40);
 
     function getHeadByBody(address body) external view returns (DocsRepo.Head memory );
     

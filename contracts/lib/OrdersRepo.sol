@@ -134,16 +134,14 @@ library OrdersRepo {
         
         investor.userNo = user;
         investor.groupRep = uint40(groupRep);
-        investor.regDate = uint48(block.timestamp);
         investor.idHash = idHash;
 
         if (!isInvestor(repo, userNo)) {
             repo.investorsList.push(user);
+            investor.regDate = uint48(block.timestamp);
         } else {
-
             if (investor.state == uint8(StateOfInvestor.Approved))
                 _decreaseQtyOfInvestors(repo);
-
             investor.state = uint8(StateOfInvestor.Pending);
         }
     }
@@ -242,11 +240,11 @@ library OrdersRepo {
         require (investor.state == uint8(StateOfInvestor.Approved),
             "OR.placeBuyOrder: wrong stateOfInvestor");
 
-        call.classOfShare = uint16(classOfShare);        
+        call.classOfShare = uint16(classOfShare);
         call.paid = uint64(paid);
         call.price = uint32(price);
         call.buyer = investor.userNo;
-        call.groupRep = investor.groupRep;                
+        call.groupRep = investor.groupRep;         
 
         _checkOffers(repo, call);
         
@@ -273,10 +271,11 @@ library OrdersRepo {
 
             if (offer.expireDate <= block.timestamp) {
 
-                seqOfOffer = offer.next;
                 repo.expired.push(
                     chain.offChain(seqOfOffer)
                 );
+                seqOfOffer = offer.next;
+                
                 continue;
             }
             
@@ -298,14 +297,12 @@ library OrdersRepo {
 
                 if (paidAsPut) {
                     chain.offChain(seqOfOffer);
+                    seqOfOffer = offer.next;
                 } else {
                     chain.nodes[seqOfOffer].paid -= deal.paid;
                 }
 
                 call.paid -= deal.paid;
-
-                seqOfOffer = offer.next;
-
             } else break;
         }
     }

@@ -12,7 +12,7 @@ import "./IRegisterOfMembers.sol";
 import "../../common/access/AccessControl.sol";
 
 contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    // using EnumerableSet for EnumerableSet.Bytes32Set;
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
 
@@ -40,7 +40,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     function setMinVoteRatioOnChain(uint min) external onlyKeeper {
-        _repo.chain.setMaxQtyOfMembers(min);
+        _repo.chain.setMinVoteRatioOnChain(min);
         emit SetMinVoteRatioOnChain(min);
     }
 
@@ -100,7 +100,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
         _repo.removeShareFromMember(share.head);
 
-        if (_repo.members[share.head.shareholder].sharesInHand.length() == 0) 
+        if (_repo.qtyOfSharesInHand(share.head.shareholder) == 0) 
             _repo.delMember(share.head.shareholder);
 
         emit RemoveShareFromMember(share.head.seqOfShare, share.head.shareholder);        
@@ -246,17 +246,36 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     
     function sharesInHand(uint256 acct)
         external view
-        returns (bytes32[] memory)
+        returns (uint[] memory)
     {
         return _repo.sharesInHand(acct);
     }
 
     // ---- Class ---- 
 
+    function qtyOfSharesInClass(uint acct, uint class)
+        external view returns(uint)
+    {
+        return _repo.qtyOfSharesInClass(acct, class);
+    }
+
+    function sharesInClass(uint256 acct, uint class)
+        external view
+        returns (uint[] memory)
+    {
+        return _repo.sharesInClass(acct, class);
+    }
+
     function isClassMember(uint256 acct, uint class)
         external view returns(bool)
     {
         return _repo.isClassMember(acct, class);
+    }
+
+    function classesBelonged(uint acct)
+        external view returns(uint[] memory)
+    {
+        return _repo.classesBelonged(acct);
     }
 
     function qtyOfClassMember(uint class)
