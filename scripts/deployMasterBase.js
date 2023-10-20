@@ -194,7 +194,7 @@ async function main() {
 	}
 	let ropKeeper = await deployTool(signers[0], "ROPKeeper", libraries);
 
-	==== Books ====
+	// ==== Books ====
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
@@ -257,7 +257,9 @@ async function main() {
 	}
 	let loo = await deployTool(signers[0], "ListOfOrders", libraries);
 
-	// let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
+	libraries = {};
+
+	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
 	await rc.setBackupKey(signers[1].address);

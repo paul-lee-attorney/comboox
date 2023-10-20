@@ -14,34 +14,6 @@ import "../../IGeneralKeeper.sol";
 
 interface IAccessControl {
 
-    // enum TitleOfBooks {
-    //     ZeroPoint,
-    //     ROC,    // 1
-    //     ROD,    // 2
-    //     BMM,    // 3
-    //     ROM,    // 4
-    //     GMM,    // 5
-    //     ROA,    // 6
-    //     ROO,    // 7
-    //     ROP,    // 8
-    //     ROS,    // 9
-    //     BOS    // 10
-    // }
-
-    // enum TitleOfKeepers {
-    //     ZeroPoint,
-    //     ROCKeeper, // 1
-    //     RODKeeper, // 2
-    //     BMMKeeper, // 3
-    //     ROMKeeper, // 4
-    //     GMMKeeper, // 5
-    //     ROAKeeper, // 6
-    //     ROOKeeper, // 7
-    //     ROPKeeper, // 8
-    //     ROSKeeper, // 9
-    //     SHAKeeper // 10
-    // }
-
     // ##################
     // ##   Event      ##
     // ##################

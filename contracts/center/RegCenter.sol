@@ -354,7 +354,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         require(fee >= floorPrice, "RC.chargeFee: lower than floor");
 
-        uint offAmt = t.primeKey.coupon * rr.discount * fee / 10000 + rr.coupon * 10 ** 9;
+        uint offAmt = uint(t.primeKey.coupon) * uint(rr.discount) * fee / 10000 + uint(rr.coupon) * 10 ** 9;
         
         fee = (offAmt < (fee - floorPrice))
             ? (fee - offAmt)
