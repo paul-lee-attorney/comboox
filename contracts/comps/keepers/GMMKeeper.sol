@@ -224,17 +224,25 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         base.attendWeightRatio = uint16(case0.sumOfWeight * 10000 / votesOfMembers);
 
         if (motion.votingRule.onlyAttendance) {
+
             base.totalHead = (case0.sumOfHead - case3.sumOfHead);
             base.totalWeight = (case0.sumOfWeight - case3.sumOfWeight);
+
         } else {
-            base.totalHead = uint32(_rom.qtyOfMembers() - case3.sumOfHead);
-            base.totalWeight = (votesOfMembers - case3.sumOfWeight); 
+
+            base.totalHead = uint32(_rom.qtyOfMembers());
+            base.totalWeight = votesOfMembers; 
+
             if (motion.votingRule.impliedConsent) {
+
                 base.supportHead = (base.totalHead - case0.sumOfHead);
                 base.supportWeight = (base.totalWeight - case0.sumOfWeight);
 
                 base.attendWeightRatio = 10000;
             }
+
+            base.totalHead -= case3.sumOfHead;
+            base.totalWeight -= case3.sumOfWeight;
 
             if (motion.head.typeOfMotion == 
                     uint8(MotionsRepo.TypeOfMotion.ApproveDoc))
