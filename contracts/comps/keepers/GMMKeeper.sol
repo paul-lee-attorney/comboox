@@ -217,9 +217,11 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         BallotsBox.Case memory case0 = _gmm.getCaseOfAttitude(seqOfMotion, 0);
         BallotsBox.Case memory case3 = _gmm.getCaseOfAttitude(seqOfMotion, 3);
 
+        Checkpoints.Checkpoint memory cp = _rom.capAtDate(motion.body.shareRegDate);
+
         uint64 votesOfMembers = _rom.basedOnPar() 
-            ? _rom.capAtDate(motion.body.shareRegDate).par
-            : _rom.capAtDate(motion.body.shareRegDate).paid;
+            ? cp.par * cp.votingWeight / 100
+            : cp.paid * cp.votingWeight / 100;
 
         base.attendWeightRatio = uint16(case0.sumOfWeight * 10000 / votesOfMembers);
 
@@ -248,7 +250,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
                     uint8(MotionsRepo.TypeOfMotion.ApproveDoc))
             {
                 uint256[] memory parties = 
-                    ISigPage((address(uint160(motion.contents)))).getParties();
+                    ISigPage(address(uint160(motion.contents))).getParties();
                 uint256 len = parties.length;
 
                 while (len > 0) {
