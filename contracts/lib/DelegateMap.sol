@@ -96,23 +96,18 @@ library DelegateMap {
         uint256 len = leaves.length;
 
         while (len > 0) {
-            info = _checkVoteInfo(leaves[len - 1], baseDate, _rom, info);
+            uint64 w = _rom.votesAtDate(acct, baseDate);
+            if (w > 0) {
+                info.weight += w;
+            } else {
+                info.emptyHead++;
+            }
             len--;
         }
         
         voter.weight = _rom.votesAtDate(acct, baseDate);
         voter.repWeight = info.weight;
         voter.repHead = uint32(leaves.length) - info.emptyHead;
-    }
-
-    function _checkVoteInfo(uint acct, uint baseDate, IRegisterOfMembers _rom, LeavesInfo memory input) 
-        private view returns(LeavesInfo memory) 
-    {
-        uint64 w = _rom.votesAtDate(acct, baseDate);
-        if (w > 0) input.weight += w;
-        else input.emptyHead ++;
-
-        return input;
     }
 
     function updateLeavesHeadcountOfDirectors(Map storage map, uint256 acct, IRegisterOfDirectors _rod) 

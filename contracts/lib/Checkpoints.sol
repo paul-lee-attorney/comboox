@@ -88,7 +88,7 @@ library Checkpoints {
             "Checkpoints: block not yet mined"
         );
 
-        uint256 high = counterOfPoints(self);
+        uint256 high = counterOfPoints(self) + 1;
         uint256 low = 1;
         while (low < high) {
             uint256 mid = _average(low, high);
@@ -98,7 +98,7 @@ library Checkpoints {
                 low = mid + 1;
             }
         }
-        if (high > 0) point = self.checkpoints[high];
+        if (high > 1) point = self.checkpoints[high - 1];
     }
 
     function pointsOfHistory(History storage self)

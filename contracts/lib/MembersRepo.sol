@@ -246,10 +246,11 @@ library MembersRepo {
 
         updateOwnersEquity(repo, cp);
 
-        if (repo.chain.basedOnPar() && deltaPar > 0)
+        if (repo.chain.basedOnPar() && deltaPar > 0) {
             repo.chain.increaseTotalVotes(deltaPar * votingWeight / 100, isIncrease);
-        else if (!repo.chain.basedOnPar() && deltaPaid > 0)
+        } else if (!repo.chain.basedOnPar() && deltaPaid > 0) {
             repo.chain.increaseTotalVotes(deltaPaid * votingWeight / 100, isIncrease);
+        }
     }
 
     function _calWeight(
@@ -263,12 +264,12 @@ library MembersRepo {
         
         if (isIncrease) {
             output = repo.chain.basedOnPar()
-                ? uint16((cp.votingWeight * cp.par + votingWeight * deltaPar) / (cp.par + deltaPar))
-                : uint16((cp.votingWeight * cp.paid + votingWeight * deltaPaid) / (cp.paid + deltaPaid));
+                ? uint16(((cp.votingWeight * cp.par + votingWeight * deltaPar) * 100 / (cp.par + deltaPar) + 50) / 100)
+                : uint16(((cp.votingWeight * cp.paid + votingWeight * deltaPaid) * 100 / (cp.paid + deltaPaid) + 50) / 100);
         } else {
             output = repo.chain.basedOnPar()
-                ? uint16((cp.votingWeight * cp.par - votingWeight * deltaPar) / (cp.par - deltaPar))
-                : uint16((cp.votingWeight * cp.paid - votingWeight * deltaPaid) / (cp.paid - deltaPaid));            
+                ? uint16(((cp.votingWeight * cp.par - votingWeight * deltaPar) * 100 / (cp.par - deltaPar) + 50) / 100)
+                : uint16(((cp.votingWeight * cp.paid - votingWeight * deltaPaid) * 100 / (cp.paid - deltaPaid) + 50) / 100);            
         }
     }
 
@@ -344,12 +345,12 @@ library MembersRepo {
         Repo storage repo,
         uint256 acct,
         uint date
-    ) public view memberExist(repo, acct) returns (uint64) {
+    ) public view returns (uint64) {
         Checkpoints.Checkpoint memory cp = repo.members[acct].votesInHand.getAtDate(date);
         
         return repo.chain.basedOnPar() 
-                ? cp.par * cp.votingWeight / 100 
-                : cp.paid * cp.votingWeight / 100;
+                ? (cp.par * cp.votingWeight + 50) / 100 
+                : (cp.paid * cp.votingWeight + 50) / 100;
     }
 
     function votesHistory(

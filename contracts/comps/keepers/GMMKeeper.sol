@@ -206,7 +206,6 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
 
     function voteCountingOfGM(uint256 seqOfMotion) external onlyDK {
         
-
         IRegisterOfMembers _rom = _gk.getROM();
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -217,11 +216,7 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         BallotsBox.Case memory case0 = _gmm.getCaseOfAttitude(seqOfMotion, 0);
         BallotsBox.Case memory case3 = _gmm.getCaseOfAttitude(seqOfMotion, 3);
 
-        Checkpoints.Checkpoint memory cp = _rom.capAtDate(motion.body.shareRegDate);
-
-        uint64 votesOfMembers = _rom.basedOnPar() 
-            ? cp.par * cp.votingWeight / 100
-            : cp.paid * cp.votingWeight / 100;
+        uint64 votesOfMembers = _rom.totalVotes();
 
         base.attendWeightRatio = uint16(case0.sumOfWeight * 10000 / votesOfMembers);
 
@@ -237,15 +232,17 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
 
             if (motion.votingRule.impliedConsent) {
 
-                base.supportHead = (base.totalHead - case0.sumOfHead);
-                base.supportWeight = (base.totalWeight - case0.sumOfWeight);
-
+                base.supportHead = base.totalHead - case0.sumOfHead;                
+                base.supportWeight = base.totalWeight > case0.sumOfWeight
+                        ? (base.totalWeight - case0.sumOfWeight)
+                        : 0;
                 base.attendWeightRatio = 10000;
             }
 
             base.totalHead -= case3.sumOfHead;
-            base.totalWeight -= case3.sumOfWeight;
-
+            base.totalWeight = base.totalWeight > case3.sumOfWeight
+                    ? base.totalWeight - case3.sumOfWeight
+                    : 0 ;
             if (motion.head.typeOfMotion == 
                     uint8(MotionsRepo.TypeOfMotion.ApproveDoc))
             {
@@ -267,10 +264,17 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
                             }
                         } else {
                             base.totalHead --;
-                            base.totalWeight -= votesAtDate;
+
+                            base.totalWeight = base.totalWeight > votesAtDate
+                                    ? base.totalWeight - votesAtDate
+                                    : 0;
+
                             if (motion.votingRule.impliedConsent) {
                                 base.supportHead --;
-                                base.supportWeight -= votesAtDate;
+
+                                base.supportWeight = base.supportWeight > votesAtDate
+                                        ? base.supportWeight - votesAtDate
+                                        : 0;
                             } else {
                                 base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
                             }
