@@ -28,9 +28,11 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
     ) external onlyDK {
         
         IRegisterOfAgreements _roa = _gk.getROA();
+        IRegisterOfShares _ros = _gk.getROS();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
-        SharesRepo.Share memory share = _gk.getROS().getShare(seqOfShare);
+        SharesRepo.Share memory share = _ros.getShare(seqOfShare);
+        uint16 subjectVW = _ros.getShare(deal.head.seqOfShare).head.votingWeight;
 
         require(deal.body.state == uint8(DealsRepo.StateOfDeal.Locked), 
             "SHAK.execAlongs: state not Locked");
@@ -43,7 +45,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         _roa.createMockOfIA(ia);
 
-        _checkAlongDeal(dragAlong, ia, deal, share, caller, paid, par);
+        _checkAlongDeal(dragAlong, ia, deal, share, caller, paid, par, subjectVW);
 
         _roa.execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
     }
@@ -55,10 +57,11 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         SharesRepo.Share memory share,
         uint256 caller,
         uint paid,
-        uint par
+        uint par,
+        uint16 subjectVW
     ) private view {
         
- 
+
         IAlongs _al = dragAlong
             ? IAlongs(_gk.getSHA().
                 getTerm(uint8(IShareholdersAgreement.TitleOfTerm.DragAlong)))
@@ -86,10 +89,10 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             
             if (_rom.basedOnPar())
                 require ( par <= 
-                deal.body.par * share.body.par / _rom.votesOfGroup(deal.head.seller), 
+                deal.body.par * subjectVW / 100 * share.body.par / _rom.votesOfGroup(deal.head.seller), 
                 "SHAKeeper.checkAlong: par overflow");
             else require ( paid <=
-                deal.body.paid * share.body.paid / _rom.votesOfGroup(deal.head.seller),
+                deal.body.paid * subjectVW / 100 * share.body.paid / _rom.votesOfGroup(deal.head.seller),
                 "SHAKeeper.checkAlong: paid overflow");            
         }
     }
