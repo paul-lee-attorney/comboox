@@ -319,6 +319,7 @@ library OptionsRepo {
         Record storage rcd = repo.records[opt.head.seqOfOpt];
 
         SharesRepo.Head memory headOfTarget = _ros.getShare(swap.seqOfTarget).head;
+        SharesRepo.Head memory headOfPledge = _ros.getShare(swap.seqOfPledge).head;
 
         require(opt.head.classOfShare == headOfTarget.class, 
             "OR.createSwap: wrong target class");
@@ -330,13 +331,13 @@ library OptionsRepo {
 
             require(opt.body.rightholder == headOfTarget.shareholder, 
                 "OR.createSwap: rightholder not targetholder");
-            require(rcd.obligors.contains(_ros.getShare(swap.seqOfPledge).head.shareholder), 
+            require(rcd.obligors.contains(headOfPledge.shareholder), 
                 "OR.createSwap: pledge shareholder not obligor");
 
             swap.isPutOpt = true;
 
         } else { // Call Opt
-            require(opt.body.rightholder == _ros.getShare(swap.seqOfPledge).head.shareholder, 
+            require(opt.body.rightholder == headOfPledge.shareholder, 
                 "OR.createSwap: pledge shareholder not rightholder");
 
             require(rcd.obligors.contains(headOfTarget.shareholder), 
@@ -346,13 +347,13 @@ library OptionsRepo {
         if (opt.head.typeOfOpt % 4 < 2) 
             swap.priceOfDeal = opt.head.rate;
         else {
-            uint32 ds = uint32((block.timestamp - headOfTarget.issueDate) / 86400);
-            swap.priceOfDeal = headOfTarget.priceOfPaid * (opt.head.rate * ds + 3650000) / 3650000;  
+            uint32 ds = uint32(((block.timestamp - headOfTarget.issueDate) + 43200) / 86400);
+            swap.priceOfDeal = (headOfTarget.priceOfPaid * (opt.head.rate * ds + 3650000) + 1825000) / 3650000;  
         }
 
         if (opt.head.typeOfOpt % 2 == 1) {            
-            swap.paidOfPledge = (swap.priceOfDeal - headOfTarget.priceOfPaid) * 
-                swap.paidOfTarget / _ros.getShare(swap.seqOfPledge).head.priceOfPaid;
+            swap.paidOfPledge = (2 * (swap.priceOfDeal - headOfTarget.priceOfPaid) * 
+                swap.paidOfTarget + headOfPledge.priceOfPaid) / (2 * headOfPledge.priceOfPaid);
         }
 
         return rcd.swaps.regSwap(swap);
