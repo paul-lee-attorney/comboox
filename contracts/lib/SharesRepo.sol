@@ -294,6 +294,15 @@ library SharesRepo {
         }
     }
 
+    function updatePriceOfPaid(
+        Repo storage repo,
+        uint seqOfShare,
+        uint newPrice
+    ) public shareExist(repo, seqOfShare) {
+        Share storage share = repo.shares[seqOfShare];
+        share.head.priceOfPaid = uint32(newPrice);
+    }
+
     function updatePayInDeadline(
         Repo storage repo,
         uint seqOfShare,

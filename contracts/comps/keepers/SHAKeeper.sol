@@ -204,8 +204,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FreeGift);
         deal.head.preSeq = deal.head.seqOfDeal;
         deal.head.seqOfDeal = 0;
-        deal.head.priceOfPaid = 0;
-        deal.head.priceOfPar = 0;
+        // deal.head.priceOfPaid = 0;
+        deal.head.priceOfPar = tShare.head.seqOfShare;
 
         deal.body.buyer = tShare.head.shareholder;
         deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
@@ -306,7 +306,18 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             _gk.getROA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
 
         _ros.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
-        _ros.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, deal.body.buyer, 0, 0);
+        _ros.transferShare(
+            deal.head.seqOfShare, 
+            deal.body.paid, 
+            deal.body.par, 
+            deal.body.buyer, 
+            deal.head.priceOfPaid, 
+            deal.head.priceOfPaid
+        );
+
+        SharesRepo.Share memory tShare = _ros.getShare(deal.head.priceOfPar);
+        if (tShare.head.priceOfPaid > deal.head.priceOfPaid)
+            _ros.updatePriceOfPaid(tShare.head.seqOfShare, deal.head.priceOfPaid);
     }
 
     // ======== FirstRefusal ========

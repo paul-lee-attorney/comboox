@@ -99,8 +99,11 @@ contract AntiDilution is IAntiDilution, AccessControl {
 
         require (isTriggered(deal, share.head.class), "AD.getGiftPaid: AD not triggered");
 
-        return (share.body.paid * getFloorPriceOfClass(share.head.class) / 
-            deal.head.priceOfPaid - share.body.paid);
+        uint32 floorPrice = getFloorPriceOfClass(share.head.class);
+
+        require (share.head.priceOfPaid >= floorPrice, "AD.getGiftPaid: price of target share lower than floor");
+
+        return (share.body.paid * (2 * floorPrice + deal.head.priceOfPaid) / (2 * deal.head.priceOfPaid) - share.body.paid);
     }
 
     // ################

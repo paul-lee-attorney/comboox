@@ -28,6 +28,8 @@ interface IRegisterOfShares {
 
     // event UpdateStateOfShare(uint256 indexed seqOfShare, uint indexed state);
 
+    event UpdatePriceOfPaid(uint indexed seqOfShare, uint indexed newPrice);
+
     event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
 
     event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
@@ -76,6 +78,7 @@ interface IRegisterOfShares {
     // ==== State & PaidInDeadline ====
 
     // function updateStateOfShare(uint256 seqOfShare, uint state) external;
+    function updatePriceOfPaid(uint seqOfShare, uint newPrice) external;
 
     function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
 

@@ -284,6 +284,14 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     //     _repo.shares[seqOfShare].body.state = uint8(state);
     // }
 
+    function updatePriceOfPaid(
+        uint seqOfShare,
+        uint newPrice
+    ) external onlyKeeper {
+        _repo.updatePriceOfPaid(seqOfShare, newPrice);
+        emit UpdatePriceOfPaid(seqOfShare, newPrice);
+    }
+
     function updatePaidInDeadline(
         uint256 seqOfShare, 
         uint deadline
