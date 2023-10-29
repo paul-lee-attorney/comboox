@@ -10,6 +10,7 @@ artifacts
 test
 
 scripts
+
 server
 
 hardhat.config.js
