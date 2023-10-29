@@ -352,8 +352,8 @@ library OptionsRepo {
         }
 
         if (opt.head.typeOfOpt % 2 == 1) {            
-            swap.paidOfPledge = (2 * (swap.priceOfDeal - headOfTarget.priceOfPaid) * 
-                swap.paidOfTarget + headOfPledge.priceOfPaid) / (2 * headOfPledge.priceOfPaid);
+            swap.paidOfPledge = (swap.priceOfDeal - headOfTarget.priceOfPaid) * 
+                swap.paidOfTarget / headOfPledge.priceOfPaid;
         }
 
         return rcd.swaps.regSwap(swap);
