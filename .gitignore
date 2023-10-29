@@ -1,17 +1,12 @@
 node_modules
 .env
-bin
-bin/contracts
-coverage
-coverage.json
-typechain
-typechain-types
 
-# Hardhat files
+bin
 cache
 artifacts
-# client/src/contracts
-client
-server/src/contracts
 
+scripts
+server
+
+hardhat.config.js
 
