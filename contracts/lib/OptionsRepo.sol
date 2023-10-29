@@ -348,7 +348,7 @@ library OptionsRepo {
             swap.priceOfDeal = opt.head.rate;
         else {
             uint32 ds = uint32(((block.timestamp - headOfTarget.issueDate) + 43200) / 86400);
-            swap.priceOfDeal = (headOfTarget.priceOfPaid * (opt.head.rate * ds + 3650000) + 1825000) / 3650000;  
+            swap.priceOfDeal = headOfTarget.priceOfPaid * (opt.head.rate * ds + 3650000) / 3650000;  
         }
 
         if (opt.head.typeOfOpt % 2 == 1) {            

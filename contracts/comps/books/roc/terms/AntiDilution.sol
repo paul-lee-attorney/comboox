@@ -103,7 +103,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
 
         require (share.head.priceOfPaid >= floorPrice, "AD.getGiftPaid: price of target share lower than floor");
 
-        return (share.body.paid * (2 * floorPrice + deal.head.priceOfPaid) / (2 * deal.head.priceOfPaid) - share.body.paid);
+        return (share.body.paid * floorPrice / deal.head.priceOfPaid - share.body.paid);
     }
 
     // ################
