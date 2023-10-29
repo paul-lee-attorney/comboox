@@ -1,9 +1,13 @@
+.gitignore
+
 node_modules
 .env
 
 bin
 cache
 artifacts
+
+test
 
 scripts
 server
