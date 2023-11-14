@@ -65,9 +65,7 @@ library ArrayUtils {
             output[len - 1] = arrA[len - 1];
             len--;
         }
-        // assembly {
-        //     output := arrA
-        // }
+        
         return output;
     }
 

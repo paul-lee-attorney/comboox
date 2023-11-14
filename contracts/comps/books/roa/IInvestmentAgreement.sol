@@ -3,6 +3,7 @@
 /* *
  * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
+ * v.0.2.1
  * */
 
 pragma solidity ^0.8.8;
@@ -18,7 +19,7 @@ interface IInvestmentAgreement is ISigPage {
     //##    Event     ##
     //##################
 
-    event AddDeal(uint indexed seqOfDeal);
+    event RegDeal(uint indexed seqOfDeal);
 
     event ClearDealCP(
         uint256 indexed seq,

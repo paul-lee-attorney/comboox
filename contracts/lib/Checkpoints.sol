@@ -22,9 +22,9 @@ library Checkpoints {
         mapping (uint256 => Checkpoint) checkpoints;
     }
 
-    //##################
+    //#################
     //##  Write I/O  ##
-    //##################
+    //#################
 
     function push(
         History storage self,
@@ -61,7 +61,7 @@ library Checkpoints {
     }
 
     //##################
-    //##    读接口    ##
+    //##  Read I/O    ##
     //##################
 
     function counterOfPoints(History storage self)
