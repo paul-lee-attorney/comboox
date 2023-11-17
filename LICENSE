@@ -68,7 +68,9 @@ prohibited from:
 1)Deploying the smart contracts of ComBoox, in whole or in part, for 
 whatever purpose, on any blockchain network that has one or more nodes out 
 of your control; 
-2)Modifying, translating, or creating derivative works based on the Work;
+
+2)Modifying, translating, or creating derivative works based on the Work; or
+
 3)Using or disposing of the Work in any illegal manner.
 
 5.Additional Terms
@@ -103,17 +105,20 @@ whereas, it cannot ensure absolute compliance for any significant legal
 issues, please seek professional advice from legal experts of the relevant 
 jurisdictions. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE FOR ANY DAMAGES 
 caused by below issues:
+
 i.AML/KYC Compliance: shall mean the mandatory legal requirements about 
 identity verification and identity archives management, that various 
 countries stipulated in the fields of financing, securities, investment, 
 asset management, currency exchange, payment etc., for the purpose of 
 investor suitability protection, anti-money laundering, anti-terrorist 
 financing, anti-tax avoidance, and other related purposes,
+
 ii.Securities Compliance: shall mean the mandatory legal requirements around 
 securities issuance and/or transaction activities (such as reporting, 
 filing, and disclosure) for the securities-type equity public offerings or 
 specified private placement in terms of stocks, bonds, and other financing 
 instruments in various countries; or
+
 iii.Data Compliance: shall mean the mandatory legal requirements for data 
 processing activities in various countries, in order to protecting data 
 security, personal information rights, national security and/or commercial 
@@ -122,9 +127,12 @@ secrets.
 3)As an infrastructure software, ComBoox cannot influence or control any 
 behavior of its users or third parties. IN NO EVENT SHALL ANY CONTRIBUTOR BE 
 LIABLE FOR ANY DAMAGES caused by below third party behavior:
+
 i.Inaccurate, incomplete or untimely data uploaded/provided by users;
+
 ii.A third party malicious attack, hack, tamper, intercept, or controls over 
-the data against its owner's intention;
+the data against its owner's intention; or
+
 iii.The unavailability of the blockchain due to the failure of any external 
 environment supplier, such as the unavailability of electrical power, 
 internet connection, and/or any other similar public utilities or 
@@ -144,6 +152,7 @@ steps:
 
 1)Create a file named "LICENSE" which contains the whole context of this 
 License in the first directory of your package;
+
 2)Attach the statement to the appropriate annotated syntax at the beginning 
 of each source file.
 
@@ -162,7 +171,7 @@ MORE NODES THAT ARE OUT OF YOUR CONTROL.
 
 
 
-
+----------------------------------------------------------------------------
 ComBoox软件许可证 1.0
 
 您对ComBoox的使用、复制及分发受ComBoox软件许可证如下条款的约束：
@@ -212,12 +221,15 @@ ComBoox非免费作品。当您调用软件API 发出写操作指令时，您的
 
 1)在含有您无法控制的一个或多个节点的区块链网络上部署 ComBoox 的智能合约，不论是部署全部还
 是部分合约，不论您出于何种目的；
-2)修改、改变或创作该作品的衍生作品；
+
+2)修改、改变或创作该作品的衍生作品；或
+
 3)以任何非法方式使用或处分本作品。
 
 5.附加条款
 
 1)如果您打算以超出本许可证允许的方式使用作品，请提前联系贡献者申请商业许可。
+
 2)本作品的被允许的使用和贡献必须包括本许可证的可读副本（请参阅下文中有关复制或分发的特殊要求
 的部分）。
 
@@ -236,18 +248,24 @@ ComBoox非免费作品。当您调用软件API 发出写操作指令时，您的
 2)尽管 ComBoox 提供了有价值的法律和合规解决方案， 但是ComBoox不能根本解决任何一项法律合
 规问题，请寻求相关司法管辖区法律专家的专业意见。在任何情况下，任何贡献者均不对以下问题造成的
 任何损害承担责任：
+
 i.反洗钱合规：指各国出于保证投资者适当性、反洗钱、反恐融资、反避税，以及其他相关目的，在证
 券、投资、融资、资产管理、外币兑换、款项支付等领域，针对行为主体身份识别与身份信息管理等问题
 提出的强制性法律要求；
+
 ii.证券合规：指各国为保护投资者权益，对于股票、债券、融资工具等面向不特定主体或超过一定数量
 的特定主体，发行或交易证券类权益凭证所规定的，提前申报、备案及信息披露等强制性法律要求；或
+
 iii.数据合规：指各国为保护数据安全、个人信息权、国家安全和/或商业秘密而对信息和数据处理活动
 提出的强制性法律要求。
 
 3)作为基础设施软件，ComBoox无法影响或控制其使用者或第三方的任何行为。在任何情况下，任何贡
 献者均不对以下第三方造成的任何损害承担责任：
+
 i.使用者上传/提供的数据不准确、不完整或不及时；
-ii.第三方通过技术手段进行恶意攻击、黑客入侵、篡改、拦截或违背使用者的意图操纵数据；
+
+ii.第三方通过技术手段进行恶意攻击、黑客入侵、篡改、拦截或违背使用者的意图操纵数据；或
+
 iii.任何外部环境故障而导致区块链不可访问的情形，例如电力、网络和/或其他公共基础设施由于第三
 方作为或不作为而导致的故障等情形。
 
@@ -255,7 +273,6 @@ iii.任何外部环境故障而导致区块链不可访问的情形，例如电�
 
 本许可证以中文和英文书就，两种语言版本具有同等法律效力。如果两种语言版本之间存在任何差异，则
 以英文版本为准。
-
 
 9.复制或分发的特殊要求
 
@@ -268,6 +285,7 @@ iii.任何外部环境故障而导致区块链不可访问的情形，例如电�
 This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
 can be obtained at:
          [https://github.com/paul-lee-attorney/comboox]
+
 THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT 
 WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED 
 TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO 
