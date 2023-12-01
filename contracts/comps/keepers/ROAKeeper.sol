@@ -107,25 +107,24 @@ contract ROAKeeper is IROAKeeper, AccessControl {
     }
 
     function _lockDealsOfParty(address ia, uint256 caller) private {
-        IInvestmentAgreement _ia = IInvestmentAgreement(ia);
-        uint[] memory list = _ia.getSeqList();
+        uint[] memory list = IInvestmentAgreement(ia).getSeqList();
         uint256 len = list.length;
         while (len > 0) {
             uint seq = list[len - 1];
             len--;
 
             DealsRepo.Deal memory deal = 
-                _ia.getDeal(seq);
+                IInvestmentAgreement(ia).getDeal(seq);
 
             if (deal.head.seller == caller) {
-                if (_ia.lockDealSubject(seq)) {
+                if (IInvestmentAgreement(ia).lockDealSubject(seq)) {
                     _gk.getROS().decreaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
                 }
             } else if (
                 deal.body.buyer == caller &&
                 deal.head.typeOfDeal ==
                 uint8(DealsRepo.TypeOfDeal.CapitalIncrease)
-            ) _ia.lockDealSubject(seq);
+            ) IInvestmentAgreement(ia).lockDealSubject(seq);
         }
     }
 

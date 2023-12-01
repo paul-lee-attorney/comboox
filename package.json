@@ -13,7 +13,6 @@
     "hardhat": "^2.15.0"
   },
   "dependencies": {
-    "@chainlink/contracts": "^0.6.1",
-    "bfg": "^0.3.0"
+    "@chainlink/contracts": "^0.6.1"
   }
 }

@@ -5,6 +5,7 @@
 <<<<<<< HEAD
  * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  * All Rights Reserved.
+<<<<<<< HEAD
  * v.0.2.1
 =======
 =======
@@ -27,6 +28,8 @@
 >>>>>>> a748ec8 (update LICENSE in all heads of file)
 =======
 >>>>>>> a748ec8 (update LICENSE in all heads of file)
+=======
+>>>>>>> parent of 1acb89a (optimise some small codes)
  * */
 
 pragma solidity ^0.8.8;
@@ -53,8 +56,8 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint paid,
         uint par
     ) external attorneyOrKeeper {
-        _repo.addDeal(sn, buyer, groupOfBuyer, paid, par);
-        // emit AddDeal(seqOfDeal);
+        uint seqOfDeal = _repo.addDeal(sn, buyer, groupOfBuyer, paid, par);
+        emit AddDeal(seqOfDeal);
     }
 
     function regDeal(DealsRepo.Deal memory deal) 
@@ -69,7 +72,6 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
             if (deal.head.seller != 0) _sigPages[1].addBlank(false, seqOfDeal, deal.head.seller);
             _sigPages[1].addBlank(true, seqOfDeal, deal.body.buyer);
         } 
-        emit RegDeal(deal.head.seqOfDeal);
     }
 
     function delDeal(uint256 seq) external onlyAttorney {

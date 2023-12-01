@@ -6,12 +6,6 @@
  * */
 
 const hre = require("hardhat");
-
-// const path = require("path");
-// const fs = require("fs");
-// const tempsDir = path.join(__dirname, "..", "server", "src", "contracts");
-
-// const hre = require("hardhat");
 const { deployTool, copyArtifactsOf } = require("./deployTool");
 
 async function main() {
@@ -22,173 +16,6 @@ async function main() {
 	);
 
 	console.log("Account balance:", (await signers[0].getBalance()).toString());
-
-	// ==== Get Address ====
-
-	// const fileNameOfContractAddrList = path.join(tempsDir, "contracts-address.json");
-	// const Smart = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
-
-	// const artLibArrayUtils = hre.artifacts.readArtifactSync("ArrayUtils");
-	// const libArrayUtils = await hre.ethers.getContractAt(artLibArrayUtils.abi, Smart.ArrayUtils);
-
-	// const artLibBallotsBox = hre.artifacts.readArtifactSync("BallotsBox");
-	// const libBallotsBox = await hre.ethers.getContractAt(artLibBallotsBox.abi, Smart.BallotsBox);
-
-	// const artLibCheckpoints = hre.artifacts.readArtifactSync("Checkpoints");
-	// const libCheckpoints = await hre.ethers.getContractAt(artLibCheckpoints.abi, Smart.Checkpoints);
-
-	// const artLibDelegateMap = hre.artifacts.readArtifactSync("DelegateMap");
-	// const libDelegateMap = await hre.ethers.getContractAt(artLibDelegateMap.abi, Smart.DelegateMap);
-
-	// const artLibDocsRepo = hre.artifacts.readArtifactSync("DocsRepo");
-	// const libDocsRepo = await hre.ethers.getContractAt(artLibDocsRepo.abi, Smart.DocsRepo);
-
-	// const artLibEnumerableSet = hre.artifacts.readArtifactSync("EnumerableSet");
-	// const libEnumerableSet = await hre.ethers.getContractAt(artLibEnumerableSet.abi, Smart.EnumerableSet);
-
-	// const artLibFRClaims = hre.artifacts.readArtifactSync("FRClaims");
-	// const libFRClaims = await hre.ethers.getContractAt(artLibFRClaims.abi, Smart.FRClaims);
-
-	// const artLibGoldChain = hre.artifacts.readArtifactSync("GoldChain");
-	// const libGoldChain = await hre.ethers.getContractAt(artLibGoldChain.abi, Smart.GoldChain);
-
-	// const artLibRolesRepo = hre.artifacts.readArtifactSync("RolesRepo");
-	// const libRolesRepo = await hre.ethers.getContractAt(artLibRolesRepo.abi, Smart.RolesRepo);
-
-	// const artLibRulesParser = hre.artifacts.readArtifactSync("RulesParser");
-	// const libRulesParser = await hre.ethers.getContractAt(artLibRulesParser.abi, Smart.RulesParser);
-
-	// const artLibSwapsRepo = hre.artifacts.readArtifactSync("SwapsRepo");
-	// const libSwapsRepo = await hre.ethers.getContractAt(artLibSwapsRepo.abi, Smart.SwapsRepo);
-
-	// const artLibTopChain = hre.artifacts.readArtifactSync("TopChain");
-	// const libTopChain = await hre.ethers.getContractAt(artLibTopChain.abi, Smart.TopChain);
-
-	// const artLibOrdersRepo = hre.artifacts.readArtifactSync("OrdersRepo");
-	// const libOrdersRepo = await hre.ethers.getContractAt(artLibOrdersRepo.abi, Smart.OrdersRepo);
-
-	// const artLibCondsRepo = hre.artifacts.readArtifactSync("CondsRepo");
-	// const libCondsRepo = await hre.ethers.getContractAt(artLibCondsRepo.abi, Smart.CondsRepo);
-
-	// const artLibDTClaims = hre.artifacts.readArtifactSync("DTClaims");
-	// const libDTClaims = await hre.ethers.getContractAt(artLibDTClaims.abi, Smart.DTClaims);
-
-	// const artLibFilesRepo = hre.artifacts.readArtifactSync("FilesRepo");
-	// const libFilesRepo = await hre.ethers.getContractAt(artLibFilesRepo.abi, Smart.FilesRepo);
-
-	// const artLibLockersRepo = hre.artifacts.readArtifactSync("LockersRepo");
-	// const libLockersRepo = await hre.ethers.getContractAt(artLibLockersRepo.abi, Smart.LockersRepo);
-
-	// const artLibOfficersRepo = hre.artifacts.readArtifactSync("OfficersRepo");
-	// const libOfficersRepo = await hre.ethers.getContractAt(artLibOfficersRepo.abi, Smart.OfficersRepo);
-
-	// const artLibPledgesRepo = hre.artifacts.readArtifactSync("PledgesRepo");
-	// const libPledgesRepo = await hre.ethers.getContractAt(artLibPledgesRepo.abi, Smart.PledgesRepo);
-
-	// const artLibSigsRepo = hre.artifacts.readArtifactSync("SigsRepo");
-	// const libSigsRepo = await hre.ethers.getContractAt(artLibSigsRepo.abi, Smart.SigsRepo);
-
-	// const artLibSharesRepo = hre.artifacts.readArtifactSync("SharesRepo");
-	// const libSharesRepo = await hre.ethers.getContractAt(artLibSharesRepo.abi, Smart.SharesRepo);
-
-	// const artLibMembersRepo = hre.artifacts.readArtifactSync("MembersRepo");
-	// const libMembersRepo = await hre.ethers.getContractAt(artLibMembersRepo.abi, Smart.MembersRepo);
-
-	// const artLibMotionsRepo = hre.artifacts.readArtifactSync("MotionsRepo");
-	// const libMotionsRepo = await hre.ethers.getContractAt(artLibMotionsRepo.abi, Smart.MotionsRepo);
-
-	// const artLibDealsRepo = hre.artifacts.readArtifactSync("DealsRepo");
-	// const libDealsRepo = await hre.ethers.getContractAt(artLibDealsRepo.abi, Smart.DealsRepo);
-
-	// const artLibOptionsRepo = hre.artifacts.readArtifactSync("OptionsRepo");
-	// const libOptionsRepo = await hre.ethers.getContractAt(artLibOptionsRepo.abi, Smart.OptionsRepo);
-
-	// const artLibUsersRepo = hre.artifacts.readArtifactSync("UsersRepo");
-	// const libUsersRepo = await hre.ethers.getContractAt(artLibUsersRepo.abi, Smart.UsersRepo);
-
-	// const artLibLinksRepo = hre.artifacts.readArtifactSync("LinksRepo");
-	// const libLinksRepo = await hre.ethers.getContractAt(artLibLinksRepo.abi, Smart.LinksRepo);
-
-	// const artRegCenter = hre.artifacts.readArtifactSync("RegCenter");
-	// const rc = await hre.ethers.getContractAt(artRegCenter.abi, Smart.RegCenter);
-
-	// const artInvestmentAgreement = hre.artifacts.readArtifactSync("InvestmentAgreement");
-	// const ia = await hre.ethers.getContractAt(artInvestmentAgreement.abi, Smart.InvestmentAgreement);
-
-	// const artShareholdersAgreement = hre.artifacts.readArtifactSync("ShareholdersAgreement");
-	// const sha = await hre.ethers.getContractAt(artShareholdersAgreement.abi, Smart.ShareholdersAgreement);
-
-	// const artAntiDilution = hre.artifacts.readArtifactSync("AntiDilution");
-	// const ad = await hre.ethers.getContractAt(artAntiDilution.abi, Smart.AntiDilution);
-
-	// const artLockUp = hre.artifacts.readArtifactSync("LockUp");
-	// const lu = await hre.ethers.getContractAt(artLockUp.abi, Smart.LockUp);
-
-	// const artAlongs = hre.artifacts.readArtifactSync("Alongs");
-	// const al = await hre.ethers.getContractAt(artAlongs.abi, Smart.Alongs);
-
-	// const artOptions = hre.artifacts.readArtifactSync("Options");
-	// const op = await hre.ethers.getContractAt(artOptions.abi, Smart.Options);
-
-	// const artGeneralKeeper = hre.artifacts.readArtifactSync("GeneralKeeper");
-	// const gk = await hre.ethers.getContractAt(artGeneralKeeper.abi, Smart.GeneralKeeper);
-
-	// const artROOKeeper = hre.artifacts.readArtifactSync("ROOKeeper");
-	// const rooKeeper = await hre.ethers.getContractAt(artROOKeeper.abi, Smart.ROOKeeper);
-
-	// const artROMKeeper = hre.artifacts.readArtifactSync("ROMKeeper");
-	// const romKeeper = await hre.ethers.getContractAt(artROMKeeper.abi, Smart.ROMKeeper);
-
-	// const artRODKeeper = hre.artifacts.readArtifactSync("RODKeeper");
-	// const rodKeeper = await hre.ethers.getContractAt(artRODKeeper.abi, Smart.RODKeeper);
-
-	// const artSHAKeeper = hre.artifacts.readArtifactSync("SHAKeeper");
-	// const shaKeeper = await hre.ethers.getContractAt(artSHAKeeper.abi, Smart.SHAKeeper);
-
-	// const artGMMKeeper = hre.artifacts.readArtifactSync("GMMKeeper");
-	// const gmmKeeper = await hre.ethers.getContractAt(artGMMKeeper.abi, Smart.GMMKeeper);
-
-	// const artBMMKeeper = hre.artifacts.readArtifactSync("BMMKeeper");
-	// const bmmKeeper = await hre.ethers.getContractAt(artBMMKeeper.abi, Smart.BMMKeeper);
-
-	// const artLOOKeeper = hre.artifacts.readArtifactSync("LOOKeeper");
-	// const looKeeper = await hre.ethers.getContractAt(artLOOKeeper.abi, Smart.LOOKeeper);
-
-	// const artROAKeeper = hre.artifacts.readArtifactSync("ROAKeeper");
-	// const roaKeeper = await hre.ethers.getContractAt(artROAKeeper.abi, Smart.ROAKeeper);
-
-	// const artROCKeeper = hre.artifacts.readArtifactSync("ROCKeeper");
-	// const rocKeeper = await hre.ethers.getContractAt(artROCKeeper.abi, Smart.ROCKeeper);
-
-	// const artROPKeeper = hre.artifacts.readArtifactSync("ROPKeeper");
-	// const ropKeeper = await hre.ethers.getContractAt(artROPKeeper.abi, Smart.ROPKeeper);
-
-	// const artRegisterOfAgreements = hre.artifacts.readArtifactSync("RegisterOfAgreements");
-	// const roa = await hre.ethers.getContractAt(artRegisterOfAgreements.abi, Smart.RegisterOfAgreements);
-
-	// const artRegisterOfDirectors = hre.artifacts.readArtifactSync("RegisterOfDirectors");
-	// const rod = await hre.ethers.getContractAt(artRegisterOfDirectors.abi, Smart.RegisterOfDirectors);
-
-	// const artMeetingMinutes = hre.artifacts.readArtifactSync("MeetingMinutes");
-	// const mm = await hre.ethers.getContractAt(artMeetingMinutes.abi, Smart.MeetingMinutes);
-
-	// const artRegisterOfConstitution = hre.artifacts.readArtifactSync("RegisterOfConstitution");
-	// const roc = await hre.ethers.getContractAt(artRegisterOfConstitution.abi, Smart.RegisterOfConstitution);
-
-	// const artRegisterOfOptions = hre.artifacts.readArtifactSync("RegisterOfOptions");
-	// const roo = await hre.ethers.getContractAt(artRegisterOfOptions.abi, Smart.RegisterOfOptions);
-
-	// const artRegisterOfPledges = hre.artifacts.readArtifactSync("RegisterOfPledges");
-	// const rop = await hre.ethers.getContractAt(artRegisterOfPledges.abi, Smart.RegisterOfPledges);
-
-	// const artRegisterOfShares = hre.artifacts.readArtifactSync("RegisterOfShares");
-	// const ros = await hre.ethers.getContractAt(artRegisterOfShares.abi, Smart.RegisterOfShares);
-
-	// const artRegisterOfMembers = hre.artifacts.readArtifactSync("RegisterOfMembers");
-	// const rom = await hre.ethers.getContractAt(artRegisterOfMembers.abi, Smart.RegisterOfMembers);
-
-	// const artListOfOrders = hre.artifacts.readArtifactSync("ListOfOrders");
-	// const loo = await hre.ethers.getContractAt(artListOfOrders.abi, Smart.ListOfOrders);
 
 	let libraries = {};
 
@@ -342,11 +169,6 @@ async function main() {
 	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries);
 	let gmmKeeper = await deployTool(signers[0], "GMMKeeper", libraries);
 	let bmmKeeper = await deployTool(signers[0], "BMMKeeper", libraries);
-
-	libraries = {
-		"RolesRepo": libRolesRepo.address,
-		"RulesParser": libRulesParser.address		
-	}
 	let looKeeper = await deployTool(signers[0], "LOOKeeper", libraries);
 
 	libraries = {
@@ -437,7 +259,7 @@ async function main() {
 
 	libraries = {};
 
-	let mockFeedRegistry = await deployTool(signers[0], "MockFeedRegistry", libraries);
+	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
 	await rc.setBackupKey(signers[1].address);
@@ -524,11 +346,6 @@ async function main() {
 	await rc.connect(signers[1]).setFeedRegistry(mockFeedRegistry.address);
 	console.log("set MOCK feed registry at address: ", mockFeedRegistry.address, "\n");
 	
-	let options = {signers:signers[1]};
-	let FuleTank = await hre.ethers.getContractFactory("FuleTank", options);
-	let fuleTank = await FuleTank.deploy(rc.address, 10000);
-	await fuleTank.deployed();
-
 	// ==== Reg Users ====
 
 	// await rc.connect(signers[2]).regUser("0x0".padEnd(66, "0"));

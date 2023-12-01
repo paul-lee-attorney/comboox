@@ -464,6 +464,8 @@ library DealsRepo {
     function payOffApprovedDeal(
         Repo storage repo,
         uint seqOfDeal,
+        // uint msgValue,
+        // uint centPrice,
         uint caller
     ) public returns (bool flag){
 
@@ -481,6 +483,10 @@ library DealsRepo {
 
         require(block.timestamp < deal.head.closingDeadline,
             "DR.payApprDeal: missed closingDeadline");
+
+        // require((uint(deal.body.paid) * deal.head.priceOfPaid + 
+        //     uint(deal.body.par - deal.body.paid) * deal.head.priceOfPar) * 
+        //     centPrice / 100 <= msgValue, "DR.payApprDeal: insufficient msgValue");
 
         deal.body.state = uint8(StateOfDeal.Closed);
 
