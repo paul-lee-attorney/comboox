@@ -18,7 +18,7 @@ Please visit blow websites for:
 
 1. [White Paper](http://combooxgitbook.io/whitepaper "White Paper of ComBoox");
 2. [Test Net (Sepolia) App](http://comboox-sepolia.vercel.app "Test Net (Sepolia) App of ComBoox"); and
-3. [Main Net App](http://comboox.vercel.app "Main Net App of ComBoox").
+3. [Ethereum Main Net App](http://comboox.vercel.app "Ethereum Main Net App of ComBoox").
 
 ***
 
