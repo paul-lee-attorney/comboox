@@ -43,6 +43,6 @@ Please visit blow websites for:
 请点击以下链接以便访问：
 
 1. [ComBoox白皮书](http://combooxgitbook.io/whitepaper "ComBoox白皮书");
-2. [测试链(Sepolia)App](http://comboox-sepolia.vercel.app "测试链(Sepolia)App"); and
-3. [以太坊主网App](http://comboox.vercel.app "以太坊主网App").
+2. [测试链(Sepolia)App](http://comboox-sepolia.vercel.app "测试链(Sepolia)App");及
+3. [以太坊主网App](http://comboox.vercel.app "以太坊主网App")。
 
