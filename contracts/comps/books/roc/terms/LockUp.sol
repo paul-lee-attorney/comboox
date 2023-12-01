@@ -27,7 +27,7 @@ contract LockUp is ILockUp, AccessControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 
-    // 基准日条件未成就时，按“2105-09-19”设定到期日
+    // default expire date as “2105-09-19”
     uint48 constant _REMOTE_FUTURE = 4282732800;
 
     // lockers[0].keyHolders: ssnList;
@@ -60,7 +60,7 @@ contract LockUp is ILockUp, AccessControl {
     }
 
     // ################
-    // ##  查询接口  ##
+    // ##  Read I/O  ##
     // ################
 
     function isLocked(uint256 seqOfShare) public view returns (bool) {
@@ -81,7 +81,7 @@ contract LockUp is ILockUp, AccessControl {
     }
 
     // ################
-    // ##  Term接口  ##
+    // ##  Term      ##
     // ################
 
     function isTriggered(DealsRepo.Deal memory deal) external view returns (bool) {
@@ -118,18 +118,12 @@ contract LockUp is ILockUp, AccessControl {
         
         uint seqOfMotion = _gk.getROA().getHeadOfFile(ia).seqOfMotion;
                
-        // uint256[] memory consentParties = _gk.getGMM().
-        //     getCaseOfAttitude(seqOfMotion,1).voters;
-
         uint256[] memory parties = ISigPage(ia).getParties();
 
         BallotsBox.Case memory consentCase = _gk.getGMM().getCaseOfAttitude(seqOfMotion, 1);
 
         uint256[] memory supporters = 
             consentCase.voters.combine(consentCase.principals).merge(parties);
-
-
-        // uint256[] memory agreedParties = consentParties.merge(parties);
 
         return _isExempted(deal.head.seqOfShare, supporters);
     }

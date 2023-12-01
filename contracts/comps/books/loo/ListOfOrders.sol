@@ -137,13 +137,8 @@ contract ListOfOrders is IListOfOrders, AccessControl {
 
     }
 
-    // function removeDeals() external onlyDK {
-    //     _repo.removeDeals();
-    // }
-
-
     //################
-    //##  Read I/O  ##
+    //##  Read I/O ##
     //################
 
     // ==== Investor ====

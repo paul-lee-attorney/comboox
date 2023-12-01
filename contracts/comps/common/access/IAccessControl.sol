@@ -46,7 +46,7 @@ interface IAccessControl {
     event LockContents();
 
     // ##################
-    // ##    写端口    ##
+    // ##    Write     ##
     // ##################
 
     function init(
@@ -75,7 +75,7 @@ interface IAccessControl {
     function lockContents() external;
 
     // ##################
-    // ##   查询端口    ##
+    // ##   Read I/O   ##
     // ##################
 
     function getOwner() external view returns (address);

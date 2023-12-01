@@ -19,7 +19,6 @@
 
 pragma solidity ^0.8.8;
 
-
 import "../comps/books/rom/IRegisterOfMembers.sol";
 
 library FRClaims {
@@ -121,7 +120,7 @@ library FRClaims {
     }
 
     //  ################################
-    //  ##       查询接口              ##
+    //  ##       Read I/O             ##
     //  ################################
 
     function isClaimer(Claims storage cls, uint acct) public view returns(bool) {

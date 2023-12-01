@@ -29,7 +29,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
     Ruler private _ruler;
 
     // #################
-    // ##   修饰器    ##
+    // ##   Modifier  ##
     // #################
 
     modifier onlyMarked(uint256 class) {
@@ -66,7 +66,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
     }
 
     // ################
-    // ##  查询接口  ##
+    // ##  Read I/O  ##
     // ################
 
     function isMarked(uint256 class) public view returns (bool flag) {
@@ -119,7 +119,7 @@ contract AntiDilution is IAntiDilution, AccessControl {
     }
 
     // ################
-    // ##  Term接口  ##
+    // ##  Term      ##
     // ################
 
     function isTriggered(DealsRepo.Deal memory deal, uint class) public view returns (bool) {

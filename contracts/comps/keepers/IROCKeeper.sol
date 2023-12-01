@@ -29,15 +29,12 @@ import "../../lib/RulesParser.sol";
 import "../../lib/DocsRepo.sol";
 
 interface IROCKeeper {
+
     // ############
     // ##  SHA   ##
     // ############
 
-    // function setTempOfBOH(address temp, uint8 typeOfDoc) external;
-
     function createSHA(uint version, address primeKeyOfCaller, uint caller) external;
-
-    // function removeSHA(address sha, uint256 caller) external;
 
     function circulateSHA(
         address sha,

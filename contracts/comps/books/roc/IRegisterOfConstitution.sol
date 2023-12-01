@@ -35,9 +35,9 @@ interface IRegisterOfConstitution is IFilesFolder{
 
     function changePointer(address body) external;
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     function pointer() external view returns (address);
 }

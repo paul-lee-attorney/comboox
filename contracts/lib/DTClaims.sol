@@ -19,7 +19,6 @@
 
 pragma solidity ^0.8.8;
 
-
 import "./EnumerableSet.sol";
 
 library DTClaims {
@@ -172,7 +171,7 @@ library DTClaims {
     }
 
     //  ################################
-    //  ##       查询接口              ##
+    //  ##       Read I/O             ##
     //  ################################
 
     function hasClaim(Claims storage cls, uint seqOfDeal) public view returns(bool) {

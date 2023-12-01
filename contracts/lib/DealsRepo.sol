@@ -190,10 +190,9 @@ library DealsRepo {
         require(deal.body.par > 0, "DR.RD: zero par");
         require(deal.body.par >= deal.body.paid, "DR.RD: paid overflow");
 
-        // if (!repo.seqList.contains(deal.head.seqOfDeal)) {
         deal.head.seqOfDeal = _increaseCounterOfDeal(repo);
         repo.seqList.add(deal.head.seqOfDeal);
-        // }
+
         repo.deals[deal.head.seqOfDeal] = Deal({
             head: deal.head,
             body: deal.body,
@@ -464,8 +463,6 @@ library DealsRepo {
     function payOffApprovedDeal(
         Repo storage repo,
         uint seqOfDeal,
-        // uint msgValue,
-        // uint centPrice,
         uint caller
     ) public returns (bool flag){
 
@@ -483,10 +480,6 @@ library DealsRepo {
 
         require(block.timestamp < deal.head.closingDeadline,
             "DR.payApprDeal: missed closingDeadline");
-
-        // require((uint(deal.body.paid) * deal.head.priceOfPaid + 
-        //     uint(deal.body.par - deal.body.paid) * deal.head.priceOfPar) * 
-        //     centPrice / 100 <= msgValue, "DR.payApprDeal: insufficient msgValue");
 
         deal.body.state = uint8(StateOfDeal.Closed);
 
@@ -506,9 +499,9 @@ library DealsRepo {
     }
 
 
-    //  ################################
-    //  ##       查询接口              ##
-    //  ###############################
+    //  ##########################
+    //  ##       Read I/O       ##
+    //  ##########################
 
     function getTypeOfIA(Repo storage repo) external view returns (uint8) {
         return repo.deals[0].head.typeOfDeal;
@@ -525,24 +518,6 @@ library DealsRepo {
     function isDeal(Repo storage repo, uint256 seqOfDeal) public view returns (bool) {
         return repo.seqList.contains(seqOfDeal);
     }
-
-    // function getHeadOfDeal(Repo storage repo, uint256 seq) 
-    //     external view dealExist(repo, seq) returns (Head memory)
-    // {
-    //     return repo.deals[seq].head;
-    // }
-
-    // function getBodyOfDeal(Repo storage repo,  uint256 seq) 
-    //     external view dealExist(repo, seq) returns (Body memory)
-    // {
-    //     return repo.deals[seq].body;
-    // }
-
-    // function getHashLockOfDeal(Repo storage repo, uint256 seq) 
-    //     external view dealExist(repo, seq) returns (bytes32)
-    // {
-    //     return repo.deals[seq].hashLock;
-    // }
     
     function getDeal(Repo storage repo, uint256 seq) 
         external view dealExist(repo, seq) returns (Deal memory)

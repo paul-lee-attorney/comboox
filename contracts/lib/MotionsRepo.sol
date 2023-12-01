@@ -512,36 +512,6 @@ library MotionsRepo {
         return repo.records[seqOfMotion].map.getDelegateOf(acct);
     }
 
-    // function getLeavesWeightAtDate(
-    //     Repo storage repo, 
-    //     uint256 seqOfMotion, 
-    //     uint acct,
-    //     uint baseDate, 
-    //     IRegisterOfMembers _rom
-    // ) public view returns(uint64 weight)
-    // {
-    //     repo.records[seqOfMotion].map.updateLeavesWeightAtDate(acct, baseDate, _rom);
-
-    //     DelegateMap.Voter storage voter = repo.records[seqOfMotion].map.voters[acct];
-
-    //     weight = voter.weight + voter.repWeight;
-    // }
-
-    // function getLeavesHeadcountOfDirectors(
-    //     Repo storage repo, 
-    //     uint256 seqOfMotion, 
-    //     uint acct,
-    //     IRegisterOfDirectors _rod
-    // ) public view returns(uint32 head)
-    // {
-    //     repo.records[seqOfMotion].map.updateLeavesHeadcountOfDirectors(acct, _rod);
-
-    //     DelegateMap.Voter storage voter = repo.records[seqOfMotion].map.voters[acct];
-
-    //     head = voter.repHead + 1;
-    // }
-
-
     // ==== motion ====
 
     function getMotion(Repo storage repo, uint256 seqOfMotion)

@@ -127,8 +127,6 @@ contract ROPKeeper is IROPKeeper, AccessControl {
             _createIA(deal.head.seqOfShare, seqOfPld, version, primeKeyOfCaller, caller)
         );
 
-        
-
         PledgesRepo.Pledge memory pld = 
             _gk.getROP().getPledge(deal.head.seqOfShare, seqOfPld);
 
@@ -153,7 +151,6 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         address primeKeyOfCaller,
         uint caller        
     ) private returns(address) {
-        
 
         _gk.getROP().execPledge(seqOfShare, seqOfPld, caller);
 
@@ -184,8 +181,6 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         deal.head.seqOfDeal = _ia.regDeal(deal);
 
         _ia.finalizeIA();
-
-        
 
         RulesParser.VotingRule memory vr = 
             RulesParser.votingRuleParser(_gk.getSHA().getRule(deal.head.typeOfDeal));
@@ -241,7 +236,6 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 caller
     ) external onlyDK {
         
-
         IRegisterOfPledges _rop = _gk.getROP();
 
         PledgesRepo.Pledge memory pld = _rop.getPledge(seqOfShare, seqOfPld);

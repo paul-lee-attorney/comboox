@@ -38,8 +38,6 @@ interface IRegisterOfShares {
 
     event DeregisterShare(uint256 indexed seqOfShare);
 
-    // event UpdateStateOfShare(uint256 indexed seqOfShare, uint indexed state);
-
     event UpdatePriceOfPaid(uint indexed seqOfShare, uint indexed newPrice);
 
     event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
@@ -55,7 +53,7 @@ interface IRegisterOfShares {
     event IncreaseEquityOfClass(bool indexed isIncrease, uint indexed class, uint indexed amt);
 
     //##################
-    //##  Write I/O  ##
+    //##  Write I/O   ##
     //##################
 
     function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) external;
@@ -89,7 +87,6 @@ interface IRegisterOfShares {
 
     // ==== State & PaidInDeadline ====
 
-    // function updateStateOfShare(uint256 seqOfShare, uint state) external;
     function updatePriceOfPaid(uint seqOfShare, uint newPrice) external;
 
     function updatePaidInDeadline(uint256 seqOfShare, uint paidInDeadline) external;
@@ -105,7 +102,7 @@ interface IRegisterOfShares {
     ) external;
 
     // ##################
-    // ##   查询接口   ##
+    // ##   Read I/O   ##
     // ##################
 
     function counterOfShares() external view returns (uint32);

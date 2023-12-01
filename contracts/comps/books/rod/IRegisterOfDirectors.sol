@@ -39,13 +39,9 @@ interface IRegisterOfDirectors {
 
     event RemoveOfficer(uint256 indexed seqOfPos);
 
-    // event ProposeMotionToBoard(uint256 indexed seqOfMotion, uint256 indexed caller);
-
-    // event ExecAction(uint256 indexed contents, bool success);
-
-    //##################
+    //#################
     //##  Write I/O  ##
-    //##################
+    //#################
 
     function createPosition(bytes32 snOfPos) external;
 
@@ -59,9 +55,9 @@ interface IRegisterOfDirectors {
 
     function removeOfficer (uint256 seqOfPos) external;
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
     
     // ==== Positions ====
 
@@ -82,9 +78,6 @@ interface IRegisterOfDirectors {
 
     function getManagersPosList() external view returns(uint[] memory);
 
-    // function getManagersFullPosInfo() external view 
-    //     returns(OfficersRepo.Position[] memory);
-
     // ==== Directors ====
 
     function isDirector(uint256 acct) external view returns (bool);
@@ -96,9 +89,6 @@ interface IRegisterOfDirectors {
 
     function getDirectorsPosList() external view 
         returns (uint256[] memory);
-
-    // function getDirectorsFullPosInfo() external view 
-    //     returns(OfficersRepo.Position[] memory);        
 
     // ==== Executives ====
     
@@ -118,9 +108,6 @@ interface IRegisterOfDirectors {
         external view returns (bool);
 
     // ==== seatsCalculator ====
-
-    // function getBoardSeatsQuota(uint256 acct) external view 
-    //     returns(uint256);
 
     function getBoardSeatsOccupied(uint acct) external view 
         returns (uint256);

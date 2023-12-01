@@ -46,8 +46,6 @@ interface IRegisterOfAgreements is IFilesFolder {
 
     // ======== RegisterOfAgreements ========
 
-    // function circulateIA(address ia, bytes32 docUrl, bytes32 docHash) external;
-
     function claimFirstRefusal(
         address ia,
         uint256 seqOfDeal,
@@ -82,16 +80,9 @@ interface IRegisterOfAgreements is IFilesFolder {
 
     function mockDealOfBuy (address ia, uint buyer, uint groupRep, uint amount) external;
 
-    // function addAlongDeal(
-    //     address ia,
-    //     uint256 seqOfLinkRule,
-    //     uint32 seqOfShare,
-    //     uint64 amount
-    // ) external returns (bool flag);
-
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     // ==== FR Claims ====
 

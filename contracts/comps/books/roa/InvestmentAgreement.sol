@@ -1,15 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
-<<<<<<< HEAD
-<<<<<<< HEAD
- * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
- * All Rights Reserved.
-<<<<<<< HEAD
- * v.0.2.1
-=======
-=======
->>>>>>> a748ec8 (update LICENSE in all heads of file)
  * Copyright (c) 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -24,12 +15,6 @@
  * YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE 
  * OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR 
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
-<<<<<<< HEAD
->>>>>>> a748ec8 (update LICENSE in all heads of file)
-=======
->>>>>>> a748ec8 (update LICENSE in all heads of file)
-=======
->>>>>>> parent of 1acb89a (optimise some small codes)
  * */
 
 pragma solidity ^0.8.8;
@@ -185,7 +170,6 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function payOffApprovedDeal(
         uint seqOfDeal,
         uint msgValue,
-        // uint centPrice,
         uint caller
     ) external returns (bool flag){
         flag = _repo.payOffApprovedDeal(seqOfDeal, caller);
@@ -200,24 +184,12 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     //  #################################
-    //  ##       查询接口               ##
-    //  ################################
+    //  ##       Read I/O              ##
+    //  #################################
 
     function getTypeOfIA() external view returns (uint8) {
         return _repo.getTypeOfIA();
     }
-
-    // function counterOfDeal() public view returns (uint16) {
-    //     return _repo.counterOfDeal();
-    // }
-
-    // function counterOfClosedDeal() public view returns (uint16) {
-    //     return _repo.counterOfClosedDeal();
-    // }
-
-    // function isDeal(uint256 seqOfDeal) public view returns (bool) {
-    //     return _repo.isDeal(seqOfDeal);
-    // }
     
     function getDeal(uint256 seqOfDeal) external view returns (DealsRepo.Deal memory)
     {
@@ -229,18 +201,6 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     // ==== Swap ====
-
-    // function counterOfSwaps(uint seqOfDeal)
-    //     external view returns (uint16)
-    // {
-    //     return _repo.counterOfSwaps(seqOfDeal);
-    // }
-
-    // function sumPaidOfTarget(uint seqOfDeal)
-    //     external view returns (uint64)
-    // {
-    //     return _repo.sumPaidOfTarget(seqOfDeal);
-    // }
 
     function getSwap(uint seqOfDeal, uint256 seqOfSwap)
         external view returns (SwapsRepo.Swap memory)

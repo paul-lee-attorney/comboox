@@ -48,7 +48,7 @@ contract Alongs is IAlongs, AccessControl {
     }
 
     // ################
-    // ##  查询接口  ##
+    // ##  Read I/O  ##
     // ################
 
     function isDragger(uint256 dragger) external view returns (bool) {

@@ -28,7 +28,6 @@ import "../../../common/components/ISigPage.sol";
 
 interface ILockUp {
 
-    // 股票锁定柜
     struct Locker {
         uint48 dueDate;
         EnumerableSet.UintSet keyHolders;
@@ -47,7 +46,7 @@ interface ILockUp {
     function removeKeyholder(uint256 seqOfShare, uint256 keyholder) external;
 
     // ################
-    // ##  查询接口  ##
+    // ##  Read I/O  ##
     // ################
 
     function isLocked(uint256 seqOfShare) external view returns (bool);

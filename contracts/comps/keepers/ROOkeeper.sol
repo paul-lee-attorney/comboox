@@ -125,7 +125,6 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint caller
     ) external onlyDK {
 
-        // 
         IRegisterOfShares _ros = _gk.getROS();
 
         SwapsRepo.Swap memory swap =

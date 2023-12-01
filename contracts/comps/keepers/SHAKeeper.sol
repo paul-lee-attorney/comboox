@@ -140,8 +140,6 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             len--;
         }
 
-        // _ia.signDoc(false, caller, sigHash);
-
     }
 
     function _createAlongDeal(
@@ -216,7 +214,6 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FreeGift);
         deal.head.preSeq = deal.head.seqOfDeal;
         deal.head.seqOfDeal = 0;
-        // deal.head.priceOfPaid = 0;
         deal.head.priceOfPar = tShare.head.seqOfShare;
 
         deal.body.buyer = tShare.head.shareholder;
@@ -401,8 +398,6 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             len--;
         }
 
-        // if (deal.head.seqOfShare > 0)
-        //     _ia.signDoc(false, deal.head.seller, sigHashOfSeller);
     }
 
     function _createFRDeal(

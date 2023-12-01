@@ -26,9 +26,7 @@ import "./TopChain.sol";
 
 library MembersRepo {
     using Checkpoints for Checkpoints.History;
-    // using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
-    // using SharesRepo for SharesRepo.Head;
     using TopChain for TopChain.Chain;
 
     struct Member {
@@ -295,7 +293,7 @@ library MembersRepo {
     }
 
     //##################
-    //##    读接口    ##
+    //##    Read      ##
     //##################
 
     // ==== member ====
@@ -440,7 +438,5 @@ library MembersRepo {
             "MR.sharesInClass: not class member");
         return repo.members[acct].sharesOfClass[class].values();
     }
-
-
 
 }

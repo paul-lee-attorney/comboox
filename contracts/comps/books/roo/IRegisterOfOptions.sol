@@ -97,7 +97,7 @@ interface IRegisterOfOptions {
     ) external returns (SwapsRepo.Swap memory swap);
     
     // ################
-    // ##  查询接口   ##
+    // ##  Read I/O  ##
     // ################
 
     function counterOfOptions() external view returns (uint32);

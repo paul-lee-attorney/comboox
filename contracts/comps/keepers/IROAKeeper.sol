@@ -33,11 +33,7 @@ interface IROAKeeper {
     // ##   Write IO  ##
     // #################
 
-    // function setTempOfIA(address temp, uint256 typeOfDoc) external;
-
     function createIA(uint256 version, address primeKeyOfCaller, uint caller) external;
-
-    // function removeIA(address ia, uint256 caller) external;
 
     function circulateIA(
         address ia,

@@ -34,7 +34,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     LockersRepo.Repo private _lockers;
 
     //##################
-    //##  Write I/O  ##
+    //##  Write I/O   ##
     //##################
 
     // ==== IssueShare ====
@@ -289,13 +289,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
     // ==== State & PaidInDeadline ====
 
-    // function updateStateOfShare(uint256 seqOfShare, uint state)
-    //     external onlyDK 
-    // {
-    //     emit UpdateStateOfShare(seqOfShare, state);
-    //     _repo.shares[seqOfShare].body.state = uint8(state);
-    // }
-
     function updatePriceOfPaid(
         uint seqOfShare,
         uint newPrice
@@ -335,8 +328,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         emit IncreaseEquityOfClass(isIncrease, classOfShare, amt);
     }
-
-
 
     // ==== private funcs ====
 
@@ -407,7 +398,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     }
 
     // #################
-    // ##   查询接口   ##
+    // ##   Read I/O  ##
     // #################
 
     function counterOfShares() external view returns (uint32) {

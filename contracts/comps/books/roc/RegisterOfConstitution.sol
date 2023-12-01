@@ -32,15 +32,15 @@ contract RegisterOfConstitution is IRegisterOfConstitution, FilesFolder {
     //##################
 
     function changePointer(address body) external onlyDK {
-        if (_pointer != address(0)) setStateOfFile(_pointer, uint8(FilesRepo.StateOfFile.Revoked));
-        // setStateOfFile(body, uint8(StateOfFile.Closed));
+        if (_pointer != address(0)) 
+            setStateOfFile(_pointer, uint8(FilesRepo.StateOfFile.Revoked));
         _pointer = body;
         emit ChangePointer(body);
     }
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     function pointer() external view returns (address) {
         return _pointer;

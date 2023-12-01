@@ -138,6 +138,4 @@ contract FilesFolder is IFilesFolder, AccessControl {
         head = _repo.getHeadOfFile(body);
     }
 
-
-
 }

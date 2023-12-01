@@ -73,7 +73,6 @@ library SigsRepo {
         uint signingDays,
         uint closingDays
     ) public {
-        // require(!circulated(p), "SR.SD: doc already circulated");
         p.blanks[0].sig.seq = uint16(signingDays);
         p.blanks[0].sig.attr = uint16(closingDays);
     }
@@ -180,7 +179,7 @@ library SigsRepo {
     }
 
     //####################
-    //##    查询接口     ##
+    //##    Read I/O    ##
     //####################
 
     function circulated(Page storage p) public view returns (bool)
@@ -190,7 +189,6 @@ library SigsRepo {
 
     function established(Page storage p) public view returns (bool)
     {
-        // return p.blanks[0].sig.flag;
         return counterOfBlanks(p) > 0 
             && counterOfBlanks(p) == counterOfSigs(p);
     }

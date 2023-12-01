@@ -25,29 +25,28 @@ library SharesRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
     struct Head {
-        uint16 class; // 股票类别/轮次编号
-        uint32 seqOfShare; // 股票序列号
-        uint32 preSeq; // 前序股票序列号（股转时原标的股序列号）
-        uint48 issueDate; // 股票签发日期（秒时间戳）
-        uint40 shareholder; // 股东代码
-        uint32 priceOfPaid; // 发行价格（实缴出资价）
-        uint32 priceOfPar; // 发行价格（认缴出资价）
-        uint16 votingWeight; // 表决权重（百分点）
+        uint16 class; 
+        uint32 seqOfShare; 
+        uint32 preSeq; 
+        uint48 issueDate; 
+        uint40 shareholder; 
+        uint32 priceOfPaid; 
+        uint32 priceOfPar; 
+        uint16 votingWeight; 
         uint8 argu;
     }
 
     struct Body {
-        uint48 payInDeadline; // 出资期限（秒时间戳）
-        uint64 paid; // 实缴出资
-        uint64 par; // 认缴出资（注册资本面值）
-        uint64 cleanPaid; // 清洁实缴出资（扣除出质、远期、销售要约金额）
+        uint48 payInDeadline; 
+        uint64 paid;
+        uint64 par; 
+        uint64 cleanPaid; 
         uint8 state;
         uint8 para;
     }
 
-    //Share 股票
     struct Share {
-        Head head; //出资证明书编号（股票编号）
+        Head head;
         Body body;
     }
 

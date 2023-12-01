@@ -67,9 +67,9 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
             emit RemoveOfficer(seqOfPos);
     }
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     // ==== Positions ====
     
@@ -105,12 +105,6 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
         return _repo.getManagersPosList();
     }
 
-    // function getManagersFullPosInfo() public view 
-    //     returns(OfficersRepo.Position[] memory) 
-    // {
-    //     return _repo.getManagersFullPosInfo();
-    // }
-
     // ==== Directors ====
 
     function isDirector(uint256 acct) external view returns (bool) {
@@ -132,12 +126,6 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
     {
         return _repo.getDirectorsPosList();
     }
-
-    // function getDirectorsFullPosInfo() external view 
-    //     returns(OfficersRepo.Position[] memory) 
-    // {
-    //     return _repo.getDirectorsFullPosInfo();
-    // }
 
     // ==== Executives ====
 
@@ -170,12 +158,6 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
     }
 
     // ==== seatsCalculator ====
-
-    // function getBoardSeatsQuota(uint256 acct) external view 
-    //     returns(uint256) 
-    // {
-    //     return _repo.getBoardSeatsQuota(acct);
-    // } 
 
     function getBoardSeatsOccupied(uint acct) external view 
         returns (uint256 )

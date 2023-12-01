@@ -26,10 +26,6 @@ import "./ILOOKeeper.sol";
 contract LOOKeeper is ILOOKeeper, AccessControl {
     using RulesParser for bytes32;
 
-    //##################
-    //##   Modifier   ##
-    //##################
-
     //###############
     //##   Write   ##
     //###############

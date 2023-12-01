@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
-<<<<<<< HEAD
-<<<<<<< HEAD
- * Copyright 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
- * All Rights Reserved.
- * v.0.2.1
+ * Copyright (c) 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
+ *
+ * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
+ * can be obtained at:
+ *         [https://github.com/paul-lee-attorney/comboox]
+ *
+ * THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT 
+ * WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED 
+ * TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO 
+ * EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.
+ *
+ * YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE 
+ * OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR 
+ * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
 pragma solidity ^0.8.8;
@@ -103,7 +112,6 @@ interface IInvestmentAgreement is ISigPage {
     function payOffApprovedDeal(
         uint seqOfDeal,
         uint msgValue,
-        // uint centPrice,
         uint caller
     ) external returns (bool flag);
 
@@ -113,29 +121,17 @@ interface IInvestmentAgreement is ISigPage {
     ) external;
 
     //  #####################
-    //  ##     查询接口     ##
+    //  ##     Read I/O    ##
     //  #####################
 
     // ======== InvestmentAgreement ========
     function getTypeOfIA() external view returns (uint8);
-
-    // function counterOfDeal() external view returns (uint16);
-
-    // function counterOfClosedDeal() external view returns (uint16);
-
-    // function isDeal(uint256 seq) external view returns (bool);
 
     function getDeal(uint256 seq) external view returns (DealsRepo.Deal memory);
 
     function getSeqList() external view returns (uint[] memory);
 
     // ==== Swap ====
-
-    // function counterOfSwaps(uint seqOfDeal)
-    //     external view returns (uint16);
-
-    // function sumPaidOfTarget(uint seqOfDeal)
-    //     external view returns (uint64);
 
     function getSwap(uint seqOfDeal, uint256 seqOfSwap)
         external view returns (SwapsRepo.Swap memory);

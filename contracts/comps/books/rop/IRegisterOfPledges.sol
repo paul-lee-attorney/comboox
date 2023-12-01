@@ -65,7 +65,7 @@ interface IRegisterOfPledges {
     event RevokePledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld);
 
     //##################
-    //##  Write I/O  ##
+    //##  Write I/O   ##
     //##################
 
     function createPledge(
@@ -131,9 +131,9 @@ interface IRegisterOfPledges {
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
         external; 
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     function counterOfPledges(uint256 seqOfShare) 
         external view returns (uint16);

@@ -23,10 +23,6 @@ import "../../lib/SharesRepo.sol";
 
 interface ILOOKeeper {
 
-    //##################
-    //##   Modifier   ##
-    //##################
-
     //###############
     //##   Write   ##
     //###############
@@ -35,7 +31,6 @@ interface ILOOKeeper {
         uint userNo,
         uint groupRep,
         bytes32 idHash
-        // uint seqOfLR
     ) external;
 
     function approveInvestor(

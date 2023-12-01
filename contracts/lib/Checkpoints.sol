@@ -72,9 +72,9 @@ library Checkpoints {
         self.checkpoints[0].timestamp++;
     }
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     function counterOfPoints(History storage self)
         public view returns (uint256)

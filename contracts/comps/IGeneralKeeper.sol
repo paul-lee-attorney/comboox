@@ -164,8 +164,6 @@ interface IGeneralKeeper {
 
     function payInCapital(uint seqOfShare, uint amt) external payable;
 
-    // function decreaseCapital(uint256 seqOfShare, uint paid, uint par) external;
-
     // ###################
     // ##   GMMKeeper   ##
     // ###################

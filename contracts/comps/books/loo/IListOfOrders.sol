@@ -46,9 +46,9 @@ interface IListOfOrders {
 
     event GetBalance(bytes32 indexed balance);
 
-    //##################
+    //#################
     //##  Write I/O  ##
-    //##################
+    //#################
 
     function regInvestor(
         uint acct,
@@ -92,7 +92,7 @@ interface IListOfOrders {
     );
 
     //################
-    //##  Read I/O  ##
+    //##  Read I/O ##
     //################
 
     // ==== Investor ====

@@ -71,6 +71,9 @@ interface IShareholdersAgreement is ISigPage {
     |  768  | GroupUpdateOrder  |  GroupUpdate | Grouping Members as per their relationship |
     ...
 
+    |  1024 | ListingRule       |  ListingRule | Listing Rule for Share Issue & Transfer    |
+    ...
+
 */
 
     struct TermsRepo {
@@ -101,9 +104,9 @@ interface IShareholdersAgreement is ISigPage {
 
     function finalizeSHA() external;
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     // ==== Terms ====
 

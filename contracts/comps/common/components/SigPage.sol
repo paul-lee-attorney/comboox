@@ -30,9 +30,9 @@ contract SigPage is ISigPage, AccessControl {
 
     SigsRepo.Page[2] internal _sigPages;
 
-    //####################
-    //##    设置接口     ##
-    //####################
+    //#############
+    //##  Write  ##
+    //#############
 
     function circulateDoc() external onlyKeeper {
         _sigPages[0].circulateDoc();

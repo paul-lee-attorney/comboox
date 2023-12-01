@@ -104,8 +104,6 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     ) external onlyKeeper returns(DTClaims.Claim[] memory) {
         require(block.timestamp >= _repo.dtExecDeadline(ia),
             "ROA.execDT: not reached frExecDeadline");
-        // require(block.timestamp < _repo.terminateStartpoint(ia),
-        //     "ROA.execDT: missed dtExecDeadline");
         
         emit AcceptAlongClaims(ia, seqOfDeal);
         return _dtClaims[ia].acceptAlongClaims(seqOfDeal);

@@ -77,7 +77,7 @@ library LinksRepo {
     }
 
     // ################
-    // ##  查询接口  ##
+    // ##  Read I/O  ##
     // ################
 
     function isDragger(Repo storage repo, uint256 dragger, IRegisterOfMembers _rom) 

@@ -20,7 +20,6 @@
 pragma solidity ^0.8.8;
 
 import "../../../../lib/LinksRepo.sol";
-// import "../../roa/IRegisterOfAgreements.sol";
 
 interface IAlongs {
 
@@ -38,7 +37,7 @@ interface IAlongs {
 
 
     // ###############
-    // ##  查询接口  ##
+    // ##  Read I/O ##
     // ###############
 
     function isDragger(uint256 dragger) external view returns (bool);

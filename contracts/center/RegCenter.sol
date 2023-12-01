@@ -291,7 +291,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
     }
 
     // ##############
-    // ## Read I/O ##
+    // ## Read I/O##
     // ##############
 
     // ==== options ====
@@ -341,8 +341,6 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
             _chargeFee(targetAddr, fee, authorAddr, rr);
 
-            // if (tx.origin != targetAddr) 
-            //     _chargeFee(tx.origin, fee, authorAddr, rr);
         }
 
         return target;
@@ -360,8 +358,6 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
 
         UsersRepo.Rule memory pr = _users.getPlatformRule();
         
-        // uint40 fee = uint40(fee);
-
         uint floorPrice = uint(pr.floor) * 10 ** 9;
 
         require(fee >= floorPrice, "RC.chargeFee: lower than floor");

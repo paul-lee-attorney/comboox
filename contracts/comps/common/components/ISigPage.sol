@@ -27,8 +27,6 @@ interface ISigPage {
 
     event CirculateDoc();
 
-    // event SetTiming (bool indexed initPage, uint indexed signingDays, uint indexed closingDays);
-
     //##################
     //##   Write I/O  ##
     //##################

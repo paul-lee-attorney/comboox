@@ -19,7 +19,6 @@
 
 pragma solidity ^0.8.8;
 
-
 import "../../../lib/FilesRepo.sol";
 import "../../../lib/RulesParser.sol";
 
@@ -86,4 +85,5 @@ interface IFilesFolder {
 
     function getHeadOfFile(address body) external view 
         returns (FilesRepo.Head memory head);
+        
 }

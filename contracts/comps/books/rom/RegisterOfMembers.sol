@@ -24,7 +24,6 @@ import "./IRegisterOfMembers.sol";
 import "../../common/access/AccessControl.sol";
 
 contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
-    // using EnumerableSet for EnumerableSet.Bytes32Set;
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
 
@@ -166,7 +165,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     // ##################
-    // ##   查询接口    ##
+    // ##   Read I/O   ##
     // ##################
 
     // ---- membersList ----

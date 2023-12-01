@@ -20,15 +20,16 @@
 pragma solidity ^0.8.8;
 
 import "../../lib/PledgesRepo.sol";
-// import "../../lib/SharesRepo.sol";
 import "../../lib/DealsRepo.sol";
 import "../../lib/DocsRepo.sol";
 import "../../lib/RulesParser.sol";
 
 interface IROPKeeper {
+
     // ###################
     // ##   ROPKeeper   ##
     // ###################
+
     function createPledge(
         bytes32 snOfPld,
         uint paid,

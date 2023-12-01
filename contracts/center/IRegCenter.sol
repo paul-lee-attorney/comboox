@@ -91,7 +91,6 @@ interface IRegCenter is IERC20, IPriceConsumer{
     event WithdrawPoints(bytes32 indexed headSn);
 
     // ==== Docs ====
-    // event SetDocKeeper(address indexed keeper);
     
     event SetTemplate(uint256 indexed typeOfDoc, uint256 indexed version, address indexed body);
 
@@ -99,10 +98,8 @@ interface IRegCenter is IERC20, IPriceConsumer{
 
     event CreateDoc(bytes32 indexed snOfDoc, address indexed body);
 
-    // event CreateComp(uint256 version, uint indexed seqOfDoc, uint indexed creator, address indexed generalKeeper);
-
     // ##################
-    // ##    写端口     ##
+    // ##    Write     ##
     // ##################
 
     // ==== Opts Setting ====
@@ -130,8 +127,6 @@ interface IRegCenter is IERC20, IPriceConsumer{
     function lockConsideration(uint to, uint amt, uint expireDate, address counterLocker, bytes memory payload, bytes32 hashLock) external;
 
     function pickupPoints(bytes32 hashLock, string memory hashKey) external;
-
-    // function pickupConsideration(bytes32 hashLock, string memory hashKey) external;
 
     function withdrawPoints(bytes32 hashLock) external;
 
@@ -163,7 +158,7 @@ interface IRegCenter is IERC20, IPriceConsumer{
     function createComp(address dk) external;
 
     // #################
-    // ##   查询端口   ##
+    // ##   Read      ##
     // #################
 
     // ==== Options ====

@@ -21,8 +21,6 @@ pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
 
-// import "../common/ruting/BOSSetting.sol";
-
 import "./IROMKeeper.sol";
 
 contract ROMKeeper is IROMKeeper, AccessControl {

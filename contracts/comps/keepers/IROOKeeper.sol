@@ -23,6 +23,7 @@ import "../../lib/OptionsRepo.sol";
 import "../../lib/SwapsRepo.sol";
 
 interface IROOKeeper {
+
     // #################
     // ##  ROOKeeper  ##
     // #################
@@ -82,6 +83,5 @@ interface IROOKeeper {
         uint seqOfSwap,
         uint caller
     ) external;
-
 
 }

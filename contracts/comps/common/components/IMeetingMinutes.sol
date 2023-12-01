@@ -50,11 +50,6 @@ interface IMeetingMinutes {
     //##  Write I/O  ##
     //#################
 
-    // function addMotion(
-    //     MotionsRepo.Head memory head,
-    //     uint256 contents
-    // ) external returns (uint64);
-
     function nominateOfficer(
         uint256 seqOfPos,
         uint seqOfVR,
@@ -191,17 +186,6 @@ interface IMeetingMinutes {
 
     function getDelegateOf(uint256 seqOfMotion, uint acct)
         external view returns (uint);
-
-    // function getLeavesWeightAtDate(
-    //     uint256 seqOfMotion, 
-    //     uint caller,
-    //     uint baseDate
-    // ) external view returns(DelegateMap.LeavesInfo memory info);
-
-    // function getLeavesHeadcountOfDirectors(
-    //     uint256 seqOfMotion, 
-    //     uint caller
-    // ) external view returns(uint32 head);
 
     // ==== motion ====
 

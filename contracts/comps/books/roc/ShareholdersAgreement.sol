@@ -144,9 +144,9 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     }
     
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     // ==== Terms ====
 

@@ -143,7 +143,7 @@ library CondsRepo {
     }
     
     // ##################
-    // ## Write I/O ##
+    // ##   Write I/O  ##
     // ##################
 
     function counterOfConds(Repo storage repo) public view returns(uint32 seqOfCond) {

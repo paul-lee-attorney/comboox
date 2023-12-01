@@ -90,9 +90,6 @@ library DocsRepo {
 
         require(head.author > 0, "DR.setTemplate: zero author");
         require(head.creator > 0, "DR.setTemplate: zero creator");
-        // if (counterOfVersions(repo, typeOfDoc) > 0)
-        //     require( repo.heads[repo.bodies[head.typeOfDoc][1][0].addr].creator 
-        //         == head.creator, "DR.setTemplate: not Template creator");
 
         head.version = _increaseCounterOfVersions(repo, head.typeOfDoc);
         head.createDate = uint48(block.timestamp);

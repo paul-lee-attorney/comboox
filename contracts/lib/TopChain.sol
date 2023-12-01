@@ -589,9 +589,9 @@ library TopChain {
         chain.nodes[0].sum -= deltaAmt;
     }
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     function isMember(Chain storage chain, uint256 acct)
         public

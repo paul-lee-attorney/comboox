@@ -20,7 +20,6 @@
 pragma solidity ^0.8.8;
 
 import "../../../lib/Checkpoints.sol";
-// import "../../../lib/EnumerableSet.sol"; 
 import "../../../lib/MembersRepo.sol";
 import "../../../lib/SharesRepo.sol";
 import "../../../lib/TopChain.sol";
@@ -62,9 +61,9 @@ interface IRegisterOfMembers {
 
     event ChangeGroupRep(uint256 indexed orgRep, uint256 indexed newRep);
 
-    //##################
+    //#################
     //##  Write I/O  ##
-    //##################
+    //#################
 
     function setMaxQtyOfMembers(uint max) external;
 

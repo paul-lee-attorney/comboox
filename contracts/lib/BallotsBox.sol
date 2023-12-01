@@ -64,7 +64,7 @@ library BallotsBox {
         bytes32 sigHash,
         uint[] memory principals
     ) public returns (bool flag) {
-        // uint40 voter = uint40(acct);        
+
         require(
             attitude == uint8(AttitudeOfVote.Support) ||
                 attitude == uint8(AttitudeOfVote.Against) ||
@@ -85,18 +85,6 @@ library BallotsBox {
                 sigHash: sigHash,
                 principals: principals
             });
-
-            // Case storage c = box.cases[attitude];
-
-            // c.sumOfHead += b.head;
-            // c.sumOfWeight += b.weight;
-            // c.voters.push(acct);
-
-            // c = box.cases[uint8(AttitudeOfVote.All)];
-
-            // c.sumOfHead += b.head;
-            // c.sumOfWeight += b.weight;
-            // c.voters.push(acct);
 
             _pushToCase(box.cases[attitude], b);
             _pushToCase(box.cases[uint8(AttitudeOfVote.All)], b);
@@ -147,7 +135,5 @@ library BallotsBox {
     {
         return box.ballots[acct];
     }
-
-
 
 }

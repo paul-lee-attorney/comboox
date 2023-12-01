@@ -30,7 +30,7 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
     PledgesRepo.Repo private _repo;
 
     //##################
-    //##  Write I/O  ##
+    //##  Write I/O   ##
     //##################
 
     function createPledge(
@@ -180,9 +180,9 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
         emit RevokePledge(seqOfShare, seqOfPld);
     }
 
-    //##################
-    //##    读接口    ##
-    //##################
+    //################
+    //##    Read    ##
+    //################
 
     function counterOfPledges(uint256 seqOfShare) 
         external view returns (uint16) 

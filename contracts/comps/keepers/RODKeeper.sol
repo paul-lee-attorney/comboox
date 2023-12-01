@@ -23,10 +23,7 @@ import "../common/access/AccessControl.sol";
 
 import "./IRODKeeper.sol";
 
-contract RODKeeper is IRODKeeper, AccessControl {
-    // using RulesParser for bytes32;
-
-    
+contract RODKeeper is IRODKeeper, AccessControl {    
 
     //##################
     //##   Modifier   ##
@@ -117,7 +114,5 @@ contract RODKeeper is IRODKeeper, AccessControl {
     {
         _gk.getROD().quitPosition(seqOfPos, caller);
     }
-
-
 
 }

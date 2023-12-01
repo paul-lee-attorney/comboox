@@ -167,7 +167,6 @@ library OptionsRepo {
         opt.body.paid = uint64(paid);
         opt.body.par = uint64(par);
 
-        // head = issueOption(repo, opt);
         head = regOption(repo, opt);
     }
 
@@ -414,7 +413,7 @@ library OptionsRepo {
     } 
 
     // ################
-    // ##  查询接口   ##
+    // ##  Read I/O  ##
     // ################
 
     // ==== Repo ====

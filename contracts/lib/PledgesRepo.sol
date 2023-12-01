@@ -55,9 +55,8 @@ library PledgesRepo {
         uint16 argu;
     }
 
-    //Pledge 质权
     struct Pledge {
-        Head head; //质押编号
+        Head head;
         Body body;
         bytes32 hashLock;
     }
@@ -185,7 +184,6 @@ library PledgesRepo {
         require(pld.head.state == uint8(StateOfPld.Issued) ||
             pld.head.state == uint8(StateOfPld.Locked), "PR.splitPld: wrong state");
         require(amt > 0, "PR.splitPld: zero amt");
-        // require(amt <= pld.body.guaranteedAmt, "PR.splitPld: amt overflow");
 
         newPld = pld;
 
@@ -287,7 +285,7 @@ library PledgesRepo {
     }
 
     //#################
-    //##    读接口    ##
+    //##    Read     ##
     //#################
 
     function isTriggerd(Pledge storage pld) public view returns(bool) {
@@ -327,8 +325,6 @@ library PledgesRepo {
         public view returns (Pledge[] memory) 
     {
         uint256 len = counterOfPld(repo, seqOfShare);
-
-        // require(len > 0, "PR.getPldsOfShare: no pledges found");
 
         Pledge[] memory output = new Pledge[](len);
 
