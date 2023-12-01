@@ -1,26 +1,26 @@
-# ComBoox Software License 1.0
+ComBoox Software License 1.0
 
-**TERMS AND CONDITIONS FOR USE, REPRODUCTION AND DISTRIBUTION.**
+TERMS AND CONDITIONS FOR USE, REPRODUCTION AND DISTRIBUTION.
 
-**ComBoox** is **NOT** for free. When you calling certain APIs for write operation, a sum of **CBP** (a kind of ERC-20 token defined inside of ComBoox) will be charged as royalty from your account and be transferred to Contributor. Please refer to source code of ComBoox and its documentation for details of the CBP regime and the respective royalty rate for the APIs.
+ComBoox is NOT for free. When you calling certain APIs for write operation, a sum of CBP (a kind of ERC-20 token defined inside of ComBoox) will be charged as royalty from your account and be transferred to Contributor. Please refer to source code of ComBoox and its documentation for details of the CBP regime and the respective royalty rate for the APIs.
 
 1. Definition.
 
-**"Contributor"** shall mean copyright owner, and the other contribution owner and any individual or Legal Entity who have submitted the Work to the Copyright Owner and subsequently incorporated within the Work.
+"Contributor" shall mean copyright owner, and the other contribution owner and any individual or Legal Entity who have submitted the Work to the Copyright Owner and subsequently incorporated within the Work.
 
-**"Contribution"** shall mean the original version of the Work and any additions to that Work, that is intentionally submitted to Contributor for inclusion in the Work by the copyright owner or by an individual or Legal Entity authorized to submit on behalf of the copyright owner.
+"Contribution" shall mean the original version of the Work and any additions to that Work, that is intentionally submitted to Contributor for inclusion in the Work by the copyright owner or by an individual or Legal Entity authorized to submit on behalf of the copyright owner.
 
-**"Legal Entity"** shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity. For the purposes of this definition, "control" means (i) the power, direct or indirect, to cause the direction or management of such entity, whether by contract or otherwise, or (ii) ownership of fifty percent (50%) or more of the outstanding shares, or (iii) beneficial ownership of such entity.
+"Legal Entity" shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity. For the purposes of this definition, "control" means (i) the power, direct or indirect, to cause the direction or management of such entity, whether by contract or otherwise, or (ii) ownership of fifty percent (50%) or more of the outstanding shares, or (iii) beneficial ownership of such entity.
 
-**"License"** shall mean the terms and conditions for the permitted use as defined by this document.
+"License" shall mean the terms and conditions for the permitted use as defined by this document.
 
-**"Licensor"** shall mean the copyright owner and/or Legal Entity authorized by the copyright owner that is granting the License.
+"Licensor" shall mean the copyright owner and/or Legal Entity authorized by the copyright owner that is granting the License.
 
-**"Permitted Use"** shall mean the acts of calling the smart contracts of ComBoox via their specific API to read or write data on the blockchain network where they were originally deployed by Contributor, and the acts of reproduction, distribution or presentation of the Work for purposes of research, verification or testing, on a computer not linking with any blockchain network, or on a local testing blockchain that consists of one or more nodes entirely and exclusively controlled by You.
+"Permitted Use" shall mean the acts of calling the smart contracts of ComBoox via their specific API to read or write data on the blockchain network where they were originally deployed by Contributor, and the acts of reproduction, distribution or presentation of the Work for purposes of research, verification or testing, on a computer not linking with any blockchain network, or on a local testing blockchain that consists of one or more nodes entirely and exclusively controlled by You.
 
-**"Work"** or (**“ComBoox”**) shall mean the ComBoox system, a blockchain based statutory books keeping system, consisting of a series of smart contracts, including all Contribution(s).
+"Work" or (“ComBoox”) shall mean the ComBoox system, a blockchain based statutory books keeping system, consisting of a series of smart contracts, including all Contribution(s).
 
-**"You"** shall mean an individual or Legal Entity exercising permissions granted by this License.
+"You" shall mean an individual or Legal Entity exercising permissions granted by this License.
 
 2. Grant of License
 
@@ -34,11 +34,11 @@ No trademark license is granted to use the trade names, trademarks of Contributo
 
 Unless expressly permitted in this License or other agreements, You are prohibited from: 
 
-**(1)Deploying the smart contracts of ComBoox, in whole or in part, for whatever purpose, on any blockchain network that has one or more nodes out of your control;**
+(1)Deploying the smart contracts of ComBoox, in whole or in part, for whatever purpose, on any blockchain network that has one or more nodes out of your control;
 
-**(2)Modifying, translating, or creating derivative works based on the Work; or**
+(2)Modifying, translating, or creating derivative works based on the Work; or
 
-**(3)Using or disposing of the Work in any illegal manner.**
+(3)Using or disposing of the Work in any illegal manner.
 
 5. Additional Terms
 
@@ -52,7 +52,7 @@ Any use of the Work in violation of this License will automatically terminate yo
 
 7. Disclaimer of Warranty
 
-(1)Contributor provides the Work (and each Contributor provides its Contributions) on an **"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO ANY DIRECT, OR INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OR INABILITY TO USE THE WORK OR THE CONTRIBUTION, NO MATTER HOW IT’S CAUSED OR BASED ON WHICH LEGAL THEORY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.**
+(1)Contributor provides the Work (and each Contributor provides its Contributions) on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES, INCLUDING, BUT NOT LIMITED TO ANY DIRECT, OR INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OR INABILITY TO USE THE WORK OR THE CONTRIBUTION, NO MATTER HOW IT’S CAUSED OR BASED ON WHICH LEGAL THEORY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 
 (2)Although ComBoox provides some valuable Legal and Compliance solutions, whereas, it cannot ensure absolute compliance for any significant legal issues, please seek professional advice from legal experts of the relevant jurisdictions. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE FOR ANY DAMAGES caused by below issues:
 
@@ -82,13 +82,13 @@ To reproduce or distribute this WORK, you are required to complete following ste
 
 (2)Attach the statement to the appropriate annotated syntax at the beginning of each source file.
 
-**This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which can be obtained at:**         
+This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which can be obtained at:         
 
 [https://github.com/paul-lee-attorney/comboox]         
 
-**THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.**
+THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.
 
-**YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR MORE NODES THAT ARE OUT OF YOUR CONTROL.**
+YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR MORE NODES THAT ARE OUT OF YOUR CONTROL.
 
 ----------------------------------------------------------------------------
 # ComBoox软件许可证 1.0
@@ -99,21 +99,21 @@ ComBoox非免费作品。当您调用软件API 发出写操作指令时，您的
 
 1. 定义
 
-**“贡献者”** 指版权所有者，以及向版权所有者提交作品，且该作品被版权所有者接受和纳入的贡献所有者及其合法授权的自然人或法人实体。
+“贡献者” 指版权所有者，以及向版权所有者提交作品，且该作品被版权所有者接受和纳入的贡献所有者及其合法授权的自然人或法人实体。
 
-**“贡献”** 指作品的原始版本，以及由版权所有者,或合法授权主体代表版权所有者提交给贡献者，并包含在作品中的任何补充内容。
+“贡献” 指作品的原始版本，以及由版权所有者,或合法授权主体代表版权所有者提交给贡献者，并包含在作品中的任何补充内容。
 
-**“法人实体”** 指行为实体以及控制该实体、受该实体控制或与该实体共同控制的所有其他实体的关联方。就本定义而言， **“控制”** 是指 (i) 无论是通过合同还是其他方式直接或间接领导或管理该实体的权力，或 (ii) 拥有百分之五十 (50%) 或更多已发行股权份额，或 (iii) 该实体的实控人。
+“法人实体” 指行为实体以及控制该实体、受该实体控制或与该实体共同控制的所有其他实体的关联方。就本定义而言， “控制” 是指 (i) 无论是通过合同还是其他方式直接或间接领导或管理该实体的权力，或 (ii) 拥有百分之五十 (50%) 或更多已发行股权份额，或 (iii) 该实体的实控人。
 
-**“许可证”** 指本文档为被允许的使用所定义的条款和条件。
+“许可证” 指本文档为被允许的使用所定义的条款和条件。
 
-**“许可方”** 指版权所有者，和/或版权所有者授权的授予许可的实体。
+“许可方” 指版权所有者，和/或版权所有者授权的授予许可的实体。
 
-**“被允许的使用”** 指通过特定API调用ComBoox的智能合约，在贡献者最初部署的区块链网络上读取或写入数据的行为，以及在不与任何区块链网络连接的计算机上，或在由您完全排他控制的一个或多个节点构成的本地测试区块链上，出于研究、验证和测试等目的复制、分发或演示作品的行为。
+“被允许的使用” 指通过特定API调用ComBoox的智能合约，在贡献者最初部署的区块链网络上读取或写入数据的行为，以及在不与任何区块链网络连接的计算机上，或在由您完全排他控制的一个或多个节点构成的本地测试区块链上，出于研究、验证和测试等目的复制、分发或演示作品的行为。
 
-**“作品”** 或（**“ComBoox”**）指 ComBoox 系统，一个基于区块链技术的公司治理文件簿记系统，由一系列智能合约组成，包括相关的所有贡献。
+“作品” 或（“ComBoox”）指 ComBoox 系统，一个基于区块链技术的公司治理文件簿记系统，由一系列智能合约组成，包括相关的所有贡献。
 
-**“您”** 指行使本许可证授予的权限的个人或法人实体。
+“您” 指行使本许可证授予的权限的个人或法人实体。
 
 2. 授予许可证
 
@@ -127,11 +127,11 @@ ComBoox非免费作品。当您调用软件API 发出写操作指令时，您的
 
 除非本许可证或其他协议书面允许，您不得：
 
-**(1)在含有您无法控制的一个或多个节点的区块链网络上部署 ComBoox 的智能合约，不论是部署全部还是部分合约，不论您出于何种目的；**
+(1)在含有您无法控制的一个或多个节点的区块链网络上部署 ComBoox 的智能合约，不论是部署全部还是部分合约，不论您出于何种目的；
 
-**(2)修改、改变或创作该作品的衍生作品；或**
+(2)修改、改变或创作该作品的衍生作品；或
 
-**(3)以任何非法方式使用或处分本作品。**
+(3)以任何非法方式使用或处分本作品。
 
 5. 附加条款
 
@@ -176,10 +176,10 @@ iii.任何外部环境故障而导致区块链不可访问的情形，例如电�
 
 (2)用适当的带注释语法将下列语句附加到每个源文件开头。
 
-**This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which can be obtained at:**
+This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which can be obtained at:
          
 [https://github.com/paul-lee-attorney/comboox]
 
-**THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.**
+THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.
 
-**YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR MORE NODES THAT ARE OUT OF YOUR CONTROL.**
+YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR MORE NODES THAT ARE OUT OF YOUR CONTROL.
