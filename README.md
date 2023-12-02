@@ -6,11 +6,11 @@
 
 By leveraging the technical features of blockchain and smart contracts, ComBoox may fundamentally solve the corporate governance problems such as **"Insider Control"** and **"Misleading Statements"** that has plagued the capital market for many years, and completely realize:
 
-1. right holder may **directly exercise** rights; 
-2. obligor has **no chance** to default; and
+1. right holders may **directly exercise** rights; 
+2. obligors have **no chance** to default; and
 3. **real-time** information disclosing.
 
-By booking the equity shares on blockchain, investors may use cryptocurrency or Central Bank Digital Currencies to pay for share consideration, which means effectively connecting the companies’ equity shares to the trillion-dollar cryptocurrency market, so that the companies may have an opportunity to have their value being reevaluated and reconfirmed with the support of the huge liquidity.
+By booking the equity shares on blockchain, investors may use cryptocurrency or Central Bank Digital Currencies to pay for share consideration, which means effectively connecting the companies’ equity shares to the trillion-dollar cryptocurrency market, so that the companies may have an opportunity to have their value reevaluated and reconfirmed with the robust support of the huge liquidity.
 
 ***
 
