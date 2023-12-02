@@ -2,7 +2,7 @@
 
 ## ---- A Book-Entry System Linking To Web 3.0 Capital Market 
 
-**ComBoox** is a blockchain-based book-entry system designed for equity share registration and statutory books keeping, which is aimed to assist users to quickly establish a legal, secure, transparent, and reliable smart contracts system on blockchain for registering equity share and keeping records of corporate governance, so as to enable rights holders such as investors, shareholders, managers, and business partners be able to directly engage in almost all the share transactions and corporate governance activities under the automatic control of smart contracts, including share subscription, transfer, pledge, consideration payment, contracts signing, motion submission, voting, nomination, appointment, resignation etc.
+**ComBoox** is a blockchain-based company book-entry system designed for equity share registration and statutory books keeping, which is aimed to assist users to quickly establish a legal, secure, transparent, and reliable smart contracts system on blockchain for registering equity share and keeping records of corporate governance, so as to enable rights holders such as investors, shareholders, managers, and business partners be able to directly engage in almost all the share transactions and corporate governance activities under the automatic control of smart contracts, including share subscription, transfer, pledge, consideration payment, contracts signing, motion submission, voting, nomination, appointment, resignation etc.
 
 By leveraging the technical features of blockchain and smart contracts, ComBoox may fundamentally solve the corporate governance problems such as **"Insider Control"** and **"Misleading Statements"** that has plagued the capital market for many years, and completely realize:
 
@@ -26,7 +26,7 @@ Please visit blow websites for:
 
 ## ————链接Web3.0资本市场的簿记工具
 
-**ComBoox**是基于区块链技术开发的股权及公司治理文件簿记系统，旨在帮助用户在区块链上快速搭建起合法、安全、透明、可信的公司股权簿记和公司治理文件簿记智能合约体系，让公司的投资人、股东、高管、合作伙伴等利害关系方可以在智能合约的自动控制下完成股权认购、股权转让、股权质押、支付对价、签约、提案、表决、提名、就职、辞任等几乎所有的股权交易行为和公司治理活动。
+**ComBoox**是基于区块链技术开发的公司股权及治理文件簿记系统，旨在帮助用户在区块链上快速搭建起合法、安全、透明、可信的公司股权簿记和公司治理文件簿记智能合约体系，让公司的投资人、股东、高管、合作伙伴等利害关系方可以在智能合约的自动控制下完成股权认购、股权转让、股权质押、支付对价、签约、提案、表决、提名、就职、辞任等几乎所有的股权交易行为和公司治理活动。
 
 ​
 借助区块链和智能合约的技术特点，ComBoox可以根本解决困扰资本市场多年的 **“内部人控制、误导性陈述”** 等公司治理难题，彻底实现：
@@ -108,19 +108,19 @@ Any use of the Work in violation of this License will automatically terminate yo
 
 (2)Although ComBoox provides some valuable Legal and Compliance solutions, whereas, it cannot ensure absolute compliance for any significant legal issues, please seek professional advice from legal experts of the relevant jurisdictions. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE FOR ANY DAMAGES caused by below issues:
 
-i.AML/KYC Compliance: shall mean the mandatory legal requirements about identity verification and identity archives management, that various countries stipulated in the fields of financing, securities, investment, asset management, currency exchange, payment etc., for the purpose of investor suitability protection, anti-money laundering, anti-terrorist financing, anti-tax avoidance, and other related purposes,
+(A).AML/KYC Compliance: shall mean the mandatory legal requirements about identity verification and identity archives management, that various countries stipulated in the fields of financing, securities, investment, asset management, currency exchange, payment etc., for the purpose of investor suitability protection, anti-money laundering, anti-terrorist financing, anti-tax avoidance, and other related purposes,
 
-ii.Securities Compliance: shall mean the mandatory legal requirements around securities issuance and/or transaction activities (such as reporting, filing, and disclosure) for the securities-type equity public offerings or specified private placement in terms of stocks, bonds, and other financing instruments in various countries; or
+(B).Securities Compliance: shall mean the mandatory legal requirements around securities issuance and/or transaction activities (such as reporting, filing, and disclosure) for the securities-type equity public offerings or specified private placement in terms of stocks, bonds, and other financing instruments in various countries; or
 
-iii.Data Compliance: shall mean the mandatory legal requirements for data processing activities in various countries, in order to protecting data security, personal information rights, national security and/or commercial secrets.
+(C).Data Compliance: shall mean the mandatory legal requirements for data processing activities in various countries, in order to protecting data security, personal information rights, national security and/or commercial secrets.
 
 (3)As an infrastructure software, ComBoox cannot influence or control any behavior of its users or third parties. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE FOR ANY DAMAGES caused by below third party behavior:
 
-i.Inaccurate, incomplete or untimely data uploaded/provided by users;
+(A).Inaccurate, incomplete or untimely data uploaded/provided by users;
 
-ii.A third party malicious attack, hack, tamper, intercept, or controls over the data against its owner's intention; or
+(B).A third party malicious attack, hack, tamper, intercept, or controls over the data against its owner's intention; or
 
-iii.The unavailability of the blockchain due to the failure of any external environment supplier, such as the unavailability of electrical power, internet connection, and/or any other similar public utilities or infrastructures failure caused by third parties’ behavior or negligence.
+(B).The unavailability of the blockchain due to the failure of any external environment supplier, such as the unavailability of electrical power, internet connection, and/or any other similar public utilities or infrastructures failure caused by third parties’ behavior or negligence.
 
 8. Language
 
