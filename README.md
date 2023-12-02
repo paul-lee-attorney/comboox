@@ -56,8 +56,6 @@ Please visit blow websites for:
 
 **TERMS AND CONDITIONS FOR USE, REPRODUCTION AND DISTRIBUTION.**
 
-**ComBoox** is **NOT** for free. When you calling certain APIs for write operation, a sum of **CBP** (a kind of ERC-20 token defined inside of ComBoox) will be charged as royalty from your account and be transferred to Contributor. Please refer to source code of ComBoox and its documentation for details of the CBP regime and the respective royalty rate for the APIs.
-
 1. Definition.
 
 **"Contributor"** shall mean copyright owner, and the other contribution owner and any individual or Legal Entity who have submitted the Work to the Copyright Owner and subsequently incorporated within the Work.
@@ -140,7 +138,7 @@ To reproduce or distribute this WORK, you are required to complete following ste
 
 [https://github.com/paul-lee-attorney/comboox]         
 
-**THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.**
+**THIS WORK IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.**
 
 **YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR MORE NODES THAT ARE OUT OF YOUR CONTROL.**
 
@@ -148,8 +146,6 @@ To reproduce or distribute this WORK, you are required to complete following ste
 # ComBoox软件许可证 1.0
 
 您对ComBoox的使用、复制及分发受ComBoox软件许可证如下条款的约束：
-
-ComBoox非免费作品。当您调用软件API 发出写操作指令时，您的帐户将可能被扣收一笔CBP代币（ComBoox系统内部定义的一种ERC-20代币）作为许可费，并划转给贡献者。请参阅ComBoox的源代码及其文档，了解 CBP代币和相关API许可费率的详细信息。  
 
 1. 定义
 
@@ -204,19 +200,19 @@ ComBoox非免费作品。当您调用软件API 发出写操作指令时，您的
 
 (2)尽管 ComBoox 提供了有价值的法律和合规解决方案， 但是ComBoox不能根本解决任何一项法律合规问题，请寻求相关司法管辖区法律专家的专业意见。在任何情况下，任何贡献者均不对以下问题造成的任何损害承担责任：
 
-i.反洗钱合规：指各国出于保证投资者适当性、反洗钱、反恐融资、反避税，以及其他相关目的，在证券、投资、融资、资产管理、外币兑换、款项支付等领域，针对行为主体身份识别与身份信息管理等问题提出的强制性法律要求；
+(A).反洗钱合规：指各国出于保证投资者适当性、反洗钱、反恐融资、反避税，以及其他相关目的，在证券、投资、融资、资产管理、外币兑换、款项支付等领域，针对行为主体身份识别与身份信息管理等问题提出的强制性法律要求；
 
-ii.证券合规：指各国为保护投资者权益，对于股票、债券、融资工具等面向不特定主体或超过一定数量的特定主体，发行或交易证券类权益凭证所规定的，提前申报、备案及信息披露等强制性法律要求；或
+(B).证券合规：指各国为保护投资者权益，对于股票、债券、融资工具等面向不特定主体或超过一定数量的特定主体，发行或交易证券类权益凭证所规定的，提前申报、备案及信息披露等强制性法律要求；或
 
-iii.数据合规：指各国为保护数据安全、个人信息权、国家安全和/或商业秘密而对信息和数据处理活动提出的强制性法律要求。
+(C).数据合规：指各国为保护数据安全、个人信息权、国家安全和/或商业秘密而对信息和数据处理活动提出的强制性法律要求。
 
 (3)作为基础设施软件，ComBoox无法影响或控制其使用者或第三方的任何行为。在任何情况下，任何贡献者均不对以下第三方造成的任何损害承担责任：
 
-i.使用者上传/提供的数据不准确、不完整或不及时；
+(A).使用者上传/提供的数据不准确、不完整或不及时；
 
-ii.第三方通过技术手段进行恶意攻击、黑客入侵、篡改、拦截或违背使用者的意图操纵数据；或
+(B).第三方通过技术手段进行恶意攻击、黑客入侵、篡改、拦截或违背使用者的意图操纵数据；或
 
-iii.任何外部环境故障而导致区块链不可访问的情形，例如电力、网络和/或其他公共基础设施由于第三方作为或不作为而导致的故障等情形。
+(C).任何外部环境故障而导致区块链不可访问的情形，例如电力、网络和/或其他公共基础设施由于第三方作为或不作为而导致的故障等情形。
 
 8. 语言
 
@@ -234,6 +230,6 @@ iii.任何外部环境故障而导致区块链不可访问的情形，例如电�
          
 [https://github.com/paul-lee-attorney/comboox]
 
-**THIS WORK IS NOT FOR FREE AND IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.**
+**THIS WORK IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.**
 
 **YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR MORE NODES THAT ARE OUT OF YOUR CONTROL.**
