@@ -108,7 +108,7 @@ library DelegateMap {
         uint256 len = leaves.length;
 
         while (len > 0) {
-            uint64 w = _rom.votesAtDate(acct, baseDate);
+            uint64 w = _rom.votesAtDate(leaves[len-1], baseDate);
             if (w > 0) {
                 info.weight += w;
             } else {
@@ -128,9 +128,9 @@ library DelegateMap {
         uint[] memory leaves = map.voters[acct].principals;
         uint256 len = leaves.length;
 
-        uint32 repHead;        
+        uint32 repHead;
         while (len > 0) {
-            if (_rod.isDirector(acct)) repHead++;
+            if (_rod.isDirector(leaves[len-1])) repHead++;
             len--;
         }
 
