@@ -21,9 +21,9 @@ pragma solidity ^0.8.8;
 
 import "./IRegCenter.sol";
 import "./ERC20/ERC20.sol";
-import "./Oracles/PriceConsumer.sol";
+import "./Oracles/PriceConsumer2.sol";
 
-contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
+contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 {
     using DocsRepo for DocsRepo.Repo;
     using DocsRepo for DocsRepo.Head;
     using UsersRepo for UsersRepo.Repo;
@@ -45,10 +45,10 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         emit SetPlatformRule(snOfRule);
     }
 
-    function setFeedRegistry(address registry_ ) external {
+    function setPriceFeed(uint seq, address feed_ ) external {
         require(msg.sender == _users.getBookeeper(), "RC: not bookeeper");
-        _setFeedRegistry(registry_);
-        emit SetFeedRegistry(registry_);
+        _setPriceFeed(seq, feed_);
+        emit SetPriceFeed(seq, feed_);
     }
 
     // ==== Power transfer ====
@@ -75,6 +75,13 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer {
         require(to > 0, "RC.mintPoints: zero to");
         
         _mint(_users.users[to].primeKey.pubKey, amt);
+    }
+
+    function burn(uint amt) external {
+        require(msg.sender == _users.getOwner(), 
+            "RC.burnPoints: not owner");
+
+        _burn(msg.sender, amt);        
     }
 
     function mintAndLockPoints(

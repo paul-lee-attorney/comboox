@@ -26,9 +26,9 @@ import "../lib/UsersRepo.sol";
 import "../lib/DocsRepo.sol";
 
 import "./ERC20/IERC20.sol";
-import "./Oracles/IPriceConsumer.sol";
+import "./Oracles/IPriceConsumer2.sol";
 
-interface IRegCenter is IERC20, IPriceConsumer{
+interface IRegCenter is IERC20, IPriceConsumer2{
 
     enum TypeOfDoc{
         ZeroPoint,
@@ -68,7 +68,7 @@ interface IRegCenter is IERC20, IPriceConsumer{
 
     event SetPlatformRule(bytes32 indexed snOfRule);
 
-    event SetFeedRegistry(address indexed registry);
+    event SetPriceFeed(uint indexed seq, address indexed priceFeed);
 
     event TransferOwnership(address indexed newOwner);
 
@@ -106,7 +106,7 @@ interface IRegCenter is IERC20, IPriceConsumer{
 
     function setPlatformRule(bytes32 snOfRule) external;
     
-    function setFeedRegistry(address registry_ ) external;
+    function setPriceFeed(uint seq, address feed_ ) external;
 
     // ==== Power transfer ====
 
@@ -117,6 +117,8 @@ interface IRegCenter is IERC20, IPriceConsumer{
     // ==== Mint/Sell Points ====
 
     function mint(uint256 to, uint amt) external;
+
+    function burn(uint amt) external;
 
     function mintAndLockPoints(uint to, uint amt, uint expireDate, bytes32 hashLock) external;
 

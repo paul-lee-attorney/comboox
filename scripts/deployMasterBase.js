@@ -6,7 +6,7 @@
  * */
 
 const hre = require("hardhat");
-const { deployTool, copyArtifactsOf } = require("./deployTool");
+const { deployTool, saveTempAddr } = require("./deployTool");
 
 async function main() {
 	const signers = await hre.ethers.getSigners();
@@ -259,7 +259,7 @@ async function main() {
 
 	libraries = {};
 
-	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
+	// let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
 	await rc.setBackupKey(signers[1].address);
@@ -343,9 +343,20 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 26, op.address, 1);
 	console.log("set template for OP at address: ", op.address, "\n");
 
-	await rc.connect(signers[1]).setFeedRegistry(mockFeedRegistry.address);
-	console.log("set MOCK feed registry at address: ", mockFeedRegistry.address, "\n");
-	
+	// await rc.connect(signers[1]).setFeedRegistry(mockFeedRegistry.address);
+	// console.log("set MOCK feed registry at address: ", mockFeedRegistry.address, "\n");
+
+	let options = {
+		signer: signers[0],
+		libraries: libraries,
+	};
+
+	let FuleTank = await hre.ethers.getContractFactory("FuleTank", options);
+	let ft = await FuleTank.deploy(rc.address, 10000);
+	await ft.deployed();
+
+	saveTempAddr("FuleTank", ft);
+
 	// ==== Reg Users ====
 
 	// await rc.connect(signers[2]).regUser("0x0".padEnd(66, "0"));

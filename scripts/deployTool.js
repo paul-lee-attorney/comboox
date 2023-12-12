@@ -60,5 +60,6 @@ function saveGKAddr(seqOfDoc, targetAddr) {
 
 module.exports = {
   deployTool,
-  saveGKAddr
+  saveGKAddr,
+  saveTempAddr,
 };

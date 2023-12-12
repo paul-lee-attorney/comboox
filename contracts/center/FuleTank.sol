@@ -24,13 +24,13 @@ import "./ERC20/IERC20.sol";
 contract FuleTank {
 
   address public owner;
-  address public regCenter;
+  IERC20 public regCenter;
   uint public rate;
   uint public sum;
 
   constructor(address _regCenter, uint _rate) {
     owner = msg.sender;
-    regCenter = _regCenter;
+    regCenter = IERC20(_regCenter);
     rate = _rate;
   }
 
@@ -48,7 +48,7 @@ contract FuleTank {
   }
 
   function setRegCenter(address _regCenter) external onlyOwner { 
-    regCenter = _regCenter;
+    regCenter = IERC20(_regCenter);
   }
   
   function setRate(uint _rate) external onlyOwner {
@@ -59,9 +59,9 @@ contract FuleTank {
 
     uint amt = msg.value * rate / 10000;
 
-    if (amt > 0 && IERC20(regCenter).balanceOf(address(this)) >= amt) {
+    if (amt > 0 && regCenter.balanceOf(address(this)) >= amt) {
 
-      IERC20(regCenter).transfer(msg.sender, amt);
+      regCenter.transfer(msg.sender, amt);
       
       sum += amt;
 
@@ -76,6 +76,15 @@ contract FuleTank {
       payable(msg.sender).transfer(amt);
 
     } else revert('insufficient amount');
+  }
+
+  function withdrawFule(uint amt) external onlyOwner {
+
+    if (regCenter.balanceOf(address(this)) >= amt) {
+
+        regCenter.transfer(msg.sender, amt);
+
+    } else revert('insufficient fule');
   }
 
 }

@@ -30,7 +30,7 @@ interface IInvestmentAgreement is ISigPage {
     //##    Event     ##
     //##################
 
-    event AddDeal(uint indexed seqOfDeal);
+    event RegDeal(uint indexed seqOfDeal);
 
     event ClearDealCP(
         uint256 indexed seq,

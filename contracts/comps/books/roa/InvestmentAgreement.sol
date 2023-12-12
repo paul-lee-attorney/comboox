@@ -40,13 +40,13 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint groupOfBuyer,
         uint paid,
         uint par
-    ) external attorneyOrKeeper {
-        uint seqOfDeal = _repo.addDeal(sn, buyer, groupOfBuyer, paid, par);
-        emit AddDeal(seqOfDeal);
+    ) external onlyAttorney() {
+        _repo.addDeal(sn, buyer, groupOfBuyer, paid, par);
+        // emit AddDeal(seqOfDeal);
     }
 
     function regDeal(DealsRepo.Deal memory deal) 
-        public attorneyOrKeeper returns(uint16 seqOfDeal) 
+        external attorneyOrKeeper returns(uint16 seqOfDeal) 
     {
         seqOfDeal = _repo.regDeal(deal);
 
@@ -57,6 +57,8 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
             if (deal.head.seller != 0) _sigPages[1].addBlank(false, seqOfDeal, deal.head.seller);
             _sigPages[1].addBlank(true, seqOfDeal, deal.body.buyer);
         } 
+
+        emit RegDeal(seqOfDeal);
     }
 
     function delDeal(uint256 seq) external onlyAttorney {

@@ -16,9 +16,9 @@ By booking the equity shares on blockchain, investors may use cryptocurrency or 
 
 Please visit blow websites for:
 
-1. [White Paper](http://combooxgitbook.io/whitepaper "White Paper of ComBoox");
+1. [White Paper](http://combooxgitbook.io/whitepaper-en "White Paper of ComBoox");
 2. [Test Net (Sepolia) App](http://comboox-sepolia.vercel.app "Test Net (Sepolia) App of ComBoox"); and
-3. [Ethereum Main Net App](http://comboox.vercel.app "Ethereum Main Net App of ComBoox").
+3. [ArbitrumOne App](http://comboox.vercel.app "ArbitrumOne App of ComBoox").
 
 ***
 
@@ -47,7 +47,7 @@ Please visit blow websites for:
 
 1. [白皮书](http://combooxgitbook.io/whitepaper "ComBoox白皮书");
 2. [测试链(Sepolia)App](http://comboox-sepolia.vercel.app "测试链(Sepolia)App");及
-3. [以太坊主网App](http://comboox.vercel.app "以太坊主网App")。
+3. [ArbitrumOne网络App](http://comboox.vercel.app "ArbitrumOne网络App")。
 
 
 ****
