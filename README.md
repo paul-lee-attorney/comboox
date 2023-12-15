@@ -1,6 +1,12 @@
+
+![ComBoox_Logo](./assets/ComBoox_Logo_ColorOnWhite_Trimmed.jpg)
+
+
+
 # Welcome to ComBoox!
 
 ## ---- A Company Book-Entry System Linking To Web 3.0 Capital Market 
+
 
 **ComBoox** is a blockchain-based company book-entry system designed for equity share registration and statutory books keeping, which is aimed to assist users to quickly establish a legal, secure, transparent, and reliable smart contracts system on blockchain for registering equity share and keeping records of corporate governance, so as to enable rights holders such as investors, shareholders, managers, and business partners be able to directly engage in almost all the share transactions and corporate governance activities under the automatic control of smart contracts, including share subscription, transfer, pledge, consideration payment, contracts signing, motion submission, voting, nomination, appointment, resignation etc.
 
