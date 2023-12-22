@@ -58,13 +58,21 @@ contract ROMKeeper is IROMKeeper, AccessControl {
 
         SharesRepo.Share memory share =
             _ros.getShare(seqOfShare);
+
+        uint centPrice = _gk.getCentPrice();
+        uint valueOfDeal = amt * centPrice;
         
         require(share.head.shareholder == caller,
             "ROMK.payInCap: not shareholder");
-        require(amt * _gk.getCentPrice() / 100 <= msgValue,
+        require(valueOfDeal <= msgValue,
             "ROMK.payInCap: insufficient amt");
         
+        msgValue -= valueOfDeal;
+        if (msgValue > 0)
+            _gk.saveToCoffer(caller, msgValue); 
+
         _ros.payInCapital(seqOfShare, amt);
+
     }
 
     function decreaseCapital(

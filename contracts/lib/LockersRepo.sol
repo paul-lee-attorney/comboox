@@ -147,7 +147,7 @@ library LockersRepo {
         if (repo.snList.remove(hashLock)) {
             head = locker.head;
             delete repo.lockers[hashLock];
-        } revert ("LR.withdrawDeposit: locker not exist");
+        } else revert ("LR.withdrawDeposit: locker not exist");
     }
 
     //#################

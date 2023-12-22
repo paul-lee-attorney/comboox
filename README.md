@@ -1,5 +1,5 @@
 
-![ComBoox_Logo](./assets/ComBoox_Logo_ColorOnWhite_Trimmed.jpg)
+![ComBoox_Logo](./assets/Logo_FullSlogen.jpg)
 
 
 

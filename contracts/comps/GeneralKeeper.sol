@@ -572,6 +572,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     function saveToCoffer(uint acct, uint value) external {
 
         require (
+                msg.sender == _keepers[4] ||
                 msg.sender == _keepers[5] ||
                 msg.sender == _keepers[6] ||
                 msg.sender == _keepers[7] ||

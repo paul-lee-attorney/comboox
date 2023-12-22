@@ -146,7 +146,7 @@ library OfficersRepo {
             if (pos.title <= uint8(TitleOfOfficers.Director)) 
                 repo.directors.posList.add(pos.seqOfPos);
             else repo.managers.posList.add(pos.seqOfPos); 
-        } else require (p.seqOfPos == pos.seqOfPos,
+        } else require (p.seqOfPos == pos.seqOfPos && p.title == pos.title,
             "OR.addPosition: remove pos first");
 
         repo.positions[pos.seqOfPos] = pos;

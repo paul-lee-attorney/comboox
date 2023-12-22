@@ -11,13 +11,13 @@ contract MockFeedRegistry {
      * Feed Registry: 0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf
      */
 
-    function decimals(address base, address quote) external pure returns (uint8) {
-        require(base == Denominations.ETH, "not based on ETH");
-        require(quote != address(0), "zero quote");
+    function decimals() external pure returns (uint8) {
+        // require(base == Denominations.ETH, "not based on ETH");
+        // require(quote != address(0), "zero quote");
         return 8;
     }
 
-    function latestRoundData(address base, address quote) external 
+    function latestRoundData() external 
         view returns (
             uint80 roundID,
             int    price,
@@ -30,22 +30,23 @@ contract MockFeedRegistry {
         startedAt = 1567958400;
         timeStamp = block.timestamp;
         answeredInRound = 190909;
+        price = 225880000000;
 
-        int[6] memory rates = [int(0), 166680000000, 130907250548, 153193742107, 24234983023517, 1212778000143];
+        // int[6] memory rates = [int(0), 166680000000, 130907250548, 153193742107, 24234983023517, 1212778000143];
 
-        price = base != Denominations.ETH
-            ? rates[0]
-            : quote == Denominations.USD
-                ?  rates[1]
-                : quote == Denominations.GBP
-                    ?  rates[2]
-                    : quote == Denominations.EUR
-                        ? rates[3]
-                        : quote == Denominations.JPY
-                            ? rates[4]
-                            : quote == Denominations.CNY
-                                ? rates[5]
-                                : rates[0];
+        // price = base != Denominations.ETH
+        //     ? rates[0]
+        //     : quote == Denominations.USD
+        //         ?  rates[1]
+        //         : quote == Denominations.GBP
+        //             ?  rates[2]
+        //             : quote == Denominations.EUR
+        //                 ? rates[3]
+        //                 : quote == Denominations.JPY
+        //                     ? rates[4]
+        //                     : quote == Denominations.CNY
+        //                         ? rates[5]
+        //                         : rates[0];
     }
 
 }

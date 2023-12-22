@@ -132,6 +132,8 @@ interface IRegCenter is IERC20, IPriceConsumer2{
 
     function withdrawPoints(bytes32 hashLock) external;
 
+    function getDepositAmt(address from) external view returns(uint);
+
     function getLocker(bytes32 hashLock) external view 
         returns (LockersRepo.Locker memory locker);
 

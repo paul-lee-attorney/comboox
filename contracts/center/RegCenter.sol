@@ -31,6 +31,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
     
     UsersRepo.Repo private _users;
     DocsRepo.Repo private _docs;
+    mapping(address => uint256) private _coffers;
     
     constructor() {
         _users.regUser(msg.sender);
@@ -81,7 +82,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
         require(msg.sender == _users.getOwner(), 
             "RC.burnPoints: not owner");
 
-        _burn(msg.sender, amt);        
+        _burn(msg.sender, amt);
     }
 
     function mintAndLockPoints(
@@ -98,6 +99,10 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
                 hashLock, 
                 msg.sender
             );
+
+        _mint(address(this), amtOfGLee * 10 ** 9);
+        _coffers[msg.sender] += amtOfGLee * 10 ** 9;
+
         emit LockPoints( LockersRepo.codifyHead(head), hashLock);
     }
 
@@ -116,10 +121,13 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
                 hashLock, 
                 msg.sender
             );
-
+        _lockPointsInCoffer(msg.sender, amtOfGLee * 10 ** 9);
         emit LockPoints(LockersRepo.codifyHead(head), hashLock);
+    }
 
-        _burn(_users.getUser(msg.sender).primeKey.pubKey, amtOfGLee * 10 ** 9);
+    function _lockPointsInCoffer(address caller, uint value) private {
+        _transfer(caller, address(this), value);
+        _coffers[caller] += value;
     }
 
     function lockConsideration(
@@ -141,10 +149,9 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
                 hashLock, 
                 msg.sender
             );
-
+            
+        _lockPointsInCoffer(msg.sender, amtOfGLee * 10 ** 9);
         emit LockConsideration(LockersRepo.codifyHead(head), counterLocker, payload, hashLock);
-
-        _burn(_users.getUser(msg.sender).primeKey.pubKey, amtOfGLee * 10 ** 9);
     }
 
     function pickupPoints(bytes32 hashLock, string memory hashKey) external
@@ -153,9 +160,21 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
             _users.pickupPoints(hashLock, hashKey, msg.sender);
 
         if (head.value > 0) {
-            emit PickupPoints(LockersRepo.codifyHead(head));            
-            _mint(_users.users[head.to].primeKey.pubKey, head.value * 10 ** 9);
+            emit PickupPoints(LockersRepo.codifyHead(head));
+
+            _pickupPointsFromCoffer(
+                _users.users[head.from].primeKey.pubKey, 
+                _users.users[head.to].primeKey.pubKey, 
+                head.value * 10 ** 9
+            );
         }
+    }
+
+    function _pickupPointsFromCoffer(address from, address to, uint amt) private {
+        require(_coffers[from] >= amt, 
+            "RC.pickupPointsFromCoffer: insufficient balance");
+        _coffers[from] -= amt;
+        _transfer(address(this), to, amt);
     }
 
     function withdrawPoints(bytes32 hashLock) external
@@ -164,9 +183,23 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
             _users.withdrawDeposit(hashLock, msg.sender);
 
         if (head.value > 0) {
+            _withdrawPoints(
+                _users.users[head.from].primeKey.pubKey, 
+                head.value * 10 ** 9
+            );
             emit WithdrawPoints(LockersRepo.codifyHead(head));
-            _mint(_users.users[head.from].primeKey.pubKey, head.value * 10 ** 9);
         }
+    }
+
+    function _withdrawPoints(address from, uint amt) private {
+        require(_coffers[from] >= amt, 
+            "RC.withdrawPoints: insufficient balance");
+        _coffers[from] -= amt;
+        _transfer(address(this), from, amt);
+    }
+
+    function getDepositAmt(address from) external view returns(uint) {
+        return _coffers[from];
     }
 
     function getLocker(bytes32 hashLock) external

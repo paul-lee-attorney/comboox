@@ -72,8 +72,12 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         
         IRegisterOfShares _ros = _gk.getROS();
 
+        uint centPrice = _gk.getCentPrice();
+
         SwapsRepo.Swap memory swap =
-            _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap, msgValue, _gk.getCentPrice());
+            _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap, msgValue, centPrice);
+
+        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) * centPrice / 100;
 
         uint buyer = _ros.getShare(swap.seqOfPledge).head.shareholder;
         
@@ -85,10 +89,15 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         if (swap.isPutOpt)
             _ros.increaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);
 
+        msgValue -= valueOfDeal;
+
         _gk.saveToCoffer(
             _ros.getShare(swap.seqOfTarget).head.shareholder, 
-            msgValue
+            valueOfDeal
         );
+
+        if (msgValue > 0)
+            _gk.saveToCoffer(caller, msgValue);
     }
 
     function terminateSwap(
@@ -145,9 +154,13 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         
         IRegisterOfShares _ros = _gk.getROS();
 
+        uint centPrice = _gk.getCentPrice();
+
         SwapsRepo.Swap memory swap = 
             IInvestmentAgreement(ia).payOffSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
-                seqOfDeal, seqOfSwap, msgValue, _gk.getCentPrice());
+                seqOfDeal, seqOfSwap, msgValue, centPrice);
+
+        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) * centPrice / 100;        
         
         _ros.increaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         _ros.increaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);
@@ -161,8 +174,12 @@ contract ROOKeeper is IROOKeeper, AccessControl {
 
         _gk.saveToCoffer(
             _ros.getShare(swap.seqOfTarget).head.shareholder, 
-            msgValue
+            valueOfDeal
         );
+
+        msgValue -= valueOfDeal;
+        if (msgValue > 0)
+            _gk.saveToCoffer(caller, msgValue);
     }
 
     function pickupPledgedShare(
