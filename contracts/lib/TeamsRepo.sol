@@ -205,6 +205,9 @@ library TeamsRepo {
         Member storage teamInfo = 
             repo.teams[seqOfTeam].members[0];
 
+        require(teamInfo.state == 0,
+            "enrollTeam: already enrolled");
+
         uint32 budget = 
             teamInfo.rate * teamInfo.estimated;
 
