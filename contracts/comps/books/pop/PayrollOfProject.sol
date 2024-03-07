@@ -19,12 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/access/AccessControl.sol";
+import "../../common/access/OwnerControl.sol";
 
-import "../../../lib/EnumerableSet.sol";
-import "../../../lib/TeamsRepo.sol";
+import "./IPayrollOfProject.sol";
 
-contract PayrollOfProject is AccessControl {
+contract PayrollOfProject is IPayrollOfProject, OwnerControl {
     using TeamsRepo for TeamsRepo.Repo;
 
     TeamsRepo.Repo private _pop;
@@ -44,20 +43,19 @@ contract PayrollOfProject is AccessControl {
 
 		function setManager(uint acct) external onlyOwner {
 				_pop.setManager(acct);
+				emit SetManager(acct);
 		}
 
 		function setCurrency(uint8 currency) external onlyOwner {
-			_currency = currency;
+			  _currency = currency;
+				emit SetCurrency(currency);
 		}
-
-    function transferProject(uint newManager) external {
-		_pop.transferProject(_msgSender(18000), newManager);
-    }
 
     // ---- Project ----
 
     function setBudget(uint rate,uint estimated) external {
 				_pop.setBudget(_msgSender(18000), rate, estimated);
+				emit SetBudget(rate, estimated);
 		}
 
     function fixBudget() external {
@@ -66,6 +64,7 @@ contract PayrollOfProject is AccessControl {
 
     function increaseBudget(uint deltaQty) external {
 				_pop.increaseBudget(_msgSender(18000), deltaQty);
+				emit IncreaseBudget(deltaQty);
 		}
 
 		// ---- Team ----
@@ -84,10 +83,12 @@ contract PayrollOfProject is AccessControl {
 
     function enrollTeam(uint seqOfTeam) external {
 				_pop.enrollTeam(_msgSender(18000), seqOfTeam);
+				emit EnrollTeam(seqOfTeam);
 		}
 
     function replaceLeader(uint seqOfTeam, uint leader) external {
 				_pop.replaceLeader(_msgSender(18000), seqOfTeam, leader);
+				emit ReplaceLeader(seqOfTeam, leader);
 		}
 
     function increaseTeamBudget(uint seqOfTeam,uint deltaQty) external {
@@ -133,24 +134,35 @@ contract PayrollOfProject is AccessControl {
 				uint ratio
 		) external {
 				_pop.verifyMemberWork(_msgSender(18000), seqOfTeam, userNo, ratio);
+				emit VerifyMemberWork(seqOfTeam, userNo, ratio);
 		}
 
 		function verifyTeamWork(uint seqOfTeam, uint ratio) external {
 				_pop.verifyTeamWork(_msgSender(18000), seqOfTeam, ratio);
+				emit VerifyTeamWork(seqOfTeam, ratio);
 		}
 
 		function payWages() external payable {
-				_pop.distributePayment(msg.value, _rc.getCentPriceInWei(_currency));
+				uint amt = msg.value;
+				uint exRate = _rc.getCentPriceInWei(_currency);
+				_pop.distributePayment(amt, exRate);
+				emit PayWages(amt, exRate);
 		}
 
 		function pickupDeposit(uint amt) external {
 				_pop.pickupDeposit(_msgSender(18000), amt);
-				payable(msg.sender).transfer(amt);
+				address caller = msg.sender;
+				payable(caller).transfer(amt);
+				emit PickupDeposit(caller, amt);
 		}
 
     ///////////////////
     //   Read I/O    //
     ///////////////////
+
+		function getCurrency() external view returns(uint8) {
+			return _currency;
+		}
 
 		function isManager(uint acct) external view returns(bool) {
 				return _pop.isManager(acct);
