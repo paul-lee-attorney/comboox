@@ -89,19 +89,46 @@ interface IShareholdersAgreement is ISigPage {
     }
 
     //##################
-    //##  Write I/O   ##
+    //##     Write    ##
     //##################
 
+    /**
+     * @dev Create a clone contract as per the template type number (`typeOfDoc`) 
+     * and its version number (`version`).
+     * Note `typeOfDoc` and `version` shall be bigger than zero.
+     */
     function createTerm(uint typeOfDoc, uint version) external;
 
+    /**
+     * @dev Remove tracking of a clone contract from mapping as per its template 
+     * type number (`typeOfDoc`). 
+     */
     function removeTerm(uint typeOfDoc) external;
 
+    /**
+     * @dev Add a pre-defined `rule` into the Rules Mapping (seqNumber => rule)
+     * Note a sequence number (`seqNumber`) of the `rule` SHALL be able to be parsed by 
+     * RuleParser library, and such `seqNumber` shall be used as the search key to 
+     * retrieve the rule from the Rules Mapping.
+     */
     function addRule(bytes32 rule) external;
 
+    /**
+     * @dev Remove tracking of a rule from the Rules Mapping as per its sequence 
+     * number (`seq`). 
+     */
     function removeRule(uint256 seq) external;
 
+    /**
+     * @dev Initiate the Shareholders Agreement with predefined default rules. 
+     */
     function initDefaultRules() external;
 
+    /**
+     * @dev Transfer special Roles having write authorities to address "Zero",
+     * so as to fix the contents of the Shareholders Agreement avoiding any further 
+     * revision by any EOA. 
+     */
     function finalizeSHA() external;
 
     //################
@@ -109,22 +136,54 @@ interface IShareholdersAgreement is ISigPage {
     //################
 
     // ==== Terms ====
-
+ 
+    /**
+     * @dev Returns whether a specific Term numbered as `title` exist  
+     * in the current Shareholders Agreemnt.
+     */
     function hasTitle(uint256 title) external view returns (bool);
 
+    /**
+     * @dev Returns total quantities of Terms in the current 
+     * Shareholders Agreemnt.
+     */
     function qtyOfTerms() external view returns (uint256);
 
+    /**
+     * @dev Returns total quantities of Terms stiputed in the current 
+     * Shareholders Agreemnt.
+     */
     function getTitles() external view returns (uint256[] memory);
 
+    /**
+     * @dev Returns the contract address of the specific Term  
+     * numbered as `title` from the Terms Mapping of the Shareholders Agreemnt.
+     */
     function getTerm(uint256 title) external view returns (address);
 
     // ==== Rules ====
-    
+
+    /**
+     * @dev Returns whether a specific Rule numbered as `seq` exist  
+     * in the current Shareholders Agreemnt.
+     */    
     function hasRule(uint256 seq) external view returns (bool);
 
+    /**
+     * @dev Returns total quantities of Rules in the current 
+     * Shareholders Agreemnt.
+     */
     function qtyOfRules() external view returns (uint256);
 
+    /**
+     * @dev Returns total quantities of Rules stiputed in the current 
+     * Shareholders Agreemnt.
+     */
     function getRules() external view returns (uint256[] memory);
 
+    /**
+     * @dev Returns the specific Rule numbered as `seq` from the Rules Mapping
+     * of the Shareholders Agreemnt.
+     */
     function getRule(uint256 seq) external view returns (bytes32);
 }

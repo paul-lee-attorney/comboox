@@ -226,20 +226,6 @@ interface IGeneralKeeper {
 
     function terminateDeal(address ia, uint256 seqOfDeal) external;
 
-    function requestToBuy(address ia, uint seqOfDeal, uint paidOfTarget, uint seqOfPledge) external;
-
-    function payOffRejectedDeal(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external payable;
-
-    function pickupPledgedShare(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external;
-
     function payOffApprovedDeal(
         address ia,
         uint seqOfDeal
@@ -258,6 +244,13 @@ interface IGeneralKeeper {
 
     function execOption(uint256 seqOfOpt) external;
 
+    function createSwap(
+        uint256 seqOfOpt,
+        uint seqOfTarget,
+        uint paidOfTarget,
+        uint seqOfPledge
+    ) external;
+
     function payOffSwap(
         uint256 seqOfOpt, 
         uint256 seqOfSwap
@@ -266,6 +259,20 @@ interface IGeneralKeeper {
     function terminateSwap(
         uint256 seqOfOpt, 
         uint256 seqOfSwap
+    ) external;
+
+    function requestToBuy(address ia, uint seqOfDeal, uint paidOfTarget, uint seqOfPledge) external;
+
+    function payOffRejectedDeal(
+        address ia,
+        uint seqOfDeal,
+        uint seqOfSwap
+    ) external payable;
+
+    function pickupPledgedShare(
+        address ia,
+        uint seqOfDeal,
+        uint seqOfSwap
     ) external;
 
     // ###################

@@ -429,7 +429,6 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IROOKeeper(_keepers[7]).pickupPledgedShare(ia, seqOfDeal, seqOfSwap, _msgSender(58000));        
     }
 
-
     // ###################
     // ##   ROPKeeper   ##
     // ###################

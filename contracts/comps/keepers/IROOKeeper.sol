@@ -35,8 +35,7 @@ interface IROOKeeper {
         uint d3
     ) external;
 
-    function execOption(uint256 seqOfOpt, uint256 caller)
-        external;
+    function execOption(uint256 seqOfOpt, uint256 caller)external;
 
     function createSwap(
         uint256 seqOfOpt,

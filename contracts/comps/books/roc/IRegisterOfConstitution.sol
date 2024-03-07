@@ -29,9 +29,9 @@ interface IRegisterOfConstitution is IFilesFolder{
 
     event ChangePointer(address indexed pointer);
 
-    //##################
-    //##  Write I/O  ##
-    //##################
+    //#############
+    //##  Write  ##
+    //#############
 
     function changePointer(address body) external;
 
