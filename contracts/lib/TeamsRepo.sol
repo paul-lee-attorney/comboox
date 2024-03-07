@@ -34,7 +34,7 @@ library TeamsRepo {
         uint32 receivableAmt;
         uint32 paidAmt;
         uint16 para;
-        bool enrolled;
+        uint8 state;
     }
 
     struct Team {
@@ -55,12 +55,12 @@ library TeamsRepo {
         _;
     }
 
-    modifier onlyEnrolledTeam(
+    modifier onlyListedTeam(
         Repo storage repo,
         uint seqOfTeam
     ) {
-        require(teamIsEnrolled(repo, seqOfTeam),
-          "TR.onlyEnrolledTeam: not");
+        require(teamIsListed(repo, seqOfTeam),
+          "TR.onlyListedTeam: not");
         _;
     }
   
@@ -104,7 +104,7 @@ library TeamsRepo {
 
         Member storage info = repo.teams[0].members[0];
 
-        require (!info.enrolled,
+        require (info.state == 0,
             "TR.setProject: already approved");
 
         info.rate = uint32(rate);
@@ -117,14 +117,14 @@ library TeamsRepo {
     ) public onlyManager(repo, caller) {
         Member storage info = repo.teams[0].members[0];
 
-        require (!info.enrolled,
+        require (info.state == 0,
             "TR.approveProject: already fixed");
 
         require (info.rate * info.estimated > 0,
             "TR.approveProject: zero budget");
 
         info.budgetAmt = info.rate * info.estimated;
-        info.enrolled = true;
+        info.state = 1;
     }
 
     function increaseBudget(
@@ -137,7 +137,7 @@ library TeamsRepo {
 
         Member storage info = repo.teams[0].members[0];
 
-        require (info.enrolled,
+        require (info.state == 1,
             "TR.increaseProBudget: pending project");
 
         info.estimated += uint16(deltaQty);
@@ -159,14 +159,17 @@ library TeamsRepo {
             repo.teams[0].members[0];
 
         projInfo.para++;
-        
+				        
         Member storage teamInfo = 
-            repo.teams[projInfo.para].members[0];
+						repo.teams[projInfo.para].members[0];
 
         teamInfo.userNo = uint16(caller);
         teamInfo.rate = uint32(rate);
         teamInfo.estimated = uint16(estimated);
+
         teamInfo.para = projInfo.para;
+
+				repo.teamsList.add(projInfo.para);
     }
 
     function updateTeam(
@@ -175,12 +178,12 @@ library TeamsRepo {
         uint seqOfTeam,
         uint rate,
         uint estimated
-    ) public onlyTeamLeader(repo, caller, seqOfTeam) {
+    ) public onlyTeamLeader(repo, caller, seqOfTeam){
 
         Member storage teamInfo = 
             repo.teams[seqOfTeam].members[0];
 
-        require(!teamInfo.enrolled,
+        require(teamInfo.state == 0,
             "updateTeam: approved team");
 
         teamInfo.rate = uint32(rate);
@@ -196,8 +199,8 @@ library TeamsRepo {
         Member storage projInfo = 
             repo.teams[0].members[0];
         
-        require(!repo.teamsList.contains(seqOfTeam),
-            "enrollTeam: already enrolled");
+        require(repo.teamsList.contains(seqOfTeam),
+            "enrollTeam: not listed");
 
         Member storage teamInfo = 
             repo.teams[seqOfTeam].members[0];
@@ -209,11 +212,9 @@ library TeamsRepo {
             (projInfo.pendingAmt + budget),
             "enrollTeam: budget overflow");
 
-        teamInfo.enrolled = true;
+        teamInfo.state = 1;
 
         projInfo.pendingAmt += budget;
-
-        repo.teamsList.add(seqOfTeam);
     }
 
     function replaceLeader(
@@ -222,7 +223,7 @@ library TeamsRepo {
         uint seqOfTeam,
         uint leader
     ) public onlyManager(repo, caller) 
-        onlyEnrolledTeam(repo, seqOfTeam)
+        onlyListedTeam(repo, seqOfTeam)
     {
         repo.teams[seqOfTeam].members[0].userNo = 
             uint40(leader);
@@ -234,7 +235,7 @@ library TeamsRepo {
         uint seqOfTeam,
         uint deltaQty
     ) public onlyManager(repo, caller) 
-        onlyEnrolledTeam(repo, seqOfTeam)
+        onlyListedTeam(repo, seqOfTeam)
     {
 
         require (deltaQty > 0,
@@ -296,7 +297,7 @@ library TeamsRepo {
         m.estimated = input.estimated;
         m.budgetAmt = input.budgetAmt;
 
-        m.enrolled = true;
+        m.state = 1;
 
         t.membersList.add(input.userNo);
         teamInfo.budgetAmt += input.budgetAmt;
@@ -319,10 +320,10 @@ library TeamsRepo {
 
 				Member storage m = t.members[userNo];
 				
-				require(m.enrolled,
+				require(m.state == 1,
 						"removeMember: not enrolled");
 
-				m.enrolled = false;
+				m.state = 0;
 
 				teamInfo.budgetAmt -= (m.budgetAmt - m.receivableAmt);
 		}
@@ -342,7 +343,7 @@ library TeamsRepo {
 
 				Member storage m = t.members[userNo];
 				
-				require(!m.enrolled,
+				require(m.state == 0,
 						"removeMember: already enrolled");
 
 				uint32 balance = (m.budgetAmt - m.receivableAmt);
@@ -351,7 +352,7 @@ library TeamsRepo {
 						(teamInfo.budgetAmt + balance),
 						"enrollMember: budget overflow");
 
-				m.enrolled = true;
+				m.state = 1;
 				teamInfo.budgetAmt += balance;
 		}
 
@@ -371,7 +372,7 @@ library TeamsRepo {
 
 				Member storage m = t.members[userNo];
 
-				require(m.enrolled,
+				require(m.state > 0,
 						"extendPeriod: not enrolled");
 
 				uint32 deltaAmt = uint32(m.rate * deltaQty);
@@ -393,7 +394,7 @@ library TeamsRepo {
 				uint caller,
 				uint seqOfTeam,
 				uint hrs
-		) public onlyEnrolledTeam(repo, seqOfTeam) {
+		) public onlyListedTeam(repo, seqOfTeam) {
 
 				Team storage t = repo.teams[seqOfTeam];
 
@@ -402,7 +403,7 @@ library TeamsRepo {
 
 				Member storage m = t.members[caller];
 
-				require(m.enrolled,
+				require(m.state == 1,
 						"TR.applyHr: not enrolled");
 
 				uint16 delta = uint16(hrs);
@@ -412,6 +413,8 @@ library TeamsRepo {
 
 				m.applied += delta;
 				m.pendingAmt = m.rate * delta;
+
+				m.state = 2;
 		}
 
 		function verifyMemberWork(
@@ -420,7 +423,7 @@ library TeamsRepo {
 				uint seqOfTeam,
 				uint userNo,
 				uint ratio
-		) public onlyEnrolledTeam(repo, seqOfTeam) {
+		) public onlyListedTeam(repo, seqOfTeam) {
 				require(ratio <= 10000,
 						"TR.verifyHr: ratio overflow");
 
@@ -435,10 +438,11 @@ library TeamsRepo {
 
 				Member storage m = t.members[userNo];
 
-				require(m.enrolled,
-						"TR.verifyHr: member removed");
+				require(m.state == 2,
+						"TR.verifyHr: wrong member state");
 
 				m.pendingAmt = uint32(m.pendingAmt * ratio / 10000);
+				m.state = 3;
 
 				teamInfo.pendingAmt += m.pendingAmt;
 		}
@@ -449,7 +453,7 @@ library TeamsRepo {
 				uint seqOfTeam,
 				uint ratio
 		) public onlyManager(repo, caller) 
-				onlyEnrolledTeam(repo, seqOfTeam)
+				onlyListedTeam(repo, seqOfTeam)
 		{
 				require(ratio <= 10000,
 						"TR.verifyHr: ratio overflow");
@@ -480,9 +484,10 @@ library TeamsRepo {
 
 				while (len > 0) {
 						Member storage m = t.members[ls[len-1]];
-						if (m.pendingAmt > 0 && m.enrolled) {
+						if (m.state == 3) {
 								m.receivableAmt += uint32(m.pendingAmt * ratio / 10000);
 								m.pendingAmt = 0;
+								m.state = 1;
 						}
 						len--;
 				}
@@ -593,23 +598,25 @@ library TeamsRepo {
 				return repo.teams[0].members[0].para;
 		}
 
-		function qtyOfEnrolledTeams (
-				Repo storage repo
-		) public view returns(uint) {
-				return repo.teamsList.length();
-		}
-
 		function getListOfTeams(
 				Repo storage repo
 		) public view returns(uint[] memory) {
 				return repo.teamsList.values();
 		}
 
-		function teamIsEnrolled(
+		function teamIsListed(
 				Repo storage repo,
 				uint seqOfTeam
 		) public view returns(bool) {
 				return repo.teamsList.contains(seqOfTeam);
+		}
+
+		function teamIsEnrolled(
+				Repo storage repo,
+				uint seqOfTeam
+		) public view returns(bool) {
+				return repo.teamsList.contains(seqOfTeam) &&
+						repo.teams[seqOfTeam].members[0].state == 1;
 		}
 
 		// ---- TeamInfo ----
@@ -618,7 +625,7 @@ library TeamsRepo {
 				Repo storage repo,
 				uint caller,
 				uint seqOfTeam
-		) public view onlyEnrolledTeam(repo, seqOfTeam) 
+		) public view onlyListedTeam(repo, seqOfTeam) 
 		returns(bool) {
 				Member memory info = repo.teams[seqOfTeam].members[0];
 				return info.userNo == caller;
@@ -627,7 +634,7 @@ library TeamsRepo {
 		function getTeamInfo(
 				Repo storage repo,
 				uint seqOfTeam
-		) public view onlyEnrolledTeam(repo, seqOfTeam)
+		) public view onlyListedTeam(repo, seqOfTeam)
 		returns(Member memory info) {
 				info = repo.teams[seqOfTeam].members[0];
 		}
@@ -638,7 +645,7 @@ library TeamsRepo {
 				Repo storage repo,
 				uint caller,
 				uint seqOfTeam
-		) public view onlyEnrolledTeam(repo, seqOfTeam) 
+		) public view onlyListedTeam(repo, seqOfTeam) 
 		returns (bool) {
 				Team storage t = repo.teams[seqOfTeam];
 				return t.membersList.contains(caller);
@@ -648,19 +655,48 @@ library TeamsRepo {
 				Repo storage repo,
 				uint caller,
 				uint seqOfTeam
-		) public view onlyEnrolledTeam(repo, seqOfTeam) 
+		) public view onlyListedTeam(repo, seqOfTeam) 
 		returns (bool) {
 				Member memory m = repo.teams[seqOfTeam].members[caller];
-				return m.enrolled;
+				return m.state > 0;
+		}
+
+		function getTeamMembersList(
+				Repo storage repo,
+				uint seqOfTeam
+		) public view onlyListedTeam(repo, seqOfTeam) 
+		returns (uint[] memory) {
+				return repo.teams[seqOfTeam].membersList.values();
 		}
 
 		function getMemberInfo(
 				Repo storage repo,
 				uint caller,
 				uint seqOfTeam
-		) public view onlyEnrolledTeam(repo, seqOfTeam) 
+		) public view onlyListedTeam(repo, seqOfTeam)
 		returns (Member memory m) {
+				require(repo.teams[seqOfTeam].membersList.contains(caller),
+						"TR.getMembersInfo: not listed");
 				m = repo.teams[seqOfTeam].members[caller];
+		}
+
+		function getMembersOfTeam(
+				Repo storage repo,
+				uint seqOfTeam
+		) public view onlyListedTeam(repo, seqOfTeam) 
+		returns (Member[] memory) {
+				uint[] memory ls = getTeamMembersList(repo, seqOfTeam);
+				uint len = ls.length;
+				Member[] memory output = new Member[](len);
+				
+				Team storage t = repo.teams[seqOfTeam];
+
+				while (len > 0) {
+						output[len-1] = t.members[ls[len-1]];
+						len--;
+				}
+
+				return output;
 		}
 
 		// ---- Payroll ----
@@ -684,41 +720,4 @@ library TeamsRepo {
 		) public view returns(uint) {
 				return repo.piggyBox[caller];
 		}
-
-		// ---- FullInfo ----
-
-		function getFullInfo(
-				Repo storage repo
-		) public view returns(Member[] memory) {
-				uint[] memory teamsList = repo.teamsList.values();
-				uint len = teamsList.length;
-				uint qtyOfMembers;
-
-				while (len > 0) {
-						qtyOfMembers += repo.teams[teamsList[len-1]].membersList.length();
-						len--;
-				}
-
-				Member[] memory output = new Member[](qtyOfMembers);
-
-				len = teamsList.length;
-
-				while (len > 0) {
-						Team storage t = repo.teams[teamsList[len-1]];
-
-						uint[] memory membersList = t.membersList.values(); 
-						uint deep = membersList.length;
-
-						while(deep > 0) {
-								output[qtyOfMembers-1] = t.members[membersList[deep-1]];
-								deep--;
-								qtyOfMembers--;
-						}
-
-						len--;
-				}
-
-				return output;
-		}
-
 }

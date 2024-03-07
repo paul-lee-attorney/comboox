@@ -41,59 +41,59 @@ contract PayrollOfProject is IPayrollOfProject, OwnerControl {
     //   Write I/O   //
     ///////////////////
 
-		function setManager(uint acct) external onlyOwner {
-				_pop.setManager(acct);
-				emit SetManager(acct);
-		}
+	function setManager(uint acct) external onlyOwner {
+		_pop.setManager(acct);
+		emit SetManager(acct);
+	}
 
-		function setCurrency(uint8 currency) external onlyOwner {
-			  _currency = currency;
-				emit SetCurrency(currency);
-		}
+	function setCurrency(uint8 currency) external onlyOwner {
+		_currency = currency;
+		emit SetCurrency(currency);
+	}
 
     // ---- Project ----
 
     function setBudget(uint rate,uint estimated) external {
-				_pop.setBudget(_msgSender(18000), rate, estimated);
-				emit SetBudget(rate, estimated);
-		}
+		_pop.setBudget(_msgSender(18000), rate, estimated);
+		emit SetBudget(rate, estimated);
+	}
 
     function fixBudget() external {
-				_pop.fixBudget(_msgSender(18000));
-		}
+		_pop.fixBudget(_msgSender(18000));
+	}
 
     function increaseBudget(uint deltaQty) external {
-				_pop.increaseBudget(_msgSender(18000), deltaQty);
-				emit IncreaseBudget(deltaQty);
-		}
+		_pop.increaseBudget(_msgSender(18000), deltaQty);
+		emit IncreaseBudget(deltaQty);
+	}
 
-		// ---- Team ----
+	// ---- Team ----
 
     function createTeam(uint rate, uint estimated) external {
-				_pop.createTeam(_msgSender(18000), rate, estimated);
-		}
+		_pop.createTeam(_msgSender(18000), rate, estimated);
+	}
 
     function updateTeam(
         uint seqOfTeam,
         uint rate,
         uint estimated
     ) external {
-				_pop.updateTeam(_msgSender(18000), seqOfTeam, rate, estimated);
-		}
+		_pop.updateTeam(_msgSender(18000), seqOfTeam, rate, estimated);
+	}
 
     function enrollTeam(uint seqOfTeam) external {
-				_pop.enrollTeam(_msgSender(18000), seqOfTeam);
-				emit EnrollTeam(seqOfTeam);
-		}
+		_pop.enrollTeam(_msgSender(18000), seqOfTeam);
+		emit EnrollTeam(seqOfTeam);
+	}
 
     function replaceLeader(uint seqOfTeam, uint leader) external {
-				_pop.replaceLeader(_msgSender(18000), seqOfTeam, leader);
-				emit ReplaceLeader(seqOfTeam, leader);
-		}
+		_pop.replaceLeader(_msgSender(18000), seqOfTeam, leader);
+		emit ReplaceLeader(seqOfTeam, leader);
+	}
 
     function increaseTeamBudget(uint seqOfTeam,uint deltaQty) external {
-				_pop.increaseTeamBudget(_msgSender(18000), seqOfTeam, deltaQty);
-		}
+		_pop.increaseTeamBudget(_msgSender(18000), seqOfTeam, deltaQty);
+	}
 
     // ---- Member ----
 
@@ -103,137 +103,137 @@ contract PayrollOfProject is IPayrollOfProject, OwnerControl {
         uint rate,
         uint estimated
     ) external {
-				_pop.enrollMember(_msgSender(18000), seqOfTeam, userNo, rate, estimated);
-		}    
+		_pop.enrollMember(_msgSender(18000), seqOfTeam, userNo, rate, estimated);
+	}    
 
-		function removeMember(uint seqOfTeam, uint userNo) external {
-				_pop.removeMember(_msgSender(18000), seqOfTeam, userNo);
-		}
+	function removeMember(uint seqOfTeam, uint userNo) external {
+		_pop.removeMember(_msgSender(18000), seqOfTeam, userNo);
+	}
 
-		function restoreMember(uint seqOfTeam, uint userNo) external {
-				_pop.restoreMember(_msgSender(18000), seqOfTeam, userNo);
-		}
+	function restoreMember(uint seqOfTeam, uint userNo) external {
+		_pop.restoreMember(_msgSender(18000), seqOfTeam, userNo);
+	}
 
-		function extendPeriod(
-				uint seqOfTeam,
-				uint userNo,
-				uint deltaQty
-		) external {
-				_pop.extendPeriod(_msgSender(18000), seqOfTeam, userNo, deltaQty);
-		}
+	function extendPeriod(
+		uint seqOfTeam,
+		uint userNo,
+		uint deltaQty
+	) external {
+		_pop.extendPeriod(_msgSender(18000), seqOfTeam, userNo, deltaQty);
+	}
 
-		// ---- Work ----
+	// ---- Work ----
 
-		function applyWorkingHour(uint seqOfTeam, uint hrs) external {
-				_pop.applyWorkingHour(_msgSender(18000), seqOfTeam, hrs);
-		}
+	function applyWorkingHour(uint seqOfTeam, uint hrs) external {
+		_pop.applyWorkingHour(_msgSender(18000), seqOfTeam, hrs);
+	}
 
-		function verifyMemberWork(
-				uint seqOfTeam,
-				uint userNo,
-				uint ratio
-		) external {
-				_pop.verifyMemberWork(_msgSender(18000), seqOfTeam, userNo, ratio);
-				emit VerifyMemberWork(seqOfTeam, userNo, ratio);
-		}
+	function verifyMemberWork(
+		uint seqOfTeam,
+		uint userNo,
+		uint ratio
+	) external {
+		_pop.verifyMemberWork(_msgSender(18000), seqOfTeam, userNo, ratio);
+		emit VerifyMemberWork(seqOfTeam, userNo, ratio);
+	}
 
-		function verifyTeamWork(uint seqOfTeam, uint ratio) external {
-				_pop.verifyTeamWork(_msgSender(18000), seqOfTeam, ratio);
-				emit VerifyTeamWork(seqOfTeam, ratio);
-		}
+	function verifyTeamWork(uint seqOfTeam, uint ratio) external {
+		_pop.verifyTeamWork(_msgSender(18000), seqOfTeam, ratio);
+		emit VerifyTeamWork(seqOfTeam, ratio);
+	}
 
-		function payWages() external payable {
-				uint amt = msg.value;
-				uint exRate = _rc.getCentPriceInWei(_currency);
-				_pop.distributePayment(amt, exRate);
-				emit PayWages(amt, exRate);
-		}
+	function payWages() external payable {
+		uint amt = msg.value;
+		uint exRate = _rc.getCentPriceInWei(_currency);
+		_pop.distributePayment(amt, exRate);
+		emit PayWages(amt, exRate);
+	}
 
-		function pickupDeposit(uint amt) external {
-				_pop.pickupDeposit(_msgSender(18000), amt);
-				address caller = msg.sender;
-				payable(caller).transfer(amt);
-				emit PickupDeposit(caller, amt);
-		}
+	function pickupDeposit(uint amt) external {
+		_pop.pickupDeposit(_msgSender(18000), amt);
+		address caller = msg.sender;
+		payable(caller).transfer(amt);
+		emit PickupDeposit(caller, amt);
+	}
 
     ///////////////////
     //   Read I/O    //
     ///////////////////
 
-		function getCurrency() external view returns(uint8) {
-			return _currency;
-		}
+	function getCurrency() external view returns(uint8) {
+		return _currency;
+	}
 
-		function isManager(uint acct) external view returns(bool) {
-				return _pop.isManager(acct);
-		}
+	function isManager(uint acct) external view returns(bool) {
+		return _pop.isManager(acct);
+	}
 
-		function getProjectInfo() external view returns(TeamsRepo.Member memory) {
-				return _pop.getProjectInfo();
-		}
+	function getProjectInfo() external view returns(TeamsRepo.Member memory) {
+		return _pop.getProjectInfo();
+	}
 
-		// ---- Teams ----
+	// ---- Teams ----
 
-		function qtyOfTeams () external view returns(uint) {
-				return _pop.qtyOfTeams();
-		}
+	function qtyOfTeams () external view returns(uint) {
+		return _pop.qtyOfTeams();
+	}
 
-		function qtyOfEnrolledTeams () external view returns(uint) {
-				return _pop.qtyOfEnrolledTeams();
-		}
+	function getListOfTeams() external view returns(uint[] memory) {
+		return _pop.getListOfTeams();
+	}
 
-		function getListOfTeams() external view returns(uint[] memory) {
-				return _pop.getListOfTeams();
-		}
+	function teamIsEnrolled(uint seqOfTeam) external view returns(bool) {
+		return _pop.teamIsEnrolled(seqOfTeam);
+	}
 
-		function teamIsEnrolled(uint seqOfTeam) external view returns(bool) {
-				return _pop.teamIsEnrolled(seqOfTeam);
-		}
+	// ---- TeamInfo ----
 
-		// ---- TeamInfo ----
+	function isTeamLeader(uint acct, uint seqOfTeam) external view returns(bool) {
+		return _pop.isTeamLeader(acct, seqOfTeam);
+	}
 
-		function isTeamLeader(uint acct, uint seqOfTeam) external view returns(bool) {
-				return _pop.isTeamLeader(acct, seqOfTeam);
-		}
+	function getTeamInfo(uint seqOfTeam) external view returns(TeamsRepo.Member memory info) {
+		return _pop.getTeamInfo(seqOfTeam);
+	}
 
-		function getTeamInfo(uint seqOfTeam) external view returns(TeamsRepo.Member memory info) {
-				return _pop.getTeamInfo(seqOfTeam);
-		}
+	// ---- Member ----
 
-		// ---- Member ----
+	function isMember(uint acct,uint seqOfTeam) external view returns (bool) {
+		return _pop.isMember(acct, seqOfTeam);
+	}
 
-		function isMember(uint acct,uint seqOfTeam) external view returns (bool) {
-				return _pop.isMember(acct, seqOfTeam);
-		}
+	function isEnrolledMember(uint acct,uint seqOfTeam) external view returns (bool) {
+		return _pop.isEnrolledMember(acct, seqOfTeam);
+	}
 
-		function isEnrolledMember(uint acct,uint seqOfTeam) external view returns (bool) {
-				return _pop.isEnrolledMember(acct, seqOfTeam);
-		}
+	function getTeamMembersList(uint seqOfTeam) external view returns(uint[] memory) {
+		return _pop.getTeamMembersList(seqOfTeam);
+	}
 
-		function getMemberInfo(uint acct, uint seqOfTeam) external view 
-				returns (TeamsRepo.Member memory m) 
-		{
-				m = _pop.getMemberInfo(acct, seqOfTeam);
-		}
+	function getMemberInfo(uint acct, uint seqOfTeam) external view 
+		returns (TeamsRepo.Member memory m) 
+	{
+		m = _pop.getMemberInfo(acct, seqOfTeam);
+	}
 
-		// ---- Payroll ----
+	function getMembersOfTeam(uint seqOfTeam) external view 
+		returns (TeamsRepo.Member[] memory ls)
+	{
+		return ls = _pop.getMembersOfTeam(seqOfTeam);
+	}
 
-		function getPayroll() external view returns (uint[] memory list) {
-				return _pop.getPayroll();
-		}
+	// ---- Payroll ----
 
-		function inPayroll(uint acct) external view returns(bool) {
-				return _pop.inPayroll(acct);
-		}
+	function getPayroll() external view returns (uint[] memory list) {
+		return _pop.getPayroll();
+	}
 
-		function getBalanceOf(uint acct) external view returns(uint) {
-				return _pop.getBalanceOf(acct);
-		}
+	function inPayroll(uint acct) external view returns(bool) {
+		return _pop.inPayroll(acct);
+	}
 
-		// ---- FullInfo ----
-
-		function getFullInfo() external view returns(TeamsRepo.Member[] memory) {
-				return _pop.getFullInfo();
-		}
+	function getBalanceOf(uint acct) external view returns(uint) {
+		return _pop.getBalanceOf(acct);
+	}
 
 }

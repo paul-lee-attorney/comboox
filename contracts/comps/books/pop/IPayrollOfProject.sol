@@ -117,8 +117,6 @@ interface IPayrollOfProject {
 
 	function qtyOfTeams () external view returns(uint);
 
-	function qtyOfEnrolledTeams () external view returns(uint);
-
 	function getListOfTeams() external view returns(uint[] memory);
 
 	function teamIsEnrolled(uint seqOfTeam) external view returns(bool);
@@ -135,8 +133,13 @@ interface IPayrollOfProject {
 
 	function isEnrolledMember(uint acct,uint seqOfTeam) external view returns (bool);
 
+	function getTeamMembersList(uint seqOfTeam) external view returns(uint[] memory);
+
 	function getMemberInfo(uint acct, uint seqOfTeam) external view 
 			returns (TeamsRepo.Member memory m);
+
+	function getMembersOfTeam(uint seqOfTeam) external view 
+		returns (TeamsRepo.Member[] memory ls);
 
 	// ---- Payroll ----
 
@@ -145,9 +148,5 @@ interface IPayrollOfProject {
 	function inPayroll(uint acct) external view returns(bool);
 
 	function getBalanceOf(uint acct) external view returns(uint);
-
-	// ---- FullInfo ----
-
-	function getFullInfo() external view returns(TeamsRepo.Member[] memory);
 
 }
