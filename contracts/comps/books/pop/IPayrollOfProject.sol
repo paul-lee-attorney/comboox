@@ -109,6 +109,8 @@ interface IPayrollOfProject {
     //   Read I/O    //
     ///////////////////
 
+	function getCurrency() external view returns(uint8);
+
 	function isManager(uint acct) external view returns(bool);
 
 	function getProjectInfo() external view returns(TeamsRepo.Member memory);
