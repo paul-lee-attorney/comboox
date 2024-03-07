@@ -270,65 +270,65 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
     // ## Comp Deploy Scripts ##
     // #########################
 
-    function createComp(address dk) external 
-    {
-        address primeKeyOfOwner = msg.sender;
-        address rc = address(this);
+    // function createComp(address dk) external 
+    // {
+    //     address primeKeyOfOwner = msg.sender;
+    //     address rc = address(this);
         
-        address gk = _createDocAtLatestVersion(20, primeKeyOfOwner);
-        IAccessControl(gk).init(primeKeyOfOwner, rc, rc, gk);
-        IGeneralKeeper(gk).createCorpSeal();
+    //     address gk = _createDocAtLatestVersion(20, primeKeyOfOwner);
+    //     IAccessControl(gk).init(primeKeyOfOwner, rc, rc, gk);
+    //     IGeneralKeeper(gk).createCorpSeal();
 
-        address[11] memory keepers = 
-            _deployKeepers(primeKeyOfOwner, dk, rc, gk);
+    //     address[11] memory keepers = 
+    //         _deployKeepers(primeKeyOfOwner, dk, rc, gk);
 
-        _deployBooks(keepers, primeKeyOfOwner, rc, gk);
+    //     _deployBooks(keepers, primeKeyOfOwner, rc, gk);
     
-        IAccessControl(gk).setDirectKeeper(dk);
-    }
+    //     IAccessControl(gk).setDirectKeeper(dk);
+    // }
 
-    function _deployKeepers(
-        address primeKeyOfOwner, 
-        address dk,
-        address rc,
-        address gk
-    ) private returns (address[11] memory keepers) {
-        keepers[0] = dk;
-        uint i = 1;
-        while (i < 11) {
-            keepers[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
-            IAccessControl(keepers[i]).init(primeKeyOfOwner, gk, rc, gk);
-            IGeneralKeeper(gk).regKeeper(i, keepers[i]);
-            i++;
-        }
-    }
+    // function _deployKeepers(
+    //     address primeKeyOfOwner, 
+    //     address dk,
+    //     address rc,
+    //     address gk
+    // ) private returns (address[11] memory keepers) {
+    //     keepers[0] = dk;
+    //     uint i = 1;
+    //     while (i < 11) {
+    //         keepers[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
+    //         IAccessControl(keepers[i]).init(primeKeyOfOwner, gk, rc, gk);
+    //         IGeneralKeeper(gk).regKeeper(i, keepers[i]);
+    //         i++;
+    //     }
+    // }
 
-    function _deployBooks(
-        address[11] memory keepers,
-        address primeKeyOfOwner, 
-        address rc,
-        address gk
-    ) private {
-        address[10] memory books;
-        uint8[10] memory types = [11, 12, 13, 14, 13, 15, 16, 17, 18, 19];
-        uint8[10] memory seqOfDK = [1, 2, 3, 0, 5, 6, 7, 8, 0, 10];
+    // function _deployBooks(
+    //     address[11] memory keepers,
+    //     address primeKeyOfOwner, 
+    //     address rc,
+    //     address gk
+    // ) private {
+    //     address[10] memory books;
+    //     uint8[10] memory types = [11, 12, 13, 14, 13, 15, 16, 17, 18, 19];
+    //     uint8[10] memory seqOfDK = [1, 2, 3, 0, 5, 6, 7, 8, 0, 10];
 
-        uint i;
-        while (i < 10) {
-            books[i] = _createDocAtLatestVersion(types[i], primeKeyOfOwner);
-            IAccessControl(books[i]).init(primeKeyOfOwner, keepers[seqOfDK[i]], rc, gk);
-            IGeneralKeeper(gk).regBook(i+1, books[i]);
-            i++;
-        }
-    }
+    //     uint i;
+    //     while (i < 10) {
+    //         books[i] = _createDocAtLatestVersion(types[i], primeKeyOfOwner);
+    //         IAccessControl(books[i]).init(primeKeyOfOwner, keepers[seqOfDK[i]], rc, gk);
+    //         IGeneralKeeper(gk).regBook(i+1, books[i]);
+    //         i++;
+    //     }
+    // }
 
-    function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
-        returns(address body)
-    {
-        uint256 latest = _docs.counterOfVersions(typeOfDoc);
-        bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(latest << 192));
-        body = createDoc(snOfDoc, primeKeyOfOwner).body;
-    }
+    // function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
+    //     returns(address body)
+    // {
+    //     uint256 latest = _docs.counterOfVersions(typeOfDoc);
+    //     bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(latest << 192));
+    //     body = createDoc(snOfDoc, primeKeyOfOwner).body;
+    // }
 
     // ##############
     // ## Read I/O##

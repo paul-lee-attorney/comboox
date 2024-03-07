@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.8;
 
-import "../comps/IGeneralKeeper.sol";
-import "../comps/common/access/IAccessControl.sol";
+// import "../comps/IGeneralKeeper.sol";
+// import "../comps/common/access/IAccessControl.sol";
 
 import "../lib/UsersRepo.sol";
 import "../lib/DocsRepo.sol";
@@ -159,7 +159,7 @@ interface IRegCenter is IERC20, IPriceConsumer2{
 
     // ==== Comp ====
 
-    function createComp(address dk) external;
+    // function createComp(address dk) external;
 
     // #################
     // ##   Read      ##
