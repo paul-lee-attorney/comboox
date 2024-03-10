@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.1
- *
  * Copyright (c) 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -22,6 +20,8 @@
 pragma solidity ^0.8.8;
 
 import "../../../lib/RolesRepo.sol";
+
+import "../../../center/IRegCenter.sol";
 import "../../IGeneralKeeper.sol";
 
 interface IAccessControl {
@@ -29,6 +29,15 @@ interface IAccessControl {
     // ##################
     // ##   Event      ##
     // ##################
+
+    event Init(
+        address indexed owner,
+        address indexed directKeeper,
+        address regCenter,
+        address indexed generalKeeper
+    );
+
+    event SetOwner(address indexed acct);
 
     event SetDirectKeeper(address indexed keeper);
 
@@ -40,7 +49,14 @@ interface IAccessControl {
     // ##    Write     ##
     // ##################
 
-    function initKeepers(address dk,address gk) external;
+    function init(
+        address owner,
+        address directKeeper,
+        address regCenter,
+        address generalKeeper
+    ) external;
+
+    function setOwner(address acct) external;
 
     function setDirectKeeper(address keeper) external;
 
@@ -61,6 +77,8 @@ interface IAccessControl {
     // ##################
     // ##   Read I/O   ##
     // ##################
+
+    function getOwner() external view returns (address);
 
     function getDK() external view returns (address);
 

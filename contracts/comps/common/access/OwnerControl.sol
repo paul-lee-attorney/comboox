@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- *
- * V.0.2.1
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -22,11 +19,10 @@
 
 pragma solidity ^0.8.8;
 
-import "./IOwnable.sol";
+import "./IOwnerControl.sol";
 
-contract Ownable is IOwnable {
-
-    Admin private _owner;
+contract OwnerControl is IOwnerControl {
+    address private _owner;
     IRegCenter internal _rc;
 
     // ################
@@ -35,37 +31,36 @@ contract Ownable is IOwnable {
 
     modifier onlyOwner {
         require(
-            _owner.addr == msg.sender,
-            "O.onlyOwner: NOT"
+            _owner == msg.sender,
+            "OC.onlyOwner: NOT"
         );
         _;
     }
 
     // #################
-    // ##  Write I/O  ##
+    // ##    Write    ##
     // #################
 
     function init(
         address owner,
         address regCenter
     ) external {
-        require(_owner.state == 0, "already inited");
-        _owner.addr = owner;
-        _owner.state = 1;
+        _owner = owner;
         _rc = IRegCenter(regCenter);
+        emit Init(owner, regCenter);
     }
 
-    function transferOwnership(address acct) onlyOwner public {
-        _owner.addr = acct;
-        emit TransferOwnership(acct);
+    function setOwner(address acct) onlyOwner external {
+        _owner = acct;
+        emit SetOwner(acct);
     }
 
-    // ################
-    // ##  Read I/O  ##
-    // ################
+    // ##############
+    // ##   Read   ##
+    // ##############
 
     function getOwner() public view returns (address) {
-        return _owner.addr;
+        return _owner;
     }
 
     function getRegCenter() public view returns (address) {

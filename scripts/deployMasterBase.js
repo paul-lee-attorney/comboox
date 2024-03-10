@@ -49,8 +49,11 @@ async function main() {
 	const libOfficersRepo = await deployTool(signers[0], "OfficersRepo", libraries);
 	const libPledgesRepo = await deployTool(signers[0], "PledgesRepo", libraries);
 	const libSigsRepo = await deployTool(signers[0], "SigsRepo", libraries);
+
+	libraries = {
+		"EnumerableSet": libEnumerableSet.address
+	};
 	const libSharesRepo = await deployTool(signers[0], "SharesRepo", libraries);
-	const libTeamsRepo = await deployTool(signers[0], "TeamsRepo", libraries);
 
 	libraries = {
 		"Checkpoints": libCheckpoints.address,
@@ -102,15 +105,6 @@ async function main() {
 	let rc = await deployTool(signers[0], "RegCenter", libraries);
 	console.log("deployed RC with owner: ", await rc.getOwner());
 	console.log("creator of RC: ", signers[0].address, "\n");
-
-	await rc.setBackupKey(signers[1].address);
-	console.log("setup bookeeper of RC: ", await rc.getBookeeper(), "\n");
-
-	libraries = {};
-	let cnc = await deployTool(signers[0], "CreateNewComp", libraries);
-
-	await cnc.init(signers[0].address, rc.address);
-	console.log("init CNC with owner: ", await cnc.getOwner(), " and RC: ", await cnc.getRegCenter(), "\n");
 
 	// ==== Deploy Templates ====
 
@@ -263,16 +257,13 @@ async function main() {
 	}
 	let loo = await deployTool(signers[0], "ListOfOrders", libraries);
 
-	libraries = {
-		"TeamsRepo": libTeamsRepo.address,
-	};
-	let pop = await deployTool(signers[0], "PayrollOfProject", libraries);
-
 	libraries = {};
 
 	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
+	await rc.setBackupKey(signers[1].address);
+	console.log("set up bookeeper: ", await rc.getBookeeper(), "\n");
 
 	await rc.connect(signers[1]).setTemplate( 1, rocKeeper.address, 1);
 	console.log("set template for ROCKeeper at address: ", rocKeeper.address, "\n");
@@ -351,9 +342,6 @@ async function main() {
 
 	await rc.connect(signers[1]).setTemplate( 26, op.address, 1);
 	console.log("set template for OP at address: ", op.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 27, pop.address, 1);
-	console.log("set template for POP at address: ", pop.address, "\n");
 
 	await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
 	console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");

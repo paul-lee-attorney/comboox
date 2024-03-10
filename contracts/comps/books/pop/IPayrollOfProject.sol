@@ -46,38 +46,38 @@ interface IPayrollOfProject {
 
 	function setCurrency(uint8 currency) external;
 
-	// ---- Project ----
+    // ---- Project ----
 
-	function setBudget(uint rate,uint estimated) external;
+    function setBudget(uint rate,uint estimated) external;
 
-	function fixBudget() external;
+    function fixBudget() external;
 
-	function increaseBudget(uint deltaQty) external;
+    function increaseBudget(uint deltaQty) external;
 
 	// ---- Team ----
 
-	function createTeam(uint rate, uint estimated) external;
+    function createTeam(uint rate, uint estimated) external;
 
-	function updateTeam(
-		uint seqOfTeam,
-		uint rate,
-		uint estimated
-	) external;
+    function updateTeam(
+        uint seqOfTeam,
+        uint rate,
+        uint estimated
+    ) external;
 
-	function enrollTeam(uint seqOfTeam) external;
+    function enrollTeam(uint seqOfTeam) external;
 
-	function replaceLeader(uint seqOfTeam, uint leader) external;
+    function replaceLeader(uint seqOfTeam, uint leader) external;
 
-	function increaseTeamBudget(uint seqOfTeam,uint deltaQty) external;
+    function increaseTeamBudget(uint seqOfTeam,uint deltaQty) external;
 
-	// ---- Member ----
+    // ---- Member ----
 
-	function enrollMember(
-		uint seqOfTeam,
-		uint userNo,
-		uint rate,
-		uint estimated
-	) external;
+    function enrollMember(
+        uint seqOfTeam,
+        uint userNo,
+        uint rate,
+        uint estimated
+    ) external;
 
 	function removeMember(uint seqOfTeam, uint userNo) external;
 

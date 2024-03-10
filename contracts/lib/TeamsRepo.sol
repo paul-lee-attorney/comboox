@@ -407,7 +407,7 @@ library TeamsRepo {
 				Member storage m = t.members[caller];
 
 				require(m.state == 1,
-						"TR.applyHr: wrong state");
+						"TR.applyHr: not enrolled");
 
 				uint16 delta = uint16(hrs);
 

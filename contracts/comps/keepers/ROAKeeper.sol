@@ -51,8 +51,10 @@ contract ROAKeeper is IROAKeeper, AccessControl {
             primeKeyOfCaller
         );
 
-        IAccessControl(doc.body).initKeepers(
+        IAccessControl(doc.body).init(
+            primeKeyOfCaller,
             address(this),
+            address(_rc),
             address(_gk)
         );
 

@@ -19,24 +19,25 @@
 
 pragma solidity ^0.8.8;
 
-import "../center/access/Ownable.sol";
+import "../comps/common/access/OwnerControl.sol";
 
 import "./ICreateNewComp.sol";
 
-contract CreateNewComp is ICreateNewComp, Ownable {
+contract CreateNewComp is ICreateNewComp, OwnerControl {
         
     function createComp(address dk) external 
     {
         address primeKeyOfOwner = msg.sender;
+        address rc = address(_rc);
         
         address gk = _createDocAtLatestVersion(20, primeKeyOfOwner);
-        IAccessControl(gk).initKeepers(address(this), gk);
+        IAccessControl(gk).init(primeKeyOfOwner, address(this), rc, gk);
         IGeneralKeeper(gk).createCorpSeal();
 
         address[11] memory keepers = 
-            _deployKeepers(primeKeyOfOwner, dk, gk);
+            _deployKeepers(primeKeyOfOwner, dk, rc, gk);
 
-        _deployBooks(keepers, primeKeyOfOwner, gk);
+        _deployBooks(keepers, primeKeyOfOwner, rc, gk);
     
         IAccessControl(gk).setDirectKeeper(dk);
     }
@@ -44,13 +45,14 @@ contract CreateNewComp is ICreateNewComp, Ownable {
     function _deployKeepers(
         address primeKeyOfOwner, 
         address dk,
+        address rc,
         address gk
     ) private returns (address[11] memory keepers) {
         keepers[0] = dk;
         uint i = 1;
         while (i < 11) {
             keepers[i] = _createDocAtLatestVersion(i, primeKeyOfOwner);
-            IAccessControl(keepers[i]).initKeepers(gk, gk);
+            IAccessControl(keepers[i]).init(primeKeyOfOwner, gk, rc, gk);
             IGeneralKeeper(gk).regKeeper(i, keepers[i]);
             i++;
         }
@@ -59,6 +61,7 @@ contract CreateNewComp is ICreateNewComp, Ownable {
     function _deployBooks(
         address[11] memory keepers,
         address primeKeyOfOwner, 
+        address rc,
         address gk
     ) private {
         address[10] memory books;
@@ -68,7 +71,7 @@ contract CreateNewComp is ICreateNewComp, Ownable {
         uint i;
         while (i < 10) {
             books[i] = _createDocAtLatestVersion(types[i], primeKeyOfOwner);
-            IAccessControl(books[i]).initKeepers(keepers[seqOfDK[i]], gk);
+            IAccessControl(books[i]).init(primeKeyOfOwner, keepers[seqOfDK[i]], rc, gk);
             IGeneralKeeper(gk).regBook(i+1, books[i]);
             i++;
         }

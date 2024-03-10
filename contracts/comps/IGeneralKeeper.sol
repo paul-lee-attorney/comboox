@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.1
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -23,7 +21,7 @@ pragma solidity ^0.8.8;
 
 import "./common/components/IMeetingMinutes.sol";
 
-// import "../lib/RolesRepo.sol";
+import "../lib/RolesRepo.sol";
 import "../lib/UsersRepo.sol";
 
 import "./keepers/IROCKeeper.sol";

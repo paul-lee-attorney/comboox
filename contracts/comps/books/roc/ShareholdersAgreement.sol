@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.1 
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -56,10 +54,12 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
         bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(version << 192));
 
-        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, address(this));
+        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, gc);        
 
-        IAccessControl(doc.body).initKeepers(
+        IAccessControl(doc.body).init(
             address(this),
+            address(this),
+            address(_rc),
             address(_gk)
         );
 
