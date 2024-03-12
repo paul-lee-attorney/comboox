@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../common/access/OwnerControl.sol";
+import "../../../center/access/Ownable.sol";
 
 import "./IPayrollOfProject.sol";
 
-contract PayrollOfProject is IPayrollOfProject, OwnerControl {
+contract PayrollOfProject is IPayrollOfProject, Ownable {
     using TeamsRepo for TeamsRepo.Repo;
 
     TeamsRepo.Repo private _pop;
@@ -37,9 +37,9 @@ contract PayrollOfProject is IPayrollOfProject, OwnerControl {
         );
     }
 
-    ///////////////////
-    //   Write I/O   //
-    ///////////////////
+  //  ###################
+  //  ##   Write I/O   ##
+  //  ###################
 
 	function setManager(uint acct) external onlyOwner {
 		_pop.setManager(acct);
@@ -53,56 +53,56 @@ contract PayrollOfProject is IPayrollOfProject, OwnerControl {
 
     // ---- Project ----
 
-    function setBudget(uint rate,uint estimated) external {
+	function setBudget(uint rate,uint estimated) external {
 		_pop.setBudget(_msgSender(18000), rate, estimated);
 		emit SetBudget(rate, estimated);
 	}
 
-    function fixBudget() external {
+	function fixBudget() external {
 		_pop.fixBudget(_msgSender(18000));
 	}
 
-    function increaseBudget(uint deltaQty) external {
+	function increaseBudget(uint deltaQty) external {
 		_pop.increaseBudget(_msgSender(18000), deltaQty);
 		emit IncreaseBudget(deltaQty);
 	}
 
 	// ---- Team ----
 
-    function createTeam(uint rate, uint estimated) external {
+	function createTeam(uint rate, uint estimated) external {
 		_pop.createTeam(_msgSender(18000), rate, estimated);
 	}
 
-    function updateTeam(
-        uint seqOfTeam,
-        uint rate,
-        uint estimated
-    ) external {
+	function updateTeam(
+		uint seqOfTeam,
+		uint rate,
+		uint estimated
+	) external {
 		_pop.updateTeam(_msgSender(18000), seqOfTeam, rate, estimated);
 	}
 
-    function enrollTeam(uint seqOfTeam) external {
+  function enrollTeam(uint seqOfTeam) external {
 		_pop.enrollTeam(_msgSender(18000), seqOfTeam);
 		emit EnrollTeam(seqOfTeam);
 	}
 
-    function replaceLeader(uint seqOfTeam, uint leader) external {
+  function replaceLeader(uint seqOfTeam, uint leader) external {
 		_pop.replaceLeader(_msgSender(18000), seqOfTeam, leader);
 		emit ReplaceLeader(seqOfTeam, leader);
 	}
 
-    function increaseTeamBudget(uint seqOfTeam,uint deltaQty) external {
+  function increaseTeamBudget(uint seqOfTeam,uint deltaQty) external {
 		_pop.increaseTeamBudget(_msgSender(18000), seqOfTeam, deltaQty);
 	}
 
-    // ---- Member ----
+	// ---- Member ----
 
-    function enrollMember(
-        uint seqOfTeam,
-        uint userNo,
-        uint rate,
-        uint estimated
-    ) external {
+	function enrollMember(
+		uint seqOfTeam,
+		uint userNo,
+		uint rate,
+		uint estimated
+	) external {
 		_pop.enrollMember(_msgSender(18000), seqOfTeam, userNo, rate, estimated);
 	}    
 
@@ -156,9 +156,9 @@ contract PayrollOfProject is IPayrollOfProject, OwnerControl {
 		emit PickupDeposit(caller, amt);
 	}
 
-    ///////////////////
-    //   Read I/O    //
-    ///////////////////
+  //  ##################
+  //  ##   Read I/O   ##
+  //  ##################
 
 	function getCurrency() external view returns(uint8) {
 		return _currency;

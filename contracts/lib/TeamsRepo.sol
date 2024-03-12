@@ -25,7 +25,9 @@ library TeamsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
     struct Member {
+        uint16 seqOfTeam;
         uint40 userNo;
+        uint8 state;
         uint32 rate;
         uint16 estimated;
         uint16 applied;
@@ -33,8 +35,6 @@ library TeamsRepo {
         uint32 pendingAmt;
         uint32 receivableAmt;
         uint32 paidAmt;
-        uint16 para;
-        uint8 state;
     }
 
     struct Team {
@@ -158,18 +158,18 @@ library TeamsRepo {
         Member storage projInfo = 
             repo.teams[0].members[0];
 
-        projInfo.para++;
+        projInfo.seqOfTeam++;
 				        
         Member storage teamInfo = 
-						repo.teams[projInfo.para].members[0];
+						repo.teams[projInfo.seqOfTeam].members[0];
 
         teamInfo.userNo = uint16(caller);
         teamInfo.rate = uint32(rate);
         teamInfo.estimated = uint16(estimated);
 
-        teamInfo.para = projInfo.para;
+        teamInfo.seqOfTeam = projInfo.seqOfTeam;
 
-				repo.teamsList.add(projInfo.para);
+				repo.teamsList.add(projInfo.seqOfTeam);
     }
 
     function updateTeam(
@@ -184,7 +184,7 @@ library TeamsRepo {
             repo.teams[seqOfTeam].members[0];
 
         require(teamInfo.state == 0,
-            "updateTeam: approved team");
+            "updateTeam: already approved");
 
         teamInfo.rate = uint32(rate);
         teamInfo.estimated = uint16(estimated);
@@ -299,6 +299,8 @@ library TeamsRepo {
         m.rate = input.rate;
         m.estimated = input.estimated;
         m.budgetAmt = input.budgetAmt;
+				
+				m.seqOfTeam = teamInfo.seqOfTeam;
 
         m.state = 1;
 
@@ -407,7 +409,7 @@ library TeamsRepo {
 				Member storage m = t.members[caller];
 
 				require(m.state == 1,
-						"TR.applyHr: not enrolled");
+						"TR.applyHr: wrong state");
 
 				uint16 delta = uint16(hrs);
 
@@ -598,7 +600,7 @@ library TeamsRepo {
 		function qtyOfTeams (
 				Repo storage repo
 		) public view returns(uint) {
-				return repo.teams[0].members[0].para;
+				return repo.teams[0].members[0].seqOfTeam;
 		}
 
 		function getListOfTeams(
