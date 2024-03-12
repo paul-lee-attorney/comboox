@@ -52,10 +52,8 @@ contract ROCKeeper is IROCKeeper, AccessControl {
 
         DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, primeKeyOfCaller);
 
-        IAccessControl(doc.body).init(
-            primeKeyOfCaller,
+        IAccessControl(doc.body).initKeepers(
             address(this),
-            address(_rc),
             address(_gk)
         );
 

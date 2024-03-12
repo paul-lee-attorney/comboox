@@ -162,10 +162,8 @@ contract ROPKeeper is IROPKeeper, AccessControl {
             primeKeyOfCaller
         );
 
-        IAccessControl(doc.body).init(
+        IAccessControl(doc.body).initKeepers(
             address(this),
-            address(this),
-            address(_rc),
             address(_gk)
         );
 

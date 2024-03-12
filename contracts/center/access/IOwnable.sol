@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * V.0.2.1
+ *
+ * Copyright (c) 2021-2023 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,11 +21,31 @@
 
 pragma solidity ^0.8.8;
 
-import "../comps/IGeneralKeeper.sol";
-import "../comps/common/access/IAccessControl.sol";
+import "../IRegCenter.sol";
 
-interface ICreateNewComp {
+interface IOwnable {
 
-    function createComp(address dk) external;
+    struct Admin{
+        address addr;
+        uint8 state;
+    }
+
+    event SetNewOwner(address indexed owner);
+
+    // #################
+    // ##    Write    ##
+    // #################
+
+    function init(address owner, address regCenter) external;
+
+    function setNewOwner(address acct) external;
+
+    // ##############
+    // ##   Read   ##
+    // ##############
+
+    function getOwner() external view returns (address);
+
+    function getRegCenter() external view returns (address);
 
 }
