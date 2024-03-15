@@ -266,7 +266,7 @@ async function main() {
 	libraries = {
 		"TeamsRepo": libTeamsRepo.address,
 	};
-	let pop = await deployTool(signers[0], "PayrollOfProject", libraries);
+	let lop = await deployTool(signers[0], "ListOfProjects", libraries);
 
 	libraries = {};
 
@@ -352,8 +352,8 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 26, op.address, 1);
 	console.log("set template for OP at address: ", op.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 27, pop.address, 1);
-	console.log("set template for POP at address: ", pop.address, "\n");
+	await rc.connect(signers[1]).setTemplate( 27, lop.address, 1);
+	console.log("set template for LOP at address: ", lop.address, "\n");
 
 	await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
 	console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");
