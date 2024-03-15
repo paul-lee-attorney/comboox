@@ -101,15 +101,15 @@ library DocsRepo {
     function createDoc(
         Repo storage repo, 
         bytes32 snOfDoc,
-        uint creator
+        address creator
     ) public returns (Doc memory doc)
     {
         doc.head = snParser(snOfDoc);
-        doc.head.creator = uint40(creator);
+        doc.head.creator = uint40(uint160(creator));
 
         require(doc.head.typeOfDoc > 0, "DR.createDoc: zero typeOfDoc");
         require(doc.head.version > 0, "DR.createDoc: zero version");
-        require(doc.head.creator > 0, "DR.createDoc: zero creator");
+        // require(doc.head.creator > 0, "DR.createDoc: zero creator");
 
         address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0].addr;
         require(temp != address(0), "DR.createDoc: template not ready");

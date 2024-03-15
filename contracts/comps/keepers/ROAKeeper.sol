@@ -350,7 +350,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         uint centPrice = _gk.getCentPrice();
         uint valueOfDeal = (deal.body.paid * deal.head.priceOfPaid + 
-            (deal.body.par - deal.body.paid) * deal.head.priceOfPar) * 
+            (deal.body.par - deal.body.paid) * deal.head.priceOfPar) / 10 ** 4 * 
             centPrice / 100;
 
         require( valueOfDeal <= msgValue, "ROAK.payApprDeal: insufficient msgValue");

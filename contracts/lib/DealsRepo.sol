@@ -586,7 +586,7 @@ library DealsRepo {
         Deal memory deal = repo.deals[seqOfDeal];
 
         return (uint(deal.body.paid * deal.head.priceOfPaid) + 
-            uint((deal.body.par - deal.body.paid) * deal.head.priceOfPar)) *
+            uint((deal.body.par - deal.body.paid) * deal.head.priceOfPar)) / 10 ** 4 *
             centPrice / 100;
     }    
 }

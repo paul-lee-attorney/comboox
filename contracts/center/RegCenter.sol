@@ -262,7 +262,7 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
         address primeKeyOfOwner
     ) public returns(DocsRepo.Doc memory doc)
     {
-        doc = _docs.createDoc(snOfDoc, _users.getUserNo(primeKeyOfOwner));
+        doc = _docs.createDoc(snOfDoc, msg.sender);
         IOwnable(doc.body).init(primeKeyOfOwner, address(this));
         
         emit CreateDoc(doc.head.codifyHead(), doc.body);
