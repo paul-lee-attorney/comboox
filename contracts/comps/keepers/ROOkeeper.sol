@@ -77,7 +77,8 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         SwapsRepo.Swap memory swap =
             _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap, msgValue, centPrice);
 
-        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) * centPrice / 100;
+        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 4 * 
+            centPrice / 100;
 
         uint buyer = _ros.getShare(swap.seqOfPledge).head.shareholder;
         
@@ -160,7 +161,8 @@ contract ROOKeeper is IROOKeeper, AccessControl {
             IInvestmentAgreement(ia).payOffSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
                 seqOfDeal, seqOfSwap, msgValue, centPrice);
 
-        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) * centPrice / 100;        
+        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 4 * 
+            centPrice / 100;        
         
         _ros.increaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         _ros.increaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);

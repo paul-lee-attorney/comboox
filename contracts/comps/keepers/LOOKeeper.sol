@@ -269,7 +269,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         IRegisterOfMembers _rom = _gk.getROM();
         uint centPrice = _gk.getCentPrice();
 
-        require(paid * price * centPrice / 100 <= msgValue,
+        require(paid * price / 10 ** 4 * centPrice / 100 <= msgValue,
             "LOOK.placeCall: insufficient value");
         
         (OrdersRepo.Deal[] memory deals, GoldChain.Node[] memory expired) = 
@@ -285,7 +285,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
             OrdersRepo.Deal memory deal = deals[len - 1];
             len--;
 
-            uint valueOfDeal = deal.paid * deal.price * centPrice / 100;
+            uint valueOfDeal = deal.paid * deal.price / 10 ** 4 * centPrice / 100;
 
             msgValue -= valueOfDeal;
 
