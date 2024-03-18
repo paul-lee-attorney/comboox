@@ -53,32 +53,28 @@ contract ListOfProjects is IListOfProjects, Ownable {
 
     // ---- Project ----
 
-	function setBudget(uint rate,uint estimated) external {
-		_pop.setBudget(_msgSender(18000), rate, estimated);
-		emit SetBudget(rate, estimated);
+	function setBudget(uint budget) external {
+		_pop.setBudget(_msgSender(18000), budget);
+		emit SetBudget(budget);
 	}
 
 	function fixBudget() external {
 		_pop.fixBudget(_msgSender(18000));
 	}
 
-	function increaseBudget(uint deltaQty) external {
-		_pop.increaseBudget(_msgSender(18000), deltaQty);
-		emit IncreaseBudget(deltaQty);
+	function increaseBudget(uint deltaAmt) external {
+		_pop.increaseBudget(_msgSender(18000), deltaAmt);
+		emit IncreaseBudget(deltaAmt);
 	}
 
 	// ---- Team ----
 
-	function createTeam(uint rate, uint estimated) external {
-		_pop.createTeam(_msgSender(18000), rate, estimated);
+	function createTeam(uint budget) external {
+		_pop.createTeam(_msgSender(18000), budget);
 	}
 
-	function updateTeam(
-		uint seqOfTeam,
-		uint rate,
-		uint estimated
-	) external {
-		_pop.updateTeam(_msgSender(18000), seqOfTeam, rate, estimated);
+	function updateTeam(uint seqOfTeam,uint budget) external {
+		_pop.updateTeam(_msgSender(18000), seqOfTeam, budget);
 	}
 
   function enrollTeam(uint seqOfTeam) external {
@@ -91,8 +87,8 @@ contract ListOfProjects is IListOfProjects, Ownable {
 		emit ReplaceLeader(seqOfTeam, leader);
 	}
 
-  function increaseTeamBudget(uint seqOfTeam,uint deltaQty) external {
-		_pop.increaseTeamBudget(_msgSender(18000), seqOfTeam, deltaQty);
+  function increaseTeamBudget(uint seqOfTeam,uint delta) external {
+		_pop.increaseTeamBudget(_msgSender(18000), seqOfTeam, delta);
 	}
 
 	// ---- Member ----
@@ -101,9 +97,9 @@ contract ListOfProjects is IListOfProjects, Ownable {
 		uint seqOfTeam,
 		uint userNo,
 		uint rate,
-		uint estimated
+		uint budget
 	) external {
-		_pop.enrollMember(_msgSender(18000), seqOfTeam, userNo, rate, estimated);
+		_pop.enrollMember(_msgSender(18000), seqOfTeam, userNo, rate, budget);
 	}    
 
 	function removeMember(uint seqOfTeam, uint userNo) external {
@@ -114,12 +110,21 @@ contract ListOfProjects is IListOfProjects, Ownable {
 		_pop.restoreMember(_msgSender(18000), seqOfTeam, userNo);
 	}
 
-	function extendPeriod(
+	function increaseMemberBudget(
 		uint seqOfTeam,
 		uint userNo,
-		uint deltaQty
+		uint delta
 	) external {
-		_pop.extendPeriod(_msgSender(18000), seqOfTeam, userNo, deltaQty);
+		_pop.increaseMemberBudget(_msgSender(18000), seqOfTeam, userNo, delta);
+	}
+
+	function adjustSalary(
+			uint seqOfTeam,
+			uint userNo,
+			bool increase,
+			uint delta
+	) external {
+		_pop.adjustSalary(_msgSender(18000), seqOfTeam, userNo, increase, delta);
 	}
 
 	// ---- Work ----

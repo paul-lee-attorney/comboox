@@ -26,8 +26,8 @@ interface IListOfProjects {
 	event SetManager(uint indexed manager);
 	event SetCurrency(uint indexed currency);
 
-	event SetBudget(uint indexed rate, uint indexed estimated);
-	event IncreaseBudget(uint indexed deltaQty);
+	event SetBudget(uint indexed budget);
+	event IncreaseBudget(uint indexed deltaAmt);
 
 	event EnrollTeam(uint indexed seqOfTeam);
 	event ReplaceLeader(uint indexed seqOfTeam, uint indexed leader);
@@ -48,21 +48,17 @@ interface IListOfProjects {
 
 	// ---- Project ----
 
-	function setBudget(uint rate,uint estimated) external;
+	function setBudget(uint budget) external;
 
 	function fixBudget() external;
 
-	function increaseBudget(uint deltaQty) external;
+	function increaseBudget(uint deltaAmt) external;
 
 	// ---- Team ----
 
-	function createTeam(uint rate, uint estimated) external;
+	function createTeam(uint budget) external;
 
-	function updateTeam(
-		uint seqOfTeam,
-		uint rate,
-		uint estimated
-	) external;
+	function updateTeam(uint seqOfTeam, uint budget) external;
 
 	function enrollTeam(uint seqOfTeam) external;
 
@@ -83,10 +79,10 @@ interface IListOfProjects {
 
 	function restoreMember(uint seqOfTeam, uint userNo) external;
 
-	function extendPeriod(
+	function increaseMemberBudget(
 		uint seqOfTeam,
 		uint userNo,
-		uint deltaQty
+		uint delta
 	) external;
 
 	// ---- Work ----
