@@ -48,7 +48,7 @@ contract Ownable is IOwnable {
     function init(
         address owner,
         address regCenter
-    ) external {
+    ) public {
         require(_owner.state == 0, "already inited");
         _owner.addr = owner;
         _owner.state = 1;
