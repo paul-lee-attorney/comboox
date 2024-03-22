@@ -60,7 +60,7 @@ contract ROMKeeper is IROMKeeper, AccessControl {
             _ros.getShare(seqOfShare);
 
         uint centPrice = _gk.getCentPrice();
-        uint valueOfDeal = amt * centPrice;
+        uint valueOfDeal = amt * centPrice / 100;
         
         require(share.head.shareholder == caller,
             "ROMK.payInCap: not shareholder");
