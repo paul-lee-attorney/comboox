@@ -275,7 +275,7 @@ async function main() {
 
 	libraries = {};
 
-	// let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
+	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
 
@@ -360,8 +360,8 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 27, lop.address, 1);
 	console.log("set template for LOP at address: ", lop.address, "\n");
 
-	// await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
-	// console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");
+	await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
+	console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");
 
 	let options = {
 		signer: signers[0],
