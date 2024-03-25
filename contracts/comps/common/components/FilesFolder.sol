@@ -33,7 +33,7 @@ contract FilesFolder is IFilesFolder, AccessControl {
     //##################
 
     function regFile(bytes32 snOfDoc, address body)
-        external onlyDK
+        external onlyKeeper
     {
         if (_repo.regFile(snOfDoc, body)) 
             emit UpdateStateOfFile(body, uint8(FilesRepo.StateOfFile.Created));
