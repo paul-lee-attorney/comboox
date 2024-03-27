@@ -597,6 +597,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
             payable(msg.sender).transfer(value);
 
+            emit PickupDeposit(msg.sender, value);
+
         } else revert("GK.pickupDeposit: no balance");
     }
 
@@ -626,6 +628,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
             seqOfMotion,
             _msgSender(18000)
         );
+
+        emit DistributeProfits(amt, expireDate, seqOfMotion);
     }
 
     function proposeToTransferFund(
@@ -691,6 +695,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
                 "GK.transferFund: insufficient balance");
             payable(to).transfer(amt);
         }
+
+        
     }
 
     // #################

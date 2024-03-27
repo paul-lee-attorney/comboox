@@ -62,6 +62,16 @@ interface IGeneralKeeper {
 
     event ExecAction(uint256 indexed contents, bool indexed result);
 
+    event PickupDeposit(address indexed to, uint indexed amt);
+    event DistributeProfits(uint indexed amt, uint indexed expireDate, uint indexed seqOfMotion);
+    event TransferFund(
+        bool indexed fromBMM,
+        address indexed to,
+        uint indexed amt, 
+        uint expireDate, 
+        uint seqOfMotion
+    );
+
     // ######################
     // ##   AccessControl  ##
     // ######################
