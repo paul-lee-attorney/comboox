@@ -96,12 +96,12 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
         
         IMeetingMinutes _bmm = _gk.getBMM();
 
-        require (amt < _gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold * 10 ** 9,
+        require (amt < uint(_gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold) * 10 ** 18,
             "BMMK.transferFund: amt overflow");
 
         uint64 seqOfMotion = 
             _bmm.createMotionToTransferFund(to, isCBP, amt, expireDate, seqOfVR, executor, proposer);
-        _bmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);            
+        _bmm.proposeMotionToBoard(seqOfMotion, proposer);            
     }
 
     // ---- Actions ----
