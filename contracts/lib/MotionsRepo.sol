@@ -185,7 +185,7 @@ library MotionsRepo {
             m.body.state == uint8(StateOfMotion.Proposed) , 
             "MR.EntrustDelegate: wrong state");
 
-        if (_rom.isMember(delegate) && _rom.isMember(principal)) {
+        if (m.head.seqOfVR < 11 && _rom.isMember(delegate) && _rom.isMember(principal)) {
             uint64 weight;
             if (m.body.shareRegDate > 0 && block.timestamp >= m.body.shareRegDate) 
                 weight = _rom.votesAtDate(principal, m.body.shareRegDate);    
