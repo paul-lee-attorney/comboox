@@ -188,12 +188,6 @@ async function main() {
 		"RulesParser": libRulesParser.address		
 	}
 	let roaKeeper = await deployTool(signers[0], "ROAKeeper", libraries);
-
-	libraries = {
-		"DocsRepo": libDocsRepo.address,
-		"RolesRepo": libRolesRepo.address,
-		"RulesParser": libRulesParser.address		
-	}
 	let rocKeeper = await deployTool(signers[0], "ROCKeeper", libraries);
 
 	libraries = {
