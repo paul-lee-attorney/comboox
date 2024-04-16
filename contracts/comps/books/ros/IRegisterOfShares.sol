@@ -56,7 +56,13 @@ interface IRegisterOfShares {
     //##  Write I/O   ##
     //##################
 
-    function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, uint par) external;
+    function issueShare(
+        bytes32 shareNumber, 
+        uint payInDeadline, 
+        uint paid, 
+        uint par, 
+        uint distrWeight
+    ) external;
 
     function addShare(SharesRepo.Share memory share) external;
 

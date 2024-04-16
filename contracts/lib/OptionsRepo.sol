@@ -296,7 +296,7 @@ library OptionsRepo {
                 require(opt.cond.checkCondsOfTwo(cp.paid, cp.par), 
                     "OR.EO: conds not satisfied");                
             } else if (opt.cond.logicOpr <= uint8(CondsRepo.LogOps.NeOr)) {
-                require(opt.cond.checkCondsOfThree(cp.paid, cp.par, cp.cleanPaid), 
+                require(opt.cond.checkCondsOfThree(cp.paid, cp.par, cp.points), 
                     "OR.EO: conds not satisfied");   
             } else revert("OR.EO: logical operator overflow");
         }
@@ -359,12 +359,12 @@ library OptionsRepo {
             swap.priceOfDeal = opt.head.rate;
         else {
             uint32 ds = uint32(((block.timestamp - headOfTarget.issueDate) + 43200) / 86400);
-            swap.priceOfDeal = headOfTarget.priceOfPaid * (opt.head.rate * ds + 3650000) / 3650000;  
+            swap.priceOfDeal = headOfTarget.priceOfPaid / 365 * (opt.head.rate * ds + 3650000) / 10000;  
         }
 
         if (opt.head.typeOfOpt % 2 == 1) {            
-            swap.paidOfPledge = (swap.priceOfDeal - headOfTarget.priceOfPaid) * 
-                swap.paidOfTarget / headOfPledge.priceOfPaid;
+            swap.paidOfPledge = (swap.priceOfDeal - headOfTarget.priceOfPaid) * 10000
+                / headOfPledge.priceOfPaid * swap.paidOfTarget / 10000;
         }
 
         return rcd.swaps.regSwap(swap);

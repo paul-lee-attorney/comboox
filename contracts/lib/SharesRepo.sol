@@ -41,8 +41,7 @@ library SharesRepo {
         uint64 paid;
         uint64 par; 
         uint64 cleanPaid; 
-        uint8 state;
-        uint8 para;
+        uint16 distrWeight;
     }
 
     struct Share {
@@ -123,7 +122,8 @@ library SharesRepo {
         bytes32 sharenumber, 
         uint payInDeadline, 
         uint paid, 
-        uint par
+        uint par,
+        uint distrWeight
     ) public pure returns (Share memory share) {
 
         share.head = snParser(sharenumber);
@@ -133,8 +133,7 @@ library SharesRepo {
             paid: uint64(paid),
             par: uint64(par),
             cleanPaid: uint64(paid),
-            state: 0,
-            para: 0
+            distrWeight: uint16(distrWeight)
         });
     }
 

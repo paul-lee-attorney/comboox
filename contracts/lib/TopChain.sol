@@ -20,6 +20,7 @@
 pragma solidity ^0.8.8;
 
 import "../comps/books/roa/IInvestmentAgreement.sol";
+import "../comps/books/ros/IRegisterOfShares.sol";
 
 import "./DealsRepo.sol";
 
@@ -921,7 +922,8 @@ library TopChain {
 
     function mockDealsOfIA(
         Chain storage chain,
-        IInvestmentAgreement _ia
+        IInvestmentAgreement _ia,
+        IRegisterOfShares _ros
     ) public {
         uint[] memory seqList = _ia.getSeqList();
 
@@ -930,12 +932,15 @@ library TopChain {
         while (len > 0) {
             DealsRepo.Deal memory deal = _ia.getDeal(seqList[len-1]);
 
-            uint64 amount = basedOnPar(chain) ? deal.body.par : deal.body.paid;
+            uint amount = basedOnPar(chain) ? deal.body.par : deal.body.paid;
 
             if (deal.head.seller > 0) {
+                amount = amount * _ros.getShare(deal.head.seqOfShare).head.votingWeight / 100;
                 mockDealOfSell(chain, deal.head.seller, amount);
+            } else {
+                amount = amount * deal.head.votingWeight / 100;
             }
-
+            
             mockDealOfBuy(chain, deal.body.buyer, deal.body.groupOfBuyer, amount);
 
             len--;

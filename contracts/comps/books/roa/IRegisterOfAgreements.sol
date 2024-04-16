@@ -76,10 +76,6 @@ interface IRegisterOfAgreements is IFilesFolder {
 
     function createMockOfIA(address ia) external;
 
-    function mockDealOfSell (address ia, uint seller, uint amount) external; 
-
-    function mockDealOfBuy (address ia, uint buyer, uint groupRep, uint amount) external;
-
     //################
     //##    Read    ##
     //################

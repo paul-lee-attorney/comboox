@@ -75,10 +75,8 @@ interface IROPKeeper {
     ) external;
 
     function execPledge(
-        bytes32 snOfDeal,
+        uint seqOfShare,
         uint256 seqOfPld,
-        uint version,
-        address primeKeyOfCaller,
         uint buyer,
         uint groupOfBuyer,
         uint256 caller

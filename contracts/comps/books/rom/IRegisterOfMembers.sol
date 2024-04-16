@@ -31,9 +31,9 @@ interface IRegisterOfMembers {
 
     event SetVoteBase(bool indexed basedOnPar);
 
-    event CapIncrease(uint indexed votingWeight, uint indexed paid, uint indexed par);
+    event CapIncrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
 
-    event CapDecrease(uint indexed votingWeight, uint indexed paid, uint indexed par);
+    event CapDecrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
 
     event SetMaxQtyOfMembers(uint indexed max);
 
@@ -51,7 +51,6 @@ interface IRegisterOfMembers {
         uint indexed acct,
         uint indexed paid,
         uint indexed par,
-        uint clean,
         bool increase
     );
 
@@ -73,6 +72,7 @@ interface IRegisterOfMembers {
 
     function capIncrease(
         uint votingWeight, 
+        uint distrWeight,
         uint paid, 
         uint par, 
         bool isIncrease
@@ -91,9 +91,9 @@ interface IRegisterOfMembers {
     function increaseAmtOfMember(
         uint acct,
         uint votingWeight,
+        uint distrWeight,
         uint deltaPaid,
         uint deltaPar,
-        uint deltaClean,
         bool isIncrease
     ) external ;
 
@@ -119,16 +119,19 @@ interface IRegisterOfMembers {
 
     // ---- Cap & Equity ----
 
-    function ownersEquity() 
-        external view 
+    function ownersEquity() external view 
         returns(Checkpoints.Checkpoint memory);
 
-    function capAtDate(uint date)
-        external view
+    function ownersPoints() external view 
+        returns(Checkpoints.Checkpoint memory);
+
+    function capAtDate(uint date) external view
         returns (Checkpoints.Checkpoint memory);
 
-   function equityOfMember(uint256 acct)
-        external view
+   function equityOfMember(uint256 acct) external view
+        returns (Checkpoints.Checkpoint memory);
+
+   function pointsOfMember(uint256 acct) external view
         returns (Checkpoints.Checkpoint memory);
 
     function equityAtDate(uint acct, uint date) 

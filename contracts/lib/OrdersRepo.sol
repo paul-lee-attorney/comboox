@@ -52,6 +52,7 @@ library OrdersRepo {
         uint64 paid;
         uint32 price;
         uint16 votingWeight;
+        uint16 distrWeight;
     }
 
     struct Repo {
@@ -105,6 +106,7 @@ library OrdersRepo {
         deal.paid = uint64(_sn >> 64);
         deal.price = uint32(_sn >> 32);
         deal.votingWeight = uint16(_sn >> 16);
+        deal.distrWeight = uint16(_sn);
     }
 
     function codifyDeal(
@@ -118,7 +120,8 @@ library OrdersRepo {
                 deal.groupRep,
                 deal.paid,
                 deal.price,
-                deal.votingWeight
+                deal.votingWeight,
+                deal.distrWeight
             );
 
         assembly {
@@ -203,6 +206,7 @@ library OrdersRepo {
         uint classOfShare,
         uint seqOfShare,
         uint votingWeight,
+        uint distrWeight,
         uint paid,
         uint price,
         uint execHours,
@@ -217,6 +221,7 @@ library OrdersRepo {
         sn = chain.createNode(
             seqOfShare,
             votingWeight,
+            distrWeight,
             paid,
             price,
             execHours,
@@ -302,7 +307,8 @@ library OrdersRepo {
                     groupRep: call.groupRep,
                     paid: paidAsPut ? offer.paid : call.paid,
                     price: offer.price,
-                    votingWeight: offer.votingWeight
+                    votingWeight: offer.votingWeight,
+                    distrWeight: offer.distrWeight
                 });
 
                 repo.deals.push(deal);

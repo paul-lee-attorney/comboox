@@ -61,7 +61,8 @@ interface IInvestmentAgreement is ISigPage {
         uint buyer,
         uint groupOfBuyer,
         uint paid,
-        uint par
+        uint par,
+        uint distrWeight
     ) external;
 
     function regDeal(DealsRepo.Deal memory deal) external returns(uint16 seqOfDeal);

@@ -52,7 +52,8 @@ interface IGeneralKeeper {
         uint40 regNum;
         uint48 regDate;
         uint8 currency;
-        bytes20 symbol;
+        uint8 state;
+        bytes19 symbol;
         string name;
     }
 
@@ -71,6 +72,8 @@ interface IGeneralKeeper {
         uint expireDate, 
         uint seqOfMotion
     );
+    event ReceivedCash(address indexed from, uint indexed amt);
+    event DeprecateGK(address indexed receiver, uint indexed balanceOfCBP, uint indexed balanceOfETH);
 
     // ######################
     // ##   AccessControl  ##
@@ -78,7 +81,7 @@ interface IGeneralKeeper {
 
     function setCompInfo (
         uint8 _currency,
-        bytes20 _symbol,
+        bytes19 _symbol,
         string memory _name
     ) external;
 
@@ -195,6 +198,8 @@ interface IGeneralKeeper {
         uint executor
     ) external;
 
+    function proposeToDeprecateGK(address payable receiver) external;
+
     function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external;
 
     function proposeMotionToGeneralMeeting(uint256 seqOfMotion) external;
@@ -215,6 +220,8 @@ interface IGeneralKeeper {
         bytes32 desHash,
         uint256 seqOfMotion
     ) external;
+
+    function deprecateGK(address payable receiver, uint seqOfMotion) external;
 
     // ###################
     // ##   ROAKeeper   ##
@@ -304,7 +311,7 @@ interface IGeneralKeeper {
 
     function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey) external;
 
-    function execPledge(bytes32 snOfDeal, uint256 seqOfPld, uint version, uint buyer, uint groupOfBuyer) external;
+    function execPledge(uint seqOfShare, uint256 seqOfPld, uint buyer, uint groupOfBuyer) external;
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external;
 

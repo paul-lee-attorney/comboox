@@ -234,7 +234,7 @@ library RulesParser {
         uint16 seqOfRule;
         uint16 titleOfIssuer;
         uint16 classOfShare;
-        uint64 maxTotalPar;
+        uint32 maxTotalPar;
         uint16 titleOfVerifier;
         uint16 maxQtyOfInvestors;
         uint32 ceilingPrice;
@@ -242,6 +242,8 @@ library RulesParser {
         uint16 lockupDays;
         uint16 offPrice;
         uint16 votingWeight;
+        uint16 distrWeight;
+        uint16 para;
     }
 
     function listingRuleParser(bytes32 sn) public pure returns(ListingRule memory rule) {
@@ -251,14 +253,16 @@ library RulesParser {
             seqOfRule: uint16(_sn >> 240),
             titleOfIssuer: uint16(_sn >> 224),
             classOfShare: uint16(_sn >> 208),
-            maxTotalPar: uint64(_sn >> 144),
-            titleOfVerifier: uint16(_sn >> 128), 
-            maxQtyOfInvestors: uint16(_sn >> 112),
-            ceilingPrice: uint32(_sn >> 80),
-            floorPrice: uint32(_sn >> 48),
-            lockupDays: uint16(_sn >> 32),
-            offPrice: uint16(_sn >> 16),
-            votingWeight: uint16(_sn)
+            maxTotalPar: uint32(_sn >> 176),
+            titleOfVerifier: uint16(_sn >> 160), 
+            maxQtyOfInvestors: uint16(_sn >> 144),
+            ceilingPrice: uint32(_sn >> 112),
+            floorPrice: uint32(_sn >> 80),
+            lockupDays: uint16(_sn >> 64),
+            offPrice: uint16(_sn >> 48),
+            votingWeight: uint16(_sn >> 32),
+            distrWeight: uint16(_sn >> 16),
+            para: uint16(_sn)
         });
     }    
 

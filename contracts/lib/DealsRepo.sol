@@ -89,7 +89,7 @@ library DealsRepo {
         uint64 par;
         uint8 state;
         uint16 para;
-        uint16 argu;
+        uint16 distrWeight;
         bool flag;
     }
 
@@ -169,7 +169,8 @@ library DealsRepo {
         uint buyer,
         uint groupOfBuyer,
         uint paid,
-        uint par
+        uint par,
+        uint distrWeight
     ) public returns (uint16 seqOfDeal)  {
 
         Deal memory deal;
@@ -180,6 +181,7 @@ library DealsRepo {
         deal.body.groupOfBuyer = uint40(groupOfBuyer);
         deal.body.paid = uint64(paid);
         deal.body.par = uint64(par);
+        deal.body.distrWeight = uint16(distrWeight);
 
         seqOfDeal = regDeal(repo, deal);
     }

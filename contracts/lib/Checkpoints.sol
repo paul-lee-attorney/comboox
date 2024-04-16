@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
+ * v.0.2.5
+ *
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -23,14 +25,21 @@ library Checkpoints {
 
     struct Checkpoint {
         uint48 timestamp;
-        uint16 votingWeight;
+        uint16 rate;
         uint64 paid;
         uint64 par;
-        uint64 cleanPaid;
+        uint64 points;
     }
 
+    // checkpoints[0] {
+    //     timestamp: counter;
+    //     rate: distrWeight;
+    //     paid;
+    //     par;
+    //     points: distrPoints;
+    // }
+
     struct History {
-        // checkpoints[0].timestamp : counter
         mapping (uint256 => Checkpoint) checkpoints;
     }
 
@@ -40,25 +49,23 @@ library Checkpoints {
 
     function push(
         History storage self,
-        uint weight,
+        uint rate,
         uint paid,
         uint par,
-        uint cleanPaid
+        uint points
     ) public {
 
         uint256 pos = counterOfPoints(self);
 
-        uint48 timestamp = uint48 (block.timestamp);
-
         Checkpoint memory point = Checkpoint({
-            timestamp: timestamp,
-            votingWeight: uint16(weight),
+            timestamp: uint48(block.timestamp),
+            rate: uint16(rate),
             paid: uint64(paid),
             par: uint64(par),
-            cleanPaid: uint64(cleanPaid)
+            points: uint64(points)
         });
-
-        if (self.checkpoints[pos].timestamp == timestamp) {
+        
+        if (self.checkpoints[pos].timestamp == point.timestamp) {
             self.checkpoints[pos] = point;
         } else {
             self.checkpoints[pos+1] = point;
@@ -70,6 +77,20 @@ library Checkpoints {
         public
     {
         self.checkpoints[0].timestamp++;
+    }
+
+    function updateDistrPoints(
+        History storage self,
+        uint rate,
+        uint paid,
+        uint par,
+        uint points
+    ) public {
+        Checkpoint storage c = self.checkpoints[0];
+        c.rate = uint16(rate);
+        c.paid = uint64(paid);
+        c.par = uint64(par);
+        c.points = uint64(points);
     }
 
     //################
@@ -126,6 +147,12 @@ library Checkpoints {
         }
 
         return output;
+    }
+
+    function getDistrPoints(History storage self)
+        public view returns (Checkpoint memory) 
+    {
+        return self.checkpoints[0];
     }
     
 }

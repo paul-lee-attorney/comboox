@@ -100,6 +100,8 @@ interface IMeetingMinutes {
         uint proposer
     ) external returns(uint64);
 
+    function createMotionToDeprecateGK(address receiver,uint proposer) external returns(uint64);
+
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint proposer
@@ -167,6 +169,8 @@ interface IMeetingMinutes {
         uint256 seqOfMotion,
         uint caller
     ) external returns(uint contents);
+
+    function deprecateGK(address receiver, uint seqOfMotion, uint executor) external;
 
     //################
     //##    Read    ##

@@ -39,9 +39,10 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint buyer,
         uint groupOfBuyer,
         uint paid,
-        uint par
+        uint par,
+        uint distrWeight
     ) external onlyAttorney() {
-        _repo.addDeal(sn, buyer, groupOfBuyer, paid, par);
+        _repo.addDeal(sn, buyer, groupOfBuyer, paid, par, distrWeight);
         // emit AddDeal(seqOfDeal);
     }
 

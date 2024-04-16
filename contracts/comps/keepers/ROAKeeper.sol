@@ -268,8 +268,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
             paid: deal.body.paid,
             par: deal.body.par,
             cleanPaid: deal.body.paid,
-            state: 0,
-            para: 0
+            distrWeight: deal.body.distrWeight
         });
 
         _ros.addShare(share);

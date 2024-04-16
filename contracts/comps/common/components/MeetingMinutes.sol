@@ -196,10 +196,23 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             );
     }
 
+    function createMotionToDeprecateGK(
+        address receiver,
+        uint proposer
+    ) external onlyKeeper returns(uint64) {
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.DeprecateGK),
+            10,
+            proposer,
+            proposer,
+            uint(uint160(receiver))
+        );
+    }
+
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint proposer
-    ) external onlyDK {
+    ) external onlyKeeper {
         
         IShareholdersAgreement _sha = _gk.getSHA();
 
@@ -342,6 +355,16 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         );
 
         execResolution(seqOfMotion, contents, caller);
+    }
+
+    function deprecateGK(address receiver, uint seqOfMotion, uint executor) external onlyDK{
+        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
+            uint8(MotionsRepo.TypeOfMotion.DeprecateGK), 
+            "MM.DeprecateGK: wrong typeOfMotion");
+        
+        uint contents = uint(uint160(receiver));
+
+        execResolution(seqOfMotion, contents, executor);
     }
 
     //################

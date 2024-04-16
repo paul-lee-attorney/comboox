@@ -40,12 +40,27 @@ contract ROPKeeper is IROPKeeper, AccessControl {
     ) external onlyDK {
         
         IRegisterOfShares _ros = _gk.getROS();
+        IShareholdersAgreement _sha = _gk.getSHA();
 
         PledgesRepo.Head memory head = snOfPld.snParser();
         
         head.pledgor = _ros.getShare(head.seqOfShare).head.shareholder;
 
         require(head.pledgor == caller, "BOPK.createPld: NOT shareholder");
+
+        if (_sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.LockUp))) {
+
+            DealsRepo.Deal memory deal;
+            
+            deal.head.seqOfShare = head.seqOfShare;
+            deal.head.typeOfDeal = 2;
+            
+            deal.head.closingDeadline = uint48(block.timestamp + head.daysToMaturity * 86400);
+
+            address lu = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.LockUp));
+            require(!ILockUp(lu).isTriggered(deal),
+                "ROPK.createPledge: target share locked");
+        }
 
         head = _gk.getROP().createPledge(
             snOfPld,
@@ -112,120 +127,140 @@ contract ROPKeeper is IROPKeeper, AccessControl {
     }
 
     function execPledge(
-        bytes32 snOfDeal,
+        uint seqOfShare,
         uint256 seqOfPld,
-        uint version,
-        address primeKeyOfCaller,
         uint buyer,
         uint groupOfBuyer,
         uint caller
     ) external onlyDK {
-        DealsRepo.Deal memory deal;
-        deal.head = DealsRepo.snParser(snOfDeal);
-
-        IInvestmentAgreement _ia = IInvestmentAgreement(
-            _createIA(deal.head.seqOfShare, seqOfPld, version, primeKeyOfCaller, caller)
-        );
-
-        PledgesRepo.Pledge memory pld = 
-            _gk.getROP().getPledge(deal.head.seqOfShare, seqOfPld);
-
-        deal.body.buyer = uint40(buyer);
-        deal.body.groupOfBuyer = uint40(groupOfBuyer);
-        deal.body.paid = uint64(pld.body.paid);
-        deal.body.par = uint64(pld.body.par);
-
-        deal.head.typeOfDeal = _gk.getROM().isMember(buyer) ? 3 : 2;
-
-        deal = _circulateIA(deal, _ia);
-
-        _signIA(_ia, deal);
-
-        _proposeIA(address(_ia), deal, caller);
-    }
-
-    function _createIA(
-        uint seqOfShare,
-        uint seqOfPld,
-        uint version,
-        address primeKeyOfCaller,
-        uint caller        
-    ) private returns(address) {
 
         _gk.getROP().execPledge(seqOfShare, seqOfPld, caller);
 
-        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
-            uint224(version << 192)); 
+        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfMembers _rom = _gk.getROM();
 
-        DocsRepo.Doc memory doc = _rc.createDoc(
-            snOfDoc,
-            primeKeyOfCaller
-        );
+        PledgesRepo.Pledge memory pld = 
+            _gk.getROP().getPledge(seqOfShare, seqOfPld);
 
-        IAccessControl(doc.body).initKeepers(
-            address(this),
-            address(_gk)
-        );
+        DealsRepo.Deal memory deal;
 
-        _gk.getROA().regFile(DocsRepo.codifyHead(doc.head), doc.body);
+        deal.head.priceOfPaid = uint32(pld.body.guaranteedAmt * 10000 / pld.body.paid);
+        deal.head.priceOfPar = uint32(pld.body.guaranteedAmt * 10000 / pld.body.par);
 
-        return doc.body;        
+        deal.body.buyer = uint40(buyer);
+        deal.body.groupOfBuyer = uint40(groupOfBuyer);
+
+        _ros.increaseCleanPaid(pld.head.seqOfShare, pld.body.paid);
+        _ros.transferShare(pld.head.seqOfShare, pld.body.paid, pld.body.par, 
+            deal.body.buyer, deal.head.priceOfPaid, deal.head.priceOfPar);
+
+        if (deal.body.buyer != deal.body.groupOfBuyer && 
+            deal.body.groupOfBuyer != _rom.groupRep(deal.body.buyer)) {
+                _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
+        }
+
+        // deal.body.buyer = uint40(buyer);
+        // deal.body.groupOfBuyer = uint40(groupOfBuyer);
+        // deal.body.paid = uint64(pld.body.paid);
+        // deal.body.par = uint64(pld.body.par);
+
+        // deal.head.typeOfDeal = _gk.getROM().isMember(buyer) ? 3 : 2;
+
+        // deal = _circulateIA(deal, _ia);
+
+        // _signIA(_ia, deal);
+
+        // _proposeIA(address(_ia), deal, caller);
     }
 
-    function _circulateIA(
-        DealsRepo.Deal memory deal,
-        IInvestmentAgreement _ia
-    ) private returns (DealsRepo.Deal memory) {
-        deal.head.seqOfDeal = _ia.regDeal(deal);
+    // function _createIA(
+    //     uint seqOfShare,
+    //     uint seqOfPld,
+    //     uint version,
+    //     uint caller        
+    // ) private returns(address) {
 
-        _ia.finalizeIA();
+    //     _gk.getROP().execPledge(seqOfShare, seqOfPld, caller);
 
-        RulesParser.VotingRule memory vr = 
-            RulesParser.votingRuleParser(_gk.getSHA().getRule(deal.head.typeOfDeal));
+    //     bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
+    //         uint224(version << 192)); 
 
-        _gk.getROA().circulateFile(
-            address(_ia), 0, 
-            uint16((deal.head.closingDeadline - uint48(block.timestamp) + 43200)/86400), 
-            vr, bytes32(0), bytes32(0)
-        );
+    //     DocsRepo.Doc memory doc = _rc.createDoc(
+    //         snOfDoc,
+    //         address(this)
+    //     );
 
-        return deal;
-    }
+    //     IAccessControl(doc.body).initKeepers(
+    //         address(this),
+    //         address(_gk)
+    //     );
 
-    function _signIA(
-        IInvestmentAgreement _ia,
-        DealsRepo.Deal memory deal
-    ) private {
-        _ia.lockDealSubject(deal.head.seqOfDeal);
+    //     _gk.getROA().regFile(DocsRepo.codifyHead(doc.head), doc.body);
+
+    //     return doc.body;        
+    // }
+
+    // function _circulateIA(
+    //     DealsRepo.Deal memory deal,
+    //     IInvestmentAgreement _ia
+    // ) private returns (DealsRepo.Deal memory) {
+    //     deal.head.seqOfDeal = _ia.regDeal(deal);
+
+    //     uint16 closingDays = 
+    //         uint16((deal.head.closingDeadline - uint48(block.timestamp) + 43200)/86400);
+
+    //     _ia.finalizeIA();
+
+    //     _ia.setTiming(false, 1, closingDays);
+
+    //     _ia.circulateDoc();
+
+    //     RulesParser.VotingRule memory vr = 
+    //         RulesParser.votingRuleParser(_gk.getSHA().getRule(deal.head.typeOfDeal));
+
+    //     _gk.getROA().circulateFile(
+    //         address(_ia), 1, 
+    //         closingDays, 
+    //         vr, bytes32(0), bytes32(0)
+    //     );
+
+    //     return deal;
+    // }
+
+    // function _signIA(
+    //     IInvestmentAgreement _ia,
+    //     DealsRepo.Deal memory deal
+    // ) private {
+    //     _ia.lockDealSubject(deal.head.seqOfDeal);
         
-        _ia.regSig(
-            deal.head.seller,
-            uint48(block.timestamp),
-            bytes32(0)
-        );
+    //     _ia.regSig(
+    //         deal.head.seller,
+    //         uint48(block.timestamp),
+    //         bytes32(0)
+    //     );
 
-        _ia.regSig(
-            deal.body.buyer,
-            uint48(block.timestamp),
-            bytes32(0)
-        );
-    }
+    //     _ia.regSig(
+    //         deal.body.buyer,
+    //         uint48(block.timestamp),
+    //         bytes32(0)
+    //     );
+    // }
 
-    function _proposeIA(
-        address ia,
-        DealsRepo.Deal memory deal,
-        uint caller
-    ) private {
+    // function _proposeIA(
+    //     address ia,
+    //     DealsRepo.Deal memory deal,
+    //     uint caller
+    // ) private {
         
 
-        IMeetingMinutes _gmm = _gk.getGMM();
+    //     IMeetingMinutes _gmm = _gk.getGMM();
 
-        uint64 seqOfMotion = 
-            _gmm.createMotionToApproveDoc(uint(uint160(ia)), deal.head.typeOfDeal, caller, deal.head.seller);
+    //     uint64 seqOfMotion = 
+    //         _gmm.createMotionToApproveDoc(uint(uint160(ia)), deal.head.typeOfDeal, caller, deal.head.seller);
         
-        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, deal.head.seller);
-        _gk.getROA().proposeFile(ia, seqOfMotion);       
-    }
+    //     _gmm.proposeMotionToGeneralMeeting(seqOfMotion, deal.head.seller);
+    //     _gk.getROA().proposeFile(ia, seqOfMotion);       
+    // }
 
 
     function revokePledge(

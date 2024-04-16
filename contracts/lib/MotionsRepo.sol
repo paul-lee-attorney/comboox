@@ -41,7 +41,8 @@ library MotionsRepo {
         ApproveDoc,
         ApproveAction,
         TransferFund,
-        DistributeProfits
+        DistributeProfits,
+        DeprecateGK
     }
 
     enum StateOfMotion {

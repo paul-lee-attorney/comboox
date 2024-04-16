@@ -24,6 +24,8 @@ import "./EnumerableSet.sol";
 import "./SharesRepo.sol";
 import "./TopChain.sol";
 
+import "../comps/books/ros/IRegisterOfShares.sol";
+
 library MembersRepo {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -78,7 +80,8 @@ library MembersRepo {
     // ==== Zero Node Setting ====
 
     function setVoteBase(
-        Repo storage repo, 
+        Repo storage repo,
+        IRegisterOfShares ros,
         bool _basedOnPar
     ) public returns (bool flag) {
 
@@ -90,13 +93,29 @@ library MembersRepo {
             while (len > 0) {
                 uint256 cur = members[len - 1];
 
+                Member storage m = repo.members[cur];
+
                 Checkpoints.Checkpoint memory cp = 
-                    repo.members[cur].votesInHand.latest();
+                    m.votesInHand.latest();
 
                 if (cp.paid != cp.par) {
-                    if (_basedOnPar)
-                        repo.chain.increaseAmt(cur, (cp.par - cp.paid) * cp.votingWeight / 100, true);
-                    else repo.chain.increaseAmt(cur, (cp.par - cp.paid) * cp.votingWeight / 100, false);
+
+                    (uint sumOfVotes, uint sumOfDistrs) = _sortWeights(m, ros, _basedOnPar);
+
+                    if (_basedOnPar) {
+                        repo.chain.increaseAmt(cur, sumOfVotes - cp.points, true);
+                    } else {
+                        repo.chain.increaseAmt(cur, cp.points - sumOfVotes, false);
+                    }
+
+                    uint64 amt = _basedOnPar ? cp.par : cp.paid;
+
+                    cp.rate = uint16(sumOfVotes * 100 / amt);
+                    m.votesInHand.push(cp.rate, cp.paid, cp.par, cp.points);
+
+                    cp.rate = uint16(sumOfDistrs * 100 / amt);
+                    cp.points = uint64(sumOfDistrs);
+                    m.votesInHand.updateDistrPoints(cp.rate, cp.paid, cp.par, cp.points);
                 }
 
                 len--;
@@ -105,6 +124,27 @@ library MembersRepo {
             repo.chain.setVoteBase(_basedOnPar);
 
             flag = true;
+        }
+    }
+
+    function _sortWeights(
+        Member storage m,
+        IRegisterOfShares ros,
+        bool basedOnPar
+    ) private view returns(uint sumOfVotes, uint sumOfDistrs) { 
+
+        uint[] memory ls = m.sharesOfClass[0].values();
+        uint len = ls.length;
+
+        while (len > 0) {
+            SharesRepo.Share memory share = ros.getShare(ls[len-1]);
+
+            uint amt = basedOnPar ? share.body.par : share.body.paid;
+
+            sumOfVotes += amt * share.head.votingWeight / 100;
+            sumOfDistrs += amt * share.body.distrWeight / 100;
+
+            len--;            
         }
     }
 
@@ -124,20 +164,10 @@ library MembersRepo {
         Repo storage repo, 
         uint acct
     ) public {
-        repo.chain.delNode(acct);
-
-        uint[] memory classes = 
-            repo.members[acct].classesBelonged.values();
-        uint len = classes.length;
-        
-        while (len > 0) {
-            repo.membersOfClass[classes[len - 1]].remove(acct);
-            len--;
+        if (repo.membersOfClass[0].remove(acct)) {
+            repo.chain.delNode(acct);
+            delete repo.members[acct];
         }
-
-        repo.membersOfClass[0].remove(acct);
-
-        delete repo.members[acct];
     }
 
     function addShareToMember(
@@ -176,120 +206,119 @@ library MembersRepo {
         Repo storage repo,
         uint acct,
         uint votingWeight,
+        uint distrWeight,
         uint deltaPaid,
         uint deltaPar,
-        uint deltaClean,
         bool isIncrease
     ) public {
+        _increaseAmtOfMember(repo, acct, votingWeight, distrWeight, deltaPaid, deltaPar, isIncrease);
+    }
 
-        if (deltaPaid > 0 || deltaPar > 0 ) {
+    function _increaseAmtOfMember(
+        Repo storage repo,
+        uint acct,
+        uint votingWeight,
+        uint distrWeight,
+        uint deltaPaid,
+        uint deltaPar,
+        bool isIncrease
+    ) private {
 
-            uint deltaAmt = repo.chain.basedOnPar() 
-                ? deltaPar 
-                : deltaPaid;
+        Member storage m = repo.members[acct];
+        bool basedOnPar = repo.chain.basedOnPar();
+        uint64 deltaAmt =  basedOnPar ? uint64(deltaPar) : uint64(deltaPaid);
 
+        Checkpoints.Checkpoint memory delta = Checkpoints.Checkpoint({
+            timestamp: 0,
+            rate: 0,
+            paid: uint64(deltaPaid),
+            par: uint64(deltaPar),
+            points: uint64(deltaAmt * votingWeight / 100)
+        });
+
+        if (acct > 0 && deltaAmt > 0) {
             repo.chain.increaseAmt(
                 acct, 
-                deltaAmt * votingWeight / 100, 
+                delta.points,
                 isIncrease
             );
         }
 
         Checkpoints.Checkpoint memory cp = 
-            repo.members[acct].votesInHand.latest();
+            m.votesInHand.latest();
 
-        if (cp.votingWeight != votingWeight)
-            cp.votingWeight = _calWeight(
-                repo, 
-                cp, 
-                votingWeight, 
-                deltaPaid, 
-                deltaPar, 
-                isIncrease
-            );
+        cp = _adjustCheckpoint(cp, delta, basedOnPar, isIncrease);
+
+        m.votesInHand.push(cp.rate, cp.paid, cp.par, cp.points);
+
+        Checkpoints.Checkpoint memory dp = 
+            m.votesInHand.getDistrPoints();
+        
+        delta.points = deltaAmt * uint16(distrWeight) / 100;
+
+        dp = _adjustCheckpoint(dp, delta, basedOnPar, isIncrease);
+
+        m.votesInHand.updateDistrPoints(dp.rate, dp.paid, dp.par, dp.points);
+    }
+
+    function _adjustCheckpoint(
+        Checkpoints.Checkpoint memory cp,
+        Checkpoints.Checkpoint memory delta,
+        bool basedOnPar,
+        bool isIncrease
+    ) private pure returns (Checkpoints.Checkpoint memory output) {
 
         if (isIncrease) {
-            cp.paid += uint64(deltaPaid);
-            cp.par += uint64(deltaPar);
-            cp.cleanPaid += uint64(deltaClean);
+            output.paid = cp.paid + delta.paid;
+            output.par = cp.par + delta.par;
+            output.points = cp.points + delta.points;
         } else {
-            cp.paid -= uint64(deltaPaid);
-            cp.par -= uint64(deltaPar);
-            cp.cleanPaid -= uint64(deltaClean);
+            output.paid = cp.paid - delta.paid;
+            output.par = cp.par - delta.par;
+            output.points = cp.points - delta.points;
         }
 
-        repo.members[acct].votesInHand.push(
-            cp.votingWeight, 
-            cp.paid, 
-            cp.par, 
-            cp.cleanPaid
-        );
+        output.rate = basedOnPar
+            ?  output.par > 0 ? uint16(output.points * 100 / output.par) : 0
+            :  output.paid > 0 ? uint16(output.points * 100 / output.paid) : 0;
     }
+
+    // function _calWeight(
+    //     Checkpoints.Checkpoint memory cp,
+    //     bool basedOnPar,
+    //     Checkpoints.Checkpoint memory delta,
+    //     bool isIncrease
+    // ) private pure returns(uint16 output) {
+        
+    //     if (isIncrease) {
+    //         output = basedOnPar
+    //             ? uint16(((cp.votingWeight * cp.par + delta.votingWeight * delta.par) * 100 / (cp.par + delta.par) + 50) / 100)
+    //             : uint16(((cp.votingWeight * cp.paid + delta.votingWeight * delta.paid) * 100 / (cp.paid + delta.paid) + 50) / 100);
+    //     } else {
+    //         output = basedOnPar
+    //             ? uint16(((cp.votingWeight * cp.par - delta.votingWeight * delta.par) * 100 / (cp.par - delta.par) + 50) / 100)
+    //             : uint16(((cp.votingWeight * cp.paid - delta.votingWeight * delta.paid) * 100 / (cp.paid - delta.paid) + 50) / 100);
+    //     }
+    // }
 
     function increaseAmtOfCap(
         Repo storage repo,
         uint votingWeight,
+        uint distrWeight,
         uint deltaPaid,
         uint deltaPar,
         bool isIncrease
     ) public {
-        Checkpoints.Checkpoint memory cp = 
-            repo.members[0].votesInHand.latest();
 
-        if (cp.votingWeight != votingWeight)
-            cp.votingWeight = _calWeight(
-                repo, 
-                cp, 
-                votingWeight, 
-                deltaPaid, 
-                deltaPar, 
-                isIncrease
-            );
+        _increaseAmtOfMember(repo, 0, votingWeight, distrWeight, deltaPaid, deltaPar, isIncrease);
+        
+        bool basedOnPar = repo.chain.basedOnPar();
 
-        if (isIncrease) {
-            cp.paid += uint64(deltaPaid);
-            cp.par += uint64(deltaPar);
-        } else {
-            cp.paid -= uint64(deltaPaid);
-            cp.par -= uint64(deltaPar);
-        }
-
-        updateOwnersEquity(repo, cp);
-
-        if (repo.chain.basedOnPar() && deltaPar > 0) {
+        if (basedOnPar && deltaPar > 0) {
             repo.chain.increaseTotalVotes(deltaPar * votingWeight / 100, isIncrease);
-        } else if (!repo.chain.basedOnPar() && deltaPaid > 0) {
+        } else if (!basedOnPar && deltaPaid > 0) {
             repo.chain.increaseTotalVotes(deltaPaid * votingWeight / 100, isIncrease);
         }
-    }
-
-    function _calWeight(
-        Repo storage repo,
-        Checkpoints.Checkpoint memory cp,
-        uint votingWeight,
-        uint deltaPaid,
-        uint deltaPar,
-        bool isIncrease
-    ) private view returns(uint16 output) {
-        
-        if (isIncrease) {
-            output = repo.chain.basedOnPar()
-                ? uint16(((cp.votingWeight * cp.par + votingWeight * deltaPar) * 100 / (cp.par + deltaPar) + 50) / 100)
-                : uint16(((cp.votingWeight * cp.paid + votingWeight * deltaPaid) * 100 / (cp.paid + deltaPaid) + 50) / 100);
-        } else {
-            output = repo.chain.basedOnPar()
-                ? uint16(((cp.votingWeight * cp.par - votingWeight * deltaPar) * 100 / (cp.par - deltaPar) + 50) / 100)
-                : uint16(((cp.votingWeight * cp.paid - votingWeight * deltaPaid) * 100 / (cp.paid - deltaPaid) + 50) / 100);            
-        }
-    }
-
-    // ==== Zero Node Setting ====
-
-    function updateOwnersEquity(
-        Repo storage repo,
-        Checkpoints.Checkpoint memory cp
-    ) public {
-        repo.members[0].votesInHand.push(cp.votingWeight, cp.paid, cp.par, cp.cleanPaid);
     }
 
     //##################
@@ -325,6 +354,12 @@ library MembersRepo {
         return repo.members[0].votesInHand.latest();
     }
 
+    function ownersPoints(
+        Repo storage repo
+    ) public view returns(Checkpoints.Checkpoint memory) {
+        return repo.members[0].votesInHand.getDistrPoints();
+    }
+
     function capAtDate(
         Repo storage repo,
         uint date
@@ -341,6 +376,15 @@ library MembersRepo {
         return repo.members[acct].votesInHand.latest();
     }
 
+    function pointsOfMember(
+        Repo storage repo,
+        uint acct
+    ) public view memberExist(repo, acct) returns(
+        Checkpoints.Checkpoint memory
+    ) {
+        return repo.members[acct].votesInHand.getDistrPoints();
+    }
+
     function equityAtDate(
         Repo storage repo,
         uint acct,
@@ -355,12 +399,8 @@ library MembersRepo {
         Repo storage repo,
         uint256 acct,
         uint date
-    ) public view returns (uint64) {
-        Checkpoints.Checkpoint memory cp = repo.members[acct].votesInHand.getAtDate(date);
-        
-        return repo.chain.basedOnPar() 
-                ? (cp.par * cp.votingWeight + 50) / 100 
-                : (cp.paid * cp.votingWeight + 50) / 100;
+    ) public view returns (uint64) { 
+        return repo.members[acct].votesInHand.getAtDate(date).points;
     }
 
     function votesHistory(

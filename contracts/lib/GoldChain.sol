@@ -22,17 +22,18 @@ pragma solidity ^0.8.8;
 library GoldChain {
 
     struct Node {
-        uint32 prev;
-        uint32 next;
+        uint24 prev;
+        uint24 next;
         uint32 seqOfShare;
         uint64 paid;
         uint32 price;
         uint48 expireDate;
         uint16 votingWeight;
+        uint16 distrWeight;
     }
 
     struct NodeWrap {
-        uint32 seq;
+        uint24 seq;
         Node node;
     }
 
@@ -70,13 +71,14 @@ library GoldChain {
 
         uint _sn = uint(sn);
 
-        node.prev = uint32(_sn >> 224);
-        node.next = uint32(_sn >> 192);
-        node.seqOfShare = uint32(_sn >> 160);
-        node.paid = uint64(_sn >> 96);
-        node.price = uint32(_sn >> 64);
-        node.expireDate = uint48(_sn >> 16);
-        node.votingWeight = uint16(_sn);
+        node.prev = uint24(_sn >> 232);
+        node.next = uint24(_sn >> 208);
+        node.seqOfShare = uint32(_sn >> 176);
+        node.paid = uint64(_sn >> 112);
+        node.price = uint32(_sn >> 80);
+        node.expireDate = uint48(_sn >> 32);
+        node.votingWeight = uint16(_sn >> 16);
+        node.distrWeight = uint16(_sn);
     }
 
     function codifyNode(
@@ -91,7 +93,8 @@ library GoldChain {
                 node.paid,
                 node.price,
                 node.expireDate,
-                node.votingWeight
+                node.votingWeight,
+                node.distrWeight
             );
 
         assembly {
@@ -103,6 +106,7 @@ library GoldChain {
         Chain storage chain,
         uint seqOfShare,
         uint votingWeight,
+        uint distrWeight,
         uint paid,
         uint price,
         uint execHours,
@@ -111,7 +115,7 @@ library GoldChain {
 
         require (uint64(paid) > 0, 'GC.createOffer: zero paid');
 
-        uint32 seq = _increaseCounter(chain);
+        uint24 seq = _increaseCounter(chain);
 
         Node memory node = Node({
             prev: 0,
@@ -120,7 +124,8 @@ library GoldChain {
             paid: uint64(paid),
             price: uint32(price),
             expireDate: uint48(block.timestamp) + uint48(execHours) * 3600,
-            votingWeight: uint16(votingWeight)
+            votingWeight: uint16(votingWeight),
+            distrWeight: uint16(distrWeight)
         });
 
         _increaseLength(chain);
@@ -134,7 +139,7 @@ library GoldChain {
 
     function _upChain(
         Chain storage chain,
-        uint32 seq,
+        uint24 seq,
         bool sortFromHead
     ) private {
 
@@ -149,8 +154,8 @@ library GoldChain {
                 sortFromHead
             );
 
-        n.prev = uint32(prev);
-        n.next = uint32(next);
+        n.prev = uint24(prev);
+        n.next = uint24(next);
 
         chain.nodes[prev].next = seq;
         chain.nodes[next].prev = seq;
@@ -193,18 +198,19 @@ library GoldChain {
 
     function _increaseCounter(
         Chain storage chain
-    ) private returns (uint32) {
+    ) private returns (uint24 out) { 
 
         Node storage n = chain.nodes[0];
+        out = uint24(n.seqOfShare);
 
         do {
             unchecked {
-                n.seqOfShare++;        
+                out++;        
             }
-        } while(isNode(chain, n.seqOfShare) ||
-            n.seqOfShare == 0);
+        } while(isNode(chain, out) ||
+            out == 0);
 
-        return n.seqOfShare;
+        n.seqOfShare = out;
     }
 
     function _increaseLength(
@@ -227,25 +233,25 @@ library GoldChain {
 
     function counter(
         Chain storage chain
-    ) public view returns (uint32) {
-        return chain.nodes[0].seqOfShare;
+    ) public view returns (uint24) {
+        return uint24(chain.nodes[0].seqOfShare);
     }
 
     function length(
         Chain storage chain
-    ) public view returns (uint32) {
-        return chain.nodes[0].price;
+    ) public view returns (uint24) {
+        return uint24(chain.nodes[0].price);
     }
 
     function head(
         Chain storage chain
-    ) public view returns (uint32) {
+    ) public view returns (uint24) {
         return chain.nodes[0].next;
     }
 
     function tail(
         Chain storage chain
-    ) public view returns (uint32) {
+    ) public view returns (uint24) {
         return chain.nodes[0].prev;
     }
 

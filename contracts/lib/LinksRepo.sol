@@ -145,17 +145,14 @@ library LinksRepo {
     }
 
     function _roeOfDeal(
-        uint32 dealPrice,
-        uint32 issuePrice,
-        uint48 closingDeadline,
-        uint48 issueDateOfShare
-    ) private pure returns (uint32 roe) {
+        uint dealPrice,
+        uint issuePrice,
+        uint closingDeadline,
+        uint issueDateOfShare
+    ) private pure returns (uint roe) {
         require(dealPrice > issuePrice, "ROE: NEGATIVE selling price");
         require(closingDeadline > issueDateOfShare, "ROE: NEGATIVE holding period");
 
-        uint deltaPrice = uint(dealPrice - issuePrice);
-        uint deltaDate = uint(closingDeadline - issueDateOfShare);
-
-        roe = uint32(deltaPrice * 10000 / uint(issuePrice) * 31536000 / deltaDate);
+        roe = (dealPrice - issuePrice) * 10000 / issuePrice * 31536000 / (closingDeadline - issueDateOfShare);
     }
 }

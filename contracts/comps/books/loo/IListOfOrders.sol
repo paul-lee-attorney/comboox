@@ -70,6 +70,7 @@ interface IListOfOrders {
         uint classOfShare,
         uint seqOfShare,
         uint votingWeight,
+        uint distrWeight,
         uint paid,
         uint price,
         uint execHours,

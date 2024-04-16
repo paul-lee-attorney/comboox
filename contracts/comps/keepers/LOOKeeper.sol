@@ -105,12 +105,13 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
             "LOOK.placeIO: higher than ceiling");
 
         require (_ros.getInfoOfClass(classOfShare).body.cleanPaid +
-            paid <= lr.maxTotalPar, "LOOK.placeIO: paid overflow");
+            paid <= uint64(lr.maxTotalPar) * 10000, "LOOK.placeIO: paid overflow");
 
         _gk.getLOO().placeSellOrder(
             classOfShare,
             0,
             lr.votingWeight,
+            lr.distrWeight,
             paid,
             price,
             execHours,
@@ -224,6 +225,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
             share.head.class,
             share.head.seqOfShare,
             share.head.votingWeight,
+            share.body.distrWeight,
             paid,
             price,
             execHours,
@@ -285,7 +287,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
             OrdersRepo.Deal memory deal = deals[len - 1];
             len--;
 
-            uint valueOfDeal = deal.paid * deal.price / 10 ** 4 * centPrice / 100;
+            uint valueOfDeal = deal.paid * deal.price / 10000 * centPrice / 100;
 
             msgValue -= valueOfDeal;
 
@@ -321,8 +323,7 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
                     paid: deal.paid,
                     par: deal.paid,
                     cleanPaid: deal.paid,
-                    state: 0,
-                    para: 0
+                    distrWeight: deal.distrWeight
                 });
 
                 _ros.addShare(share);

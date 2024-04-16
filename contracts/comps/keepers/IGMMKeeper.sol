@@ -74,6 +74,8 @@ interface IGMMKeeper {
         uint proposer
     ) external;
 
+    function proposeToDeprecateGK(address receiver,uint proposer) external;
+
     function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate, uint caller) external;
 
     function proposeMotionToGeneralMeeting(uint256 seqOfMotion,uint caller) external;
@@ -114,4 +116,5 @@ interface IGMMKeeper {
         uint caller
     ) external returns(uint);
 
+    function deprecateGK(address receiver, uint seqOfMotion, uint executor) external;
 }

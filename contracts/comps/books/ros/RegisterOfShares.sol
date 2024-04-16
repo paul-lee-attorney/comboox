@@ -42,12 +42,13 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function issueShare(
         bytes32 shareNumber, 
         uint payInDeadline, 
-        uint paid, 
-        uint par
+        uint paid,
+        uint par,
+        uint distrWeight
     ) external onlyKeeper {
 
         SharesRepo.Share memory share =
-            SharesRepo.createShare(shareNumber, payInDeadline, paid, par);
+            SharesRepo.createShare(shareNumber, payInDeadline, paid, par, distrWeight);
 
         addShare(share);
     }
@@ -70,6 +71,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         _rom.addMember(share.head.shareholder);
         _rom.capIncrease(
             share.head.votingWeight,
+            share.body.distrWeight,
             share.body.paid,
             share.body.par,
             true
@@ -184,8 +186,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             paid: uint64(paid),
             par: uint64(par),
             cleanPaid: uint64(paid),
-            state: 0,
-            para: 0
+            distrWeight: share.body.distrWeight
         });        
 
         _decreaseShareAmt(share, paid, par);
@@ -218,6 +219,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         _gk.getROM().capIncrease(
             share.head.votingWeight,            
+            share.body.distrWeight,
             paid, 
             par,
             false
@@ -243,18 +245,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             paid
         );
 
-        SharesRepo.Share storage share = 
-            _repo.shares[seqOfShare];
-
-        _gk.getROM().increaseAmtOfMember(
-            share.head.shareholder, 
-            share.head.votingWeight, 
-            0, 
-            0, 
-            paid, 
-            false
-        );
-
         emit DecreaseCleanPaid(seqOfShare, paid);
     }
 
@@ -270,18 +260,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             true,
             seqOfShare,
             paid
-        );
-
-        SharesRepo.Share storage share = 
-            _repo.shares[seqOfShare];
-
-        _gk.getROM().increaseAmtOfMember(
-            share.head.shareholder, 
-            share.head.votingWeight, 
-            0, 
-            0, 
-            paid, 
-            true
         );
 
         emit IncreaseCleanPaid(seqOfShare, paid);
@@ -349,17 +327,18 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         _rom.capIncrease(
             share.head.votingWeight,
+            share.body.distrWeight,
             amount, 
             0,
             true
         );
 
         _rom.increaseAmtOfMember(
-            share.head.shareholder, 
-            share.head.votingWeight, 
+            share.head.shareholder,
+            share.head.votingWeight,
+            share.body.distrWeight,
             amount, 
             0, 
-            amount, 
             true
         );
 
@@ -385,9 +364,9 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             _rom.increaseAmtOfMember(
                 share.head.shareholder,
                 share.head.votingWeight,
+                share.body.distrWeight,
                 paid,
                 par,
-                paid,
                 false
             );
 

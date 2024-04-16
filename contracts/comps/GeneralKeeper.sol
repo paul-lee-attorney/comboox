@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
+ * v0.2.5
  *
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
@@ -38,7 +38,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     function setCompInfo (
         uint8 _currency,
-        bytes20 _symbol,
+        bytes19 _symbol,
         string memory _name
     ) external onlyDK {
         _info.currency = _currency;
@@ -100,11 +100,13 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ##################
 
     function _msgSender(uint price) private returns (uint40 usr) {
-        usr = _rc.getUserNo(
-            msg.sender, 
-            price * (10 ** 10), 
-            _rc.getAuthorByBody(address(this))
-        );
+        if (_info.state == 0) {
+            usr = _rc.getUserNo(
+                msg.sender, 
+                price * (10 ** 10), 
+                _rc.getAuthorByBody(address(this))
+            );
+        } else revert ("GK: deprecated");
     }
 
     // ##################
@@ -282,6 +284,10 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         );
     }
 
+    function proposeToDeprecateGK(address payable receiver) external {
+        IGMMKeeper(_keepers[5]).proposeToDeprecateGK(receiver, _msgSender(88000));
+    }
+
     function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external {
         IGMMKeeper(_keepers[5]).entrustDelegaterForGeneralMeeting(seqOfMotion, delegate, _msgSender(36000));
     }
@@ -322,6 +328,22 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         if (_execute(targets, values, params)) {
             emit ExecAction(contents, true);
         } else emit ExecAction(contents, false);        
+    }
+
+    function deprecateGK(address payable receiver, uint seqOfMotion) external {
+        IGMMKeeper(_keepers[5]).deprecateGK(receiver, seqOfMotion, _msgSender(88000));
+
+        uint balanceOfCBP = _rc.balanceOf(address(this));
+        _rc.transfer(receiver, balanceOfCBP);
+
+        uint balanceOfETH = address(this).balance;
+        receiver.transfer(balanceOfETH);
+
+        _info.state = 1;
+        _info.name = "Archives Of Deprecated Books";
+        _info.symbol = bytes19("DEPRECATED");
+
+        emit DeprecateGK(receiver, balanceOfCBP, balanceOfETH);
     }
 
     // ###################
@@ -460,8 +482,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         IROPKeeper(_keepers[8]).releasePledge(seqOfShare, seqOfPld, hashKey);
     }
 
-    function execPledge(bytes32 snOfDeal, uint256 seqOfPld, uint version, uint buyer, uint groupOfBuyer) external {
-        IROPKeeper(_keepers[8]).execPledge(snOfDeal, seqOfPld, version, msg.sender, buyer, groupOfBuyer, _msgSender(88000));
+    function execPledge(uint seqOfShare, uint256 seqOfPld, uint buyer, uint groupOfBuyer) external {
+        IROPKeeper(_keepers[8]).execPledge(seqOfShare, seqOfPld, buyer, groupOfBuyer, _msgSender(88000));
     }
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external {
@@ -696,9 +718,11 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
             require (address(this).balance >= _coffers[0] + amt,
                 "GK.transferFund: insufficient balance");
             payable(to).transfer(amt);
-        }
+        }        
+    }
 
-        
+    receive() external payable {
+        emit ReceivedCash(msg.sender, msg.value);
     }
 
     // #################

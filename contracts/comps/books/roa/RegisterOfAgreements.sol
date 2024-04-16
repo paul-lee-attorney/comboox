@@ -116,25 +116,8 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
             (TopChain.Node[] memory list, TopChain.Para memory para) = 
                 _gk.getROM().getSnapshot();
             _mockOfIA[ia].restoreChain(list, para);
-            _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia));
+            _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia), _gk.getROS());
         }
-    }
-
-    function mockDealOfSell(
-        address ia, 
-        uint seller, 
-        uint amount
-    ) external onlyKeeper {
-        _mockOfIA[ia].mockDealOfSell(seller, amount);
-    }
-
-    function mockDealOfBuy(
-        address ia, 
-        uint buyer, 
-        uint groupRep, 
-        uint amount
-    ) external{
-        _mockOfIA[ia].mockDealOfBuy(buyer, groupRep, amount);
     }
     
     //###############

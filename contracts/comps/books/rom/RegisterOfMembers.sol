@@ -56,21 +56,24 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     function setVoteBase(bool _basedOnPar) external onlyKeeper {
-        if (_repo.setVoteBase(_basedOnPar)) 
+        IRegisterOfShares _ros = _gk.getROS();
+
+        if (_repo.setVoteBase(_ros, _basedOnPar)) 
             emit SetVoteBase(_basedOnPar);
     }
 
     function capIncrease(
-        uint votingWeight, 
-        uint paid, 
-        uint par, 
+        uint votingWeight,
+        uint distrWeight,
+        uint paid,
+        uint par,
         bool isIncrease
     ) external onlyROS {
 
-        _repo.increaseAmtOfCap(votingWeight, paid, par, isIncrease);
+        _repo.increaseAmtOfCap(votingWeight, distrWeight, paid, par, isIncrease);
 
-        if (isIncrease) emit CapIncrease(votingWeight, paid, par);
-        else emit CapDecrease(votingWeight, paid, par);
+        if (isIncrease) emit CapIncrease(votingWeight, paid, par, distrWeight);
+        else emit CapDecrease(votingWeight, paid, par, distrWeight);
     }
 
     function addMember(uint256 acct) external onlyROS {
@@ -87,9 +90,9 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         _repo.increaseAmtOfMember(
             share.head.shareholder, 
             share.head.votingWeight, 
+            share.body.distrWeight,
             share.body.paid, 
             share.body.par, 
-            share.body.cleanPaid, 
             true
         );
         
@@ -103,9 +106,9 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         _repo.increaseAmtOfMember(
             share.head.shareholder, 
             share.head.votingWeight, 
+            share.body.distrWeight, 
             share.body.paid, 
             share.body.par, 
-            share.body.cleanPaid, 
             false
         );
 
@@ -120,18 +123,18 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     function increaseAmtOfMember(
         uint acct,
         uint votingWeight,
+        uint distrWeight,
         uint deltaPaid,
         uint deltaPar,
-        uint deltaClean,
         bool isIncrease
     ) public onlyROS {
 
         _repo.increaseAmtOfMember(
             acct,
             votingWeight,
+            distrWeight,
             deltaPaid,
             deltaPar,
-            deltaClean,
             isIncrease
         );
 
@@ -139,7 +142,6 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
             acct,
             deltaPaid,
             deltaPar,
-            deltaClean,
             isIncrease
         );
     }
@@ -203,6 +205,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         return _repo.ownersEquity();
     }
 
+    function ownersPoints() 
+        external view 
+        returns(Checkpoints.Checkpoint memory) 
+    {
+        return _repo.ownersPoints();
+    }
+
     function capAtDate(uint date)
         external view
         returns (Checkpoints.Checkpoint memory)
@@ -215,6 +224,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         returns (Checkpoints.Checkpoint memory)
     {
         return _repo.equityOfMember(acct);
+    }
+
+   function pointsOfMember(uint256 acct)
+        external view
+        returns (Checkpoints.Checkpoint memory)
+    {
+        return _repo.pointsOfMember(acct);
     }
 
    function equityAtDate(uint256 acct, uint date)

@@ -24,7 +24,7 @@ async function deployTool(signer, targetName, libraries) {
   const target = await Target.deploy();
   await target.deployed();
 
-  console.log("Deployed ", targetName, "at address:", target.address);
+  console.log("Deployed ", targetName, "at address:", target.address, "\n");
 
   saveTempAddr(targetName, target);
 

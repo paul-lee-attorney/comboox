@@ -67,15 +67,17 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint classOfShare,
         uint seqOfShare,
         uint votingWeight,
+        uint distrWeight,
         uint paid,
         uint price,
         uint execHours,
         bool sortFromHead
     ) external onlyDK {
         bytes32 sn = _repo.placeSellOrder(
-            classOfShare, 
+            classOfShare,
             seqOfShare,
             votingWeight,
+            distrWeight,
             paid, 
             price,
             execHours,

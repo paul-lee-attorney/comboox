@@ -100,22 +100,22 @@ async function main() {
 		"LockersRepo": libLockersRepo.address
 	};
 	let rc = await deployTool(signers[0], "RegCenter", libraries);
-	let res = await rc.getOwner();
-	console.log("deployed RC with owner: ", res, "\n");
+	// let res = await rc.getOwner();
+	console.log("deployed RC with owner: ", signers[0].address, "\n");
 	console.log("creator of RC: ", signers[0].address, "\n");
 
 	await rc.setBackupKey(signers[1].address);
-	res = await rc.getBookeeper();
-	console.log("setup bookeeper of RC: ", res, "\n");
+	// res = await rc.getBookeeper();
+	console.log("setup bookeeper of RC: ", signers[1].address, "\n");
 
 	libraries = {};
 	let cnc = await deployTool(signers[0], "CreateNewComp", libraries);
 
 	await cnc.init(signers[0].address, rc.address);
-	res = await cnc.getOwner();
-	console.log("init CNC with owner: ", res, "\n");
-	res = await cnc.getRegCenter();
-	console.log(" set CNC with RC: ", res , "\n");
+	// res = await cnc.getOwner();
+	console.log("init CNC with owner: ", signers[0].address, "\n");
+	// res = await cnc.getRegCenter();
+	console.log(" set CNC with RC: ", rc.address , "\n");
 
 	// ==== Deploy Templates ====
 
@@ -193,9 +193,9 @@ async function main() {
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"PledgesRepo": libPledgesRepo.address,
-		"DealsRepo": libDealsRepo.address,
-		"DocsRepo": libDocsRepo.address,
-		"RulesParser": libRulesParser.address
+		// "DealsRepo": libDealsRepo.address,
+		// "DocsRepo": libDocsRepo.address,
+		// "RulesParser": libRulesParser.address
 	}
 	let ropKeeper = await deployTool(signers[0], "ROPKeeper", libraries);
 
@@ -269,7 +269,7 @@ async function main() {
 
 	libraries = {};
 
-	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
+	// let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries);
 
 	// ==== SetTemplate ====
 
@@ -354,8 +354,8 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 27, lop.address, 1);
 	console.log("set template for LOP at address: ", lop.address, "\n");
 
-	await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
-	console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");
+	// await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
+	// console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");
 
 	let options = {
 		signer: signers[0],

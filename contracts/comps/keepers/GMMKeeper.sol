@@ -176,6 +176,19 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         );
     }
 
+    function proposeToDeprecateGK(
+        address receiver,
+        uint proposer
+    ) external memberOrDirector(proposer){
+
+        IMeetingMinutes _gmm = _gk.getGMM();
+
+        uint64 seqOfMotion = 
+            _gmm.createMotionToDeprecateGK(receiver, proposer);
+            
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, proposer);
+    }
+
     // ==== ProposeMotion ====
 
     function entrustDelegaterForGeneralMeeting(
@@ -341,17 +354,13 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
         uint[] memory members = _rom.membersList();
         uint len = members.length;
 
-        uint totalEquity = _rom.basedOnPar()
-            ? _rom.ownersEquity().par
-            : _rom.ownersEquity().paid ;
+        uint totalPoints = _rom.ownersPoints().points;
 
         while (len > 0) {
             uint member = members[len - 1];
-            uint equityOfMember = _rom.basedOnPar()
-                ? _rom.equityOfMember(member).par
-                : _rom.equityOfMember(member).paid;
-
-            _gk.saveToCoffer(member, equityOfMember * amt / totalEquity);
+            uint pointsOfMember = _rom.pointsOfMember(member).points;
+            
+            _gk.saveToCoffer(member, pointsOfMember * amt / totalPoints);
 
             len--;
         }
@@ -392,6 +401,18 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
             desHash,
             seqOfMotion,
             caller
+        );
+    }
+
+    function deprecateGK(
+        address receiver,
+        uint seqOfMotion,
+        uint executor
+    ) external onlyDK {
+        _gk.getGMM().deprecateGK(
+            receiver,
+            seqOfMotion,
+            executor
         );
     }
 

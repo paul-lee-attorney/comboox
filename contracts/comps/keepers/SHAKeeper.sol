@@ -44,7 +44,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
-        uint16 subjectVW = _ros.getShare(deal.head.seqOfShare).head.votingWeight;
+        uint subjectVW = _ros.getShare(deal.head.seqOfShare).head.votingWeight;
 
         require(deal.body.state == uint8(DealsRepo.StateOfDeal.Locked), 
             "SHAK.execAlongs: state not Locked");
@@ -70,7 +70,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 caller,
         uint paid,
         uint par,
-        uint16 subjectVW
+        uint subjectVW
     ) private view {
         
 
@@ -101,11 +101,11 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             
             if (_rom.basedOnPar())
                 require ( par <= 
-                deal.body.par * subjectVW / 100 * share.body.par / _rom.votesOfGroup(deal.head.seller), 
+                uint(deal.body.par) * subjectVW / _rom.votesOfGroup(deal.head.seller) * uint(share.body.par) / 100 , 
                 "SHAKeeper.checkAlong: par overflow");
             else require ( paid <=
-                deal.body.paid * subjectVW / 100 * share.body.paid / _rom.votesOfGroup(deal.head.seller),
-                "SHAKeeper.checkAlong: paid overflow");            
+                uint(deal.body.paid) * subjectVW / _rom.votesOfGroup(deal.head.seller) * uint(share.body.paid) / 100,
+                "SHAKeeper.checkAlong: paid overflow");
         }
     }
 
@@ -170,7 +170,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
             par: claim.par,
             state: uint8(DealsRepo.StateOfDeal.Locked),
             para: 0,
-            argu: 0,
+            distrWeight: deal.body.distrWeight,
             flag: false
         });
 
