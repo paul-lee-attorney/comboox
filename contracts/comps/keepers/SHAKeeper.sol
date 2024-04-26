@@ -247,6 +247,11 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
             while (j > 0) {
 
+                if (!_ros.notLocked(sharesInHand[j-1], deal.head.closingDeadline)) {
+                    j--;
+                    continue;
+                }
+
                 giftPaid = _createGift(
                     _ia,
                     deal,
@@ -310,6 +315,8 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
         require(caller == deal.body.buyer, "caller is not buyer");
+        require(_ros.notLocked(deal.head.seqOfShare, block.timestamp),
+            "SHAK.takeGift: share locked");
 
         if (_ia.takeGift(seqOfDeal))
             _gk.getROA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));

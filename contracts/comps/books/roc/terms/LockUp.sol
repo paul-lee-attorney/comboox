@@ -84,7 +84,7 @@ contract LockUp is ILockUp, AccessControl {
     // ##  Term      ##
     // ################
 
-    function isTriggered(DealsRepo.Deal memory deal) external view returns (bool) {
+    function isTriggered(DealsRepo.Deal memory deal) public view returns (bool) {
  
         if (
             deal.head.typeOfDeal > 1 &&
@@ -95,19 +95,19 @@ contract LockUp is ILockUp, AccessControl {
         return false;
     }
 
-    function _isExempted(uint256 seqOfShare, uint256[] memory agreedParties)
+    function _isExempted(DealsRepo.Deal memory deal, uint256[] memory agreedParties)
         private
         view
         returns (bool)
     {
-        if (!isLocked(seqOfShare)) return true;
+        if (!isTriggered(deal)) return true;
 
-        Locker storage locker = _lockers[seqOfShare];
+        Locker storage locker = _lockers[deal.head.seqOfShare];
 
         uint256[] memory holders = locker.keyHolders.values();
         uint256 len = holders.length;
 
-        if (len > agreedParties.length) {
+        if (len == 0 || len > agreedParties.length) {
             return false;
         } else {
             return holders.fullyCoveredBy(agreedParties);
@@ -125,7 +125,7 @@ contract LockUp is ILockUp, AccessControl {
         uint256[] memory supporters = 
             consentCase.voters.combine(consentCase.principals).merge(parties);
 
-        return _isExempted(deal.head.seqOfShare, supporters);
+        return _isExempted(deal, supporters);
     }
 
 }

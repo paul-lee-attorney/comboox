@@ -158,4 +158,12 @@ interface IRegisterOfShares {
     ) external view returns (LockersRepo.Locker memory);
 
     function getLocksList() external view returns (bytes32[] memory);
-}
+
+    // ==== NotLocked ====
+    
+    function notLocked(
+        uint seqOfShare,
+        uint closingDate
+    ) external view returns(bool);
+    
+ }

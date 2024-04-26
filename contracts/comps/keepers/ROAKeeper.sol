@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
+ * v.0.2.5
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -115,14 +116,21 @@ contract ROAKeeper is IROAKeeper, AccessControl {
                 IInvestmentAgreement(ia).getDeal(seq);
 
             if (deal.head.seller == caller) {
+
                 if (IInvestmentAgreement(ia).lockDealSubject(seq)) {
                     _gk.getROS().decreaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
                 }
-            } else if (
-                deal.body.buyer == caller &&
-                deal.head.typeOfDeal ==
-                uint8(DealsRepo.TypeOfDeal.CapitalIncrease)
-            ) IInvestmentAgreement(ia).lockDealSubject(seq);
+
+            } else if (deal.body.buyer == caller) {
+                
+                _buyerIsVerified(deal.body.buyer);
+                
+                if (deal.head.typeOfDeal ==
+                   uint8(DealsRepo.TypeOfDeal.CapitalIncrease)) {
+                    IInvestmentAgreement(ia).lockDealSubject(seq);
+                }
+                
+            }
         }
     }
 
@@ -138,22 +146,28 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
-        DealsRepo.Head memory head = 
-            _ia.getDeal(seqOfDeal).head;
+        DealsRepo.Deal memory deal = 
+            _ia.getDeal(seqOfDeal);
 
-        bool isST = (head.seqOfShare != 0);
+        bool isST = (deal.head.seqOfShare != 0);
 
-        if (isST) require(caller == head.seller, "BOIK.PTC: not seller");
-        else require(_gk.getROD().isDirector(caller), "BOIK.PTC: not director");
+        if (isST) {
+            require(caller == deal.head.seller, "BOIK.PTC: not seller");
+            require(_lockUpCheck(address(_ia), deal, uint48(block.timestamp)), 
+                "BOIK.PTC: target share locked");
+        } else {
+            require (_gk.getROD().isDirector(caller) ||
+                _gk.getROM().controllor() == caller, 
+                "BOIK.PTC: not director or controllor");
+        }
 
-        _vrAndSHACheck(_ia, seqOfDeal, isST);
+        _vrAndSHACheck(_ia);
 
         _ia.clearDealCP(seqOfDeal, hashLock, closingDeadline);
     }
 
-    function _vrAndSHACheck(IInvestmentAgreement _ia, uint256 seqOfDeal, bool isST) private view {
+    function _vrAndSHACheck(IInvestmentAgreement _ia) private view {
         
-
         IMeetingMinutes _bmm = _gk.getBMM();
         IMeetingMinutes _gmm = _gk.getGMM();
         IRegisterOfAgreements _roa = _gk.getROA();
@@ -185,13 +199,6 @@ contract ROAKeeper is IROAKeeper, AccessControl {
                     "BOIK.vrCheck: rejected by GM or Board");
             else revert("BOIK.vrCheck: authority overflow");
         }
-
-        if (isST && _sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.LockUp))) {
-            address lu = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.LockUp));
-            require(
-                ILockUp(lu).isExempted(address(_ia), _ia.getDeal(seqOfDeal)),
-                "ROAKeeper.lockUpCheck: not exempted");
-        }
     }
 
     function closeDeal(
@@ -212,12 +219,52 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         else _issueNewShare(_ia, deal.head.seqOfDeal);
     }
 
+    function _lockUpCheck(
+        address _ia,
+        DealsRepo.Deal memory deal,
+        uint48 closingDate
+    ) private view returns(bool) {
+
+        IShareholdersAgreement _sha = _gk.getSHA();
+        
+        if (!_sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.LockUp))) {
+            return true;
+        }
+
+        address lu = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.LockUp));
+        
+        if (closingDate > 0) {
+            deal.head.closingDeadline = closingDate;
+        }
+
+        if (!ILockUp(lu).isTriggered(deal)) {
+            return true;
+        } else if (ILockUp(lu).isExempted(_ia, deal)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function _buyerIsVerified(
+        uint buyer
+    ) private view {
+        require (_gk.getLOO().getInvestor(buyer).state == 
+            uint8(OrdersRepo.StateOfInvestor.Approved), 
+            "ROAK.buyerIsVerified: not");
+    }
+
     function _shareTransfer(IInvestmentAgreement _ia, uint256 seqOfDeal) private {
         
         IRegisterOfShares _ros = _gk.getROS();
         IRegisterOfMembers _rom = _gk.getROM();
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
+
+        _buyerIsVerified(deal.body.buyer);
+
+        require (_lockUpCheck(address(_ia), deal, uint48(block.timestamp)),
+            "ROAK._ST: share locked");
 
         _ros.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _ros.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, 
@@ -236,7 +283,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
             _gk.getROM().controllor() == caller, 
             "ROAK.issueNewShare: not director or controllor");
 
-        _vrAndSHACheck(_ia, seqOfDeal, false);
+        _vrAndSHACheck(_ia);
 
         if (_ia.directCloseDeal(seqOfDeal)) _gk.getROA().execFile(ia);
 
@@ -249,6 +296,9 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         IRegisterOfMembers _rom = _gk.getROM();
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
+
+        _buyerIsVerified(deal.body.buyer);
+
         SharesRepo.Share memory share;
 
         share.head = SharesRepo.Head({
@@ -292,7 +342,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         );
 
 
-        _vrAndSHACheck(_ia, seqOfDeal, true);
+        _vrAndSHACheck(_ia);
 
         if (_ia.directCloseDeal(seqOfDeal))
             _gk.getROA().execFile(ia);
@@ -345,7 +395,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         DealsRepo.Deal memory deal = 
             _ia.getDeal(seqOfDeal);
 
-        _vrAndSHACheck(_ia, deal.head.seqOfDeal, deal.head.seqOfShare != 0);
+        _vrAndSHACheck(_ia);
 
         uint centPrice = _gk.getCentPrice();
         uint valueOfDeal = (deal.body.paid * deal.head.priceOfPaid + 

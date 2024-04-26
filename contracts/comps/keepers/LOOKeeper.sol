@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
+ * v.0.2.5
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -157,11 +158,17 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
         uint seqOfLR,
         bool sortFromHead
     ) external onlyDK {
-        
+
+        OrdersRepo.Investor memory investor = _gk.getLOO().getInvestor(caller);
+
+        require (investor.state == uint8(OrdersRepo.StateOfInvestor.Approved),
+            "LOOK.placeSellOrder: wrong stateOfInvestor");
+
         IRegisterOfShares _ros = _gk.getROS();
+        IShareholdersAgreement _sha = _gk.getSHA();
 
         RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+            _sha.getRule(seqOfLR).listingRuleParser();
 
         require(seqOfClass == lr.classOfShare,
             "LOOK.placePut: wrong class");
@@ -179,6 +186,10 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
             SharesRepo.Share memory share = 
                 _ros.getShare(sharesInhand[len - 1]);
             len--;
+
+            if (!_ros.notLocked(share.head.seqOfShare, block.timestamp)) {
+                continue;
+            }
 
             if(lr.lockupDays == 0 ||
                 share.head.issueDate + 
@@ -292,6 +303,12 @@ contract LOOKeeper is ILOOKeeper, AccessControl {
             msgValue -= valueOfDeal;
 
             if (deal.seqOfShare > 0) {
+
+                if (!_ros.notLocked(deal.seqOfShare, block.timestamp)) {
+                    msgValue += valueOfDeal;
+                    continue;
+                }
+
                 SharesRepo.Share memory share = _ros.getShare(deal.seqOfShare);
                 _gk.saveToCoffer(share.head.shareholder, valueOfDeal);
                 _ros.increaseCleanPaid(deal.seqOfShare, deal.paid);

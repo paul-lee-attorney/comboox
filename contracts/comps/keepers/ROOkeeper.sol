@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
+ * v.0.2.5
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -51,10 +52,18 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint seqOfPledge,
         uint256 caller
     ) external onlyDK {
-        
+
+        uint closingDate = _gk.getROO().getOption(seqOfOpt).body.closingDeadline;
+
         IRegisterOfOptions _roo = _gk.getROO(); 
         IRegisterOfShares _ros = _gk.getROS();
-        
+
+        require(_ros.notLocked(seqOfTarget, closingDate),
+            "ROOK.CreateSwap: target share locked");
+
+        require(_ros.notLocked(seqOfPledge, closingDate),
+            "ROOK.CreateSwap: pledged share locked");
+
         SwapsRepo.Swap memory swap = 
             _roo.createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, caller);
 
@@ -76,6 +85,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
 
         SwapsRepo.Swap memory swap =
             _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap, msgValue, centPrice);
+
+        require(_ros.notLocked(swap.seqOfTarget, block.timestamp),
+            "ROOK.payOffSwap: target locked");
 
         uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 4 * 
             centPrice / 100;
@@ -116,6 +128,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
 
         require (caller == seller, "ROOK.terminateSwap: wrong ");
 
+        require(_ros.notLocked(swap.seqOfPledge, block.timestamp),
+            "ROOK.terminateSwap: pledge share locked");
+
         _ros.increaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         
         if(swap.isPutOpt) {
@@ -140,7 +155,10 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         SwapsRepo.Swap memory swap =
             IInvestmentAgreement(ia).createSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
                 seqOfDeal, paidOfTarget, seqOfPledge, caller);
-        
+
+        require(_ros.notLocked(swap.seqOfPledge, block.timestamp),
+            "ROOK.requestToBuy: pledge share locked");
+
         _ros.decreaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         _ros.decreaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);
     }
@@ -160,6 +178,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         SwapsRepo.Swap memory swap = 
             IInvestmentAgreement(ia).payOffSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
                 seqOfDeal, seqOfSwap, msgValue, centPrice);
+
+        require(_ros.notLocked(swap.seqOfTarget, block.timestamp),
+            "ROOK.payOffRejectedDeal: target locked");
 
         uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 4 * 
             centPrice / 100;        
@@ -200,6 +221,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint40 seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
 
         require(caller == seller, "ROAK.pickupPledgedShare: not seller");
+
+        require(_ros.notLocked(swap.seqOfPledge, block.timestamp),
+            "ROOK.pickUpPledged: share locked");
 
         _ros.increaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         _ros.increaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);

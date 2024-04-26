@@ -453,4 +453,30 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function getLocksList() external view returns (bytes32[] memory) {
         return _lockers.getSnList();
     }
+
+    // ==== NotLocked ====
+    function notLocked(
+        uint seqOfShare,
+        uint closingDate
+    ) external view returns(bool) {
+        IShareholdersAgreement _sha = _gk.getSHA();
+
+        if (!_sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.LockUp))){
+            return true;
+        }
+
+        address lu = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.LockUp));
+
+        DealsRepo.Deal memory deal;
+        
+        deal.head.typeOfDeal = 2;
+        deal.head.seqOfShare = uint32(seqOfShare);        
+        deal.head.closingDeadline = uint48(closingDate);
+
+        if (!ILockUp(lu).isTriggered(deal)) {
+            return true;
+        }
+
+        return false;   
+    }
 }
