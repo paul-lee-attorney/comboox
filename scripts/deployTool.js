@@ -12,7 +12,7 @@ const fs = require("fs");
 const tempsDir = path.join(__dirname, "..", "server", "src", "contracts");
 const docsDir = path.join(__dirname, "..", "client", "src", "contracts");
 
-async function deployTool(signer, targetName, libraries) {
+async function deployTool(signer, targetName, libraries, params) {
 
   let options = {signer: signer};
   
@@ -21,7 +21,7 @@ async function deployTool(signer, targetName, libraries) {
   }
 
   const Target = await hre.ethers.getContractFactory(targetName, options);
-  const target = await Target.deploy();
+  const target = await Target.deploy(...params);
   await target.deployed();
 
   console.log("Deployed ", targetName, "at address:", target.address, "\n");
