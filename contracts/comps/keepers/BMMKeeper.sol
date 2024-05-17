@@ -209,42 +209,51 @@ contract BMMKeeper is IBMMKeeper, AccessControl {
 
                 base.attendHeadRatio = 10000;                
             }
-
-            if (motion.head.typeOfMotion == 
-                uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) 
-            {
-                uint256[] memory parties = 
-                    ISigPage((address(uint160(motion.contents)))).getParties();
-                uint256 len = parties.length;
-
-                while (len > 0) {
-                    uint32 voteHead = 
-                        uint32(_rod.getBoardSeatsOccupied(uint40(parties[len - 1])));
-
-                    if (voteHead > 0) {
-                        if (motion.votingRule.partyAsConsent) {
-                            if (!motion.votingRule.impliedConsent) {
-                                base.supportHead += voteHead;
-
-                                base.attendHeadRatio += uint16(voteHead * 10000 / numOfDirectors);
-                            }
-                        } else {
-                            base.totalHead -= voteHead;
-                            if (motion.votingRule.impliedConsent) {
-                                base.supportHead -= voteHead;
-                            } else {
-                                base.attendHeadRatio += uint16(voteHead * 10000 / numOfDirectors);
-                            }
-
-                            if (base.totalHead == 0)
-                                base.unaniConsent = true;
-                        }
-                    }
-
-                    len--;
-                }                
-            }
         }
+
+        if (motion.head.typeOfMotion == 
+            uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) 
+        {
+            uint256[] memory parties = 
+                ISigPage((address(uint160(motion.contents)))).getParties();
+            uint256 len = parties.length;
+
+            while (len > 0) {
+                uint32 voteHead = 
+                    uint32(_rod.getBoardSeatsOccupied(uint40(parties[len - 1])));
+
+                if (voteHead > 0) {
+                    if (motion.votingRule.partyAsConsent) {
+
+                        if (motion.votingRule.onlyAttendance) {
+                            base.totalHead += voteHead;
+                        }
+
+                        if (!motion.votingRule.impliedConsent) {
+                            base.supportHead += voteHead;
+
+                            base.attendHeadRatio += uint16(voteHead * 10000 / numOfDirectors);
+                        }
+                    } else {
+                        if (!motion.votingRule.onlyAttendance) {
+                            base.totalHead -= voteHead;
+                        }
+                        
+                        if (motion.votingRule.impliedConsent) {
+                            base.supportHead -= voteHead;
+                        } else {
+                            base.attendHeadRatio += uint16(voteHead * 10000 / numOfDirectors);
+                        }
+
+                        if (base.totalHead == 0)
+                            base.unaniConsent = true;
+                    }
+                }
+
+                len--;
+            }                
+        }
+        
 
         IShareholdersAgreement _sha = _gk.getSHA();
 

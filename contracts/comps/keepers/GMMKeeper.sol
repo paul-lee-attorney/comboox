@@ -270,50 +270,61 @@ contract GMMKeeper is IGMMKeeper, AccessControl {
             base.totalWeight = base.totalWeight > case3.sumOfWeight
                     ? base.totalWeight - case3.sumOfWeight
                     : 0 ;
-            if (motion.head.typeOfMotion == 
-                    uint8(MotionsRepo.TypeOfMotion.ApproveDoc))
-            {
-                uint256[] memory parties = 
-                    ISigPage(address(uint160(motion.contents))).getParties();
-                uint256 len = parties.length;
+        }
 
-                while (len > 0) {
-                    uint64 votesAtDate = 
-                        _rom.votesAtDate(parties[len - 1], motion.body.shareRegDate);
+        if (motion.head.typeOfMotion == 
+            uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) {
 
-                    if (votesAtDate > 0) {
-                        if (motion.votingRule.partyAsConsent) {
-                            if (!motion.votingRule.impliedConsent) {
-                                base.supportHead ++;
-                                base.supportWeight += votesAtDate;
+            uint256[] memory parties = 
+                ISigPage(address(uint160(motion.contents))).getParties();
+            uint256 len = parties.length;
 
-                                base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
-                            }
-                        } else {
+            while (len > 0) {
+                uint64 votesAtDate = 
+                    _rom.votesAtDate(parties[len - 1], motion.body.shareRegDate);
+
+                if (votesAtDate > 0) {
+                    if (motion.votingRule.partyAsConsent) {
+
+                        if (motion.votingRule.onlyAttendance) {
+                            base.totalHead++;
+                            base.totalWeight += votesAtDate;
+                        }
+
+                        if (!motion.votingRule.impliedConsent) {
+                            base.supportHead ++;
+                            base.supportWeight += votesAtDate;
+
+                            base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
+                        }
+                        
+                    } else {
+
+                        if (!motion.votingRule.onlyAttendance) {
                             base.totalHead --;
 
                             base.totalWeight = base.totalWeight > votesAtDate
                                     ? base.totalWeight - votesAtDate
                                     : 0;
-
-                            if (motion.votingRule.impliedConsent) {
-                                base.supportHead --;
-
-                                base.supportWeight = base.supportWeight > votesAtDate
-                                        ? base.supportWeight - votesAtDate
-                                        : 0;
-                            } else {
-                                base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
-                            }
-
-                            if (base.totalHead == 0)
-                                base.unaniConsent = true;
                         }
-                    }
 
-                    len--;
-                }                
-            }
+                        if (motion.votingRule.impliedConsent) {
+                            base.supportHead --;
+
+                            base.supportWeight = base.supportWeight > votesAtDate
+                                    ? base.supportWeight - votesAtDate
+                                    : 0;
+                        } else {
+                            base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
+                        }
+
+                        if (base.totalHead == 0)
+                            base.unaniConsent = true;
+                    }
+                }
+
+                len--;
+            }                
         }
 
         bool quorumFlag = (address(_gk.getSHA()) == address(0)|| 
