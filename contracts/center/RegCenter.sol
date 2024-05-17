@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
+ * v.0.2.5
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -33,8 +34,11 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
     DocsRepo.Repo private _docs;
     mapping(address => uint256) private _coffers;
     
-    constructor() {
-        _users.regUser(msg.sender);
+    constructor(address keeper) {
+        _users.users[0].primeKey.pubKey = msg.sender;
+        _users.users[0].backupKey.pubKey = keeper;
+        // _users.regUser(msg.sender);
+        // _users.regUser(keeper);
     }
 
     // ########################

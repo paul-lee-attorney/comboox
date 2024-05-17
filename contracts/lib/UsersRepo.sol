@@ -61,6 +61,9 @@ library UsersRepo {
     // });
 
     // counterOfUers: users[0].primeKey.coupon;
+    
+    // owner: users[0].primeKey.pubKey;
+    // bookeeper: users[0].backupKey.pubKey;
 
     // ####################
     // ##    Modifier    ##
@@ -103,7 +106,7 @@ library UsersRepo {
     }
 
     function setPlatformRule(Repo storage repo, bytes32 snOfRule, address msgSender) 
-        public onlyOwner(repo, msgSender) onlyPrimeKey(repo, msgSender) 
+        public onlyOwner(repo, msgSender) 
     {
 
         Rule memory rule = ruleParser(snOfRule);
@@ -135,13 +138,13 @@ library UsersRepo {
     function transferOwnership(Repo storage repo, address newOwner, address msgSender) 
         public onlyOwner(repo, msgSender)
     {
-        repo.users[1].primeKey.pubKey = newOwner;
+        repo.users[0].primeKey.pubKey = newOwner;
     }
 
     function handoverCenterKey(Repo storage repo, address newKeeper, address msgSender) 
         public onlyKeeper(repo, msgSender) 
     {
-        repo.users[1].backupKey.pubKey = newKeeper;
+        repo.users[0].backupKey.pubKey = newKeeper;
     }
 
     // ==== Author Setting ====
@@ -362,11 +365,11 @@ library UsersRepo {
     }
 
     function getOwner(Repo storage repo) public view returns (address) {
-        return repo.users[1].primeKey.pubKey;
+        return repo.users[0].primeKey.pubKey;
     }
 
     function getBookeeper(Repo storage repo) public view returns (address) {
-        return repo.users[1].backupKey.pubKey;
+        return repo.users[0].backupKey.pubKey;
     }
 
     // ==== register ====
