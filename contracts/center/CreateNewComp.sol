@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../center/access/Ownable.sol";
+import "./access/Ownable.sol";
 
 import "./ICreateNewComp.sol";
 

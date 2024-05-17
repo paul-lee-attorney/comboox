@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.8;
 
-import "./common/access/IAccessControl.sol";
-import "./IGeneralKeeper.sol";
+import "../comps/common/access/IAccessControl.sol";
+import "../comps/IGeneralKeeper.sol";
 
 interface ICreateNewComp {
     function createComp(address dk) external;
