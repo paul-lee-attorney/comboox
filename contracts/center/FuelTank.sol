@@ -21,7 +21,7 @@ pragma solidity ^0.8.8;
 
 import "./access/Ownable.sol";
 
-contract FuleTank is Ownable {
+contract FuelTank is Ownable {
 
   uint public rate;
   uint public sum;
@@ -39,7 +39,7 @@ contract FuleTank is Ownable {
     rate = _rate;
   }
 
-  function refule() external payable {
+  function refuel() external payable {
 
     uint amt = msg.value * rate / 10000;
 
@@ -62,13 +62,13 @@ contract FuleTank is Ownable {
     } else revert('insufficient amount');
   }
 
-  function withdrawFule(uint amt) external onlyOwner {
+  function withdrawFuel(uint amt) external onlyOwner {
 
     if (_rc.balanceOf(address(this)) >= amt) {
 
         _rc.transfer(msg.sender, amt);
 
-    } else revert('insufficient fule');
+    } else revert('insufficient fuel');
   }
 
 }

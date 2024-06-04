@@ -11,7 +11,7 @@ test
 
 scripts
 
-server
+server/src/contracts/
 
 hardhat.config.js
 

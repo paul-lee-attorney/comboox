@@ -37,8 +37,8 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
     constructor(address keeper) {
         _users.users[0].primeKey.pubKey = msg.sender;
         _users.users[0].backupKey.pubKey = keeper;
-        // _users.regUser(msg.sender);
-        // _users.regUser(keeper);
+        _users.regUser(msg.sender);
+        _users.regUser(keeper);
     }
 
     // ########################

@@ -264,7 +264,7 @@ async function main() {
 	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries, params);
 
 	params = [rc.address, 10000];
-	let ft = 	await deployTool(signers[0], "FuleTank", libraries, params);
+	let ft = 	await deployTool(signers[0], "FuelTank", libraries, params);
 
 	// ==== SetTemplate ====
 
