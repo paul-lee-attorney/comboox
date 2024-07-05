@@ -714,7 +714,7 @@ contract GeneralKeeper_2 is IGeneralKeeper_2, RoyaltyCharge {
         }        
     }
 
-    receive() external payable isNormal{
+    receive() external payable {
         emit ReceivedCash(msg.sender, msg.value);
     }
 

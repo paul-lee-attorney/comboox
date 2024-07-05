@@ -103,7 +103,7 @@ async function main() {
 
 	params = [signers[1].address];
 
-	let rc = await deployTool(signers[0], "RegCenter", libraries, params);
+	let rc = await deployTool(signers[0], "RegCenter_2", libraries, params);
 	console.log("deployed RC with owner: ", await rc.getOwner(), "\n");
 	console.log("Bookeeper of RC: ", await rc.getBookeeper(), "\n");
 
@@ -278,6 +278,10 @@ async function main() {
 	let lop = await deployTool(signers[0], "ListOfProjects", libraries, params);
 
 	libraries = {};
+	params = [rc.address];
+	let pc = await deployTool(signers[0], "PriceConsumer_3", libraries, params);
+
+	params = [];
 	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries, params);
 
 	params = [rc.address, 10000];
@@ -416,6 +420,9 @@ async function main() {
 
 	await rc.connect(signers[1]).setTemplate( 27, lop.address, 1);
 	console.log("set template for LOP at address: ", lop.address, "\n");
+
+	await rc.connect(signers[1]).setOracle(pc.address);
+	console.log("set Oracle at address: ", pc.address, "\n");
 
 	await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
 	console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");

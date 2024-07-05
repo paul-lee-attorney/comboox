@@ -132,6 +132,8 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
     function _lockPointsInCoffer(address caller, uint value) private {
         _transfer(caller, address(this), value);
         _coffers[caller] += value;
+        _coffers[address(0)] += value;
+        emit LockPointsInCoffer(caller, value);
     }
 
     function lockConsideration(
@@ -178,7 +180,9 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
         require(_coffers[from] >= amt, 
             "RC.pickupPointsFromCoffer: insufficient balance");
         _coffers[from] -= amt;
+        _coffers[address(0)] -= amt;
         _transfer(address(this), to, amt);
+        emit PickupPointsFromCoffer(from, to, amt);
     }
 
     function withdrawPoints(bytes32 hashLock) external
@@ -199,7 +203,9 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
         require(_coffers[from] >= amt, 
             "RC.withdrawPoints: insufficient balance");
         _coffers[from] -= amt;
+        _coffers[address(0)] -= amt;
         _transfer(address(this), from, amt);
+        emit WithdrawPointsFromLocker(from, amt);
     }
 
     function getDepositAmt(address from) external view returns(uint) {
@@ -309,17 +315,13 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
 
         uint40 target = _users.getUserNo(targetAddr);
 
-        if (msg.sender != targetAddr && author > 0) {
+        require(_docs.docExist(msg.sender), 
+            "RC.getUserNo: msgSender not registered ");
+        
+        UsersRepo.Key memory rr = _users.getRoyaltyRule(author);
+        address authorAddr = _users.users[author].primeKey.pubKey; 
 
-            require(_docs.docExist(msg.sender), 
-                "RC.getUserNo: msgSender not registered ");
-            
-            UsersRepo.Key memory rr = _users.getRoyaltyRule(author);
-            address authorAddr = _users.users[author].primeKey.pubKey; 
-
-            _chargeFee(targetAddr, fee, authorAddr, rr);
-
-        }
+        _chargeFee(targetAddr, fee, authorAddr, rr);
 
         return target;
     }
