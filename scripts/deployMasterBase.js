@@ -164,31 +164,31 @@ async function main() {
 	libraries = {
 		"RolesRepo": libRolesRepo.address
 	}
-	let gk = await deployTool(signers[0], "GeneralKeeper", libraries, params);
-	let gk_2 = await deployTool(signers[0], "GeneralKeeper_2", libraries, params);
+	// let gk = await deployTool(signers[0], "GeneralKeeper", libraries, params);
+	// let gk_2 = await deployTool(signers[0], "GeneralKeeper_2", libraries, params);
 	let gk_3 = await deployTool(signers[0], "GeneralKeeper_3", libraries, params);
-	let rooKeeper = await deployTool(signers[0], "ROOKeeper", libraries, params);
+	// let rooKeeper = await deployTool(signers[0], "ROOKeeper", libraries, params);
 	let rooKeeper_2 = await deployTool(signers[0], "ROOKeeper_2", libraries, params);
-	let romKeeper = await deployTool(signers[0], "ROMKeeper", libraries, params);
-	let romKeeper_2 = await deployTool(signers[0], "ROMKeeper_2", libraries, params);
+	// let romKeeper = await deployTool(signers[0], "ROMKeeper", libraries, params);
+	// let romKeeper_2 = await deployTool(signers[0], "ROMKeeper_2", libraries, params);
 	let romKeeper_3 = await deployTool(signers[0], "ROMKeeper_3", libraries, params);
-	let rodKeeper = await deployTool(signers[0], "RODKeeper", libraries, params);
+	// let rodKeeper = await deployTool(signers[0], "RODKeeper", libraries, params);
 	let rodKeeper_2 = await deployTool(signers[0], "RODKeeper_2", libraries, params);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
-	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries, params);
+	// let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries, params);
 	let shaKeeper_2 = await deployTool(signers[0], "SHAKeeper_2", libraries, params);
-	let gmmKeeper = await deployTool(signers[0], "GMMKeeper", libraries, params);
-	let gmmKeeper_2 = await deployTool(signers[0], "GMMKeeper_2", libraries, params);
+	// let gmmKeeper = await deployTool(signers[0], "GMMKeeper", libraries, params);
+	// let gmmKeeper_2 = await deployTool(signers[0], "GMMKeeper_2", libraries, params);
 	let gmmKeeper_3 = await deployTool(signers[0], "GMMKeeper_3", libraries, params);
-	let bmmKeeper = await deployTool(signers[0], "BMMKeeper", libraries, params);
-	let bmmKeeper_2 = await deployTool(signers[0], "BMMKeeper_2", libraries, params);
+	// let bmmKeeper = await deployTool(signers[0], "BMMKeeper", libraries, params);
+	// let bmmKeeper_2 = await deployTool(signers[0], "BMMKeeper_2", libraries, params);
 	let bmmKeeper_3 = await deployTool(signers[0], "BMMKeeper_3", libraries, params);
-	let looKeeper = await deployTool(signers[0], "LOOKeeper", libraries, params);
-	let looKeeper_2 = await deployTool(signers[0], "LOOKeeper_2", libraries, params);
+	// let looKeeper = await deployTool(signers[0], "LOOKeeper", libraries, params);
+	// let looKeeper_2 = await deployTool(signers[0], "LOOKeeper_2", libraries, params);
 	let looKeeper_3 = await deployTool(signers[0], "LOOKeeper_3", libraries, params);
 
 	libraries = {
@@ -196,17 +196,17 @@ async function main() {
 		"RolesRepo": libRolesRepo.address,
 		"RulesParser": libRulesParser.address		
 	}
-	let roaKeeper = await deployTool(signers[0], "ROAKeeper", libraries, params);
-	let roaKeeper_2 = await deployTool(signers[0], "ROAKeeper_2", libraries, params);
+	// let roaKeeper = await deployTool(signers[0], "ROAKeeper", libraries, params);
+	// let roaKeeper_2 = await deployTool(signers[0], "ROAKeeper_2", libraries, params);
 	let roaKeeper_3 = await deployTool(signers[0], "ROAKeeper_3", libraries, params);
-	let rocKeeper = await deployTool(signers[0], "ROCKeeper", libraries, params);
+	// let rocKeeper = await deployTool(signers[0], "ROCKeeper", libraries, params);
 	let rocKeeper_2 = await deployTool(signers[0], "ROCKeeper_2", libraries, params);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
 		"PledgesRepo": libPledgesRepo.address,
 	}
-	let ropKeeper = await deployTool(signers[0], "ROPKeeper", libraries, params);
+	// let ropKeeper = await deployTool(signers[0], "ROPKeeper", libraries, params);
 	let ropKeeper_2 = await deployTool(signers[0], "ROPKeeper_2", libraries, params);
 
 	// ==== Books ====
@@ -289,77 +289,77 @@ async function main() {
 
 	// ==== SetTemplate ====
 
-	await rc.connect(signers[1]).setTemplate( 1, rocKeeper.address, 1);
-	console.log("set template for ROCKeeper at address: ", rocKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 1, rocKeeper.address, 1);
+	// console.log("set template for ROCKeeper at address: ", rocKeeper.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 1, rocKeeper_2.address, 1);
 	console.log("set template for ROCKeeper_2 at address: ", rocKeeper_2.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 2, rodKeeper.address, 1);
-	console.log("set template for RODKeeper at address: ", rodKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 2, rodKeeper.address, 1);
+	// console.log("set template for RODKeeper at address: ", rodKeeper.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 2, rodKeeper_2.address, 1);
 	console.log("set template for RODKeeper_2 at address: ", rodKeeper_2.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 3, bmmKeeper.address, 1);
-	console.log("set template for BMMKeeper at address: ", bmmKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 3, bmmKeeper.address, 1);
+	// console.log("set template for BMMKeeper at address: ", bmmKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 3, bmmKeeper_2.address, 1);
-	console.log("set template for BMMKeeper_2 at address: ", bmmKeeper_2.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 3, bmmKeeper_2.address, 1);
+	// console.log("set template for BMMKeeper_2 at address: ", bmmKeeper_2.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 3, bmmKeeper_3.address, 1);
 	console.log("set template for BMMKeeper_3 at address: ", bmmKeeper_3.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 4, romKeeper.address, 1);
-	console.log("set template for ROMKeeper at address: ", romKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 4, romKeeper.address, 1);
+	// console.log("set template for ROMKeeper at address: ", romKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 4, romKeeper_2.address, 1);
-	console.log("set template for ROMKeeper_2 at address: ", romKeeper_2.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 4, romKeeper_2.address, 1);
+	// console.log("set template for ROMKeeper_2 at address: ", romKeeper_2.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 4, romKeeper_3.address, 1);
 	console.log("set template for ROMKeeper_3 at address: ", romKeeper_3.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 5, gmmKeeper.address, 1);
-	console.log("set template for GMMKeeper at address: ", gmmKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 5, gmmKeeper.address, 1);
+	// console.log("set template for GMMKeeper at address: ", gmmKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 5, gmmKeeper_2.address, 1);
-	console.log("set template for GMMKeeper_2 at address: ", gmmKeeper_2.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 5, gmmKeeper_2.address, 1);
+	// console.log("set template for GMMKeeper_2 at address: ", gmmKeeper_2.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 5, gmmKeeper_3.address, 1);
 	console.log("set template for GMMKeeper_3 at address: ", gmmKeeper_3.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 6, roaKeeper.address, 1);
-	console.log("set template for ROAKeeper at address: ", roaKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 6, roaKeeper.address, 1);
+	// console.log("set template for ROAKeeper at address: ", roaKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 6, roaKeeper_2.address, 1);
-	console.log("set template for ROAKeeper_2 at address: ", roaKeeper_2.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 6, roaKeeper_2.address, 1);
+	// console.log("set template for ROAKeeper_2 at address: ", roaKeeper_2.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 6, roaKeeper_3.address, 1);
 	console.log("set template for ROAKeeper_3 at address: ", roaKeeper_3.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 7, rooKeeper.address, 1);
-	console.log("set template for ROOKeeper at address: ", rooKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 7, rooKeeper.address, 1);
+	// console.log("set template for ROOKeeper at address: ", rooKeeper.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 7, rooKeeper_2.address, 1);
 	console.log("set template for ROOKeeper_2 at address: ", rooKeeper_2.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 8, ropKeeper.address, 1);
-	console.log("set template for ROPKeeper at address: ", ropKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 8, ropKeeper.address, 1);
+	// console.log("set template for ROPKeeper at address: ", ropKeeper.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 8, ropKeeper_2.address, 1);
 	console.log("set template for ROPKeeper_2 at address: ", ropKeeper_2.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 9, shaKeeper.address, 1);
-	console.log("set template for SHAKeeper at address: ", shaKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 9, shaKeeper.address, 1);
+	// console.log("set template for SHAKeeper at address: ", shaKeeper.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 9, shaKeeper_2.address, 1);
 	console.log("set template for SHAKeeper_2 at address: ", shaKeeper_2.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 10, looKeeper.address, 1);
-	console.log("set template for LOOKeeper at address: ", looKeeper.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 10, looKeeper.address, 1);
+	// console.log("set template for LOOKeeper at address: ", looKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 10, looKeeper_2.address, 1);
-	console.log("set template for LOOKeeper_2 at address: ", looKeeper_2.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 10, looKeeper_2.address, 1);
+	// console.log("set template for LOOKeeper_2 at address: ", looKeeper_2.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 10, looKeeper_3.address, 1);
 	console.log("set template for LOOKeeper_3 at address: ", looKeeper_3.address, "\n");
@@ -391,11 +391,11 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 19, loo.address, 1);
 	console.log("set template for LOO at address: ", loo.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 20, gk.address, 1);
-	console.log("set template for GK at address: ", gk.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 20, gk.address, 1);
+	// console.log("set template for GK at address: ", gk.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 20, gk_2.address, 1);
-	console.log("set template for GK_2 at address: ", gk_2.address, "\n");
+	// await rc.connect(signers[1]).setTemplate( 20, gk_2.address, 1);
+	// console.log("set template for GK_2 at address: ", gk_2.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 20, gk_3.address, 1);
 	console.log("set template for GK_3 at address: ", gk_3.address, "\n");
