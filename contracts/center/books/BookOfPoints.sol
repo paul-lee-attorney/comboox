@@ -35,8 +35,8 @@ contract BookOfPoints is IBookOfPoints, ERC20("ComBooxPoints", "CBP"), BookOfUse
     // ##  Mint & Lock ##
     // ##################
 
-    function mint(uint256 to, uint amt) external onlyOwner {
-        _mint(_getUserByNo(to).primeKey.pubKey, amt);
+    function mint(address to, uint amt) external onlyOwner {
+        _mint(to, amt);
     }
 
     function burn(uint amt) external {

@@ -49,7 +49,7 @@ interface IBookOfPoints {
     // ##    Write     ##
     // ##################
 
-    function mint(uint256 to, uint amt) external;
+    function mint(address to, uint amt) external;
 
     function burn(uint amt) external;
 

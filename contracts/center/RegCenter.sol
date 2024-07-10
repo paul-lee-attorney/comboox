@@ -72,14 +72,14 @@ contract RegCenter is IRegCenter, ERC20("ComBooxPoints", "CBP"), PriceConsumer2 
     // ##  Mint & Lock ##
     // ##################
 
-    function mint(uint256 to, uint amt) external {
+    function mint(address to, uint amt) external {
 
         require(msg.sender == _users.getOwner(), 
             "RC.mintPoints: not owner");
 
-        require(to > 0, "RC.mintPoints: zero to");
+        // require(to > 0, "RC.mintPoints: zero to");
         
-        _mint(_users.users[to].primeKey.pubKey, amt);
+        _mint(to, amt);
     }
 
     function burn(uint amt) external {
