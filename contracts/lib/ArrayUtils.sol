@@ -151,4 +151,24 @@ library ArrayUtils {
 
         return true;
     }
+
+    function noOverlapWith(uint[] memory arrA, uint[] memory arrB) public pure returns(bool) {
+        uint lenA = arrA.length;
+        uint lenB = arrB.length;
+
+        while (lenA > 0) {
+            uint i = 0;
+            while (i < lenB) {
+                if (arrA[lenA-1] == arrB[i]) {
+                    return false;
+                }
+                i++;
+            }
+            lenA--;
+        }
+
+        return true;
+    }
+
+
 }

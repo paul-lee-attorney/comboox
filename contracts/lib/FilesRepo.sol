@@ -183,10 +183,10 @@ library FilesRepo {
         require(repo.files[body].head.state == uint8(StateOfFile.Proposed),
             "FR.VCFF: Doc not proposed");
 
-        uint48 timestamp = uint48(block.timestamp);
+        // uint48 timestamp = uint48(block.timestamp);
 
-        require(timestamp >= votingDeadline(repo, body), 
-            "FR.voteCounting: still in votingPeriod");
+        // require(timestamp >= votingDeadline(repo, body), 
+        //     "FR.voteCounting: still in votingPeriod");
 
         File storage file = repo.files[body];
 
