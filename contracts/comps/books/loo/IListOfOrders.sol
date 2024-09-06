@@ -21,6 +21,8 @@ pragma solidity ^0.8.8;
 
 import "../../../lib/OrdersRepo.sol";
 import "../../../lib/GoldChain.sol";
+import "../../../lib/InvestorsRepo.sol";
+import "../../../lib/EnumerableSet.sol";
 
 interface IListOfOrders {
 
@@ -34,17 +36,13 @@ interface IListOfOrders {
 
     event RevokeInvestor(uint indexed investor, uint indexed verifier);
 
-    event PlaceSellOrder(bytes32 indexed sn);
+    event OrderPlaced(bytes32 indexed order, bool indexed isOffer);
 
-    event WithdrawSellOrder(bytes32 indexed sn);
+    event OrderWithdrawn(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
-    event PlaceBuyOrder(uint caller, uint indexed classOfShare, uint indexed paid, uint indexed price);
+    event DealClosed(bytes32 indexed deal, uint indexed consideration);
 
-    event Deal(bytes32 indexed deal);
-
-    event OfferExpired(bytes32 indexed offer);
-
-    event GetBalance(bytes32 indexed balance);
+    event OrderExpired(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
     //#################
     //##  Write I/O  ##
@@ -67,6 +65,7 @@ interface IListOfOrders {
     ) external;
 
     function placeSellOrder(
+        uint caller,
         uint classOfShare,
         uint seqOfShare,
         uint votingWeight,
@@ -74,23 +73,33 @@ interface IListOfOrders {
         uint paid,
         uint price,
         uint execHours,
-        bool sortFromHead
-    ) external;
-
-    function withdrawSellOrder(
-        uint classOfShare,
-        uint seqOfOrder
-    ) external returns(GoldChain.Node memory order);
+        uint centPriceInWei
+    ) external returns(
+        OrdersRepo.Deal[] memory deals, 
+        GoldChain.Order[] memory expired,
+        OrdersRepo.Deal memory offer
+    );
 
     function placeBuyOrder(
-        uint offeror,
         uint classOfShare,
+        uint caller,
+        uint groupRep,
         uint paid,
-        uint price
+        uint price,
+        uint execHours,
+        uint centPriceInWei,
+        uint msgValue
     ) external returns (
-        OrdersRepo.Deal[] memory deals,
-        GoldChain.Node[] memory expired
+        OrdersRepo.Deal[] memory deals, 
+        GoldChain.Order[] memory expired,
+        OrdersRepo.Deal memory bid
     );
+
+    function withdrawOrder(
+        uint classOfShare,
+        uint seqOfOrder,
+        bool isOffer
+    ) external returns(GoldChain.Order memory order);
 
     //################
     //##  Read I/O ##
@@ -104,7 +113,7 @@ interface IListOfOrders {
 
     function getInvestor(
         uint userNo
-    ) external view returns(OrdersRepo.Investor memory);
+    ) external view returns(InvestorsRepo.Investor memory);
 
     function getQtyOfInvestors() 
         external view returns(uint);
@@ -113,51 +122,46 @@ interface IListOfOrders {
         external view returns(uint[] memory);
 
     function investorInfoList() 
-        external view returns(OrdersRepo.Investor[] memory);
+        external view returns(InvestorsRepo.Investor[] memory);
 
     // ==== Deals ====
 
-    function counterOfOffers(
-        uint classOfShare  
-    ) external view returns(uint32);
+    function counterOfOrders(
+        uint classOfShare, bool isOffer
+    ) external view returns (uint32);
 
     function headOfList(
-        uint classOfShare
+        uint classOfShare, bool isOffer
     ) external view returns (uint32);
 
     function tailOfList(
-        uint classOfShare
+        uint classOfShare, bool isOffer
     ) external view returns (uint32);
 
     function lengthOfList(
-        uint classOfShare
+        uint classOfShare, bool isOffer
     ) external view returns (uint);
 
     function getSeqList(
-        uint classOfShare
+        uint classOfShare, bool isOffer
     ) external view returns (uint[] memory);
-
-    function getChain(
-        uint classOfShare
-    ) external view returns (GoldChain.NodeWrap[] memory);
 
     // ==== Order ====
 
     function isOrder(
-        uint classOfShare,
-        uint seqOfOrder
+        uint classOfShare, uint seqOfOrder, bool isOffer
     ) external view returns (bool);
     
     function getOrder(
-        uint classOfShare,
-        uint seqOfOrder
-    ) external view returns (GoldChain.Node memory );
+        uint classOfShare, uint seqOfOrder, bool isOffer
+    ) external view returns (GoldChain.Order memory);
+
+    function getOrders(
+        uint classOfShare, bool isOffer
+    ) external view returns (GoldChain.Order[] memory);
 
     // ==== Class ====
-
     function isClass(uint classOfShare) external view returns(bool);
 
     function getClassesList() external view returns(uint[] memory);
-
-
 }

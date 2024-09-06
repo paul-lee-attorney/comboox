@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../common/access/AccessControl.sol";
+import "../../../common/access/DraftControl.sol";
 
 import "./IOptions.sol";
 
-contract Options is IOptions, AccessControl {
+contract Options is IOptions, DraftControl {
     using OptionsRepo for OptionsRepo.Repo;
     using OptionsRepo for OptionsRepo.Option;
     using OptionsRepo for OptionsRepo.Head;

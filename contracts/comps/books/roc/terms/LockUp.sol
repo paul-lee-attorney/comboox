@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../common/access/AccessControl.sol";
+import "../../../common/access/DraftControl.sol";
 
 import "./ILockUp.sol";
 
-contract LockUp is ILockUp, AccessControl {
+contract LockUp is ILockUp, DraftControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
 

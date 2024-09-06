@@ -20,7 +20,9 @@
 pragma solidity ^0.8.8;
 
 interface IROMKeeper {
-    
+
+    event PayInCapital(uint indexed seqOfShare, uint indexed amt, uint indexed valueOfDeal);
+
     // #################
     // ##   Write IO  ##
     // #################
@@ -39,7 +41,7 @@ interface IROMKeeper {
         uint seqOfShare, 
         uint amt, 
         uint msgValue, 
-        uint caller
+        address msgSender
     ) external;
 
     function decreaseCapital(

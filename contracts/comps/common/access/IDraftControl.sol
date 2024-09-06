@@ -21,33 +21,42 @@
 
 pragma solidity ^0.8.8;
 
-import "../../IGeneralKeeper.sol";
+import "../../../lib/RolesRepo.sol";
 
-interface IAccessControl {
+interface IDraftControl {
 
     // ##################
     // ##   Event      ##
     // ##################
 
-    event SetDirectKeeper(address indexed keeper);
+    event SetRoleAdmin(bytes32 indexed role, address indexed acct);    
 
-    event SetNewGK(address indexed gk);
+    event LockContents();
 
     // ##################
     // ##    Write     ##
     // ##################
 
-    function initKeepers(address dk,address gk) external;
+    function setRoleAdmin(bytes32 role, address acct) external;
 
-    function setNewGK(address gk) external;
+    function grantRole(bytes32 role, address acct) external;
 
-    function setDirectKeeper(address keeper) external;
+    function revokeRole(bytes32 role, address acct) external;
 
-    function takeBackKeys(address target) external;
+    function renounceRole(bytes32 role) external;
+
+    function abandonRole(bytes32 role) external;
+
+    function lockContents() external;
 
     // ##################
     // ##   Read I/O   ##
     // ##################
 
-    function getDK() external view returns (address);
+    function isFinalized() external view returns (bool);
+
+    function getRoleAdmin(bytes32 role) external view returns (address);
+
+    function hasRole(bytes32 role, address acct) external view returns (bool);
+
 }

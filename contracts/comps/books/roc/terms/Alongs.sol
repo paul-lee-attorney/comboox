@@ -19,10 +19,10 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../common/access/AccessControl.sol";
+import "../../../common/access/DraftControl.sol";
 import "./IAlongs.sol";
 
-contract Alongs is IAlongs, AccessControl {
+contract Alongs is IAlongs, DraftControl {
     using LinksRepo for LinksRepo.Repo;
 
     LinksRepo.Repo private _repo;

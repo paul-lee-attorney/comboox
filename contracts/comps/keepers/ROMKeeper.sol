@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/AccessControl.sol";
+import "../common/access/RoyaltyCharge.sol";
 
 import "./IROMKeeper.sol";
 
-contract ROMKeeper is IROMKeeper, AccessControl {
+contract ROMKeeper is IROMKeeper, RoyaltyCharge {
 
     // ###################
     // ##   ROMKeeper   ##
@@ -51,9 +51,11 @@ contract ROMKeeper is IROMKeeper, AccessControl {
         uint seqOfShare, 
         uint amt,
         uint msgValue,
-        uint caller
+        address msgSender
     ) external onlyDK {
         
+        uint caller = _msgSender(msgSender, 36000);
+
         IRegisterOfShares _ros = _gk.getROS();
 
         SharesRepo.Share memory share =
@@ -68,11 +70,12 @@ contract ROMKeeper is IROMKeeper, AccessControl {
             "ROMK.payInCap: insufficient amt");
         
         msgValue -= valueOfDeal;
-        if (msgValue > 0)
+        if (msgValue > 0) {
             _gk.saveToCoffer(caller, msgValue); 
+        }
 
         _ros.payInCapital(seqOfShare, amt);
-
+        emit PayInCapital(seqOfShare, amt, valueOfDeal);
     }
 
     function decreaseCapital(

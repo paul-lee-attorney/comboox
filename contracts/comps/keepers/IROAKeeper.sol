@@ -19,32 +19,42 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/roa/IInvestmentAgreement.sol";
-
+import "../common/access/IDraftControl.sol";
 import "../common/components/IFilesFolder.sol";
 import "../common/components/ISigPage.sol";
+
+import "../books/roa/IInvestmentAgreement.sol";
+import "../books/roa/IRegisterOfAgreements.sol";
+import "../books/roc/IShareholdersAgreement.sol";
+import "../books/roc/terms/ILockUp.sol";
+
+
 
 import "../../lib/DocsRepo.sol";
 import "../../lib/RulesParser.sol";
 import "../../lib/SharesRepo.sol";
+import "../../lib/InvestorsRepo.sol";
 
 interface IROAKeeper {
+
+    event PayOffApprovedDeal(address indexed ia, uint seqOfDeal, uint indexed valueOfDeal, uint indexed caller);
+
     // #################
     // ##   Write IO  ##
     // #################
 
-    function createIA(uint256 version, address primeKeyOfCaller, uint caller) external;
+    function createIA(uint256 version, address msgSender) external;
 
     function circulateIA(
         address ia,
         bytes32 docUrl,
         bytes32 docHash,
-        uint256 caller
+        address msgSender
     ) external;
 
     function signIA(
         address ia,
-        uint256 caller,
+        address msgSender,
         bytes32 sigHash
     ) external;
 
@@ -55,7 +65,7 @@ interface IROAKeeper {
         uint256 seqOfDeal,
         bytes32 hashLock,
         uint closingDeadline,
-        uint256 caller
+        address msgSender
     ) external;
 
     function closeDeal(
@@ -67,22 +77,22 @@ interface IROAKeeper {
     function transferTargetShare(
         address ia,
         uint256 seqOfDeal,
-        uint256 caller
+        address msgSender
     ) external;
 
-    function issueNewShare(address ia, uint256 seqOfDeal, uint caller) external;
+    function issueNewShare(address ia, uint256 seqOfDeal, address msgSender) external;
 
     function terminateDeal(
         address ia,
         uint256 seqOfDeal,
-        uint256 caller
+        address msgSender
     ) external;
 
     function payOffApprovedDeal(
         address ia,
         uint seqOfDeal,
         uint msgValue,
-        uint caller
+        address msgSender
     ) external;    
 
 }

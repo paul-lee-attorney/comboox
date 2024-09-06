@@ -20,6 +20,7 @@
 pragma solidity ^0.8.8;
 
 import "./access/Ownable.sol";
+import "../lib/Address.sol";
 
 contract FuelTank is Ownable {
 
@@ -54,12 +55,7 @@ contract FuelTank is Ownable {
   }
 
   function withdrawIncome(uint amt) external onlyOwner {
-
-    if (address(this).balance >= amt) {
-
-      payable(msg.sender).transfer(amt);
-
-    } else revert('insufficient amount');
+    Address.sendValue(payable(msg.sender), amt);
   }
 
   function withdrawFuel(uint amt) external onlyOwner {

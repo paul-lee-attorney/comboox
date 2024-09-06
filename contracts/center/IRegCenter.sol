@@ -28,11 +28,10 @@ import "../lib/DocsRepo.sol";
 import "./books/IBookOfDocs.sol";
 import "./books/IBookOfPoints.sol";
 import "./books/IBookOfUsers.sol";
-import "./Oracles/IPriceConsumer2.sol";
 
 import "./ERC20/IERC20.sol";
 
-interface IRegCenter is IBookOfDocs, IBookOfPoints, IERC20, IPriceConsumer2, IBookOfUsers{
+interface IRegCenter is IBookOfDocs, IBookOfPoints, IERC20, IBookOfUsers{
 
     enum TypeOfDoc{
         ZeroPoint,
@@ -70,5 +69,7 @@ interface IRegCenter is IBookOfDocs, IBookOfPoints, IERC20, IPriceConsumer2, IBo
     function regUser() external;
 
     function getUserNo(address targetAddr, uint fee, uint author) external returns (uint40);
+    
+    function getCentPriceInWei(uint seq) external view returns(uint);
 
 }

@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../common/access/AccessControl.sol";
+import "../../../common/access/DraftControl.sol";
 
 import "./IAntiDilution.sol";
 
-contract AntiDilution is IAntiDilution, AccessControl {
+contract AntiDilution is IAntiDilution, DraftControl {
     using EnumerableSet for EnumerableSet.UintSet;
 
     Ruler private _ruler;

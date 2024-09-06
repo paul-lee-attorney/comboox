@@ -28,13 +28,13 @@ interface IRODKeeper {
     function takeSeat(
         uint256 seqOfMotion,
         uint256 seqOfPos,
-        uint caller 
+        address msgSender 
     ) external;
 
     function removeDirector (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint caller
+        address msgSender
     ) external;
 
     // ==== Officers ====
@@ -42,17 +42,17 @@ interface IRODKeeper {
     function takePosition(
         uint256 seqOfMotion,
         uint256 seqOfPos,
-        uint caller 
+        address msgSender 
     ) external;
 
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint caller
+        address msgSender
     ) external;
 
     // ==== Quit ====
 
-    function quitPosition(uint256 seqOfPos, uint caller) external;
+    function quitPosition(uint256 seqOfPos, address msgSender) external;
 
 }

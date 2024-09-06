@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/AccessControl.sol";
+import "../common/access/RoyaltyCharge.sol";
 
 import "./ISHAKeeper.sol";
 
-contract SHAKeeper is ISHAKeeper, AccessControl {
+contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
 
     // ======== TagAlong & DragAlong ========
@@ -35,16 +35,17 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfShare,
         uint paid,
         uint par,
-        uint256 caller,
+        address msgSender,
         bytes32 sigHash
     ) external onlyDK {
+
+        uint caller = _msgSender(msgSender, 88000);
         
         IRegisterOfAgreements _roa = _gk.getROA();
         IRegisterOfShares _ros = _gk.getROS();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
-        uint subjectVW = _ros.getShare(deal.head.seqOfShare).head.votingWeight;
 
         require(deal.body.state == uint8(DealsRepo.StateOfDeal.Locked), 
             "SHAK.execAlongs: state not Locked");
@@ -57,7 +58,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
 
         _roa.createMockOfIA(ia);
 
-        _checkAlongDeal(dragAlong, ia, deal, share, caller, paid, par, subjectVW);
+        _checkAlongDeal(dragAlong, ia, deal, share, caller, paid, par, _ros.getShare(deal.head.seqOfShare).head.votingWeight);
 
         _roa.execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
     }
@@ -67,7 +68,7 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         address ia,
         DealsRepo.Deal memory deal,
         SharesRepo.Share memory share,
-        uint256 caller,
+        uint caller,
         uint paid,
         uint par,
         uint subjectVW
@@ -112,9 +113,10 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
     function acceptAlongDeal(
         address ia,
         uint256 seqOfDeal,
-        uint256 caller,
+        address msgSender,
         bytes32 sigHash
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 36000);
         
         IRegisterOfAgreements _roa = _gk.getROA();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
@@ -185,9 +187,10 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         address ia,
         uint256 seqOfDeal,
         uint256 seqOfShare,
-        uint256 caller,
+        address msgSender,
         bytes32 sigHash
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 88000);
         
         IRegisterOfShares _ros = _gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
@@ -306,8 +309,9 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
     function takeGiftShares(
         address ia,
         uint256 seqOfDeal,
-        uint caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 58000);
         
         IRegisterOfShares _ros = _gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
@@ -343,9 +347,10 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
         uint256 seqOfRightholder,
         address ia,
         uint256 seqOfDeal,
-        uint256 caller,
+        address msgSender,
         bytes32 sigHash
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 88000);
         
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -377,8 +382,9 @@ contract SHAKeeper is ISHAKeeper, AccessControl {
     function computeFirstRefusal(
         address ia,
         uint256 seqOfDeal,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 18000);
         
         IRegisterOfMembers _rom = _gk.getROM();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);

@@ -23,6 +23,7 @@ import "../../lib/PledgesRepo.sol";
 import "../../lib/DealsRepo.sol";
 import "../../lib/DocsRepo.sol";
 import "../../lib/RulesParser.sol";
+import "../../lib/InvestorsRepo.sol";
 
 interface IROPKeeper {
 
@@ -36,7 +37,7 @@ interface IROPKeeper {
         uint par,
         uint guaranteedAmt,
         uint execDays,
-        uint256 caller
+        address msgSender
     ) external;
 
     function transferPledge(
@@ -44,28 +45,28 @@ interface IROPKeeper {
         uint256 seqOfPld,
         uint buyer,
         uint amt,
-        uint256 caller        
+        address msgSender        
     ) external;
 
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint amt,
-        uint256 caller
+        address msgSender
     ) external;
 
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint extDays,
-        uint256 caller
+        address msgSender
     ) external;
 
     function lockPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
         bytes32 hashLock,
-        uint256 caller
+        address msgSender
     ) external;
 
     function releasePledge(
@@ -79,13 +80,13 @@ interface IROPKeeper {
         uint256 seqOfPld,
         uint buyer,
         uint groupOfBuyer,
-        uint256 caller
+        address msgSender
     ) external;
 
     function revokePledge(
         uint256 seqOfShare, 
         uint256 seqOfPld,
-        uint256 caller
+        address msgSender
     ) external;
 
 }

@@ -22,26 +22,19 @@ pragma solidity ^0.8.8;
 
 import "./IROAKeeper.sol";
 
-import "../common/access/AccessControl.sol";
+import "../common/access/RoyaltyCharge.sol";
 
-contract ROAKeeper is IROAKeeper, AccessControl {
+contract ROAKeeper is IROAKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
-
-    // ##################
-    // ##   Modifier   ##
-    // ##################
-
-    modifier onlyPartyOf(address ia, uint256 caller) {
-        require(ISigPage(ia).isParty(caller), "BOIK.md.OPO: NOT Party");
-        _;
-    }
 
     // #############################
     // ##   InvestmentAgreement   ##
     // #############################
 
-    function createIA(uint version, address primeKeyOfCaller, uint caller) external onlyDK {
+    function createIA(uint version, address msgSender) external onlyDK {
  
+        uint caller = _msgSender(msgSender, 58000);
+
         require(_gk.getROM().isMember(caller), "not MEMBER");
         
         bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
@@ -49,7 +42,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
         DocsRepo.Doc memory doc = _rc.createDoc(
             snOfDoc,
-            primeKeyOfCaller
+            msgSender
         );
 
         IAccessControl(doc.body).initKeepers(
@@ -66,10 +59,14 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         address ia,
         bytes32 docUrl,
         bytes32 docHash,
-        uint256 caller
-    ) external onlyDK onlyPartyOf(ia, caller){
-        require(IAccessControl(ia).isFinalized(), 
-            "BOIK.CIA: IA not finalized");
+        address msgSender
+    ) external onlyDK {
+        uint caller = _msgSender(msgSender, 36000);
+
+        require(ISigPage(ia).isParty(caller), "ROAK.md.OPO: NOT Party");
+
+        require(IDraftControl(ia).isFinalized(), 
+            "ROAK.CIA: IA not finalized");
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -91,14 +88,19 @@ contract ROAKeeper is IROAKeeper, AccessControl {
 
     function signIA(
         address ia,
-        uint256 caller,
+        address msgSender,
         bytes32 sigHash
-    ) external onlyDK onlyPartyOf(ia, caller) {
+    ) external onlyDK {
+
+        uint caller = _msgSender(msgSender, 36000);
+
+        require(ISigPage(ia).isParty(caller), "ROAK.md.OPO: NOT Party");
+
         IRegisterOfAgreements _roa = _gk.getROA();
 
         require(
             _roa.getHeadOfFile(ia).state == uint8(FilesRepo.StateOfFile.Circulated),
-            "BOIK.signIA: wrong state"
+            "ROAK.signIA: wrong state"
         );
 
         _lockDealsOfParty(ia, caller);
@@ -141,8 +143,10 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         uint256 seqOfDeal,
         bytes32 hashLock,
         uint closingDeadline,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
+
+        uint caller = _msgSender(msgSender, 58000);
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -152,13 +156,13 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         bool isST = (deal.head.seqOfShare != 0);
 
         if (isST) {
-            require(caller == deal.head.seller, "BOIK.PTC: not seller");
+            require(caller == deal.head.seller, "ROAK.PTC: not seller");
             require(_lockUpCheck(address(_ia), deal, uint48(block.timestamp)), 
-                "BOIK.PTC: target share locked");
+                "ROAK.PTC: target share locked");
         } else {
             require (_gk.getROD().isDirector(caller) ||
                 _gk.getROM().controllor() == caller, 
-                "BOIK.PTC: not director or controllor");
+                "ROAK.PTC: not director or controllor");
         }
 
         _vrAndSHACheck(_ia);
@@ -189,15 +193,15 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         if (vr.amountRatio > 0 || vr.headRatio > 0) {
             if (vr.authority == 1)
                 require(_gmm.isPassed(seqOfMotion), 
-                    "BOIK.vrCheck:  rejected by GM");
+                    "ROAK.vrCheck:  rejected by GM");
             else if (vr.authority == 2)
                 require(_bmm.isPassed(seqOfMotion), 
-                    "BOIK.vrCheck:  rejected by Board");
+                    "ROAK.vrCheck:  rejected by Board");
             else if (vr.authority == 3)
                 require(_gmm.isPassed(seqOfMotion) && 
                     _bmm.isPassed(seqOfMotion), 
-                    "BOIK.vrCheck: rejected by GM or Board");
-            else revert("BOIK.vrCheck: authority overflow");
+                    "ROAK.vrCheck: rejected by GM or Board");
+            else revert("ROAK.vrCheck: authority overflow");
         }
     }
 
@@ -250,7 +254,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         uint buyer
     ) private view {
         require (_gk.getLOO().getInvestor(buyer).state == 
-            uint8(OrdersRepo.StateOfInvestor.Approved), 
+            uint8(InvestorsRepo.StateOfInvestor.Approved), 
             "ROAK.buyerIsVerified: not");
     }
 
@@ -275,8 +279,10 @@ contract ROAKeeper is IROAKeeper, AccessControl {
                 _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
     }
 
-    function issueNewShare(address ia, uint256 seqOfDeal, uint caller) public onlyDK {
-        
+    function issueNewShare(address ia, uint256 seqOfDeal, address msgSender) public onlyDK {
+
+        uint caller = _msgSender(msgSender, 58000);
+
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         require(_gk.getROD().isDirector(caller) ||
@@ -332,15 +338,17 @@ contract ROAKeeper is IROAKeeper, AccessControl {
     function transferTargetShare(
         address ia,
         uint256 seqOfDeal,
-        uint256 caller
+        address msgSender
     ) public onlyDK {
+
+        uint caller = _msgSender(msgSender, 58000);
+
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         require(
             caller == _ia.getDeal(seqOfDeal).head.seller,
-                "BOIK.TTS: not seller"
+                "ROAK.TTS: not seller"
         );
-
 
         _vrAndSHACheck(_ia);
 
@@ -353,16 +361,17 @@ contract ROAKeeper is IROAKeeper, AccessControl {
     function terminateDeal(
         address ia,
         uint256 seqOfDeal,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 18000);
+
         IRegisterOfAgreements _roa = _gk.getROA();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         require(
             caller == deal.head.seller,
-            "BOIK.TD: NOT seller"
+            "ROAK.TD: NOT seller"
         );
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
@@ -379,7 +388,7 @@ contract ROAKeeper is IROAKeeper, AccessControl {
                 _roa.terminateFile(ia);
             if (_ia.releaseDealSubject(seqOfDeal))
                 _gk.getROS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);            
-        } else revert("BOIK.TD: wrong state");
+        } else revert("ROAK.TD: wrong state");
     }
 
 
@@ -387,9 +396,10 @@ contract ROAKeeper is IROAKeeper, AccessControl {
         address ia,
         uint seqOfDeal,
         uint msgValue,
-        uint caller
+        address msgSender
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 58000);
+
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = 

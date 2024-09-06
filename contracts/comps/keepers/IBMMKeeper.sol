@@ -23,15 +23,19 @@ import "../books/rod/IRegisterOfDirectors.sol";
 import "../../lib/RulesParser.sol";
 
 interface IBMMKeeper {
+
+    event TransferFund(address indexed to, bool indexed isCBP, uint indexed amt, uint seqOfMotion, uint caller);
+    event ExecAction(address indexed targets, uint indexed values, bytes indexed params, uint seqOfMotion, uint caller);
+
     function nominateOfficer(
         uint256 seqOfPos,
         uint candidate,
-        uint nominator
+        address msgSender
     ) external;
 
     function createMotionToRemoveOfficer(
         uint256 seqOfPos,
-        uint nominator
+        address msgSender
     ) external;
 
     // ---- Docs ----
@@ -40,7 +44,7 @@ interface IBMMKeeper {
         uint doc,
         uint seqOfVR,
         uint executor,
-        uint proposer
+        address msgSender
     ) external;
 
     // ---- TransferFund ----
@@ -52,7 +56,7 @@ interface IBMMKeeper {
         uint expireDate,
         uint seqOfVR,
         uint executor,
-        uint proposer
+        address msgSender
     ) external;
 
     // ---- Action ----
@@ -64,7 +68,7 @@ interface IBMMKeeper {
         bytes[] memory params,
         bytes32 desHash,
         uint executor,
-        uint proposer
+        address msgSender
     ) external;
 
     // ==== Cast Vote ====
@@ -72,24 +76,24 @@ interface IBMMKeeper {
     function entrustDelegaterForBoardMeeting(
         uint256 seqOfMotion,
         uint delegate,
-        uint caller
+        address msgSender
     ) external;
 
     function proposeMotionToBoard (
         uint seqOfMotion,
-        uint caller
+        address msgSender
     ) external;
 
     function castVote(
         uint256 seqOfMotion,
         uint attitude,
         bytes32 sigHash,
-        uint256 caller
+        address msgSender
     ) external;
 
     // ==== Vote Counting ====
 
-    function voteCounting(uint256 seqOfMotion) external;
+    function voteCounting(uint256 seqOfMotion, address msgSender) external;
 
     // ==== Exec Motion ====
 
@@ -99,7 +103,7 @@ interface IBMMKeeper {
         uint amt,
         uint expireDate,
         uint seqOfMotion,
-        uint caller
+        address msgSender
     ) external;
 
     function execAction(
@@ -109,6 +113,6 @@ interface IBMMKeeper {
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion,
-        uint caller
+        address msgSender
     ) external returns (uint);
 }

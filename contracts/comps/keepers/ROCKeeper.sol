@@ -19,38 +19,31 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/AccessControl.sol";
+import "../common/access/RoyaltyCharge.sol";
 
 import "./IROCKeeper.sol";
 
-contract ROCKeeper is IROCKeeper, AccessControl {
+contract ROCKeeper is IROCKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
+    using ArrayUtils for uint[];
     
-    // ##################
-    // ##   Modifier   ##
-    // ##################
-
-    modifier onlyPartyOf(address body, uint256 caller) {
-        require(ISigPage(body).isParty(caller), "NOT Party of Doc");
-        _;
-    }
-
     // #############
     // ##   SHA   ##
     // #############
 
     function createSHA(
         uint version, 
-        address primeKeyOfCaller, 
-        uint caller
+        address msgSender
     ) external onlyDK {
+
+        uint caller = _msgSender(msgSender, 18000);
 
         require(_gk.getROM().isMember(caller), "not MEMBER");
 
         bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 224) +
             uint224(version << 192)); 
 
-        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, primeKeyOfCaller);
+        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, msgSender);
 
         IAccessControl(doc.body).initKeepers(
             address(this),
@@ -66,9 +59,13 @@ contract ROCKeeper is IROCKeeper, AccessControl {
         address sha,
         bytes32 docUrl,
         bytes32 docHash,
-        uint256 caller
-    ) external onlyDK onlyPartyOf(sha, caller) {
-        require(IAccessControl(sha).isFinalized(), 
+        address msgSender
+    ) external onlyDK {
+        uint caller = _msgSender(msgSender, 18000);
+
+        require(ISigPage(sha).isParty(caller), "NOT Party of Doc");
+
+        require(IDraftControl(sha).isFinalized(), 
             "BOHK.CSHA: SHA not finalized");
 
         
@@ -91,8 +88,11 @@ contract ROCKeeper is IROCKeeper, AccessControl {
     function signSHA(
         address sha,
         bytes32 sigHash,
-        uint256 caller
-    ) external onlyDK onlyPartyOf(sha, caller) {
+        address msgSender
+    ) external onlyDK {
+        uint caller = _msgSender(msgSender, 18000);
+
+        require(ISigPage(sha).isParty(caller), "NOT Party of Doc");
 
         require(
             _gk.getROC().getHeadOfFile(sha).state == uint8(FilesRepo.StateOfFile.Circulated),
@@ -102,9 +102,24 @@ contract ROCKeeper is IROCKeeper, AccessControl {
         ISigPage(sha).signDoc(true, caller, sigHash);
     }
 
-    function activateSHA(address sha, uint256 caller)
-        external onlyDK onlyPartyOf(sha, caller)
-    {
+    function _membersAllSigned(
+        IRegisterOfMembers _rom,
+        IShareholdersAgreement _sha
+    ) view private returns (bool) {
+        uint[] memory members = _rom.membersList();
+        uint[] memory parties = _sha.getParties();
+        
+        if (parties.length == 0 || parties.length != members.length) {
+            return false;
+        }
+
+        return members.fullyCoveredBy(parties);
+    }
+
+    function activateSHA(address sha, address msgSender) external onlyDK {
+        uint caller = _msgSender(msgSender, 58000);
+
+        require(ISigPage(sha).isParty(caller), "NOT Party of Doc");
         
         IRegisterOfConstitution _roc = _gk.getROC();
         IRegisterOfMembers _rom = _gk.getROM();
@@ -112,19 +127,17 @@ contract ROCKeeper is IROCKeeper, AccessControl {
         require(sha != address(0), "ROCK.actSHA: zero sha");
         IShareholdersAgreement _sha = IShareholdersAgreement(sha);
 
-        if (address(_gk.getSHA()) == address(0)) {
-            uint[] memory members = _rom.membersList();
-            for (uint i; i<members.length; i++)
-                require (_sha.isSigner(members[i]), 
-                    "ROCK.actSHA: member not sign");
-            _roc.setStateOfFile(sha, uint8(FilesRepo.StateOfFile.Closed));
-        } else {
+        uint seqOfMotion = _roc.getHeadOfFile(sha).seqOfMotion;
+
+        if (seqOfMotion > 0) {
             _gk.getGMM().execResolution(
-                _roc.getHeadOfFile(sha).seqOfMotion,
+                seqOfMotion,
                 uint(uint160(sha)),
                 caller
             );
             _roc.execFile(sha);
+        } else if (_membersAllSigned(_rom, _sha)) {
+            _roc.setStateOfFile(sha, uint8(FilesRepo.StateOfFile.Closed));
         }
 
         _roc.changePointer(sha);
@@ -214,7 +227,9 @@ contract ROCKeeper is IROCKeeper, AccessControl {
         }        
     }
 
-    function acceptSHA(bytes32 sigHash, uint256 caller) external onlyDK {
+    function acceptSHA(bytes32 sigHash, address msgSender) external onlyDK {
+        uint caller = _msgSender(msgSender, 36000);
+
         IShareholdersAgreement _sha = _gk.getSHA();
         _sha.addBlank(false, true, 1, caller);
         _sha.signDoc(false, caller, sigHash);

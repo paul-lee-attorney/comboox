@@ -23,8 +23,8 @@ pragma solidity ^0.8.8;
 
 import "./common/components/IMeetingMinutes.sol";
 
-// import "../lib/RolesRepo.sol";
 import "../lib/UsersRepo.sol";
+import "../lib/Address.sol";
 
 import "./keepers/IROCKeeper.sol";
 import "./keepers/IRODKeeper.sol";
@@ -61,17 +61,12 @@ interface IGeneralKeeper {
     // ##   Event   ##
     // ###############
 
-    event ExecAction(uint256 indexed contents, bool indexed result);
-
-    event PickupDeposit(address indexed to, uint indexed amt);
+    event RegKeeper (uint indexed title, address indexed keeper, address indexed dk);
+    event RegBook (uint indexed title, address indexed book, address indexed dk);
+    event ExecAction(uint256 indexed contents);
+    event SaveToCoffer(uint indexed acct, uint256 indexed value);
+    event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);
     event DistributeProfits(uint indexed amt, uint indexed expireDate, uint indexed seqOfMotion);
-    event TransferFund(
-        bool indexed fromBMM,
-        address indexed to,
-        uint indexed amt, 
-        uint expireDate, 
-        uint seqOfMotion
-    );
     event ReceivedCash(address indexed from, uint indexed amt);
     event DeprecateGK(address indexed receiver, uint indexed balanceOfCBP, uint indexed balanceOfETH);
 
@@ -445,8 +440,7 @@ interface IGeneralKeeper {
         uint execHours,
         uint paid,
         uint price,
-        uint seqOfLR,
-        bool sortFromHead
+        uint seqOfLR
     ) external;
 
     function withdrawSellOrder(
@@ -454,13 +448,23 @@ interface IGeneralKeeper {
         uint seqOfOrder
     ) external;    
 
-    function placeBuyOrder(uint classOfShare, uint paid, uint price) external payable;
+    function placeBuyOrder(
+        uint classOfShare, 
+        uint paid, 
+        uint price,
+        uint execHours      
+    ) external payable;
     
+    function withdrawBuyOrder(
+        uint classOfShare,
+        uint seqOfOrder
+    ) external;
+
     // ###############
     // ##  Routing  ##
     // ###############
 
-    function getROC() external view returns (IRegisterOfConstitution );
+    function getROC() external view returns (IRegisterOfConstitution);
 
     function getSHA() external view returns (IShareholdersAgreement);
 

@@ -63,7 +63,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
             address(_gk)
         );
 
-        IAccessControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);
+        IDraftControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);
 
         _terms.terms[title] = doc.body;
         _terms.seqList.add(title);
@@ -136,7 +136,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         uint len = titles.length;
 
         while (len > 0) {
-            IAccessControl(_terms.terms[titles[len-1]]).lockContents();
+            IDraftControl(_terms.terms[titles[len-1]]).lockContents();
             len --;
         }
 

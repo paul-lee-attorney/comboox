@@ -19,14 +19,15 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/roa/IInvestmentAgreement.sol";
-
 import "../../lib/MotionsRepo.sol";
 import "../../lib/OfficersRepo.sol";
 
 import "../common/components/ISigPage.sol";
 
 interface IGMMKeeper {
+    event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, uint indexed caller);
+    event TransferFund(address indexed to, bool indexed isCBP, uint indexed amt, uint seqOfMotion, uint caller);
+    event ExecAction(address indexed targets, uint indexed values, bytes indexed params, uint seqOfMotion, uint caller);
 
     // ################
     // ##   Motion   ##
@@ -35,22 +36,22 @@ interface IGMMKeeper {
     function nominateDirector(
         uint256 seqOfPos,
         uint candidate,
-        uint nominator
+        address msgSender
     ) external;
 
     function createMotionToRemoveDirector(
         uint256 seqOfPos,
-        uint caller
+        address msgSender
     ) external;
 
-    function proposeDocOfGM(uint doc, uint seqOfVR, uint executor,  uint proposer) external;
+    function proposeDocOfGM(uint doc, uint seqOfVR, uint executor,  address msgSender) external;
 
     function proposeToDistributeProfits(
         uint amt,
         uint expireDate,
         uint seqOfVR,
         uint executor,
-        uint caller
+        address msgSender
     ) external;
 
     function proposeToTransferFund(
@@ -60,7 +61,7 @@ interface IGMMKeeper {
         uint expireDate,
         uint seqOfVR,
         uint executor,
-        uint proposer
+        address msgSender
     ) external;
 
 
@@ -71,29 +72,29 @@ interface IGMMKeeper {
         bytes[] memory params,
         bytes32 desHash,
         uint executor,
-        uint proposer
+        address msgSender
     ) external;
 
-    function proposeToDeprecateGK(address receiver,uint proposer) external;
+    function proposeToDeprecateGK(address receiver,address msgSender) external;
 
-    function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate, uint caller) external;
+    function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate, address msgSender) external;
 
-    function proposeMotionToGeneralMeeting(uint256 seqOfMotion,uint caller) external;
+    function proposeMotionToGeneralMeeting(uint256 seqOfMotion, address msgSender) external;
 
     function castVoteOfGM(
         uint256 seqOfMotion,
         uint attitude,
         bytes32 sigHash,
-        uint256 caller
+        address msgSender
     ) external;
 
-    function voteCountingOfGM(uint256 seqOfMotion) external;
+    function voteCountingOfGM(uint256 seqOfMotion, address msgSender) external;
 
     function distributeProfits(
         uint amt,
         uint expireDate,
         uint seqOfMotion,
-        uint caller
+        address msgSender
     ) external;
 
 
@@ -103,7 +104,7 @@ interface IGMMKeeper {
         uint amt,
         uint expireDate,
         uint seqOfMotion,
-        uint caller
+        address msgSender
     ) external;
 
     function execActionOfGM(
@@ -113,8 +114,8 @@ interface IGMMKeeper {
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion,
-        uint caller
+        address msgSender
     ) external returns(uint);
 
-    function deprecateGK(address receiver, uint seqOfMotion, uint executor) external;
+    function deprecateGK(address receiver, uint seqOfMotion, address msgSender) external;
 }

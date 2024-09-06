@@ -22,6 +22,7 @@ pragma solidity ^0.8.8;
 import "../../../center/access/Ownable.sol";
 
 import "./IListOfProjects.sol";
+import "../../../lib/Address.sol";
 
 contract ListOfProjects is IListOfProjects, Ownable {
     using TeamsRepo for TeamsRepo.Repo;
@@ -157,7 +158,7 @@ contract ListOfProjects is IListOfProjects, Ownable {
 	function pickupDeposit(uint amt) external {
 		_pop.pickupDeposit(_msgSender(18000), amt);
 		address caller = msg.sender;
-		payable(caller).transfer(amt);
+		Address.sendValue(payable(caller), amt);
 		emit PickupDeposit(caller, amt);
 	}
 

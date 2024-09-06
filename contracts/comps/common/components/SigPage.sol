@@ -21,9 +21,9 @@ pragma solidity ^0.8.8;
 
 import "./ISigPage.sol";
 
-import "../access/AccessControl.sol";
+import "../access/DraftControl.sol";
 
-contract SigPage is ISigPage, AccessControl {
+contract SigPage is ISigPage, DraftControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
     using SigsRepo for SigsRepo.Page;

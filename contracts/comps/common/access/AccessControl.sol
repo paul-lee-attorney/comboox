@@ -25,13 +25,8 @@ import "./IAccessControl.sol";
 import "../../../center/access/Ownable.sol";
 
 contract AccessControl is IAccessControl, Ownable {
-    using RolesRepo for RolesRepo.Repo;
 
-    bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
-
-    RolesRepo.Repo private _roles;
-
-    Admin private _dk;
+    Admin internal _dk;
     IGeneralKeeper internal _gk;
 
     // ################
@@ -44,29 +39,10 @@ contract AccessControl is IAccessControl, Ownable {
         _;
     }
 
-    modifier onlyGC {
-        require(_roles.getRoleAdmin(_ATTORNEYS) == 
-            msg.sender,"AC.onlyGC: NOT");
-        _;
-    }
-
     modifier onlyKeeper {
         require(_gk.isKeeper(msg.sender) || 
             _dk.addr == msg.sender, 
             "AC.onlyKeeper: NOT");
-        _;
-    }
-
-    modifier onlyAttorney {
-        require(_roles.hasRole(_ATTORNEYS, msg.sender),
-            "AC.onlyAttorney: NOT");
-        _;
-    }
-
-    modifier attorneyOrKeeper {
-        require(_roles.hasRole(_ATTORNEYS, msg.sender) ||
-            _gk.isKeeper(msg.sender),
-            "AC.md.attorneyOrKeeper: NOT");
         _;
     }
 
@@ -82,6 +58,11 @@ contract AccessControl is IAccessControl, Ownable {
         _dk.state = 1;
     }
 
+    function setNewGK(address gk) external onlyDK {
+        _gk = IGeneralKeeper(gk);
+        emit SetNewGK(gk);
+    }
+
     function setDirectKeeper(address acct) external onlyDK {
         _dk.addr = acct;
         emit SetDirectKeeper(acct);
@@ -91,38 +72,6 @@ contract AccessControl is IAccessControl, Ownable {
         IAccessControl(target).setDirectKeeper(msg.sender);
     }
 
-    function setRoleAdmin(bytes32 role, address acct) external onlyOwner {
-        _roles.setRoleAdmin(role, acct);
-        emit SetRoleAdmin(role, acct);
-    }
-
-    function grantRole(bytes32 role, address acct) external {
-        _roles.grantRole(role, acct, msg.sender);
-    }
-
-    function revokeRole(bytes32 role, address acct) external {
-        _roles.revokeRole(role, acct, msg.sender);
-    }
-
-    function renounceRole(bytes32 role) external {
-        _roles.renounceRole(role, msg.sender);
-    }
-
-    function abandonRole(bytes32 role) external onlyOwner {
-        _roles.abandonRole(role);
-    }
-
-    function lockContents() public onlyOwner {
-        require(_dk.state == 1, 
-            "AC.lockContents: wrong state");
-
-        _roles.abandonRole(_ATTORNEYS);
-        setNewOwner(address(0));
-        _dk.state = 2;
-
-        emit LockContents();
-    }
-
     // ##############
     // ##   Read   ##
     // ##############
@@ -130,17 +79,4 @@ contract AccessControl is IAccessControl, Ownable {
     function getDK() external view returns (address) {
         return _dk.addr;
     }
-
-    function isFinalized() public view returns (bool) {
-        return _dk.state == 2;
-    }
-
-    function getRoleAdmin(bytes32 role) public view returns (address) {
-        return _roles.getRoleAdmin(role);
-    }
-
-    function hasRole(bytes32 role, address acct) public view returns (bool) {
-        return _roles.hasRole(role, acct);
-    }
-
 }

@@ -19,9 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/roc/IShareholdersAgreement.sol";
 import "../books/roc/terms/ILockUp.sol";
-
 import "../common/components/ISigPage.sol";
 
 import "../../lib/OfficersRepo.sol";
@@ -34,22 +32,22 @@ interface IROCKeeper {
     // ##  SHA   ##
     // ############
 
-    function createSHA(uint version, address primeKeyOfCaller, uint caller) external;
+    function createSHA(uint version, address msgSender) external;
 
     function circulateSHA(
         address sha,
         bytes32 docUrl,
         bytes32 docHash,
-        uint256 caller
+        address msgSender
     ) external;
 
     function signSHA(
         address sha,
         bytes32 sigHash,
-        uint256 caller
+        address msgSender
     ) external;
 
-    function activateSHA(address sha, uint256 caller) external;
+    function activateSHA(address sha, address msgSender) external;
 
-    function acceptSHA(bytes32 sigHash, uint256 caller) external;
+    function acceptSHA(bytes32 sigHash, address msgSender) external;
 }

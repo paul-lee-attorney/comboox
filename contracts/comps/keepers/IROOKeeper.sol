@@ -36,27 +36,27 @@ interface IROOKeeper {
         uint d3
     ) external;
 
-    function execOption(uint256 seqOfOpt, uint256 caller)external;
+    function execOption(uint256 seqOfOpt, address msgSender)external;
 
     function createSwap(
         uint256 seqOfOpt,
         uint seqOfTarget,
         uint paidOfTarget,
         uint seqOfPledge,
-        uint256 caller
+        address msgSender
     ) external;
 
     function payOffSwap(
         uint256 seqOfOpt, 
         uint256 seqOfSwap,
         uint msgValue,
-        uint caller
+        address msgSender
     ) external;
 
     function terminateSwap(
         uint256 seqOfOpt, 
         uint256 seqOfSwap,
-        uint caller
+        address msgSender
     ) external;
 
     // ==== Swap ====
@@ -66,7 +66,7 @@ interface IROOKeeper {
         uint seqOfDeal,
         uint paidOfTarget,
         uint seqOfPledge,
-        uint caller
+        address msgSender
     ) external;
 
     function payOffRejectedDeal(
@@ -74,14 +74,14 @@ interface IROOKeeper {
         uint seqOfDeal,
         uint seqOfSwap,
         uint msgValue,
-        uint caller
+        address msgSender
     ) external;
 
     function pickupPledgedShare(
         address ia,
         uint seqOfDeal,
         uint seqOfSwap,
-        uint caller
+        address msgSender
     ) external;
 
 }

@@ -22,9 +22,9 @@ pragma solidity ^0.8.8;
 
 import "./IROOKeeper.sol";
 
-import "../common/access/AccessControl.sol";
+import "../common/access/RoyaltyCharge.sol";
 
-contract ROOKeeper is IROOKeeper, AccessControl {
+contract ROOKeeper is IROOKeeper, RoyaltyCharge {
 
     // ##################
     // ##    Option    ##
@@ -39,9 +39,11 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         _gk.getROO().updateOracle(seqOfOpt, d1, d2, d3);
     }
 
-    function execOption(uint256 seqOfOpt, uint256 caller)
+    function execOption(uint256 seqOfOpt, address msgSender)
         external onlyDK
     {
+        uint caller = _msgSender(msgSender, 18000);
+
         _gk.getROO().execOption(seqOfOpt, caller);
     }
 
@@ -50,8 +52,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint seqOfTarget,
         uint paidOfTarget,
         uint seqOfPledge,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 36000);
 
         uint closingDate = _gk.getROO().getOption(seqOfOpt).body.closingDeadline;
 
@@ -76,8 +79,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint256 seqOfOpt, 
         uint256 seqOfSwap,
         uint msgValue,
-        uint caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 58000);
         
         IRegisterOfShares _ros = _gk.getROS();
 
@@ -116,9 +120,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
     function terminateSwap(
         uint256 seqOfOpt, 
         uint256 seqOfSwap,
-        uint caller
+        address msgSender
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 58000);        
     
         SwapsRepo.Swap memory swap = 
             _gk.getROO().terminateSwap(seqOfOpt, seqOfSwap);
@@ -147,8 +151,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint seqOfDeal,
         uint paidOfTarget,
         uint seqOfPledge,
-        uint caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 58000);
 
         IRegisterOfShares _ros = _gk.getROS();
 
@@ -168,8 +173,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         uint seqOfDeal,
         uint seqOfSwap,
         uint msgValue,
-        uint caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 58000);
         
         IRegisterOfShares _ros = _gk.getROS();
 
@@ -209,8 +215,9 @@ contract ROOKeeper is IROOKeeper, AccessControl {
         address ia,
         uint seqOfDeal,
         uint seqOfSwap,
-        uint caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 58000);
         
         IRegisterOfShares _ros = _gk.getROS();
 

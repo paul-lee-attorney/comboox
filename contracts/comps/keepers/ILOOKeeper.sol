@@ -19,34 +19,44 @@
 
 pragma solidity ^0.8.8;
 
+import "../IGeneralKeeper.sol";
+import "../books/loo/IListOfOrders.sol";
+import "../books/ros/IRegisterOfShares.sol";
+
 import "../../lib/SharesRepo.sol";
+import "../../lib/OrdersRepo.sol";
+import "../../lib/InvestorsRepo.sol";
 
 interface ILOOKeeper {
+
+    event ReleaseSTConsideration(uint indexed payee, uint indexed amt);
+    event RefundBidDeposit(uint indexed buyer, uint indexed amt);
+    event RefundBidBalance(uint indexed buyer, uint indexed amt);
 
     //###############
     //##   Write   ##
     //###############
 
     function regInvestor(
-        uint userNo,
+        address msgSender,
         uint groupRep,
         bytes32 idHash
     ) external;
 
     function approveInvestor(
         uint userNo,
-        uint caller,
+        address msgSender,
         uint seqOfLR
     ) external;
 
     function revokeInvestor(
         uint userNo,
-        uint caller,
+        address msgSender,
         uint seqOfLR
     ) external;
 
     function placeInitialOffer(
-        uint caller,
+        address msgSender,
         uint classOfShare,
         uint execHours,
         uint paid,
@@ -55,34 +65,40 @@ interface ILOOKeeper {
     ) external;
 
     function withdrawInitialOffer(
-        uint caller,
+        address msgSender,
         uint classOfShare,
         uint seqOfOrder,
         uint seqOfLR
     ) external;
 
     function placeSellOrder(
-        uint caller,
+        address msgSender,
         uint seqOfClass,
         uint execHours,
         uint paid,
         uint price,
-        uint seqOfLR,
-        bool sortFromHead
+        uint seqOfLR
     ) external;
 
     function withdrawSellOrder(
-        uint caller,
+        address msgSender,
         uint classOfShare,
         uint seqOfOrder
     ) external;
 
     function placeBuyOrder(
-        uint caller,
+        address msgSender,
         uint classOfShare,
         uint paid,
         uint price,
+        uint execHours,
         uint msgValue
+    ) external;
+
+    function withdrawBuyOrder(
+        address msgSender,
+        uint classOfShare,
+        uint seqOfOrder
     ) external;
 
 }

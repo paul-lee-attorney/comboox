@@ -19,21 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/AccessControl.sol";
+import "../common/access/RoyaltyCharge.sol";
 
 import "./IRODKeeper.sol";
 
-contract RODKeeper is IRODKeeper, AccessControl {    
-
-    //##################
-    //##   Modifier   ##
-    //##################
-
-    modifier directorExist(uint256 acct) {
-        require(_gk.getROD().isDirector(acct), 
-            "BODK.DE: not director");
-        _;
-    }
+contract RODKeeper is IRODKeeper, RoyaltyCharge {    
 
     //###############
     //##   Write   ##
@@ -44,9 +34,10 @@ contract RODKeeper is IRODKeeper, AccessControl {
     function takeSeat(
         uint256 seqOfMotion,
         uint256 seqOfPos,
-        uint caller 
+        address msgSender 
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 36000);
+
         IMeetingMinutes _gmm = _gk.getGMM();
         
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -60,9 +51,10 @@ contract RODKeeper is IRODKeeper, AccessControl {
     function removeDirector (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint caller
+        address msgSender
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 58000);
+
         IMeetingMinutes _gmm = _gk.getGMM();
 
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -78,9 +70,10 @@ contract RODKeeper is IRODKeeper, AccessControl {
     function takePosition(
         uint256 seqOfMotion,
         uint256 seqOfPos,
-        uint caller 
+        address msgSender 
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 36000);
+
         IMeetingMinutes _bmm = _gk.getBMM();
     
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -94,9 +87,10 @@ contract RODKeeper is IRODKeeper, AccessControl {
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
-        uint caller
+        address msgSender
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 58000);
+
         IMeetingMinutes _bmm = _gk.getBMM();
 
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
@@ -109,9 +103,10 @@ contract RODKeeper is IRODKeeper, AccessControl {
 
     // ==== Quit ====
 
-    function quitPosition(uint256 seqOfPos, uint caller)
+    function quitPosition(uint256 seqOfPos, address msgSender)
         external onlyDK 
     {
+        uint caller = _msgSender(msgSender, 18000);
         _gk.getROD().quitPosition(seqOfPos, caller);
     }
 

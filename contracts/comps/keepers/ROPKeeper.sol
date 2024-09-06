@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/AccessControl.sol";
+import "../common/access/RoyaltyCharge.sol";
 
 import "./IROPKeeper.sol";
 
-contract ROPKeeper is IROPKeeper, AccessControl {
+contract ROPKeeper is IROPKeeper, RoyaltyCharge {
     using PledgesRepo for bytes32;
     
     // ###################
@@ -34,7 +34,7 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint pledgor
     ) private view {
         require (_gk.getLOO().getInvestor(pledgor).state == 
-            uint8(OrdersRepo.StateOfInvestor.Approved), 
+            uint8(InvestorsRepo.StateOfInvestor.Approved), 
             "ROPK.pledgorIsVerified: not");
     }
 
@@ -44,9 +44,10 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint par,
         uint guaranteedAmt,
         uint execDays,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 66000);
+
         IRegisterOfShares _ros = _gk.getROS();
 
         PledgesRepo.Head memory head = snOfPld.snParser();
@@ -74,8 +75,9 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfPld,
         uint buyer,
         uint amt,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 36000);
         _gk.getROP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
     }
 
@@ -83,9 +85,9 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint amt,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
-        
+        uint caller = _msgSender(msgSender, 36000);        
 
         PledgesRepo.Pledge memory pld = 
             _gk.getROP().refundDebt(seqOfShare, seqOfPld, amt, caller);
@@ -97,8 +99,9 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint extDays,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 18000);
         _gk.getROP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
     }
 
@@ -106,8 +109,9 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfShare,
         uint256 seqOfPld,
         bytes32 hashLock,
-        uint256 caller
+        address msgSender
     ) external onlyDK {        
+        uint caller = _msgSender(msgSender, 58000);
         _gk.getROP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
     }
 
@@ -116,8 +120,6 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfPld, 
         string memory hashKey
     ) external onlyDK {
-        
-
         uint64 paid = _gk.getROP().releasePledge(seqOfShare, seqOfPld, hashKey);
         _gk.getROS().increaseCleanPaid(seqOfShare, paid);
     }
@@ -127,8 +129,9 @@ contract ROPKeeper is IROPKeeper, AccessControl {
         uint256 seqOfPld,
         uint buyer,
         uint groupOfBuyer,
-        uint caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 88000);
 
         _pledgerIsVerified(buyer);
 
@@ -166,8 +169,9 @@ contract ROPKeeper is IROPKeeper, AccessControl {
     function revokePledge(
         uint256 seqOfShare, 
         uint256 seqOfPld,
-        uint256 caller
+        address msgSender
     ) external onlyDK {
+        uint caller = _msgSender(msgSender, 58000);
         
         IRegisterOfPledges _rop = _gk.getROP();
 
