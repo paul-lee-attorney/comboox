@@ -27,8 +27,14 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     using OrdersRepo for OrdersRepo.Deal;
     using GoldChain for GoldChain.Chain;
     using GoldChain for GoldChain.Node;
+    using GoldChain for GoldChain.Data;
+    using EnumerableSet for EnumerableSet.UintSet;
+    using InvestorsRepo for InvestorsRepo.Repo;
 
-    OrdersRepo.Repo private _repo;
+    InvestorsRepo.Repo private _investors;
+
+    mapping (uint => OrdersRepo.Repo) private _ordersOfClass;
+    EnumerableSet.UintSet private _classesList;
 
     //#################
     //##  Write I/O  ##
@@ -41,7 +47,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint groupRep,
         bytes32 idHash
     ) external onlyDK {
-        _repo.regInvestor(userNo, groupRep, idHash);
+        _investors.regInvestor(userNo, groupRep, idHash);
         emit RegInvestor(userNo, groupRep, idHash);
     }
 
@@ -49,7 +55,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint userNo,
         uint verifier
     ) external onlyDK {
-        _repo.approveInvestor(userNo, verifier);
+        _investors.approveInvestor(userNo, verifier);
         emit ApproveInvestor(userNo, verifier);
     }        
 
@@ -57,13 +63,14 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint userNo,
         uint verifier
     ) external onlyDK {
-        _repo.revokeInvestor(userNo, verifier);
+        _investors.revokeInvestor(userNo, verifier);
         emit RevokeInvestor(userNo, verifier);
     }
 
     // ==== Order ====
 
     function placeSellOrder(
+        uint caller,
         uint classOfShare,
         uint seqOfShare,
         uint votingWeight,
@@ -71,9 +78,16 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint paid,
         uint price,
         uint execHours,
-        bool sortFromHead
-    ) external onlyDK {
-        bytes32 sn = _repo.placeSellOrder(
+        uint centPriceInWei
+    ) external onlyDK returns(
+        OrdersRepo.Deal[] memory deals, 
+        GoldChain.Order[] memory expired,
+        OrdersRepo.Deal memory offer
+    ) {
+        _classesList.add(classOfShare);
+
+        (deals, expired, offer) = _ordersOfClass[classOfShare].placeSellOrder(
+            caller,
             classOfShare,
             seqOfShare,
             votingWeight,
@@ -81,66 +95,87 @@ contract ListOfOrders is IListOfOrders, AccessControl {
             paid, 
             price,
             execHours,
-            sortFromHead 
+            centPriceInWei
         );
 
-        emit PlaceSellOrder(sn);
+        if (deals.length > 0) _logDeals(deals);
+        if (expired.length > 0) _logExpired(expired, false);
+        if (offer.price > 0) _logOrder(offer, true);
     }
 
-    function withdrawSellOrder(
-        uint classOfShare,
-        uint seqOfOrder
-    ) external onlyDK returns(GoldChain.Node memory order) {
-
-        order = _repo.withdrawSellOrder(
-            classOfShare, 
-            seqOfOrder
-        );
-
-        emit WithdrawSellOrder(order.codifyNode());
+    function _logOrder(OrdersRepo.Deal memory order, bool isOffer) private {
+        emit OrderPlaced(order.codifyDeal(), isOffer);
     }
 
-
-    function placeBuyOrder(
-        uint caller,
-        uint classOfShare,
-        uint paid,
-        uint price
-    ) external onlyDK returns (
-        OrdersRepo.Deal[] memory deals, 
-        GoldChain.Node[] memory expired
-    ) {
-        OrdersRepo.Deal memory balance;
-
-        (deals, balance, expired) = 
-            _repo.placeBuyOrder(
-                caller,
-                classOfShare,
-                paid,
-                price
-            );
-
-        emit PlaceBuyOrder(caller, classOfShare, paid, price);
-
+    function _logDeals(OrdersRepo.Deal[] memory deals) private {
         uint len = deals.length;
         while (len > 0) {
-            emit Deal(deals[len - 1].codifyDeal());
+            emit DealClosed(deals[len - 1].codifyDeal(), deals[len - 1].consideration);
             len--;
         }
+    }
 
-        len = expired.length;
+    function _logExpired(GoldChain.Order[] memory expired, bool isOffer) private {
+        uint len = expired.length;
         while (len > 0) {
-            emit OfferExpired(expired[len - 1].codifyNode());
+            emit OrderExpired(expired[len - 1].node.codifyNode(),
+                expired[len - 1].data.codifyData(),isOffer);
             len--;
         }
-        
-        if (balance.paid > 0)
-            emit GetBalance(balance.codifyDeal());
+    }
 
+    function placeBuyOrder(
+        uint classOfShare,
+        uint caller,
+        uint groupRep,
+        uint paid,
+        uint price,
+        uint execHours,
+        uint centPriceInWei,
+        uint msgValue
+    ) external onlyDK returns (
+        OrdersRepo.Deal[] memory deals, 
+        GoldChain.Order[] memory expired,
+        OrdersRepo.Deal memory bid
+    ) {
+
+        _classesList.add(classOfShare);
+
+        (deals, expired, bid) = _ordersOfClass[classOfShare].placeBuyOrder(
+            classOfShare,
+            caller,
+            groupRep,
+            paid, 
+            price,
+            execHours,
+            centPriceInWei,
+            msgValue
+        );
+
+        if (deals.length > 0) _logDeals(deals);
+        if (expired.length > 0) _logExpired(expired, true);
+        if (bid.price > 0) _logOrder(bid, false);
+    }
+
+    function withdrawOrder(
+        uint classOfShare,
+        uint seqOfOrder,
+        bool isOffer
+    ) external onlyDK returns(GoldChain.Order memory order) {
+
+        if (!_classesList.contains(classOfShare)) return order;
+
+        order = _ordersOfClass[classOfShare].withdrawOrder(
+            seqOfOrder, isOffer
+        );
+
+        if (order.node.paid > 0) emit OrderWithdrawn(
+            order.node.codifyNode(), order.data.codifyData(), isOffer
+        );
     }
 
     //################
-    //##  Read I/O ##
+    //##  Read I/O  ##
     //################
 
     // ==== Investor ====
@@ -148,96 +183,100 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     function isInvestor(
         uint userNo
     ) external view returns(bool) {
-        return _repo.isInvestor(userNo);
+        return _investors.isInvestor(userNo);
     }
 
     function getInvestor(
         uint userNo
-    ) external view returns(OrdersRepo.Investor memory) {
-        return _repo.getInvestor(userNo);
+    ) external view returns(InvestorsRepo.Investor memory) {
+        return _investors.getInvestor(userNo);
     }
 
     function getQtyOfInvestors() 
         external view returns(uint) 
     {
-        return _repo.getQtyOfInvestors();
+        return _investors.getQtyOfInvestors();
     }
 
     function investorList() 
         external view returns(uint[] memory) 
     {
-        return _repo.investorList();
+        return _investors.investorList();
     }
 
     function investorInfoList() 
-        external view returns(OrdersRepo.Investor[] memory) 
+        external view returns(InvestorsRepo.Investor[] memory) 
     {
-        return _repo.investorInfoList();
+        return _investors.investorInfoList();
     }
 
     // ==== Chain ====
 
-    function counterOfOffers(
-        uint classOfShare
+    function counterOfOrders(
+        uint classOfShare, bool isOffer
     ) external view returns (uint32) {
-        return _repo.ordersOfClass[classOfShare].counter();
+        if (!_classesList.contains(classOfShare)) return 0;
+        return _ordersOfClass[classOfShare].counterOfOrders(isOffer);
     }
 
     function headOfList(
-        uint classOfShare
+        uint classOfShare, bool isOffer
     ) external view returns (uint32) {
-        return _repo.ordersOfClass[classOfShare].head();
+        if (!_classesList.contains(classOfShare)) return 0;
+        return _ordersOfClass[classOfShare].headOfList(isOffer);
     }
 
     function tailOfList(
-        uint classOfShare
+        uint classOfShare, bool isOffer
     ) external view returns (uint32) {
-        return _repo.ordersOfClass[classOfShare].tail();
+        if (!_classesList.contains(classOfShare)) return 0;
+        return _ordersOfClass[classOfShare].tailOfList(isOffer);
     }
 
     function lengthOfList(
-        uint classOfShare
+        uint classOfShare, bool isOffer
     ) external view returns (uint) {
-        return _repo.ordersOfClass[classOfShare].length();
+        if (!_classesList.contains(classOfShare)) return 0;
+        return _ordersOfClass[classOfShare].lengthOfList(isOffer);
     }
 
     function getSeqList(
-        uint classOfShare
-    ) external view returns (uint[] memory) {
-        return _repo.ordersOfClass[classOfShare].getSeqList();
-    }
-
-    function getChain(
-        uint classOfShare
-    ) external view returns (GoldChain.NodeWrap[] memory) {
-        return _repo.ordersOfClass[classOfShare].getChain();
+        uint classOfShare, bool isOffer
+    ) external view returns (uint[] memory list) {
+        if (!_classesList.contains(classOfShare)) return list;
+        list = _ordersOfClass[classOfShare].getSeqList(isOffer);
     }
 
     // ==== Order ====
 
     function isOrder(
-        uint classOfShare,
-        uint seqOfOrder
+        uint classOfShare, uint seqOfOrder, bool isOffer
     ) external view returns (bool) {
-        return _repo.ordersOfClass[classOfShare].isNode(seqOfOrder);
+        if (!_classesList.contains(classOfShare)) return false;
+        return _ordersOfClass[classOfShare].isOrder(isOffer, seqOfOrder);
     }
     
     function getOrder(
-        uint classOfShare,
-        uint seqOfOrder
-    ) external view returns (GoldChain.Node memory ) {
-        return _repo.ordersOfClass[classOfShare].
-            getNode(seqOfOrder);
+        uint classOfShare, uint seqOfOrder, bool isOffer
+    ) external view returns (GoldChain.Order memory order) {
+        if (!_classesList.contains(classOfShare)) return order;
+        order = _ordersOfClass[classOfShare].getOrder(isOffer, seqOfOrder);
+    }
+
+    function getOrders(
+        uint classOfShare, bool isOffer
+    ) external view returns (GoldChain.Order[] memory list) {
+        if (!_classesList.contains(classOfShare)) return list;
+        list = _ordersOfClass[classOfShare].getOrders(isOffer);
     }
 
     // ==== Class ====
-
     function isClass(uint classOfShare) external view returns(bool) {
-        return _repo.isClass(classOfShare);
+        return _classesList.contains(classOfShare);
     }
 
     function getClassesList() external view returns(uint[] memory) {
-        return _repo.getClassesList();
+        return _classesList.values();
     }
 
 }

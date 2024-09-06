@@ -22,63 +22,73 @@ pragma solidity ^0.8.8;
 library GoldChain {
 
     struct Node {
-        uint24 prev;
-        uint24 next;
-        uint32 seqOfShare;
+        uint32 prev;
+        uint32 next;
+        uint40 issuer;
         uint64 paid;
         uint32 price;
         uint48 expireDate;
+        bool isOffer;
+    }
+
+    struct Data {
+        uint16 classOfShare;
+        uint32 seqOfShare;
+        uint40 groupRep;
         uint16 votingWeight;
         uint16 distrWeight;
+        uint64 centPriceInWei;
+        uint40 buyer;
+        uint32 seq;
     }
 
-    struct NodeWrap {
-        uint24 seq;
+    struct Order {
         Node node;
+        Data data;
     }
-
-    /* nodes[0] {
+    
+    /* node[0] {
         prev: tail;
         next: head;
-        seqOfShare: counter;
-        price: length;
+        price: counter;
     } */
 
+   /* data[0] {
+        seq: length;
+   }*/
+
     struct Chain {
-        mapping (uint => Node) nodes;
+        mapping (uint => Order) orders;
     }
 
     //#################
     //##  Modifier   ##
     //#################
 
-    modifier nodeExist(
-        Chain storage chain,
-        uint seq
-    ) {
-        require(isNode(chain, seq),
-            "GC.nodeExist: not");
-        _;
-    }
+    // modifier nodeExist(Chain storage chain,uint seq) {
+    //     require(isNode(chain, seq),"GC.nodeExist: not");
+    //     _;
+    // }
 
     //#################
     //##  Write I/O  ##
     //#################
 
-    function parseSn(
+    // ==== Node ====
+
+    function parseNode(
         bytes32 sn
     ) public pure returns(Node memory node) {
 
         uint _sn = uint(sn);
 
-        node.prev = uint24(_sn >> 232);
-        node.next = uint24(_sn >> 208);
-        node.seqOfShare = uint32(_sn >> 176);
-        node.paid = uint64(_sn >> 112);
-        node.price = uint32(_sn >> 80);
-        node.expireDate = uint48(_sn >> 32);
-        node.votingWeight = uint16(_sn >> 16);
-        node.distrWeight = uint16(_sn);
+        node.prev = uint32(_sn >> 224);
+        node.next = uint32(_sn >> 192);
+        node.issuer = uint40(_sn >> 152);
+        node.paid = uint64(_sn >> 88);
+        node.price = uint32(_sn >> 56);
+        node.expireDate = uint48(_sn >> 8);
+        node.isOffer = uint8(_sn) == 1;
     }
 
     function codifyNode(
@@ -89,12 +99,11 @@ library GoldChain {
             abi.encodePacked(
                 node.prev,
                 node.next,
-                node.seqOfShare,
+                node.issuer,
                 node.paid,
                 node.price,
                 node.expireDate,
-                node.votingWeight,
-                node.distrWeight
+                uint8(node.isOffer ? 1 : 0)
             );
 
         assembly {
@@ -102,63 +111,105 @@ library GoldChain {
         }                
     }
 
+    // ==== Data ====
+
+    function parseData(
+        bytes32 sn
+    ) public pure returns(Data memory data) {
+
+        uint _sn = uint(sn);
+
+        data.classOfShare = uint16(_sn >> 240);
+        data.seqOfShare = uint32(_sn >> 208);
+        data.groupRep = uint40(_sn >> 168);
+        data.votingWeight = uint16(_sn >> 152);
+        data.distrWeight = uint16(_sn >> 136);
+        data.centPriceInWei = uint64(_sn >> 72);
+        data.buyer = uint40(_sn >> 32);
+        data.seq = uint32(_sn);
+    }
+
+    function codifyData(
+        Data memory data
+    ) public pure returns(bytes32 sn) {
+        bytes memory _sn = 
+            abi.encodePacked(
+                data.classOfShare,
+                data.seqOfShare,
+                data.groupRep,
+                data.votingWeight,
+                data.distrWeight,
+                data.centPriceInWei,
+                data.buyer,
+                data.seq
+            );
+
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }                        
+    }
+
+    // ==== Node ====
+
     function createNode(
         Chain storage chain,
-        uint seqOfShare,
-        uint votingWeight,
-        uint distrWeight,
+        uint issuer,
         uint paid,
         uint price,
         uint execHours,
-        bool sortFromHead
-    ) public returns (bytes32 sn) {
+        bool isOffer,
+        Data memory data
+    ) public {
 
-        require (uint64(paid) > 0, 'GC.createOffer: zero paid');
+        require (uint64(paid) > 0, 'GC.createNode: zero paid');
+        require (data.classOfShare > 0, "GC.addData: zero class");
+        require (data.centPriceInWei > 0, "GC.addData: zero centPrice");
 
-        uint24 seq = _increaseCounter(chain);
+        data.seq = _increaseCounter(chain);
 
-        Node memory node = Node({
-            prev: 0,
-            next: 0,
-            seqOfShare: uint32(seqOfShare),
+        chain.orders[data.seq].node = Node({
+            prev:0,
+            next:0,
+            issuer: uint40(issuer),
             paid: uint64(paid),
             price: uint32(price),
-            expireDate: uint48(block.timestamp) + uint48(execHours) * 3600,
-            votingWeight: uint16(votingWeight),
-            distrWeight: uint16(distrWeight)
+            expireDate: uint48(block.timestamp + 3600 * execHours),
+            isOffer: isOffer
         });
+        
+        chain.orders[data.seq].data = data;
 
         _increaseLength(chain);
-
-        chain.nodes[seq] = node;
-
-        _upChain(chain, seq, sortFromHead);
-
-        sn = codifyNode(node);
+        _upChain(chain, data.seq);
     }
 
-    function _upChain(
-        Chain storage chain,
-        uint24 seq,
-        bool sortFromHead
-    ) private {
+    function _abs(uint32 a, uint32 b) private pure returns(uint32 c) {
+        c = a > b ? a - b : b - a;
+    }
 
-        Node storage n = chain.nodes[seq];
+    function _upChain(Chain storage chain,uint32 seq) private {
+
+        Node storage node = chain.orders[seq].node;
+
+        bool sortFromHead = 
+            _abs(chain.orders[tail(chain)].node.price, node.price) > 
+            _abs(chain.orders[head(chain)].node.price, node.price);
 
         (uint prev, uint next) = 
             _getPos(
-                chain, 
-                n.price, 
-                sortFromHead ? 0 : tail(chain), 
-                sortFromHead ? head(chain) : 0, 
-                sortFromHead
+                chain,
+                node.price,
+                sortFromHead ? 0 : tail(chain),
+                sortFromHead ? head(chain) : 0,
+                sortFromHead,
+                node.isOffer
             );
 
-        n.prev = uint24(prev);
-        n.next = uint24(next);
+        node.prev = uint32(prev);
+        node.next = uint32(next);
 
-        chain.nodes[prev].next = seq;
-        chain.nodes[next].prev = seq;
+        chain.orders[prev].node.next = seq;
+        chain.orders[next].node.prev = seq;
     }
 
     function _getPos(
@@ -166,63 +217,80 @@ library GoldChain {
         uint price,
         uint prev,
         uint next,
-        bool sortFromHead
+        bool sortFromHead,
+        bool isAscedning
     ) public view returns(uint, uint) {
         if (sortFromHead) {
-            while(next > 0 && chain.nodes[next].price <= price) {
-                prev = next;
-                next = chain.nodes[next].next;
+            if (isAscedning) {
+                while(next > 0 && chain.orders[next].node.price <= price) {
+                    prev = next;
+                    next = chain.orders[next].node.next;
+                }
+            } else {
+                while(next > 0 && chain.orders[next].node.price >= price) {
+                    prev = next;
+                    next = chain.orders[next].node.next;
+                }                
             }
         } else {
-            while(prev > 0 && chain.nodes[prev].price > price) {
-                next = prev;
-                prev = chain.nodes[prev].prev;
+            if (isAscedning) {
+                while(prev > 0 && chain.orders[prev].node.price > price) {
+                    next = prev;
+                    prev = chain.orders[prev].node.prev;
+                }
+            } else {
+                while(prev > 0 && chain.orders[prev].node.price < price) {
+                    next = prev;
+                    prev = chain.orders[prev].node.prev;
+                }
             }
         }
         return (prev, next);
     }
     
     function offChain(
-        Chain storage chain,
-        uint seq
-    ) public nodeExist(chain, seq) returns(Node memory node) {
+        Chain storage chain, uint seq
+    ) public returns(Order memory order) {
 
-        node = chain.nodes[seq];
+        require(isNode(chain, seq), "GC.offChain: Node not exist");
 
-        chain.nodes[node.prev].next = node.next;
-        chain.nodes[node.next].prev = node.prev;
+        order = chain.orders[seq];
 
-        delete chain.nodes[seq];
+        chain.orders[order.node.prev].node.next = order.node.next;
+        chain.orders[order.node.next].node.prev = order.node.prev;
+
+        delete chain.orders[seq];
+
         _decreaseLength(chain);
     }
 
     function _increaseCounter(
         Chain storage chain
-    ) private returns (uint24 out) { 
+    ) private returns (uint32 out) { 
 
-        Node storage n = chain.nodes[0];
-        out = uint24(n.seqOfShare);
+        Node storage node = chain.orders[0].node;
+        out = node.price;
 
         do {
             unchecked {
-                out++;        
+                out++;    
             }
         } while(isNode(chain, out) ||
             out == 0);
 
-        n.seqOfShare = out;
+        node.price = out;
     }
 
     function _increaseLength(
         Chain storage chain
     ) private {
-        chain.nodes[0].price++;
+        chain.orders[0].data.seq++;
     }
 
     function _decreaseLength(
         Chain storage chain
     ) private {
-        chain.nodes[0].price--;
+        chain.orders[0].data.seq--;
     }
 
     //#################
@@ -233,44 +301,52 @@ library GoldChain {
 
     function counter(
         Chain storage chain
-    ) public view returns (uint24) {
-        return uint24(chain.nodes[0].seqOfShare);
+    ) public view returns (uint32) {
+        return chain.orders[0].node.price;
     }
 
     function length(
         Chain storage chain
-    ) public view returns (uint24) {
-        return uint24(chain.nodes[0].price);
+    ) public view returns (uint32) {
+        return chain.orders[0].data.seq;
     }
 
     function head(
         Chain storage chain
-    ) public view returns (uint24) {
-        return chain.nodes[0].next;
+    ) public view returns (uint32) {
+        return chain.orders[0].node.next;
     }
 
     function tail(
         Chain storage chain
-    ) public view returns (uint24) {
-        return chain.nodes[0].prev;
+    ) public view returns (uint32) {
+        return chain.orders[0].node.prev;
     }
 
     // ==== Node ====
     
     function isNode(
-        Chain storage chain,
-        uint seq
+        Chain storage chain, uint seq
     ) public view returns(bool) {
-        return chain.nodes[seq].expireDate > 0;
+        return chain.orders[seq].node.expireDate > 0;
     } 
 
     function getNode(
-        Chain storage chain,
-        uint seq
-    ) public view nodeExist(chain, seq) returns(
-        Node memory 
-    ) {
-        return chain.nodes[seq];
+        Chain storage chain, uint seq
+    ) public view returns(Node memory node) {
+        node = chain.orders[seq].node;
+    }
+
+    function getData(
+        Chain storage chain, uint seq
+    ) public view returns(Data memory data) {
+        data = chain.orders[seq].data;
+    }
+
+    function getOrder(
+        Chain storage chain, uint seq
+    ) public view returns(Order memory order) {
+        order = chain.orders[seq];
     }
 
     // ==== Chain ====
@@ -281,11 +357,11 @@ library GoldChain {
         uint len = length(chain);
         uint[] memory list = new uint[](len);
 
-        Node memory node = chain.nodes[0];
+        Node memory node = chain.orders[0].node;
 
         while (len > 0) {
             list[len-1] = node.prev;
-            node = chain.nodes[node.prev];
+            node = chain.orders[node.prev].node;
             len--;
         }
 
@@ -294,16 +370,15 @@ library GoldChain {
 
     function getChain(
         Chain storage chain
-    ) public view returns (NodeWrap[] memory) {
+    ) public view returns (Order[] memory) {
         uint len = length(chain);
-        NodeWrap[] memory list = new NodeWrap[](len);
+        Order[] memory list = new Order[](len);
 
-        Node memory node = chain.nodes[0];
+        Node memory node = chain.orders[0].node;
 
         while (len > 0) {
-            list[len-1].seq = node.prev;
-            node = chain.nodes[node.prev];
-            list[len-1].node = node;
+            list[len-1] = chain.orders[node.prev];
+            node = chain.orders[node.prev].node;
             len--;
         }
 
