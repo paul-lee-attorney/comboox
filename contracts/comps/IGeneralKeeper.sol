@@ -61,8 +61,8 @@ interface IGeneralKeeper {
     // ##   Event   ##
     // ###############
 
-    event RegKeeper (uint indexed title, address indexed keeper, address indexed dk);
-    event RegBook (uint indexed title, address indexed book, address indexed dk);
+    event RegKeeper(uint indexed title, address indexed keeper, address indexed dk);
+    event RegBook(uint indexed title, address indexed book, address indexed dk);
     event ExecAction(uint256 indexed contents);
     event SaveToCoffer(uint indexed acct, uint256 indexed value, bytes32 indexed reason);
     event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);

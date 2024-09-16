@@ -85,7 +85,7 @@ library MotionsRepo {
 
     struct Record {
         DelegateMap.Map map;
-        BallotsBox.Box box;        
+        BallotsBox.Box box;
     }
 
     struct VoteCalBase {
@@ -216,14 +216,15 @@ library MotionsRepo {
             _directorProposalRightCheck(repo, seqOfMotion, caller, gr.proposeHeadRatioOfDirectorsInGM, _rod),
             "MR.PMTGM: has no proposalRight");
 
-        _proposeMotion(repo, seqOfMotion, _sha, caller);
+        _proposeMotion(repo, seqOfMotion, _sha, caller, _rom.qtyOfMembers() == 1);
     } 
 
     function _proposeMotion(
         Repo storage repo,
         uint seqOfMotion,
         IShareholdersAgreement _sha,
-        uint caller
+        uint caller,
+        bool soleMember
     ) private {
 
         require(caller > 0, "MR.PM: zero caller");
@@ -243,9 +244,9 @@ library MotionsRepo {
         Body memory body = Body({
             proposer: uint40(caller),
             proposeDate: timestamp,
-            shareRegDate: timestamp + uint48(vr.invExitDays) * 86400,
-            voteStartDate: timestamp + uint48(vr.invExitDays + vr.votePrepareDays) * 86400,
-            voteEndDate: timestamp + uint48(vr.invExitDays + vr.votePrepareDays + vr.votingDays) * 86400,
+            shareRegDate: soleMember ? timestamp : timestamp + uint48(vr.invExitDays) * 86400,
+            voteStartDate: soleMember ? timestamp : timestamp + uint48(vr.invExitDays + vr.votePrepareDays) * 86400,
+            voteEndDate: soleMember ? timestamp + 86400 : timestamp + uint48(vr.invExitDays + vr.votePrepareDays + vr.votingDays) * 86400,
             para: 0,
             state: uint8(StateOfMotion.Proposed)
         });
@@ -331,7 +332,7 @@ library MotionsRepo {
             ),
             "MR.PMTB: has no proposalRight");
 
-        _proposeMotion(repo, seqOfMotion, _sha, caller);
+        _proposeMotion(repo, seqOfMotion, _sha, caller, _rod.getNumOfDirectors() == 1);
     } 
 
     // ==== vote ====
