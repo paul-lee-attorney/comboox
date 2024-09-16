@@ -37,7 +37,7 @@ import "../../lib/InvestorsRepo.sol";
 
 interface IROAKeeper {
 
-    event PayOffApprovedDeal(address indexed ia, uint seqOfDeal, uint indexed valueOfDeal, uint indexed caller);
+    event PayOffCIDeal(uint indexed caller, uint indexed valueOfDeal);
 
     // #################
     // ##   Write IO  ##

@@ -108,13 +108,19 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
 
         msgValue -= valueOfDeal;
 
-        _gk.saveToCoffer(
-            _ros.getShare(swap.seqOfTarget).head.shareholder, 
-            valueOfDeal
-        );
+        uint seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
 
-        if (msgValue > 0)
-            _gk.saveToCoffer(caller, msgValue);
+        _gk.saveToCoffer(
+            seller,valueOfDeal, 
+            bytes32(0x4465706f736974436f6e73696465726174696f6e4f6653776170000000000000)
+        ); // reason: DepositConsiderationOfSwap
+ 
+        if (msgValue > 0) {
+            _gk.saveToCoffer(
+                caller, msgValue, 
+                bytes32(0x4465706f73697442616c616e63654f6653776170000000000000000000000000)
+            ); // reason: DepositBalanceOfSwap
+        }
     }
 
     function terminateSwap(
@@ -201,14 +207,20 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         _ros.transferShare(swap.seqOfTarget, swap.paidOfTarget, swap.paidOfTarget, 
             buyer, swap.priceOfDeal, swap.priceOfDeal);
 
+        uint seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
+
         _gk.saveToCoffer(
-            _ros.getShare(swap.seqOfTarget).head.shareholder, 
-            valueOfDeal
-        );
+            seller,valueOfDeal,
+            bytes32(0x4465706f736974436f6e73696465724f6652656a65637465644465616c000000)
+        ); // reason: DepositConsiderOfRejectedDeal
 
         msgValue -= valueOfDeal;
-        if (msgValue > 0)
-            _gk.saveToCoffer(caller, msgValue);
+        if (msgValue > 0) {
+            _gk.saveToCoffer(
+                caller, msgValue, 
+                bytes32(0x4465706f73697442616c616e63654f6652656a65637465644465616c00000000)
+            ); // reason: DepositBalanceOfRejectedDeal
+        }
     }
 
     function pickupPledgedShare(

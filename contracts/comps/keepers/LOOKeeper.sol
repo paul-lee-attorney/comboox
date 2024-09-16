@@ -151,7 +151,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
                 execHours, 
                 centPrice
             );
-        if (deals.length > 0) _closeDeals(deals);
+        if (deals.length > 0) _closeDeals(deals, true);
         if (expired.length > 0) _restoreExpiredOrders(expired);
         if (offer.price == 0 && offer.paid > 0) {
             GoldChain.Order memory balance;
@@ -162,7 +162,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         }
     }
 
-    function _closeDeals(OrdersRepo.Deal[] memory deals) private {
+    function _closeDeals(OrdersRepo.Deal[] memory deals, bool isOffer) private {
 
         IRegisterOfShares _ros = _gk.getROS(); 
         IRegisterOfMembers _rom = _gk.getROM();
@@ -180,7 +180,19 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
                 }
 
                 SharesRepo.Share memory share = _ros.getShare(deal.seqOfShare);
-                _gk.saveToCoffer(share.head.shareholder, deal.consideration);
+
+                if (isOffer) {
+                    _gk.releaseCustody(
+                        deal.buyer, share.head.shareholder, deal.consideration,
+                        bytes32(0x436c6f73654f66666572416761696e7374426964000000000000000000000000)
+                    ); // reason: CloseOfferAgainstBid
+                } else {
+                    _gk.saveToCoffer(
+                        share.head.shareholder, deal.consideration,
+                        bytes32(0x436c6f7365426964416761696e73744f66666572000000000000000000000000)
+                    ); // reason: CloseBidAgainstOffer
+                }
+
                 _ros.increaseCleanPaid(deal.seqOfShare, deal.paid);
                 _ros.transferShare(
                     deal.seqOfShare,
@@ -191,9 +203,17 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
                     0
                 );
 
-                emit ReleaseSTConsideration(share.head.shareholder, deal.consideration);
-
             } else {
+
+                if (isOffer) {
+                    _gk.releaseCustody(
+                        deal.buyer, 0, deal.consideration,
+                        bytes32(0x436c6f7365496e69744f66666572416761696e73744269640000000000000000)
+                    ); // reason: CloseInitOfferAgainstBid
+                } else {
+                    emit CloseBidAgainstInitOffer(deal.buyer, deal.consideration);
+                }
+
                 SharesRepo.Share memory share;
                 
                 share.head = SharesRepo.Head({
@@ -233,12 +253,13 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
             if (order.data.seqOfShare > 0) {
                 _ros.increaseCleanPaid(order.data.seqOfShare, order.node.paid);
             } else {
-                 _ros.increaseEquityOfClass(false, order.data.classOfShare, 0, 0, order.node.paid);
+                _ros.increaseEquityOfClass(false, order.data.classOfShare, 0, 0, order.node.paid);
             }
         } else {
-            uint amt = uint(order.node.paid) * order.node.price / 10000 * order.data.centPriceInWei / 100;
-            _gk.saveToCoffer(order.data.buyer, amt);
-            emit RefundBidDeposit(order.data.buyer, amt);
+            _gk.releaseCustody(
+                order.node.issuer, order.node.issuer, order.data.margin,
+                bytes32(0x526566756e6456616c75654f664269644f726465720000000000000000000000)
+            ); //RefundValueOfBidOrder
         }
     }
 
@@ -445,11 +466,20 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
                 msgValue
             );
 
-        if (deals.length > 0) _closeDeals(deals);
+        if (deals.length > 0) _closeDeals(deals, false);
         if (expired.length > 0) _restoreExpiredOrders(expired);
-        if (bid.price == 0 && bid.paid > 0) {
-            _gk.saveToCoffer(bid.buyer, bid.consideration);
-            emit RefundBidDeposit(bid.buyer, bid.consideration);
+        if (bid.paid > 0 && bid.price > 0) {
+            uint acct = bid.buyer;
+            acct = (acct << 40) + acct;
+            _gk.saveToCoffer(
+                acct, bid.consideration,
+                bytes32(0x437573746f647956616c75654f664269644f7264657200000000000000000000)
+            ); // CustodyValueOfBidOrder
+        } else if (bid.consideration > 0) {
+            _gk.saveToCoffer(
+                bid.buyer, bid.consideration,
+                bytes32(0x4465706f73697442616c616e63654f664269644f726465720000000000000000)
+            ); // DepositBalanceOfBidOrder
         }
     }
 
@@ -465,7 +495,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, false);
         
-        require(order.data.buyer == caller,
+        require(order.node.issuer == caller,
             "LOOK.withdrawBuyOrder: not buyer");
         
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, false);

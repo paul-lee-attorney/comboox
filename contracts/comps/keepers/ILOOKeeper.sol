@@ -29,9 +29,7 @@ import "../../lib/InvestorsRepo.sol";
 
 interface ILOOKeeper {
 
-    event ReleaseSTConsideration(uint indexed payee, uint indexed amt);
-    event RefundBidDeposit(uint indexed buyer, uint indexed amt);
-    event RefundBidBalance(uint indexed buyer, uint indexed amt);
+    event CloseBidAgainstInitOffer(uint indexed buyer, uint indexed amt);
 
     //###############
     //##   Write   ##

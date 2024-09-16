@@ -418,16 +418,23 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
             _gk.getROA().execFile(ia);
 
         if (deal.head.seqOfShare > 0) {
-            _gk.saveToCoffer(deal.head.seller, valueOfDeal);
+            _gk.saveToCoffer(
+                deal.head.seller, valueOfDeal, 
+                bytes32(0x4465706f736974436f6e73696465726174696f6e4f6653544465616c00000000)
+            ); // DepositConsiderationOfSTDeal 
             _shareTransfer(_ia, deal.head.seqOfDeal);
         } else {
             _issueNewShare(_ia, deal.head.seqOfDeal);
+            emit PayOffCIDeal(caller, valueOfDeal);
         }
 
         msgValue -= valueOfDeal;
-        if (msgValue > 0)
-            _gk.saveToCoffer(caller, msgValue);
-            
+        if (msgValue > 0) {
+            _gk.saveToCoffer(
+                caller, msgValue,
+                bytes32(0x4465706f73697442616c616e63654f664f54434465616c000000000000000000)
+            ); // DepositBalanceOfOTCDeal 
+        }    
     }
     
 }

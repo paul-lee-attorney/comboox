@@ -119,7 +119,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint len = expired.length;
         while (len > 0) {
             emit OrderExpired(expired[len - 1].node.codifyNode(),
-                expired[len - 1].data.codifyData(),isOffer);
+                expired[len - 1].data.codifyData(), isOffer);
             len--;
         }
     }
@@ -169,7 +169,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
             seqOfOrder, isOffer
         );
 
-        if (order.node.paid > 0) emit OrderWithdrawn(
+        emit OrderWithdrawn(
             order.node.codifyNode(), order.data.codifyData(), isOffer
         );
     }

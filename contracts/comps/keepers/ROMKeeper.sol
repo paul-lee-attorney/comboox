@@ -71,7 +71,10 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
         
         msgValue -= valueOfDeal;
         if (msgValue > 0) {
-            _gk.saveToCoffer(caller, msgValue); 
+            _gk.saveToCoffer(
+                caller, msgValue, 
+                bytes32(0x4465706f73697442616c616e63654f66506179496e4361700000000000000000)
+            ); // reason: DepositBalanceOfPayInCap 
         }
 
         _ros.payInCapital(seqOfShare, amt);

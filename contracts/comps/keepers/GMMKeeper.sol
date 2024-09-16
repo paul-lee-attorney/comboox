@@ -440,15 +440,19 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint totalPoints = _rom.ownersPoints().points;
         uint sum = 0;
 
-        while (len > 0) {
+        while (len > 1) {
             uint member = members[len - 1];
             uint pointsOfMember = _rom.pointsOfMember(member).points;
+            uint value = pointsOfMember * amt / totalPoints;
             
-            _gk.saveToCoffer(member, pointsOfMember * amt / totalPoints);
-            sum += pointsOfMember * amt / totalPoints;
+            // reason: DistributeProfits
+            _gk.saveToCoffer(member, value, bytes32(0x4469737472696275746550726f66697473000000000000000000000000000000));
+            sum += value;
 
             len--;
         }
+            // reason: DistributeProfits
+        _gk.saveToCoffer(members[0], amt-sum, bytes32(0x4469737472696275746550726f66697473000000000000000000000000000000));
 
         emit DistributeProfits(sum, seqOfMotion, caller);
     }

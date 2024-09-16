@@ -582,9 +582,9 @@ contract GeneralKeeper is IGeneralKeeper, RoyaltyCharge {
         return _rc.getCentPriceInWei(_info.currency);
     }
 
-    function saveToCoffer(uint acct, uint value) external{
+    function saveToCoffer(uint acct, uint value, bytes32 reason) external{
 
-        require (
+        require(
                 msg.sender == _keepers[4] ||
                 msg.sender == _keepers[5] ||
                 msg.sender == _keepers[6] ||
@@ -598,7 +598,7 @@ contract GeneralKeeper is IGeneralKeeper, RoyaltyCharge {
         _coffers[acct] += value;
         _coffers[0] += value;
 
-        emit SaveToCoffer(acct, value);        
+        emit SaveToCoffer(acct, value, reason);
     }
 
     function pickupDeposit() external isNormal{
@@ -616,6 +616,27 @@ contract GeneralKeeper is IGeneralKeeper, RoyaltyCharge {
             emit PickupDeposit(msg.sender, caller, value);
 
         } else revert("GK.pickupDeposit: no balance");
+    }
+    
+    function releaseCustody(uint from, uint to, uint amt, bytes32 reason) external isNormal {
+
+        require (msg.sender == _keepers[10], 
+            "GK.releaseCustody: wrong Keeper");
+
+        uint acct = (from << 40) + from; 
+
+        uint value = _coffers[acct];
+        require (value >= amt, "GK.releaseCusotody: insufficient");
+
+        _coffers[acct] -= amt;
+
+        if (to > 0) {
+            _coffers[to] += amt;
+        } else {
+            _coffers[0] -= amt;
+        }
+
+        emit ReleaseCustody(from, to, amt, reason);
     }
 
     function proposeToDistributeProfits(

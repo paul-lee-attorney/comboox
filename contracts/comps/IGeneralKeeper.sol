@@ -64,11 +64,12 @@ interface IGeneralKeeper {
     event RegKeeper (uint indexed title, address indexed keeper, address indexed dk);
     event RegBook (uint indexed title, address indexed book, address indexed dk);
     event ExecAction(uint256 indexed contents);
-    event SaveToCoffer(uint indexed acct, uint256 indexed value);
+    event SaveToCoffer(uint indexed acct, uint256 indexed value, bytes32 indexed reason);
     event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);
     event DistributeProfits(uint indexed amt, uint indexed expireDate, uint indexed seqOfMotion);
     event ReceivedCash(address indexed from, uint indexed amt);
     event DeprecateGK(address indexed receiver, uint indexed balanceOfCBP, uint indexed balanceOfETH);
+    event ReleaseCustody(uint indexed from, uint indexed to, uint indexed amt, bytes32 reason);
 
     // ######################
     // ##   AccessControl  ##
@@ -375,9 +376,11 @@ interface IGeneralKeeper {
 
     function getCentPrice() external view returns(uint);
 
-    function saveToCoffer(uint acct, uint value) external;
+    function saveToCoffer(uint acct, uint value, bytes32 reason) external;
 
     function pickupDeposit() external;
+
+    function releaseCustody(uint from, uint to, uint amt, bytes32 reason) external;    
 
     function proposeToDistributeProfits(
         uint amt,

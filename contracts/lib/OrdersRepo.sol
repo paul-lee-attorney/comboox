@@ -127,9 +127,8 @@ library OrdersRepo {
                 groupRep: 0,
                 votingWeight: offer.votingWeight,
                 distrWeight: offer.distrWeight,
-                centPriceInWei: uint64(centPriceInWei),
-                buyer: 0,
-                seq: 0
+                margin: 0,
+                state: 0
             }); 
 
             repo.offers.createNode(
@@ -177,8 +176,7 @@ library OrdersRepo {
             consideration: consideration
         });
 
-        require(consideration >= 
-            bid.paid * bid.price / 10000 * centPriceInWei / 100,
+        require(consideration >= getDealValue(bid.paid, bid.price, centPriceInWei),
             "OR.placeBuyOrder: insufficient msgValue");
 
         _matchOrders(repo, bid, centPriceInWei);
@@ -191,9 +189,8 @@ library OrdersRepo {
                 groupRep: bid.groupRep,
                 votingWeight: 0,
                 distrWeight: 0,
-                centPriceInWei: uint64(centPriceInWei),
-                buyer: bid.buyer,
-                seq: 0
+                margin: uint128(bid.consideration),
+                state: 0
             }); 
 
             repo.bids.createNode(
@@ -224,17 +221,9 @@ library OrdersRepo {
             : repo.bids.offChain(seqOfOrder);
     }
 
-    function _updateBid(
-        GoldChain.Order storage n,
-        uint centPriceInWei
-    ) private {
-        n.node.paid = uint64(uint(n.node.paid) * n.data.centPriceInWei / centPriceInWei);
-        n.data.centPriceInWei = uint64(centPriceInWei);
-    }
-
-    function _getDealValue(
+    function getDealValue(
         uint paid, uint price, uint centPrice
-    ) private pure returns (uint64) {
+    ) public pure returns (uint64) {
         return uint64(paid * price / 10000 * centPrice / 100);
     } 
 
@@ -265,57 +254,79 @@ library OrdersRepo {
             if (order.price == 0 || 
                     (isOffer ? n.node.price >= order.price : n.node.price <= order.price)) {
 
-                if (isOffer) {
-                    _updateBid(n, centPriceInWei);
-                } else if(order.price == 0 && 
-                    order.consideration < _getDealValue(order.paid, n.node.price, centPriceInWei)) {
-                    order.paid = uint64(order.consideration * 10000 / n.node.price * 100 / centPriceInWei);
+                Deal memory deal;
+
+                deal.price = isOffer 
+                    ?   order.price == 0 ? n.node.price : order.price
+                    :   n.node.price; 
+
+                if (order.paid >= n.node.paid) {
+                    deal.paid = n.node.paid;
+                    n.data.state = 1;
+                } else {
+                    deal.paid = order.paid;
                 }
 
-                bool paidAsList = n.node.paid <= order.paid;
+                deal.consideration = getDealValue(deal.paid, deal.price, centPriceInWei);
 
-                Deal memory deal = isOffer
-                    ? Deal({
-                        classOfShare: order.classOfShare,
-                        seqOfShare: order.seqOfShare,
-                        buyer: n.data.buyer,
-                        groupRep: n.data.groupRep,
-                        paid: paidAsList ? n.node.paid : order.paid,
-                        price: order.price > 0 ? order.price : n.node.price,
-                        votingWeight: order.votingWeight,
-                        distrWeight: order.distrWeight,
-                        consideration: 0
-                    })
-                    : Deal({
-                        classOfShare: n.data.classOfShare,
-                        seqOfShare: n.data.seqOfShare,
-                        buyer: order.buyer,
-                        groupRep: order.groupRep,
-                        paid: paidAsList ? n.node.paid : order.paid,
-                        price: n.node.price,
-                        votingWeight: n.data.votingWeight,
-                        distrWeight: n.data.distrWeight,
-                        consideration: 0
-                    });
+                if (isOffer) {
 
-                deal.consideration = _getDealValue(deal.paid, deal.price, centPriceInWei);
-                repo.deals.push(deal);
+                    if (deal.consideration >= n.data.margin) {
+                        deal.consideration = n.data.margin;
+                        deal.paid = uint64(deal.consideration * 100 / centPriceInWei * 10000 / deal.price);
+                        
+                        n.data.margin = 0;
+                        n.node.paid = 0;
+                        n.data.state = 1;
+                    } else {
+                        n.data.margin -= uint128(deal.consideration);
+                        n.node.paid -= deal.paid;
+                    }
 
-                if (paidAsList) {
-                    seqOfNode = chain.offChain(seqOfNode).node.next;
+                    deal.classOfShare = order.classOfShare;
+                    deal.seqOfShare = order.seqOfShare;
+                    deal.buyer = n.node.issuer;
+                    deal.groupRep = n.data.groupRep;
+                    deal.votingWeight = order.votingWeight;
+                    deal.distrWeight = order.distrWeight;
+
                 } else {
+                    
+                    if (deal.consideration >= order.consideration) {
+                        deal.consideration = order.consideration;
+                        deal.paid = uint64(deal.consideration * 100 / centPriceInWei * 10000 / deal.price);
+
+                        order.paid = deal.paid;
+
+                        if (n.data.state == 1) {
+                            n.data.state = 0;
+                        }
+                    }
+
                     n.node.paid -= deal.paid;
+
+                    order.consideration -= deal.consideration;
+
+                    deal.classOfShare = n.data.classOfShare;
+                    deal.seqOfShare = n.data.seqOfShare;
+                    deal.buyer = order.buyer;
+                    deal.groupRep = order.groupRep;
+                    deal.votingWeight = n.data.votingWeight;
+                    deal.distrWeight = n.data.distrWeight;
+
                 }
 
                 order.paid -= deal.paid;
 
-                if (!isOffer) {
-                    if (order.paid > 0) {
-                        order.consideration -= deal.consideration;
-                    } else {
-                        order.consideration = 0;
+                if (n.data.state == 1) {
+                    GoldChain.Order memory delistedOrder = chain.offChain(seqOfNode);
+                    seqOfNode = delistedOrder.node.next;
+                    if (isOffer) {
+                        repo.expired.push(delistedOrder);
                     }
                 }
+
+                repo.deals.push(deal);
 
             } else break;
         }
