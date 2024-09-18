@@ -32,6 +32,10 @@ contract FuelTank is Ownable {
     rate = _rate;
   }
 
+  event Refuel (address indexed buyer, uint indexed amtOfEth, uint indexed amtOfCbp);
+  event WithdrawFuel (address indexed owner, uint indexed amt);
+  event WithdrawIncome (address indexed owner, uint indexed amt);
+
   // ##################
   // ##  Write I/O   ##
   // ##################
@@ -45,25 +49,22 @@ contract FuelTank is Ownable {
     uint amt = msg.value * rate / 10000;
 
     if (amt > 0 && _rc.balanceOf(address(this)) >= amt) {
-
       _rc.transfer(msg.sender, amt);
-      
       sum += amt;
-
+      emit Refuel (msg.sender, msg.value, amt);
     } else revert ('zero amt or insufficient balace');
 
   }
 
   function withdrawIncome(uint amt) external onlyOwner {
     Address.sendValue(payable(msg.sender), amt);
+    emit WithdrawIncome(msg.sender, amt);
   }
 
   function withdrawFuel(uint amt) external onlyOwner {
-
     if (_rc.balanceOf(address(this)) >= amt) {
-
         _rc.transfer(msg.sender, amt);
-
+        emit WithdrawFuel(msg.sender, amt);
     } else revert('insufficient fuel');
   }
 
