@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: UNLICENSED
+
+/* *
+ * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * All Rights Reserved.
+ * */
+
+const addrList = {
+  "ArrayUtils": "0x6a463566D66c4D35664a9c42451870c23826A4d0",
+  "BallotsBox": "0xA6a902791E6ba1F9288DfD9969C51890419bf903",
+  "Checkpoints": "0xC99C58947Bed27D43d99D0Ffe3e977cFb34c34b4",
+  "DelegateMap": "0x75F49b5fD95850FB70e8Cf0D1e0d7619b2d42552",
+  "DocsRepo": "0x5fC8d68ddFB088528A630C9852C3585B58bc18fd",
+  "EnumerableSet": "0xc4F24b69792Ff96f0316fab2D7dF198aF8033930",
+  "FRClaims": "0xe0B408681288A6b3d138b693c65e2423a754D500",
+  "GoldChain": "0xd4b495c7C9132e49056850bA049999cB516846Cb",
+  "RolesRepo": "0xc92cb1397E10429b3d9b1dd19f6025FD3D55ea6a",
+  "RulesParser": "0x442719360Abe969B6243d8B309CC59B51F54e184",
+  "SwapsRepo": "0x99a5510c78236381e2885206838b3dEA5C8DCf8c",
+  "TopChain": "0x0891197CD60EcC75A9b33FF52319FEE25B18992e",
+  "OrdersRepo": "0x282fBF4e2cF17612bB538D9fcb4A17616d0df64b",
+  "CondsRepo": "0xEeEd28a73e6a889141D24B0a7ae0a0297aD42e0b",
+  "DTClaims": "0xA32CE3DfCe44A80f4c345F5F4A38387c0Dcba480",
+  "FilesRepo": "0x5D274fad76A675f62247591A85f1af5Ac08AB574",
+  "LockersRepo": "0xf32d55a6f821417460218ef95729F1EF31999dE4",
+  "OfficersRepo": "0x6f9dfF195e0A67169917D001790D5cfE509F1f0d",
+  "PledgesRepo": "0xbF74BAE9fD4933abdAea1129Ddd78FfD24eae144",
+  "SigsRepo": "0x86132eED1084B46492Ed7f4F28Bb3d70Ae2f2d5F",
+  "SharesRepo": "0xc8b7e13294dDd59A5e51f5F348a90630704EDCD4",
+  "TeamsRepo": "0x934ab1e9C9CE0A191ab91e5CEAd4F1a3Cce58977",
+  "MembersRepo": "0x8D84ade913E57100F0D7C57055A900458e94B649",
+  "MotionsRepo": "0x32eCA91ffaE51e63F1016f029304A3aFe8505D58",
+  "DealsRepo": "0x1F40BDEddbA43471b20b2C484aFfb6a5f083dbcA",
+  "OptionsRepo": "0xc8BE0f1Cd988BdE9B6b62E9663Dbe3d32527037B",
+  "UsersRepo": "0xa32d157eB58C3E62B7896b34FAE97eB862F5a838",
+  "LinksRepo": "0xdC8809871864A301d1d5f52AF44Faab196CfA577",
+  "RegCenter": "0x1Fc0A05132D8cD2204bCd6214D48499D27cB1a15",
+  "CreateNewComp": "0x93228EE431b71C4156FF56d97f9D9B282b6035D1",
+  "InvestmentAgreement": "0x93df8ef4D0c9aD17b035Bcf383B5418D8aB4bd9A",
+  "ShareholdersAgreement": "0x7f1734757792dB440156a2e8bd9ccbB03BA9cA75",
+  "AntiDilution": "0x1Be8c86fB9530dAeF20E2707c71B6ab1cdd3bA8a",
+  "LockUp": "0x6b49C5E59Ab5f3F8A2C306b39284Ccda805eA78E",
+  "Alongs": "0x80B7DFfD123576B21c8142562C8C455eF508D827",
+  "Options": "0xE72c7C5FebD47611af628546ca0A82FeA34700A6",
+  "GeneralKeeper": "0x0C31C68b986B86E0fd246F2b9765aC92576D3B50",
+  "ROOKeeper": "0xDFF2B495216A56f3b6aA03a5822A5c270Df96aFf",
+  "ROMKeeper": "0xb29321382B962fE2193dbe23Ae3bf9B0f97B34A6",
+  "RODKeeper": "0xC7776ABaD91C307B82A27Af968f6b76e4ADfE5DB",
+  "SHAKeeper": "0x0DD613d76680BfB9A6ba48b2A4F1A8cA423A9229",
+  "GMMKeeper": "0x66a91Af298317c0172a951dD0A3bbBa8377005f9",
+  "BMMKeeper": "0x8Eb358584b7E38076E4AE9B7D0a9f886B0EB66c5",
+  "LOOKeeper": "0x8FB053E4bF27d47da6196c3975a7A210bF22f8E6",
+  "ROAKeeper": "0xE45c78e2e9C97f9Bd4Ff7Ab799C40f22b9070F18",
+  "ROCKeeper": "0xDc73bA946116b77f6E15A5Ef84f1471CaeFcE9ec",
+  "ROPKeeper": "0x42eE6F77B3576351096cf5Df0115573bA76a0A65",
+  "RegisterOfAgreements": "0x46850B31840bdE352A06615F1dE1AdE0aB87dE5C",
+  "RegisterOfDirectors": "0x7713D675232e7eD9C7595A8b2AEeE177D802ff40",
+  "MeetingMinutes": "0x8A72F4D185FC82DBA8fD308b8aC968869e8FfF4C",
+  "RegisterOfConstitution": "0xb3d42637FcE9982B12aC7bAD91f39abEE810529a",
+  "RegisterOfOptions": "0x3e4598Fc3b3B1eC2E417750D537248467F8dCDb6",
+  "RegisterOfPledges": "0xFD3ed1C91Cc272392182cC250F46C3f973E00C2b",
+  "RegisterOfShares": "0xb269e57Cc1F9F0f79c0445d52F1A345db60cA1E5",
+  "RegisterOfMembers": "0xAEBD450f41267DeE05E65C699140E89Cd4522212",
+  "ListOfOrders": "0x76a3C9D1c72A4f9FA91b6F0071cB128B970B3317",
+  "FuleTank": "0x9e68f22b636E54A7FF7e62bE3Ff2cbd28947182d",
+  "MockFeedRegistry": "",
+  "ListOfProjects": "0x15f435f162E144b81a5B9BDAcC5455A43795fa81"
+};
+
+const hre = require("hardhat");
+
+async function readContract(targetName) {
+
+  let Target = hre.artifacts.readArtifactSync(targetName);
+  let addr = addrList[targetName];
+  let target = await hre.ethers.getContractAt(Target.abi, addr);
+
+  console.log("Obtained ", targetName, " at address:", target.address, " \n");
+
+  return target;
+};
+
+module.exports = {
+  readContract,
+};

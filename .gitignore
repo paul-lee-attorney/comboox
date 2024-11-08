@@ -9,8 +9,6 @@ artifacts
 
 test
 
-scripts
-
 server/src/contracts/
 
 hardhat.config.js
