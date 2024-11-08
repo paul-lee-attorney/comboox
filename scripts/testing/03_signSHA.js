@@ -6,26 +6,18 @@
  * */
 
 const hre = require("hardhat");
-const path = require("path");
-const fs = require("fs");
-const tempsDir = path.join(__dirname, "..", "..", "server", "src", "contracts");
 
 const { readContract } = require("../readTool"); 
-const { grParser, grCodifier, prParser, prCodifier, vrParser, vrCodifier, lrParser, lrCodifier, bigIntToNum, Bytes32Zero, alongRuleCodifier, parseTimestamp } = require('./utils');
-const { title } = require("process");
+const { parseTimestamp, Bytes32Zero } = require('./utils');
+const { getROC, getGK } = require("./boox");
+const { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, lrParser, lrCodifier, alongRuleCodifier, alongRuleParser } = require("./sha");
 
 async function main() {
 
-    const fileNameOfTemps = path.join(tempsDir, "contracts-address.json");
-    const Temps = JSON.parse(fs.readFileSync(fileNameOfTemps,"utf-8"));
-
-    const fileNameOfBoox = path.join(__dirname, "boox.json");
-    const Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
-
 	  const signers = await hre.ethers.getSigners();
 
-    const gk = await readContract("GeneralKeeper", Boox.GK);
-    const roc = await readContract("RegisterOfConstitution", Boox.ROC);
+    const gk = await getGK();
+    const roc = await getROC();
 
     // ==== Create SHA ====
 
@@ -49,7 +41,7 @@ async function main() {
     const estDate = (new Date('2023-11-08')).getTime()/1000;
 
     let gr = grParser(await sha.getRule(0));
-    console.log("Default GovernanceRule:", gr, "\n");
+    // console.log("Default GovernanceRule:", gr, "\n");
 
     gr.establishedDate = estDate;
     gr.businessTermInYears = 99;
@@ -62,7 +54,7 @@ async function main() {
 
     for (let i=1; i<13; i++) {
       let vr = vrParser(await sha.getRule(i));
-      console.log("Default VotingRule", i, ":", vr, "\n");
+      // console.log("Default VotingRule", i, ":", vr, "\n");
 
       if (i<8 ) {
         vr.frExecDays = 1;
@@ -216,7 +208,7 @@ async function main() {
     }
 
     await da.addDragger(alongRuleCodifier(alongRule), 1);
-    console.log('Along Rule Dragged by User_1:', await da.getLinkRule(1), "\n");
+    console.log('Along Rule Dragged by User_1:', alongRuleParser(await da.getLinkRule(1)), "\n");
 
     await da.addFollower(1, 3);
     await da.addFollower(1, 4);   
@@ -244,7 +236,7 @@ async function main() {
     }
 
     await ta.addDragger(alongRuleCodifier(alongRule), 1);
-    console.log('Along Rule Tagged to User_1:', await ta.getLinkRule(1), "\n");
+    console.log('Along Rule Tagged to User_1:', alongRuleParser(await ta.getLinkRule(1)), "\n");
 
     await ta.addFollower(1, 3);
     await ta.addFollower(1, 4);   

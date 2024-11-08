@@ -6,28 +6,24 @@
  * */
 
 const hre = require("hardhat");
-const path = require("path");
-const fs = require("fs");
-const tempsDir = path.join(__dirname, "..", "..", "server", "src", "contracts");
 
+const { getGK, getROA, getGMM, getROS, getROM, } = require("./boox");
 const { readContract } = require("../readTool"); 
-const { parseTimestamp, codifyHeadOfDeal, increaseTime, Bytes32Zero, now, parseShare } = require("./utils");
+const { parseTimestamp, increaseTime, Bytes32Zero, now, } = require("./utils");
+const { codifyHeadOfDeal, parseDeal } = require("./roa");
+const { printShares } = require("./ros");
+const { printMembers } = require("./rom");
+
 
 async function main() {
 
-    const fileNameOfTemps = path.join(tempsDir, "contracts-address.json");
-    const Temps = JSON.parse(fs.readFileSync(fileNameOfTemps,"utf-8"));
-
-    const fileNameOfBoox = path.join(__dirname, "boox.json");
-    const Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
-
 	  const signers = await hre.ethers.getSigners();
 
-    const gk = await readContract("GeneralKeeper", Boox.GK);
-    const roa = await readContract("RegisterOfAgreements", Boox.ROA);
-    const gmm = await readContract("MeetingMinutes", Boox.GMM);
-    const ros = await readContract("RegisterOfShares", Boox.ROS);
-    const rom = await readContract("RegisterOfMembers", Boox.ROM);
+    const gk = await getGK();
+    const roa = await getROA();
+    const gmm = await getGMM();
+    const ros = await getROS();
+    const rom = await getROM();
     
     // ==== Create Investment Agreement ====
 
@@ -63,7 +59,7 @@ async function main() {
     await ia.addDeal(codifyHeadOfDeal(headOfDeal), 3, 3, 10000 * 10 ** 4, 10000 * 10 ** 4, 100);
 
     const deal = await ia.getDeal(1);
-    console.log('created deal:', deal);
+    console.log('created deal:', parseDeal(deal), "\n");
 
     // ---- Config SigPage of IA ----
 
@@ -130,11 +126,9 @@ async function main() {
 
     await gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value});
 
-    const shares = (await ros.getSharesList()).map(v => parseShare(v));
-    console.log('Shares of the Comp:', shares);
+    await printShares(ros);
 
-    const members = (await rom.membersList()).map(v => v.toString());
-    console.log('Members of the Comp:', members);
+    await printMembers(rom);
 
 }
 

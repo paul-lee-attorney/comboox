@@ -5,64 +5,40 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
-const path = require("path");
-const fs = require("fs");
-const tempsDir = path.join(__dirname, "..", "..", "server", "src", "contracts");
-const { readContract } = require("../readTool"); 
 const { saveBooxAddr } = require("./saveTool");
-const { codifyHeadOfShare, parseHeadOfShare, pfrCodifier, pfrParser, longDataParser } = require('./utils');
+const { codifyHeadOfShare, printShares } = require('./ros');
+const { getCNC, getGK, getROM, getROS } = require("./boox");
+const { parseTimestamp } = require("./utils");
 
+const parseCompInfo = (arr) => {
+  const info = {
+    regNum: arr[0],
+    regDate: parseTimestamp(arr[1]),
+    currency: arr[2],
+    state: arr[3],
+    symbol: ethers.utils.toUtf8String(arr[4]),
+    name: arr[5],
+  }
+
+  return info;
+}
 
 async function main() {
-
-    const fileNameOfContractAddrList = path.join(tempsDir, "contracts-address.json");
-    const Temp = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
-
-    const fileNameOfBoox = path.join(__dirname, "boox.json");
-    const Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
 
 	  const signers = await hre.ethers.getSigners();
     console.log('Acct_1:', signers[0].address, "Acct_2:", signers[1].address, "\n");
 
-    const rc = await readContract("RegCenter", Temp.RegCenter);
-    const ft = await readContract("FuelTank", Temp.FuelTank);
-
-    // ==== Set Platform Rule ====
-
-
-    let pfr = pfrParser(await rc.getPlatformRule());
-    console.log("Obtained PlatformRule:", pfr);
-
-    pfr.eoaRewards = "0.018";
-    await rc.setPlatformRule(pfrCodifier(pfr));
-    pfr = pfrParser(await rc.getPlatformRule());
-    console.log("Updated PlatformRule:", pfr, "\n");
-
-    // ==== Reg Users ====
-
-    await rc.mint(signers[0].address, 8n * 10n ** 18n);
-    await rc.mint(signers[1].address, 8n * 10n ** 18n);
-
-    for (let i = 3; i<7; i++) {
-      await rc.connect(signers[i]).regUser();
-      console.log('RegUser:', await rc.connect(signers[i]).getMyUserNo());
-      console.log('Balance Of CBP:', ethers.utils.formatUnits((await rc.balanceOf(signers[i].address)), 18), "\n");
-    }
-    await rc.connect(signers[2]).regUser();
-    console.log('RegUser:', await rc.connect(signers[2]).getMyUserNo());
-    console.log('Balance Of CBP:', ethers.utils.formatUnits((await rc.balanceOf(signers[2].address)), 18), "\n");
+    const cnc = await getCNC();
 
     // ==== Create Company ====
 
-    const cnc = await readContract("CreateNewComp", Temp.CreateNewComp);
     let tx = await cnc.createComp(signers[1].address);
     let receipt = await tx.wait();
 
     const GK = `0x${receipt.logs[0].topics[2].substring(26)}`;
     saveBooxAddr("GK", GK);
 
-    const gk = await readContract("GeneralKeeper", GK);
+    const gk = await getGK(GK);
     
     const ROC = await gk.getROC();
     saveBooxAddr("ROC", ROC);
@@ -129,17 +105,13 @@ async function main() {
     const symbol = ethers.utils.hexlify(ethers.utils.toUtf8Bytes("COMBOOX")).padEnd(40, '0');
     await gk.connect(signers[1]).setCompInfo(0, symbol, "ComBoox DAO LLC");
     
-    const info = await gk.getCompInfo();
-    console.log('CompInfo:', info);
-    console.log('Symbol:', ethers.utils.toUtf8String(info[4]));
-    const regDate = new Date(info[1]*1000);
-    console.log('RegDate:', regDate.toUTCString(), '\n');
+    const info = parseCompInfo(await gk.getCompInfo());
+    console.log('CompInfo:', info, "\n");
     
-    const rom = await readContract("RegisterOfMembers", ROM);
+    const rom = await getROM();
     rom.connect(signers[1]).setMaxQtyOfMembers(0);
 
-    const ros = await readContract("RegisterOfShares", ROS);
-
+    const ros = await getROS();
     let issueDate = (new Date('2023-11-08')).getTime()/1000;
     
     let head = {
@@ -194,39 +166,13 @@ async function main() {
 
     await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), issueDate, 10000 * 10 ** 4, 20000 * 10 ** 4, 100);
 
-    let filter = ros.filters.IssueShare();
-    let events = await ros.queryFilter(filter);
-
-    events.forEach((log)=>{
-      console.log("BlkNo:", log.blockNumber);
-      console.log("IssuedShare:", parseHeadOfShare(log.topics[1]), 'with Paid:', longDataParser(ethers.utils.formatUnits(log.topics[2], 4)), 'and Par:', longDataParser(ethers.utils.formatUnits(log.topics[3], 4)), "\n");
-    });
+    await printShares(ros);
 
     ros.connect(signers[1]).setDirectKeeper(gk.address);
     console.log('return Key of ROS \n');
 
     rom.connect(signers[1]).setDirectKeeper(gk.address);
     console.log('return Key of ROM \n');
-
-    // ==== Transfer Ownership of Platform to Company ====
-
-    await rc.transferOwnership(Boox.GK);
-    let newOwner = await rc.getOwner();
-    console.log('newOwner of ComBoox:', newOwner, '\n');
-
-    // ==== Transfer Ownership of Fuel Tank to Company ====
-
-    await ft.setNewOwner(Boox.GK);
-    newOwner = await ft.getOwner();
-    console.log('newOwner of FuelTank:', newOwner, '\n');
-
-    // ==== Transfer IPR of Templates to Company ====
-
-    for (let i=1; i<28; i++) {
-      tx = await rc.transferIPR(i, 1, 8);
-      receipt = await tx.wait();
-      console.log('IPR of typeOfDoc', Number(receipt.logs[0].topics[1]),'version', Number(receipt.logs[0].topics[2]), 'was transfered to User', Number(receipt.logs[0].topics[3]), '\n');
-    }
     
 }
 

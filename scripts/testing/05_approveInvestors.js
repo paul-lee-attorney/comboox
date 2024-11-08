@@ -6,25 +6,16 @@
  * */
 
 const hre = require("hardhat");
-const path = require("path");
-const fs = require("fs");
-const tempsDir = path.join(__dirname, "..", "..", "server", "src", "contracts");
 
-const { readContract } = require("../readTool"); 
-const { Bytes32Zero, parseTimestamp } = require("./utils");
+const { parseTimestamp } = require("./utils");
+const { getGK, getLOO } = require("./boox");
 
 async function main() {
 
-    const fileNameOfTemps = path.join(tempsDir, "contracts-address.json");
-    const Temps = JSON.parse(fs.readFileSync(fileNameOfTemps,"utf-8"));
-
-    const fileNameOfBoox = path.join(__dirname, "boox.json");
-    const Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
-
 	  const signers = await hre.ethers.getSigners();
 
-    const gk = await readContract("GeneralKeeper", Boox.GK);
-    const loo = await readContract("ListOfOrders", Boox.LOO);
+    const gk = await getGK();
+    const loo = await getLOO();
     
     // ==== Reg Investors ====
 
