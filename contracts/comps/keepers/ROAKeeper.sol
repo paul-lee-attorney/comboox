@@ -270,6 +270,8 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         require (_lockUpCheck(address(_ia), deal, uint48(block.timestamp)),
             "ROAK._ST: share locked");
 
+        require(_checkAlong(_ia, seqOfDeal), "ROAK.shareTransfer: Along Deal Open");
+
         _ros.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _ros.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, 
             deal.body.buyer, deal.head.priceOfPaid, deal.head.priceOfPar);
@@ -277,6 +279,23 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         if (deal.body.buyer != deal.body.groupOfBuyer && 
             deal.body.groupOfBuyer != _rom.groupRep(deal.body.buyer)) 
                 _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
+    }
+
+    function _checkAlong(IInvestmentAgreement _ia, uint seqOfDeal) private view returns(bool) {
+        uint[] memory seqList = _ia.getSeqList();
+        uint len = seqList.length;
+        while (len > 0) {
+            DealsRepo.Deal memory deal = _ia.getDeal(seqList[len - 1]);
+            if ((deal.head.typeOfDeal == uint8(DealsRepo.TypeOfDeal.TagAlong) ||
+                deal.head.typeOfDeal == uint8(DealsRepo.TypeOfDeal.DragAlong)) &&
+                deal.head.preSeq == uint16(seqOfDeal) &&
+                deal.body.state != uint8(DealsRepo.StateOfDeal.Closed)) 
+            {
+                return false;
+            }
+            len--;
+        }
+        return true;
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal, address msgSender) public onlyDK {
