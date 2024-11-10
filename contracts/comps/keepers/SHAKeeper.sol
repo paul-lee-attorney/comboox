@@ -136,7 +136,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
 
             _createAlongDeal(_ia, claim, deal, share);
 
-            _ia.regSig(deal.head.seller, claim.sigDate, claim.sigHash);
+            _ia.regSig(share.head.shareholder, claim.sigDate, claim.sigHash);
             _ia.regSig(caller, uint48(block.timestamp), sigHash);
 
             len--;
@@ -150,7 +150,8 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         DealsRepo.Deal memory deal,
         SharesRepo.Share memory share
     ) private {
-        deal.head = DealsRepo.Head({
+        DealsRepo.Deal memory aDeal;
+        aDeal.head = DealsRepo.Head({
             typeOfDeal: claim.typeOfClaim == 0 
                 ? uint8(DealsRepo.TypeOfDeal.DragAlong) 
                 : uint8(DealsRepo.TypeOfDeal.TagAlong),
@@ -165,7 +166,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             votingWeight: share.head.votingWeight
         });
 
-        deal.body = DealsRepo.Body({
+        aDeal.body = DealsRepo.Body({
             buyer: deal.body.buyer,
             groupOfBuyer: deal.body.groupOfBuyer,
             paid: claim.paid,
@@ -176,7 +177,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             flag: false
         });
 
-        _ia.regDeal(deal);
+        _ia.regDeal(aDeal);
 
         _gk.getROS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
     }

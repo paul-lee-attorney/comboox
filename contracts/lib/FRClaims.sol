@@ -108,12 +108,19 @@ library FRClaims {
             }
 
             i = 0;
+            uint256 sum;
+            len--;
+
             while(i < len) {
                 Claim storage cl = p.claims[i];
 
                 cl.ratio = cl.weight * 10000 / p.sumOfWeight;
+                sum += cl.ratio;
                 i++; 
             }
+            
+            p.claims[len].ratio = 10000 - uint64(sum);
+
         } else revert("FRClaims: already created");
 
         output = p.claims;
