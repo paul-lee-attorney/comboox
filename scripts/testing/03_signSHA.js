@@ -8,11 +8,16 @@
 const hre = require("hardhat");
 
 const { readContract } = require("../readTool"); 
-const { parseTimestamp, Bytes32Zero } = require('./utils');
+const { parseTimestamp, Bytes32Zero, now } = require('./utils');
 const { getROC, getGK } = require("./boox");
 const { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, lrParser, lrCodifier, alongRuleCodifier, alongRuleParser } = require("./sha");
+const { codifyHeadOfOption, codifyCond, parseOption } = require("./roo");
 
 async function main() {
+
+    console.log('********************************');
+    console.log('**        Create SHA          **');
+    console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -242,6 +247,68 @@ async function main() {
     await ta.addFollower(1, 4);   
     console.log('User_1 tagged by the followers:', (await ta.getFollowers(1)).map(v => v.toString()), "\n");
 
+    // ---- Call / Put Option ----
+
+    await sha.createTerm(5, 1);
+    const OP = await sha.getTerm(5);
+    const op = await readContract("Options", OP);
+
+
+    const today = await now();
+    const triggerDate = today + 86400 * 10;
+    
+    let headOfOpt = {
+        seqOfOpt: 0,
+        typeOfOpt: 4,
+        classOfShare: 2,
+        rate: 1.1,
+        issueDate: today,
+        triggerDate: triggerDate,
+        execDays: 55,
+        closingDays: 3,
+        obligor: 3,
+    };
+
+    let cond = {
+      seqOfCond: 0,
+      logicOpr: 2,
+      compOpr1: 4,
+      para1: 1000,
+      compOpr2: 4,
+      para2: 100,
+      compOpr3: 0,
+      para3: 0,
+    };
+
+    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), 2, 500 * 10 ** 4, 500 * 10 ** 4);
+    console.log('create Opt:', parseOption(await op.getOption(1)), '\n');
+    
+    headOfOpt = {
+      seqOfOpt: 0,
+      typeOfOpt: 5,
+      classOfShare: 2,
+      rate: 1.8,
+      issueDate: today,
+      triggerDate: triggerDate,
+      execDays: 55,
+      closingDays: 3,
+      obligor: 2,
+    };
+
+    cond = {
+      seqOfCond: 0,
+      logicOpr: 1,
+      compOpr1: 3,
+      para1: 5000,
+      compOpr2: 3,
+      para2: 500,
+      compOpr3: 0,
+      para3: 0,
+    };
+
+    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), 3, 500 * 10 ** 4, 500 * 10 ** 4);
+    console.log('create Opt:', parseOption(await op.getOption(2)), '\n');
+    
     // ---- Config SigPage of SHA ----
 
     await sha.setTiming(true, 1, 90);

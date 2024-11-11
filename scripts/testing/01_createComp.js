@@ -25,6 +25,10 @@ const parseCompInfo = (arr) => {
 
 async function main() {
 
+    console.log('********************************');
+    console.log('**    Create Company Boox     **');
+    console.log('********************************\n');
+
 	  const signers = await hre.ethers.getSigners();
     console.log('Acct_1:', signers[0].address, "Acct_2:", signers[1].address, "\n");
 

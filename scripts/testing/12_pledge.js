@@ -95,7 +95,7 @@ async function main() {
     await gk.connect(signers[3]).createPledge(codifyHeadOfPledge(headOfPld), 4000 * 10 ** 4, 4000 * 10 ** 4, 2000 * 10 ** 4, 5);
     console.log('created pledges on share 7', parsePledge(await rop.getPledge(7, 3)), '\n');
 
-    await printShare(7);
+    await printShare(ros, 7);
 
     // ---- Read API ----
 

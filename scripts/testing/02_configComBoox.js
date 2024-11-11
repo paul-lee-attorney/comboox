@@ -9,6 +9,10 @@ const { getRC, getFT, getGK } = require("./boox");
 
 async function main() {
 
+    console.log('********************************');
+    console.log('**       Config ComBoox       **');
+    console.log('********************************\n');
+
 	  const signers = await hre.ethers.getSigners();
     console.log('Acct_1:', signers[0].address, "Acct_2:", signers[1].address, "\n");
 
