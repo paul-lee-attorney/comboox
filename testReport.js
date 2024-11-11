@@ -32,6 +32,7 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/testing/10_alongs.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/11_firstRefusal.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/12_pledge.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/13_options.js', '--network', 'localhost']);
     console.log('All scripts executed successfully');
   } catch (err) {
     console.error('Error in script execution:', err);
