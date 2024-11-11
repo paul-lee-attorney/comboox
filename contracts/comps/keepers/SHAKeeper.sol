@@ -407,36 +407,49 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             _gk.getROA().computeFirstRefusal(ia, seqOfDeal);
 
         uint256 len = cls.length;
+        DealsRepo.Deal memory frDeal;
+        uint paid = deal.body.paid;
+        uint par = deal.body.par;
         while (len > 0) {
-            _createFRDeal(_ia, deal, cls[len-1], _rom, sigHashOfSeller);
+            frDeal = _createFRDeal(deal, cls[len-1], _rom);
+            if (len > 1) {
+                paid -= frDeal.body.paid;
+                par -= frDeal.body.par;
+            } else {
+                frDeal.body.paid = uint64(paid);
+                frDeal.body.par = uint64(par);
+            }
+            _regFRDeal(_ia, frDeal, cls[len-1], sigHashOfSeller);
             len--;
         }
-
+        
     }
 
     function _createFRDeal(
+        DealsRepo.Deal memory deal,
+        FRClaims.Claim memory cl,
+        IRegisterOfMembers _rom
+    ) private view returns(DealsRepo.Deal memory frDeal) {
+
+        frDeal = deal;
+
+        frDeal.body.buyer = cl.claimer;
+        frDeal.body.groupOfBuyer = _rom.groupRep(cl.claimer);
+        frDeal.body.paid = (deal.body.paid * cl.ratio) / 10000;
+        frDeal.body.par = (deal.body.par * cl.ratio) / 10000;
+    }
+
+    function _regFRDeal(
         IInvestmentAgreement _ia,
         DealsRepo.Deal memory deal,
         FRClaims.Claim memory cl,
-        IRegisterOfMembers _rom,
         bytes32 sigHashOfSeller
     ) private {
-
-        uint64 orgPaid = deal.body.paid;
-        uint64 orgPar = deal.body.par;
-        
-        deal.body.buyer = cl.claimer;
-        deal.body.groupOfBuyer = _rom.groupRep(cl.claimer);
-        deal.body.paid = (orgPaid * cl.ratio) / 10000;
-        deal.body.par = (orgPar * cl.ratio) / 10000;
 
         _ia.regDeal(deal);
         _ia.regSig(cl.claimer, cl.sigDate, cl.sigHash);
 
         if (deal.head.seller > 0)
             _ia.regSig(deal.head.seller, uint48(block.timestamp), sigHashOfSeller);
-
-        deal.body.paid = orgPaid;
-        deal.body.par = orgPar;
     }
 }
