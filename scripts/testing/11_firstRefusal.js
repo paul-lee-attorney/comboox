@@ -70,7 +70,7 @@ async function main() {
       typeOfDeal: 2,
       seqOfDeal: 0,
       preSeq: 0,
-      classOfShare: 1,
+      classOfShare: 2,
       seqOfShare: 11,
       seller: 5,
       priceOfPaid: 3,
@@ -79,7 +79,7 @@ async function main() {
       votingWeight: 100,
     }
     
-    await createDeal(headOfDeal, 95000);
+    await createDeal(headOfDeal, 20000);
 
     headOfDeal = {
       typeOfDeal: 2,
@@ -100,7 +100,7 @@ async function main() {
       typeOfDeal: 2,
       seqOfDeal: 0,
       preSeq: 0,
-      classOfShare: 2,
+      classOfShare: 1,
       seqOfShare: 13,
       seller: 5,
       priceOfPaid: 3,
@@ -109,7 +109,7 @@ async function main() {
       votingWeight: 100,
     }
     
-    await createDeal(headOfDeal, 20000);
+    await createDeal(headOfDeal, 95000);
 
     // ---- Config SigPage of IA ----
 
@@ -139,7 +139,7 @@ async function main() {
     console.log('IA is signed by User_5 ?', await ia.isSigner(5), "\n");
 
     await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
-    console.log('IA is signed by User_6 ?', await ia.isSigner(1), "\n");
+    console.log('IA is signed by User_6 ?', await ia.isSigner(6), "\n");
 
     console.log('IA is established ?', await ia.established(), '\n');
 
@@ -163,7 +163,15 @@ async function main() {
     }
 
     const dealsList = (await ia.getSeqList()).map(v => Number(v));
-    console.log('dealsList:', dealsList, '\n');
+
+    let len = dealsList.length;
+    while (len > 0) {
+      const dl = await ia.getDeal(dealsList[len-1]);
+      console.log("deal:", parseDeal(dl), "\n");
+      len --;
+    }
+
+    // console.log('dealsList:', dealsList, '\n');
 
     console.log('IA is established ?', await ia.established(), '\n');
 
@@ -200,6 +208,7 @@ async function main() {
 
       const centPrice = await gk.getCentPrice();
       const deal = await ia.getDeal(seqOfDeal);
+      // console.log('deal:', deal, '\n');
       const paid = deal[1][2];
       const value = 300n * BigInt(paid) / 10000n * BigInt(centPrice) + 500n;
       console.log('centPrice (GWei):', ethers.utils.formatUnits(centPrice.toString(), 9), 'paid', ethers.utils.formatUnits(paid.toString(), 4),  'value:', value, '\n');
@@ -210,7 +219,10 @@ async function main() {
       console.log('seqOfDeal', seqOfDeal, 'was paid out \n');
     }
 
-    for (let i=5; i<=dealsList.length; i++) 
+    for (let i=12; i>=9; i--)
+        await payOffDeal(i);
+
+    for (let i=8; i>=5; i--)
         await payOffDeal(i);
 
     await printShares(ros);

@@ -7,6 +7,12 @@
 
 const { parseUnits, parseTimestamp, longDataParser } = require('./utils');
 
+const printShare = async (ros, seqOfShare) => {
+  const share = parseShare(await ros.getShare(seqOfShare));
+  console.log('Share No:', seqOfShare, ':', share, '\n');
+}
+
+
 const printShares = async (ros) => {
   const shares = (await ros.getSharesList()).map(v => parseShare(v));
   console.log('Shares of the Comp:', shares, '\n');
@@ -67,6 +73,7 @@ function parseShare(arr) {
 }
 
 module.exports = {
+    printShare,
     printShares,
     codifyHeadOfShare,
     parseHeadOfShare,

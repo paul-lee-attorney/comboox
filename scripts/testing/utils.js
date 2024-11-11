@@ -14,6 +14,8 @@ const now = async () => {
 const increaseTime = async (seconds) => {
   await hre.ethers.provider.send("evm_increaseTime", [seconds]);
   await hre.ethers.provider.send("evm_mine");
+  console.log('Forward On-Chain time for', seconds, 'seconds \n');
+  console.log('Current On-Chain Date:', parseTimestamp(await now()), '\n');
 }
 
 function parseTimestamp (stamp) {
