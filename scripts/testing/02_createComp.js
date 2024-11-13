@@ -8,20 +8,8 @@
 const { saveBooxAddr } = require("./saveTool");
 const { codifyHeadOfShare, printShares } = require('./ros');
 const { getCNC, getGK, getROM, getROS } = require("./boox");
-const { parseTimestamp } = require("./utils");
-
-const parseCompInfo = (arr) => {
-  const info = {
-    regNum: arr[0],
-    regDate: parseTimestamp(arr[1]),
-    currency: arr[2],
-    state: arr[3],
-    symbol: ethers.utils.toUtf8String(arr[4]),
-    name: arr[5],
-  }
-
-  return info;
-}
+const { now } = require("./utils");
+const { parseCompInfo } = require("./gk");
 
 async function main() {
 
@@ -116,7 +104,10 @@ async function main() {
     rom.connect(signers[1]).setMaxQtyOfMembers(0);
 
     const ros = await getROS();
-    let issueDate = (new Date('2023-11-08')).getTime()/1000;
+    const issueDate = (new Date('2023-11-08')).getTime()/1000;
+    
+    const today = await now();
+    const payInDeadline = today + 86400 * 180;
     
     let head = {
       class: 1,
@@ -168,14 +159,14 @@ async function main() {
       votingWeight: 100,
     };
 
-    await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), issueDate, 10000 * 10 ** 4, 20000 * 10 ** 4, 100);
+    await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), payInDeadline, 10000 * 10 ** 4, 20000 * 10 ** 4, 100);
 
     await printShares(ros);
 
-    ros.connect(signers[1]).setDirectKeeper(gk.address);
+    await ros.connect(signers[1]).setDirectKeeper(ROMKeeper);
     console.log('return Key of ROS \n');
 
-    rom.connect(signers[1]).setDirectKeeper(gk.address);
+    await rom.connect(signers[1]).setDirectKeeper(ROMKeeper);
     console.log('return Key of ROM \n');
     
 }

@@ -5,7 +5,18 @@
  * All Rights Reserved.
  * */
 
-const { parseUnits } = require('./utils');
+const { parseUnits, parseHexToBigInt } = require('./utils');
+
+function parseSnOfPFR(sn) {
+  sn = sn.substring(2);
+  return {
+    eoaRewards: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(0, 10)).toString(), 9),
+    coaRewards: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(10, 20)).toString(), 9),
+    floor: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(20, 30)).toString(), 9),
+    rate: parseInt(sn.substring(30, 34), 16),
+    para: parseInt(sn.substring(34, 38), 16), 
+  };
+}
 
 function pfrParser(arrRule) {
   const out = {
@@ -33,6 +44,7 @@ function pfrCodifier(rule) {
 }
 
 module.exports = {
+    parseSnOfPFR,
     pfrParser,
     pfrCodifier,
 };

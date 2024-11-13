@@ -45,7 +45,7 @@ const parseNode = (sn) => {
     issuer: parseInt(sn.substring(16, 26), 16),
     paid: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(26, 42)).toString(), 4),
     price: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(42, 50)).toString(), 4),
-    expireDate: parseTimestamp(parsInt(sn.substring(50, 62), 16)),
+    expireDate: parseTimestamp(parseInt(sn.substring(50, 62), 16)),
     isOffer: (sn.substring(62, 64) == '01'),
   };
 }

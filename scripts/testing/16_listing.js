@@ -40,10 +40,6 @@ async function main() {
       console.log('ETH amount to', ethers.utils.formatUnits(value.toString(), 18), 'deposit to account of User', acct.toString(), 'for reason of', ethers.utils.parseBytes32String(reason), '\n');
     });
 
-    gk.on("SaveToCoffer", (acct, value, reason) => {
-      console.log('ETH amount to', ethers.utils.formatUnits(value.toString(), 18), 'deposit to account of User', acct.toString(), 'for reason of', ethers.utils.parseBytes32String(reason), '\n');
-    });
-
     gk.on("ReceivedCash", (acct, value) => {
       console.log('ETH amount to', ethers.utils.formatUnits(value.toString(), 18), 'received from', acct.toString(), '\n');
     });
@@ -52,29 +48,13 @@ async function main() {
       console.log('Custody ETH amount to', ethers.utils.formatUnits(amt.toString(), 18), 'released from', from.toString(), 'to', to.toString(), 'for reason of', ethers.utils.parseBytes32String(reason), '\n');
     });
 
-    // ==== Order Print ====
-
-    const printOrder = async (isOffer) => {
-      const list = await loo.getOrders(2, isOffer);
-      const seqOfOrder = list.length - 1;
-      const order = parseOrder(await loo.getOrder(2, seqOfOrder, isOffer));
-      console.log(isOffer ? 'Sell Order': 'Buy Order', seqOfOrder, 'is created as', order, '\n');
-      return seqOfOrder;
-    }  
-
-    const printOrdersList = async (isOffer) => {
-      const list = (await loo.getOrders(2, isOffer)).map(v => parseOrder(v));
-      console.log(isOffer ? 'Sell Orders List': 'Buy Orders List', '\n', list);
-      return list;
-    }  
-
     // ==== Parse Logs ====
 
     const parseLogs = async (tx) => {
       const receipt = await tx.wait();
 
-      let seqOfOrderPlaced = 0;
-      let orderPlaced = [];
+      let seqOfOrder = 0;
+      let orderPlaced = {};
       let orderWithdrawn = [];
       let orderExpired = [];
       let dealClosed = [];
@@ -96,18 +76,17 @@ async function main() {
 
             if (parsedLog.name == "OrderPlaced") {
 
-              const order = parseDeal(parsedLog.args[0]);
-
-              orderPlaced.push({order: order, typeOfOrder: parsedLog.args[1] ? 'Sell Order': 'Buy Order'});
-
-              seqOfOrderPlaced = order.seqOfOrder;
+              orderPlaced = {
+                order: parseDeal(parsedLog.args[0]), 
+                isOffer: parsedLog.args[1],
+              };
 
             } else if (parsedLog.name == "OrderWithdrawn") {
 
               orderWithdrawn.push({
                 node: parseNode(parsedLog.args[0]), 
                 data: parseData(parsedLog.args[1]), 
-                typeOfOrder: parsedLog.args[3] ? 'Sell Order' : 'Buy Order',
+                isOffer: parsedLog.args[2],
               });
 
             } else if (parsedLog.name == "DealClosed") {
@@ -136,14 +115,22 @@ async function main() {
 
       });
 
+      if (orderPlaced?.order?.paid > '0.0') {
+        seqOfOrder = await loo.counterOfOrders(2, orderPlaced.isOffer);
+        orderPlaced.seqOfOrder = seqOfOrder;
+        console.log('Order Placed: \n', orderPlaced, '\n');
+      }
+
       if (orderWithdrawn.length > 0) 
         console.log('Orders withdrawn: \n', orderWithdrawn, '\n');
+
       if (orderExpired.length > 0) 
         console.log('Orders expired: \n', orderExpired, '\n');
+
       if (dealClosed.length > 0) 
         console.log('Deals closed: \n', dealClosed, '\n');
 
-      return seqOfOrderPlaced;
+      return seqOfOrder;
     }
 
     let seqOfOrder = 0;
