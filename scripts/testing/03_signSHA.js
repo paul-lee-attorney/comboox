@@ -264,7 +264,7 @@ async function main() {
         rate: 1.1,
         issueDate: today,
         triggerDate: triggerDate,
-        execDays: 55,
+        execDays: 60,
         closingDays: 3,
         obligor: 3,
     };
@@ -290,7 +290,7 @@ async function main() {
       rate: 1.8,
       issueDate: today,
       triggerDate: triggerDate,
-      execDays: 55,
+      execDays: 60,
       closingDays: 3,
       obligor: 2,
     };

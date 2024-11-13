@@ -17,6 +17,10 @@ const { printMembers } = require("./rom");
 
 async function main() {
 
+    console.log('********************************');
+    console.log('**       First Refusal        **');
+    console.log('********************************\n');
+
 	  const signers = await hre.ethers.getSigners();
 
     const gk = await getGK();

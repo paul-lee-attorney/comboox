@@ -39,7 +39,7 @@ function parseHeadOfShare(sn) {
       class: parseInt(sn.substring(2, 6), 16),
       seqOfShare: parseInt(sn.substring(6, 14), 16),
       preSeq: parseInt(sn.substring(14, 22), 16),
-      issueDate: parseInt(sn.substring(22, 34), 16),
+      issueDate: parseTimestamp(parseInt(sn.substring(22, 34), 16)),
       shareholder: parseInt(sn.substring(34, 44), 16),
       priceOfPaid: ethers.utils.formatUnits(parseInt(sn.substring(44, 52), 16), 4),
       priceOfPar: ethers.utils.formatUnits(parseInt(sn.substring(52, 60), 16), 4),

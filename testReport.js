@@ -25,14 +25,17 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/testing/03_signSHA.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/04_electOfficers.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/05_approveInvestors.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/06_capitalIncrease.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/07_externalTransfer.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/08_internalTransfer.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/09_antiDilution.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/10_alongs.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/11_firstRefusal.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/12_pledge.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/13_options.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/06_motions.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/07_capitalIncrease.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/08_externalTransfer.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/09_internalTransfer.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/10_antiDilution.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/11_alongs.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/12_firstRefusal.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/13_pledge.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/14_options.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/15_cbpTransaction.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/16_listing.js', '--network', 'localhost']);
     console.log('All scripts executed successfully');
   } catch (err) {
     console.error('Error in script execution:', err);

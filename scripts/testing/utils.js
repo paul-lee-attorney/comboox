@@ -34,6 +34,16 @@ function parseUnits(input, dec) {
   return output.substring(2);
 }
 
+function parseHexToBigInt(input) {
+  if (!input.startsWith('0x')) {
+    input = '0x' + input;
+  }
+
+  const bigNumber = ethers.BigNumber.from(input);
+
+  return BigInt(bigNumber.toString());
+}
+
 const Bytes32Zero = `0x${'0'.padEnd(64,'0')}`;
 const AddrZero = `0x${'0'.padEnd(40,'0')}`;
 
@@ -43,6 +53,7 @@ module.exports = {
     parseTimestamp,
     longDataParser,
     parseUnits,
+    parseHexToBigInt,
     Bytes32Zero,
     AddrZero,
 };

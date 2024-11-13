@@ -9,6 +9,8 @@
   "author": "Li Li @ Jingtian & Gongcheng",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.0",
     "hardhat": "^2.15.0"
   },

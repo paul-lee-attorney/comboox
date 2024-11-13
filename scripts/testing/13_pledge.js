@@ -14,6 +14,10 @@ const { printShare } = require("./ros");
 
 async function main() {
 
+    console.log('********************************');
+    console.log('**        Pledges             **');
+    console.log('********************************\n');
+
 	  const signers = await hre.ethers.getSigners();
 
     const gk = await getGK();

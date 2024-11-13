@@ -5,12 +5,18 @@
  * All Rights Reserved.
  * */
 
+const getAllMembers = async (rom) => {
+  const membersList = (await rom.membersList()).map(v => Number(v));  
+  return membersList;
+}
+
 const printMembers = async (rom) => {
-  const members = (await rom.membersList()).map(v => v.toString());
+  const members = await getAllMembers(rom);
   console.log('Members of the Comp:', members, '\n');
 }
 
 module.exports = {
+    getAllMembers,
     printMembers,
 };
 
