@@ -21,8 +21,16 @@ const { AddrZero } = require('./utils');
 // Company. And, User No.5 - No.6 will act as external investors
 // in some scenarios like Drag/Tag Along deals and Listing Deals. 
 
+// Scenarios for testing included in this section:
+// 1. Owner (User No.1) set Platform Rule to enable new users may
+//    get 0.018 CBP as rewards;
+// 2. Mint 8 CBP to User No.1 and User No.2 as set up cost;
+// 3. Register User No.3 - No. 7 as potential Members and Investors
+// 4. User No.3 - No.7 obtain New User Awards as per the Platfrom
+//    Rule.
+
 // Write APIs tested in this section:
-// RegCenter:
+// Smart Contract: RegCenter
 // 1. function setPlatformRule(bytes32 snOfRule) external;
 // 2. function mint(address to, uint amt) external;
 // 3. function regUser() external;
@@ -46,40 +54,54 @@ async function main() {
     pfr.eoaRewards = "0.018";
     const snOfPFR = pfrCodifier(pfr);
 
+    // User No.2 is not Owner, thus, setPlatformRule func shall block
+    // the calling and revert error message. 
+    await expect(rc.connect(signers[1]).setPlatformRule(snOfPFR)).to.be.revertedWith("UR.mf.OO: not owner");
+    console.log("Passed Access Control Test for rc.setPlatformRule().\n");
+
+    // User No.1 is owner, therefore, setPlatformRule func shall successfully
+    // triggered and emit Events as expected.
     await expect(rc.setPlatformRule(snOfPFR)).to.emit(rc, "SetPlatformRule").withArgs(snOfPFR);
-    console.log('Passed Event Test for SetPlatformRule. \n');
+    console.log('Passed Event Test for rc.SetPlatformRule(). \n');
 
     expect(pfrParser(await rc.getPlatformRule()).eoaRewards).to.equal("0.018");
-    console.log('Passed Verification Test for rc.setPlatformRule func. \n');
+    console.log('Passed Verification Test for rc.setPlatformRule(). \n');
 
     // ==== Reg Users ====
 
-    // User_1 and User_2 are two special Users registered during the deploying 
-    // process of ComBoox, thus, they cannot get new user awards. This "mint"
-    // process is to provide enough start up CBP for them to go through this 
-    // test process.
+    // User No.1 and User No.2 are two special Users registered during the
+    // deploying process of ComBoox, thus, they cannot get new user awards. 
+    // This "mint" process is to provide enough start up CBP for them to go
+    // through this test process.
     await expect(rc.mint(signers[0].address, 8n * 10n ** 18n)).to.emit(rc, "Transfer").withArgs(AddrZero, signers[0].address, 8n * 10n ** 18n);
+    console.log("Passed Event Test for rc.mint(). \n");
+
+    const userNo2 = await rc.connect(signers[1]).getMyUserNo();
+    expect(userNo2).to.equal(2);
+    console.log("Passed UserNo Verify Test for userNo2. \n");
 
     await rc.mint(signers[1].address, 8n * 10n ** 18n);
+    expect(ethers.utils.formatUnits((await rc.balanceOf(signers[1].address)).toString(), 18)).to.equal("8.0");
+    console.log("Passed Result Test for rc.mint(). \n");    
 
     // Reg new users for signers[3-7].
     for (let i = 3; i<7; i++) {
       await rc.connect(signers[i]).regUser();
 
       expect(await rc.connect(signers[i]).getMyUserNo()).to.equal(i);
-      console.log('Passed UserNo test for signers[', i, '].', '\n');
+      console.log('Passed Result Test for rc.regUser() with signers[', i, '].', '\n');
 
       expect(ethers.utils.formatUnits((await rc.balanceOf(signers[i].address)).toString(), 18)).to.equal("0.018");
-      console.log('Passed NewUserAwards test for signers[', i, '].', '\n');
+      console.log('Passed NewUserAwards Result Test for signers[', i, '].', '\n');
     }
 
     // Reg new user for signers[2] (as User_7).
     await rc.connect(signers[2]).regUser();
     expect(await rc.connect(signers[2]).getMyUserNo()).to.equal(7);
-    console.log('Passed UserNo test for signers[', 2, '].', '\n');
+    console.log('Passed Result Test for rc.regUser() with signers[', 2, '].', '\n');
 
     expect(ethers.utils.formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
-    console.log('Passed NewUserAwards test for signers[', 2, '].', '\n');
+    console.log('Passed NewUserAwards Test for signers[', 2, '].', '\n');
 
 }
 
