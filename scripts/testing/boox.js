@@ -15,7 +15,11 @@ const fileNameOfTemps = path.join(tempsDir, "contracts-address.json");
 const Temps = JSON.parse(fs.readFileSync(fileNameOfTemps,"utf-8"));
 
 const fileNameOfBoox = path.join(__dirname, "boox.json");
-const Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
+let Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
+
+const refreshBoox = () => {
+  Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
+}
 
 // ==== RegCenter ====
 
@@ -79,6 +83,7 @@ const getROS = async () => {
 }
 
 module.exports = {
+  refreshBoox,
   getRC,
   getCNC,
   getFT,

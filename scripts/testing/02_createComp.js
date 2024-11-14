@@ -8,10 +8,11 @@
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
 const { saveBooxAddr } = require("./saveTool");
-const { codifyHeadOfShare, printShares } = require('./ros');
-const { getCNC, getGK, getROM, getROS, getRC } = require("./boox");
-const { now } = require("./utils");
+const { codifyHeadOfShare, printShares, parseShare } = require('./ros');
+const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
+const { now, increaseTime } = require("./utils");
 const { parseCompInfo } = require("./gk");
+const { readContract } = require("../readTool");
 
 // First step to use ComBoox system is to set up a Company Boox.
 // This section displays how the owner of a company creates 
@@ -31,8 +32,19 @@ const { parseCompInfo } = require("./gk");
 //    (2) Share_2: shareholder: User_2, paid: 80k, par: 80k;
 //    (3) Share_3: shareholder: User_3, paid: 40k, par: 40k;
 //    (4) Share_4: shareholder: User_4, paid: 10k, par: 20k;
-// 4. User No.2 (as the secretary) return the control rights
-//    to ROS and "Register of Members" ("ROM") back to ROMKeeper. 
+// 4. User No.2 (as the secretary) turn over the Direct Keeper 
+//    rights to ROS and "Register of Members" ("ROM") back to 
+//    ROMKeeper. 
+// 5. User No.2 (as the secretary) lock paid-in capital amount to 
+//    5000 on Share_4 with hashLock.
+// 6. User No.4 unlock the hash lock with right string key,
+//    so that obtained the paid-in capital.
+// 7. User No.2 (as the secretary) lock paid-in capital amount to
+//    5000 on Share_4 with hashLock again.
+// 8. After the pay in deadline, User No.2 withdraw the locked 
+//    paid-in amount back from hash lock.
+// 9. User No.4 pay in ETH directly to exchange paid-in capital 
+//    of Share_4 amount to 5000. 
 
 // Write APIs tested in this section:
 // 1. CreateNewComp
@@ -41,24 +53,28 @@ const { parseCompInfo } = require("./gk");
 // 2. RegCenter
 // 2.1 function createDoc(bytes32 snOfDoc,address primeKeyOfOwner) external;
 
-// 3. Ownable
-// 3.1 function init(address owner, address regCenter) external;
+// 3. GeneralKeeper
+// 3.1 function createCorpSeal() external;
+// 3.2 function regKeeper(uint256 title, address keeper) external;
+// 3.3 function regBook(uint256 title, address keeper) external;
 
-// 4. GeneralKeeper
-// 4.1 function createCorpSeal() external;
-// 4.2 function regKeeper(uint256 title, address keeper) external;
-// 4.3 function regBook(uint256 title, address keeper) external;
+// 4. AccessControl
+// 4.1 function setDirectKeeper(address keeper) external;
 
-// 5. AccessControl
-// 5.1 function initKeepers(address dk,address gk) external;
-// 5.2 function setDirectKeeper(address keeper) external;
+// 5. RegisterOfMembers
+// 5.1 function setMaxQtyOfMembers(uint max) external;
 
-// 6. RegisterOfMembers
-// 6.1 function setMaxQtyOfMembers(uint max) external;
+// 6. RegisterOfShares
+// 6.1 function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, 
+//     uint par, uint distrWeight) external;
+// 6.2 function decreaseCapital(uint256 seqOfShare, uint paid, uint par) external;
 
-// 7. RegisterOfShares
-// 7.1 function issueShare(bytes32 shareNumber, uint payInDeadline, uint paid, 
-//        uint par, uint distrWeight) external;
+// 7. GeneralKeeper
+// 7.1 function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, 
+//     bytes32 hashLock) external;
+// 7.2 function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
+// 7.3 function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
+// 7.4 function payInCapital(uint seqOfShare, uint amt) external payable;
 
 async function main() {
 
@@ -68,7 +84,7 @@ async function main() {
 
     // ==== Get Instances ====
 
-	  const signers = await ethers.getSigners();
+	  const signers = await hre.ethers.getSigners();
     const cnc = await getCNC();
     const rc = await getRC();
 
@@ -80,7 +96,7 @@ async function main() {
     await expect(tx).to.emit(rc, "CreateDoc");
     console.log("Passed Event Test for rc.CreateDoc(). \n");
 
-    const GK = `0x${receipt.logs[0].topics[2].substring(26)}`;
+    const GK = ethers.utils.getAddress(`0x${receipt.logs[0].topics[2].substring(26)}`);
     saveBooxAddr("GK", GK);
 
     const gk = await getGK(GK);
@@ -148,6 +164,8 @@ async function main() {
     const LOOKeeper = await gk.getKeeper(10);
     saveBooxAddr("LOOKeeper", LOOKeeper);
 
+    refreshBoox();
+
     // ==== Config Comp ====
 
     const symbol = ethers.utils.hexlify(ethers.utils.toUtf8Bytes("COMBOOX")).padEnd(40, '0');
@@ -166,7 +184,7 @@ async function main() {
     
     await rom.connect(signers[1]).setMaxQtyOfMembers(50);
     expect(await rom.maxQtyOfMembers()).to.equal(50);
-    console.log("Passed Result Verify Test for rom.setMaxQtyOfMembers. \n");
+    console.log("Passed Result Verify Test for rom.setMaxQtyOfMembers(). \n");
 
     const ros = await getROS();
 
@@ -200,6 +218,7 @@ async function main() {
     console.log("Passed Event Test for rom.CapIncrease(). \n");
 
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(1), BigNumber.from(1));
+    console.log("Passed Event Test for rom.AddShareToMember(). \n");
 
     head = {
       class: 1,
@@ -240,20 +259,132 @@ async function main() {
 
     await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), payInDeadline, 10000 * 10 ** 4, 20000 * 10 ** 4, 100);
 
-    await printShares(ros);
+    head = {
+      class: 2,
+      seqOfShare: 5,
+      preSeq: 0,
+      issueDate: issueDate,
+      shareholder: 5,
+      priceOfPaid: 1.5,
+      priceOfPar: 0,
+      votingWeight: 100,
+    };
+
+    await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), payInDeadline, 20000 * 10 ** 4, 20000 * 10 ** 4, 100);
+
+    // ==== Decrease Capital ====
+
+    tx = await ros.connect(signers[1]).decreaseCapital(5, 20000 * 10 ** 4, 20000 * 10 ** 4);
+
+    await tx.wait();
+
+    await expect(tx).to.emit(rom, "CapDecrease").withArgs(BigNumber.from(100), BigNumber.from(20000 * 10 ** 4), BigNumber.from(20000 * 10 ** 4), 100);
+    console.log("Passed Event Test for rom.CapDecrease(). \n");
+
+    await expect(tx).to.emit(rom, "RemoveShareFromMember").withArgs(BigNumber.from(5), BigNumber.from(5));
+    console.log("Passed Event Test for rom.RemoveShareFromMember(). \n");
+
+    await expect(tx).to.emit(ros, "DeregisterShare").withArgs(BigNumber.from(5));
+    console.log("Passed Event Test for ros.DeregisterShare(). \n");
+
+    // ==== Turn Over Direct Keeper Rights ====
 
     await ros.connect(signers[1]).setDirectKeeper(ROMKeeper);
 
-    let dk = (await ros.getDK()).toLowerCase();
-    expect(dk).to.equal(ROMKeeper.toLowerCase());
+    let dk = await ros.getDK();
+    expect(dk).to.equal(ROMKeeper);
     console.log("Passed Result Verify Test for ros.setDirectKeeper(). \n");
     
     await rom.connect(signers[1]).setDirectKeeper(ROMKeeper);
     
-    dk = (await rom.getDK()).toLowerCase();
-    expect(dk).to.equal(ROMKeeper.toLowerCase());
+    dk = await rom.getDK();
+    expect(dk).to.equal(ROMKeeper);
     console.log("Passed Result Verify Test for rom.setDirectKeeper(). \n");
+
+    // ==== Pay In Capital by Hash Lock ====
+
+    let expireDate = today + 86400 * 3;
+    let hashLock = ethers.utils.id('Today is Monday.');
+    tx = await gk.connect(signers[1]).setPayInAmt(4, 5000 * 10 ** 4, expireDate, hashLock);
+
+    await tx.wait();
+
+    await expect(tx).to.emit(ros, "SetPayInAmt");
+    console.log("Passed Event Test for ros.SetPayInAmt(). \n");
+
+    tx = await gk.connect(signers[4]).requestPaidInCapital(hashLock, 'Today is Monday.');
+
+    await tx.wait();
+
+    await expect(tx).to.emit(rom, "CapIncrease").withArgs(BigNumber.from(100), BigNumber.from(5000 * 10 ** 4), 0, BigNumber.from(100));
+    console.log("Passed Event Test for rom.CapIncrease(). \n");
+
+    await expect(tx).to.emit(rom, "ChangeAmtOfMember").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4), 0, true);
+    console.log("Passed Event Test for rom.ChangeAmtOfMember(). \n");
+
+    await expect(tx).to.emit(ros, "PayInCapital").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4));
+    console.log("Passed Event Test for ros.PayInCapital(). \n");
+
+    // ==== Withdraw Locked Capital ====
+
+    hashLock = ethers.utils.id('Today is Tuesday.');
+
+    tx = await gk.connect(signers[1]).setPayInAmt(4, 5000 * 10 ** 4, expireDate, hashLock);
+
+    await increaseTime(86400 * 3);
+
+    tx = await gk.connect(signers[1]).withdrawPayInAmt(hashLock, 4);
+
+    await expect(tx).to.emit(ros, "WithdrawPayInAmt").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4));
+    console.log("Passed Event Test for ros.WithdrawPayInAmt(). \n");
+
+    // ==== Pay In Capital in ETH ====
+
+    const centPrice = await gk.getCentPrice();
+    let value = 150n * 5000n * BigInt(centPrice);
+
+    tx = await gk.connect(signers[4]).payInCapital(4, 5000 * 10 ** 4, {value: value + 100n});
     
+    receipt = await tx.wait();
+
+    let eventAbi = [
+      "event Transfer(address indexed from, address indexed to, uint256 indexed value)"
+    ];
+
+    let iface = new ethers.utils.Interface(eventAbi);
+
+    for (const log of receipt.logs) {
+      if (log.address == rc.address) {
+        try {
+          const parsedLog = iface.parseLog(log);
+          
+          if (parsedLog.name == "Transfer") {
+            expect(parsedLog.args[0]).to.equal(signers[4].address);
+            expect(parsedLog.args[1]).to.equal(signers[0].address);
+            expect(parsedLog.args[2]).to.equal(BigNumber.from(36n * 10n ** 13n));
+            console.log("Passed Royalty Test for gk.payInCapital(). \n");
+          }
+        } catch (err) {
+          console.log("Parse Log Error:", err);
+        }
+      }
+    }
+
+    await expect(tx).to.emit(gk, "SaveToCoffer");
+    console.log("Passed Event Test for gk.SaveToCoffer(). \n");
+
+    const romKeeper = await readContract("ROMKeeper", ROMKeeper);
+
+    await expect(tx).to.emit(romKeeper, "PayInCapital");
+    console.log("Passed Event Test for romKeeper.PayInCapital(). \n");
+    
+    let share = parseShare(await ros.getShare(4));
+
+    expect(share.body.paid).to.equal("20,000.0");
+    console.log("Passed Result Verify Test for gk.payInCapital(). \n");
+    
+    await printShares(ros);
+
 }
 
 main()

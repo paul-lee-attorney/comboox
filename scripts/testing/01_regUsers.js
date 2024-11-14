@@ -14,10 +14,10 @@ const { AddrZero } = require('./utils');
 // users in ComBoox. Each new user may obtain a sum of awards
 // for its registration, rate of which is defined in Platform 
 // Rule. And, the Platform Rule can only be set and revised by
-// the owner of the Platform. Currently, the owner is ComBoox DAO.
+// the owner of the Platform. 
 
 // We prepared totally 7 users (User No.1 - No.7) for the testing
-// program. User No.1 - No. 4 will be the founding members of the 
+// program. User No.1 - No.4 will be the founding members of the 
 // Company. And, User No.5 - No.6 will act as external investors
 // in some scenarios like Drag/Tag Along deals and Listing Deals. 
 
@@ -43,7 +43,7 @@ async function main() {
 
     // ==== Obtain Instances ====
 
-	  const signers = await ethers.getSigners();
+	  const signers = await hre.ethers.getSigners();
     const rc = await getRC();
 
     // ==== Set Platform Rule ====
@@ -74,7 +74,7 @@ async function main() {
     // This "mint" process is to provide enough start up CBP for them to go
     // through this test process.
     await expect(rc.mint(signers[0].address, 8n * 10n ** 18n)).to.emit(rc, "Transfer").withArgs(AddrZero, signers[0].address, 8n * 10n ** 18n);
-    console.log("Passed Event Test for rc.mint(). \n");
+    console.log("Passed Event Test for rc.Transfer(). \n");
 
     const userNo2 = await rc.connect(signers[1]).getMyUserNo();
     expect(userNo2).to.equal(2);
