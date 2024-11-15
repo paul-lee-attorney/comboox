@@ -5,7 +5,10 @@
  * All Rights Reserved.
  * */
 
-const { parseUnits, parseHexToBigInt } = require('./utils');
+const { expect } = require("chai");
+const { BigNumber } = require("ethers");
+const { getRC, getGK } = require('./boox');
+const { parseUnits, parseHexToBigInt, AddrZero } = require('./utils');
 
 function parseSnOfPFR(sn) {
   sn = sn.substring(2);
@@ -43,10 +46,45 @@ function pfrCodifier(rule) {
   return out;
 }
 
+async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
+
+  const receipt = await tx.wait();
+
+  const eventAbi = [
+    "event Transfer(address indexed from, address indexed to, uint256 indexed value)",
+    "event CreateDoc(bytes32 indexed snOfDoc, address indexed body)",
+  ];
+  
+  const iface = new ethers.utils.Interface(eventAbi);
+  let addr = AddrZero;
+  
+  for (const log of receipt.logs) {
+    if (log.address == addrOfRC) {
+      try {
+        const parsedLog = iface.parseLog(log);
+        
+        if (parsedLog.name == "CreateDoc") {
+          addr = parsedLog.args[1];
+        } else if (parsedLog.name == "Transfer") {
+          expect(parsedLog.args[0]).to.equal(from);
+          expect(parsedLog.args[1]).to.equal(to);
+          expect(parsedLog.args[2]).to.equal(BigNumber.from(rate * 10n ** 13n));
+          console.log("Passed Royalty Test for", func, "\n");
+        }
+      } catch (err) {
+        console.log("Parse Log Error:", err);
+      }
+    }
+  }
+
+  return addr;
+}
+
 module.exports = {
     parseSnOfPFR,
     pfrParser,
     pfrCodifier,
+    royaltyTest,
 };
 
   

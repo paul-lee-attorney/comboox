@@ -21,8 +21,8 @@ function grParser(hexRule) {
     maxNumOfDirectors: parseInt(hexRule.substring(36, 38), 16).toString(),
     tenureMonOfBoard: parseInt(hexRule.substring(38, 42), 16).toString(),
     quorumOfBoardMeeting: (Number(parseInt(hexRule.substring(42, 46), 16)) / 100).toFixed(2).toString(),
-    establishedDate: parseTimestamp(parseInt(hexRule.substring(46, 58), 16)),
-    businessTermInYears: parseInt(hexRule.substring(58, 60), 16).toString(),
+    establishedDate: parseInt(hexRule.substring(46, 58), 16),
+    businessTermInYears: parseInt(hexRule.substring(58, 60), 16),
     typeOfComp: parseInt(hexRule.substring(60, 62), 16).toString(),
     minVoteRatioOnChain: (Number(parseInt(hexRule.substring(62, 66), 16)) / 100).toFixed(2).toString(),    
   };
@@ -123,18 +123,18 @@ function prCodifier(rule, seq) {
 function prParser(hexRule) {
   const rule = {
     seqOfRule: parseInt(hexRule.substring(2, 6), 16), 
-    qtyOfSubRule: parseInt(hexRule.substring(6, 8), 16).toString(),
-    seqOfSubRule: parseInt(hexRule.substring(8, 10), 16).toString(),
+    qtyOfSubRule: parseInt(hexRule.substring(6, 8), 16),
+    seqOfSubRule: parseInt(hexRule.substring(8, 10), 16),
     removePos: hexRule.substring(10, 12) === '01',
-    seqOfPos: parseInt(hexRule.substring(12, 16), 16).toString(),
-    titleOfPos: titles[parseInt(hexRule.substring(16, 20), 16) - 1],
-    nominator: parseInt(hexRule.substring(20, 30), 16).toString(),
-    titleOfNominator: titles[parseInt(hexRule.substring(30, 34), 16) - 1],
-    seqOfVR: parseInt(hexRule.substring(34, 38), 16).toString(),
-    endDate: parseTimestamp(parseInt(hexRule.substring(38, 50), 16)),
-    para: parseInt(hexRule.substring(50, 54), 16).toString(),
-    argu: parseInt(hexRule.substring(54, 58), 16).toString(),
-    data: parseInt(hexRule.substring(58, 66), 16).toString(),
+    seqOfPos: parseInt(hexRule.substring(12, 16), 16),
+    titleOfPos: parseInt(hexRule.substring(16, 20), 16),
+    nominator: parseInt(hexRule.substring(20, 30), 16),
+    titleOfNominator: parseInt(hexRule.substring(30, 34), 16),
+    seqOfVR: parseInt(hexRule.substring(34, 38), 16),
+    endDate: parseInt(hexRule.substring(38, 50), 16),
+    para: parseInt(hexRule.substring(50, 54), 16),
+    argu: parseInt(hexRule.substring(54, 58), 16),
+    data: parseInt(hexRule.substring(58, 66), 16),
   };
 
   return rule;
@@ -143,17 +143,17 @@ function prParser(hexRule) {
 function lrParser(hexLr) {
   const rule = {
     seqOfRule: parseInt(hexLr.substring(2, 6), 16), 
-    titleOfIssuer: titles[parseInt(hexLr.substring(6, 10), 16) - 1],
-    classOfShare: parseInt(hexLr.substring(10, 14), 16).toString(),
-    maxTotalPar: Number('0x' + hexLr.substring(14, 22)).toString(),
-    titleOfVerifier: titles[parseInt(hexLr.substring(22, 26), 16) - 1],
-    maxQtyOfInvestors: parseInt(hexLr.substring(26, 30), 16).toString(),
+    titleOfIssuer: parseInt(hexLr.substring(6, 10), 16),
+    classOfShare: parseInt(hexLr.substring(10, 14), 16),
+    maxTotalPar: parseInt(hexLr.substring(14, 22), 16),
+    titleOfVerifier: parseInt(hexLr.substring(22, 26), 16),
+    maxQtyOfInvestors: parseInt(hexLr.substring(26, 30), 16),
     ceilingPrice: ethers.utils.formatUnits(BigInt('0x' + hexLr.substring(30, 38)), 4),
     floorPrice: ethers.utils.formatUnits(BigInt('0x' + hexLr.substring(38, 46)), 4),
-    lockupDays: parseInt(hexLr.substring(46, 50), 16).toString(),
+    lockupDays: parseInt(hexLr.substring(46, 50), 16),
     offPrice: ethers.utils.formatUnits(BigInt('0x' + hexLr.substring(50, 54)), 4),
-    votingWeight: parseInt(hexLr.substring(54, 58), 16).toString(),
-    distrWeight: parseInt(hexLr.substring(58, 62), 16).toString(),
+    votingWeight: parseInt(hexLr.substring(54, 58), 16),
+    distrWeight: parseInt(hexLr.substring(58, 62), 16),
   }
   return rule;
 }
@@ -179,12 +179,17 @@ function lrCodifier( objLr, seq) {
 
 function alongRuleParser(arr) {
   const out = {
-    triggerDate: parseTimestamp(arr[0]),
-    effectiveDate: parseTimestamp(arr[1]),
+    triggerDate: arr[0],
+    effectiveDays: arr[1],
     triggerType: arr[2],
-    shareRatioThreshold: arr[3],
-    rate: arr[4],
+    shareRatioThreshold: arr[3] / 100,
+    rate: arr[4] / 10000,
     proRata: arr[5],
+    seq: arr[6],
+    para: arr[7],
+    argu: arr[8],
+    ref: arr[9],
+    data: parseInt(arr[10].toString()),
   };
   return out;
 }

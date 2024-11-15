@@ -13,6 +13,7 @@ const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { parseCompInfo } = require("./gk");
 const { readContract } = require("../readTool");
+const { royaltyTest } = require("./rc");
 
 // First step to use ComBoox system is to set up a Company Boox.
 // This section displays how the owner of a company creates 
@@ -344,31 +345,8 @@ async function main() {
     let value = 150n * 5000n * BigInt(centPrice);
 
     tx = await gk.connect(signers[4]).payInCapital(4, 5000 * 10 ** 4, {value: value + 100n});
-    
-    receipt = await tx.wait();
 
-    let eventAbi = [
-      "event Transfer(address indexed from, address indexed to, uint256 indexed value)"
-    ];
-
-    let iface = new ethers.utils.Interface(eventAbi);
-
-    for (const log of receipt.logs) {
-      if (log.address == rc.address) {
-        try {
-          const parsedLog = iface.parseLog(log);
-          
-          if (parsedLog.name == "Transfer") {
-            expect(parsedLog.args[0]).to.equal(signers[4].address);
-            expect(parsedLog.args[1]).to.equal(signers[0].address);
-            expect(parsedLog.args[2]).to.equal(BigNumber.from(36n * 10n ** 13n));
-            console.log("Passed Royalty Test for gk.payInCapital(). \n");
-          }
-        } catch (err) {
-          console.log("Parse Log Error:", err);
-        }
-      }
-    }
+    await royaltyTest(rc.address, signers[4].address, signers[0].address, 36n, "gk.payInCapital().");
 
     await expect(tx).to.emit(gk, "SaveToCoffer");
     console.log("Passed Event Test for gk.SaveToCoffer(). \n");
