@@ -58,6 +58,7 @@ const { getRC, getFT, getGK } = require("./boox");
 
 async function main() {
 
+    console.log('\n');
     console.log('********************************');
     console.log('**       Config ComBoox       **');
     console.log('********************************\n');
