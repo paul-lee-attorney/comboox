@@ -37,6 +37,7 @@ const { AddrZero } = require('./utils');
 
 async function main() {
 
+    console.log('\n');
     console.log('********************************');
     console.log('**         Reg Users          **');
     console.log('********************************\n');
