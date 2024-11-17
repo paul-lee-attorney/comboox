@@ -524,7 +524,7 @@ async function main() {
 
     await sha.setTiming(true, 1, 90);
     
-    expect(await await sha.getSigningDays()).to.equal(1);
+    expect(await sha.getSigningDays()).to.equal(1);
     expect(await sha.getClosingDays()).to.equal(90);
 
     console.log("Passed Result Verify Test for sha.setTiming(). \n");

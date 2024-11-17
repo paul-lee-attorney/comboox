@@ -5,6 +5,7 @@
  * All Rights Reserved.
  * */
 
+const { ethers } = require("hardhat");
 const { parseUnits, longDataParser } = require("./utils");
 
 function parseHeadOfDeal(arr) {
@@ -14,7 +15,11 @@ function parseHeadOfDeal(arr) {
     preSeq: arr[2],
     classOfShare: arr[3],
     seqOfShare: arr[4],
-    seller: arr[5], 
+    seller: arr[5],
+    priceOfPaid: Number(ethers.utils.formatUnits(arr[6], 4)),
+    priceOfPar: arr[7],
+    closingDeadline: arr[8],
+    votingWeight: arr[9],
   }
 };
 
@@ -26,8 +31,10 @@ function parseDeal (arr) {
       groupOfBuyer: arr[1][1],
       paid: longDataParser(ethers.utils.formatUnits(arr[1][2].toString(), 4)),
       par: longDataParser(ethers.utils.formatUnits(arr[1][3].toString(), 4)),
-      distrWeight: arr[1][4],
-      flag: arr[1][5],
+      state: arr[1][4],
+      para: arr[1][5],
+      distrWeight: arr[1][6],
+      flag: arr[1][7],
     },
     hashLock: arr[2],
   }
