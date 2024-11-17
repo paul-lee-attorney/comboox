@@ -60,14 +60,14 @@ function motionSnParser(sn) {
 
 const getMotionsList = async (gmm) => {
   const motionsList = (await gmm.getSeqList()).map(v => Number(v));
-  console.log('MotionsList:', motionsList, '\n');
+  // console.log('MotionsList:', motionsList, '\n');
   return motionsList;
 }
 
 const getLatestSeqOfMotion = async (gmm) => {
   const motionsList = await getMotionsList(gmm);
   const lastOne = motionsList[motionsList.length - 1];
-  console.log('Last One:', lastOne, '\n');
+  // console.log('Last One:', lastOne, '\n');
   return lastOne;
 }
 

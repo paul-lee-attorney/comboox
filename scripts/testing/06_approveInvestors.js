@@ -6,16 +6,29 @@
  * */
 
 const { expect } = require("chai");
-const { BigNumber, ethers } = require("ethers");
-
-const { parseTimestamp, Bytes32Zero, AddrZero } = require("./utils");
 const { getGK, getLOO, getRC } = require("./boox");
 const { parseInvestor } = require("./loo");
 const { royaltyTest } = require("./rc");
 
+// This section shows how to register, approve and revoke Investors in 
+// ComBoox. Only approved Investors may enter into Investment Agreements
+// as buyers or involve in listing orders on Register of Orders.
+
+// The scenario for testing include in this section:
+// 1. Signer_7 to Signer_9 register Users with RegCenter;
+// 2. Signer_0 to Signer_9 register Investor with General Keeper;
+// 3. Signer_0 (User_1) as Chairman approves the Investor applications of Users;
+// 4. User_1 as Chairman revoke Investor role for User_8 to User_10.
+
+// The write APIs tested in this section:
+// 1. GeneralKeeper;
+// 1.1 function regInvestor(uint groupRep, bytes32 idHash) external;
+// 1.2 function approveInvestor(uint userNo, uint seqOfLR) external;
+// 1.3 function revokeInvestor(uint userNo, uint seqOfLR) external;
+
 async function main() {
 
-    console.log('/n********************************');
+    console.log('\n********************************');
     console.log('**     Approve Investors      **');
     console.log('********************************\n');
 

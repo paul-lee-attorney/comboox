@@ -11,7 +11,7 @@ const { getGK, getBMM, getGMM, getROD, getRC } = require('./boox');
 const { positionParser } = require('./sha');
 const { Bytes32Zero, increaseTime, parseTimestamp, now } = require('./utils');
 const { royaltyTest } = require("./rc");
-const { motionSnParser } = require("./gmm");
+const { motionSnParser, getLatestSeqOfMotion } = require("./gmm");
 
 // This section shows how to nominate candidate and cast vote for officers.
 // Usually, directors' board seat will be allocated among Members in SHA.
@@ -57,7 +57,7 @@ const { motionSnParser } = require("./gmm");
 
 async function main() {
 
-    console.log('********************************');
+    console.log('\n********************************');
     console.log('**        Elect Officers      **');
     console.log('********************************\n');
 
@@ -98,8 +98,7 @@ async function main() {
 
     // ---- Propose ----
 
-    let gmmList = (await gmm.getSeqList()).map(v => Number(v));
-    let seqOfMotion = gmmList[gmmList.length - 1];
+    let seqOfMotion = await getLatestSeqOfMotion(gmm);
 
     await expect(gk.connect(signers[5]).proposeMotionToGeneralMeeting(seqOfMotion)).to.be.revertedWith("MR.PMTGM: has no proposalRight");
     console.log("Passed Access Control Test for gk.proposeMotionToGeneralMeeting() \n");
@@ -200,8 +199,7 @@ async function main() {
 
     // ---- Propose, Vote and Exec Motion ----
 
-    gmmList = (await gmm.getSeqList()).map(v => Number(v));
-    seqOfMotion = gmmList[gmmList.length - 1];
+    seqOfMotion = await getLatestSeqOfMotion(gmm);
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
@@ -234,8 +232,7 @@ async function main() {
 
     await gk.nominateDirector(1, 1);
 
-    gmmList = (await gmm.getSeqList()).map(v => Number(v));
-    seqOfMotion = gmmList[gmmList.length - 1];
+    seqOfMotion = await getLatestSeqOfMotion(gmm);
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
