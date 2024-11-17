@@ -215,14 +215,14 @@ const titles = [
 
 const positionParser = (arr) => {
   return {
-    title: titles[arr[0] - 1],
+    title: arr[0],
     seqOfPos: arr[1],
     acct: arr[2],
     nominator: arr[3],
-    startDate: parseTimestamp(arr[4]),
-    endDate: parseTimestamp(arr[5]),
+    startDate: arr[4],
+    endDate: arr[5],
     seqOfVR: arr[6],
-    titleOfNominator: titles[arr[7] - 1],
+    titleOfNominator: arr[7],
     argu: arr[8],
   }
 };

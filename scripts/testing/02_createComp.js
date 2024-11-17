@@ -346,7 +346,7 @@ async function main() {
 
     tx = await gk.connect(signers[4]).payInCapital(4, 5000 * 10 ** 4, {value: value + 100n});
 
-    await royaltyTest(rc.address, signers[4].address, signers[0].address, 36n, "gk.payInCapital().");
+    await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "gk.payInCapital().");
 
     await expect(tx).to.emit(gk, "SaveToCoffer");
     console.log("Passed Event Test for gk.SaveToCoffer(). \n");

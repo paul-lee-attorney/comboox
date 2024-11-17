@@ -6,7 +6,7 @@
  * */
 
 const hre = require("hardhat");
-
+const { BigNumber } = require("ethers");
 const { getAllMembers } = require("./rom");
 const { Bytes32Zero, parseTimestamp, parseUnits } = require("./utils");
 
@@ -45,6 +45,18 @@ const parseMotion = (arr) => {
   };
 }
 
+function motionSnParser(sn) {
+  let head = {
+    typeOfMotion: parseInt(sn.substring(2, 6), 16),
+    seqOfMotion: BigNumber.from(`0x${sn.substring(6, 22)}`),
+    seqOfVR: parseInt(sn.substring(22, 26), 16),
+    creator: parseInt(sn.substring(26, 36), 16),
+    executor: parseInt(sn.substring(36, 46), 16),
+    createDate: parseInt(sn.substring(46, 58), 16),
+    data: parseInt(sn.substring(58, 66), 16),
+  }
+  return head;
+}
 
 const getMotionsList = async (gmm) => {
   const motionsList = (await gmm.getSeqList()).map(v => Number(v));
@@ -86,6 +98,7 @@ const allSupportLatestMotion = async (gk, rom, gmm) => {
 }
 
 module.exports = {
+    motionSnParser,
     parseMotion,
     getLatestSeqOfMotion,
     getMotionsList,
