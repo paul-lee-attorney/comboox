@@ -40,13 +40,20 @@ const { motionSnParser } = require("./gmm");
 // Write APIs tested in this section:
 // 1. GeneralKeeper
 // 1.1 function nominateDirector(uint256 seqOfPos, uint candidate) external;
-
-
-
-
-
-
-
+// 1.2 function createMotionToRemoveDirector(uint256 seqOfPos) external;
+// 1.3 function proposeMotionToGeneralMeeting(uint256 seqOfMotion) external;
+// 1.4 function castVoteOfGM(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
+// 1.5 function voteCountingOfGM(uint256 seqOfMotion) external;
+// 1.6 function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external;
+// 1.7 function removeDirector (uint256 seqOfMotion, uint256 seqOfPos) external;
+// 1.8 function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external;
+// 1.9 function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external;
+// 1.10 function quitPosition(uint256 seqOfPos) external;
+// 1.11 function nominateOfficer(uint256 seqOfPos, uint candidate) external;
+// 1.12 function createMotionToRemoveOfficer(uint256 seqOfPos) external;
+// 1.13 function proposeMotionToBoard (uint seqOfMotion) external;
+// 1.14 function castVote(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
+// 1.15 function voteCounting(uint256 seqOfMotion) external;
 
 async function main() {
 

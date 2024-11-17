@@ -18,7 +18,7 @@ const parseInvestor = (arr) => {
     regDate: parseTimestamp(arr[2]),
     verifier: arr[3],
     approveDate: parseTimestamp(arr[4]),
-    approved: stateOfInvestor[arr[5]],
+    approved: stateOfInvestor[arr[6]],
     idHash: arr[7],
   };
 }
