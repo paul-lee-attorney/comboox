@@ -12,18 +12,19 @@ const { getGK, getGMM, getRC } = require("./boox");
 const { getLatestSeqOfMotion, parseMotion } = require("./gmm");
 const { royaltyTest } = require("./rc");
 
-// This section shows how to entrust proxy for a motion to be voted on General Meeting,
+// This section shows how to entrust proxy to propose a motion to the General Meeting,
 // or, on the other hand, how to solicitate voting proxy for a motion. Once entrust a 
-// proxy, the principal can NOT cast vote directly by itself.  It's the proxy that may 
-// cast vote on behalf of its principals.
+// proxy, the principal can NOT cast vote for the Motion directly by itself.  It's the 
+// proxy that may cast vote on behalf of its principals.
 
 // The scenario for testing include in this section:
 // 1. User_4 created a motion to mint certain number of CBP to the Company (GeneralKeeper);
-// 2. User_1 entrust User_4 as proxy to propose and vote for the said Motion;
+// 2. User_1 entrust User_4 as proxy so as to enable User_4 have enough voting weight to 
+//    propose and vote for the said Motion;
 // 3. User_4 votes "for" the Motion, while User_2 and User_3 vote "against" the Motion, thus
-//    the Motion is rejectd by the GMM;
-// 4. User_4 repropose another Motion with the same contents with the GMM;
-// 5. All Members support the Motion, therefore, the Motion is passed by the GMM.
+//    the Motion is rejectd by the General Meeting;
+// 4. User_4 repropose another Motion with the same contents with the General Meeting;
+// 5. All Members support the Motion, therefore, the Motion is passed by the General Meeting.
 
 // The write APIs tested in this section:
 // 1. GeneralKeeper;

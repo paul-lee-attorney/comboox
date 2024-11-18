@@ -10,15 +10,70 @@ const { BigNumber } = require("ethers");
 
 const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
-const { parseTimestamp, increaseTime, Bytes32Zero, now } = require("./utils");
-const { printShares, codifyHeadOfShare, parseShare, parseHeadOfShare } = require("./ros");
+const { increaseTime, Bytes32Zero, now } = require("./utils");
+const { parseShare, parseHeadOfShare } = require("./ros");
 const { codifyHeadOfDeal, parseDeal } = require("./roa");
-const { printMembers } = require("./rom");
 const { royaltyTest } = require("./rc");
-const { getLatestSeqOfMotion, parseMotion } = require("./gmm");
+const { getLatestSeqOfMotion } = require("./gmm");
+
+// This section show how to propose a Capital Increase deal in form of Investment
+// Agreement to be signed by the controlling Member and the potential Investor. 
+// Afther approval of the General Meeting, only the controlling Member may confirm
+// all conditions precedents are satisfied, so as to enable the Deal being able to
+// closed. Upon closing, a new share will be issued to the investor, and the investor
+// will be included into the Register of Members to become a Member. The Owners Equity
+// as well as the Registered Capital will also be increased by the same amount. 
+
+// Similar with other motions of the General Meeting, it is only the Members may 
+// propose a Motion to the General Meeting for review and voting. And, for "off-chain"
+// consideration payment, only if the hashlock was opened by the correct "Key", the 
+// subject share may be issued accordingly.
+
+// The scenario for testing include in this section:
+// 1. User_1 as the controlling Member create a draft Investment Agreement (the "Draft")
+//    by cloning the Template；
+// 2. User_1 as the owner of the Draft appoint himself as the General Counsel to the Draft,
+//    so as to enable himself can further setting the deals and signing pages of the Draft;
+// 3. User_1 as the Attorney to the Draft, craete a Capital Increase Deal and set up
+//    all necessar attributes of an Investment Agreement, such as signing days, closing 
+//    days and blanks of signing page;
+// 4. User_1 finalize the Draft to block any further change of it;
+// 5. User_1 circulate the Draft to Parties of the Investment Agreement;
+// 6. User_1 and User_5 signed the Investment Agreement, so as to let it “establshied" in legal;
+// 7. User_1 submit the Investment Agreement to the General Meeting of Members for voting;
+// 8. All rest Members other than User_1 cast "support" vote for the Motion;
+// 9. User_1 triggers the Vote Counting function to make the Motion's state turn into "Passed";
+// 10. User_1 as the controlling Member confirms all precedent conditions are fulfilled and 
+//     input the HashLock encrypted by Keccat-256;
+// 11. User_5 pays the subsciption consideration off-chain and obtains the "Hash Key" to the 
+//     Hash Lock installed by User_1;
+// 12. User_5 input the correct ”Hash Key" to close the Deal and obtained the newly issued
+//     Share。
 
 
+// The Write APIs tested in this sction:
+// 1. General Keper
+// 1.1 function createIA(uint256 snOfIA) external;
+// 1.2 function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external;
+// 1.3 function signIA(address ia, bytes32 sigHash) external;
+// 1.4 function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDeadline) external;
+// 1.5 function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) external;
+// 1.6 function proposeDocOfGM(uint doc, uint seqOfVR, uint executor) external;
+// 1.7 function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external;
+// 1.8 function castVoteOfGM(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
+// 1.9 function voteCountingOfGM(uint256 seqOfMotion) external;
 
+// 2. Investment Agreement
+// 2.1 function addDeal(bytes32 sn, uint buyer, uint groupOfBuyer, uint paid,
+//     uint par, uint distrWeight) external;
+// 2.2 function finalizeIA() external; 
+
+// 3. Draft Control
+// 3.1 function setRoleAdmin(bytes32 role, address acct) external;
+
+// 4. Sig Page
+// 4.1 function setTiming(bool initPage, uint signingDays, uint closingDays) external;
+// 4.2 function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)external;
 
 
 async function main() {
