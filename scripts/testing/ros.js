@@ -5,6 +5,7 @@
  * All Rights Reserved.
  * */
 
+const { getROS } = require('./boox');
 const { parseUnits, parseTimestamp, longDataParser } = require('./utils');
 
 const printShare = async (ros, seqOfShare) => {
@@ -16,6 +17,14 @@ const printShare = async (ros, seqOfShare) => {
 const printShares = async (ros) => {
   const shares = (await ros.getSharesList()).map(v => parseShare(v));
   console.log('Shares of the Comp:', shares, '\n');
+}
+
+const getLatestShare = async (ros) => {
+  const list = (await ros.getSeqListOfShares()).map(v => parseInt(v));
+  const seqOfShare = list[list.length - 1];
+  const share = parseShare(await ros.getShare(seqOfShare));
+
+  return share;
 }
 
 function codifyHeadOfShare(head) {
@@ -72,12 +81,55 @@ function parseShare(arr) {
   };
 }
 
+async function obtainNewShare(tx) {
+
+  const ros = await getROS();
+  const receipt = await tx.wait();
+
+  const eventAbi = [
+    "event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par)",
+    "event PayInCapital(uint256 indexed seqOfShare, uint indexed amount)",
+    "event SubAmountFromShare(uint256 indexed seqOfShare, uint indexed paid, uint indexed par)",
+    "event DeregisterShare(uint256 indexed seqOfShare)",
+    "event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid)",
+    "event IncreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid)",
+    "event IncreaseEquityOfClass(bool indexed isIncrease, uint indexed class, uint indexed amt)",
+  ];
+  
+  const iface = new ethers.utils.Interface(eventAbi);
+  let seqOfShare = 0;
+  let share = {};
+  
+  for (const log of receipt.logs) {
+    if (log.address == ros.address) {
+      try {
+        const parsedLog = iface.parseLog(log);
+        
+        if (parsedLog.name == "IssueShare") {
+          seqOfShare= parseHeadOfShare(parsedLog.args[0]).seqOfShare;          
+        }
+      } catch (err) {
+        console.log("Parse Log Error:", err);
+      }
+    }
+  }
+
+  if (seqOfShare > 0) {
+    share = parseShare(await ros.getShare(seqOfShare));
+  }
+
+  return share;
+
+}
+
 module.exports = {
     printShare,
     printShares,
     codifyHeadOfShare,
     parseHeadOfShare,
     parseShare,
+    obtainNewShare,
+    getLatestShare,
 };
 
   

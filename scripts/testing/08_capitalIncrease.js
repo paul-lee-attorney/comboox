@@ -11,18 +11,18 @@ const { BigNumber } = require("ethers");
 const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now } = require("./utils");
-const { parseShare, parseHeadOfShare } = require("./ros");
+const { obtainNewShare } = require("./ros");
 const { codifyHeadOfDeal, parseDeal } = require("./roa");
 const { royaltyTest } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 
-// This section show how to propose a Capital Increase deal in form of Investment
-// Agreement to be signed by the controlling Member and the potential Investor. 
-// Afther approval of the General Meeting, only the controlling Member may confirm
-// all conditions precedents are satisfied, so as to enable the Deal being able to
-// closed. Upon closing, a new share will be issued to the investor, and the investor
-// will be included into the Register of Members to become a Member. The Owners Equity
-// as well as the Registered Capital will also be increased by the same amount. 
+// This section shows how to draft, propose and close a Capital Increase deal
+// by an Investment Agreement. Afther approval of the General Meeting, only 
+// the controlling Member may confirm all conditions precedents are satisfied, 
+// so as to enable the Deal being able to closed. Upon closing, a new share will 
+// be issued to the investor, and the investor will be included into the 
+// Register of Members to become a Member. The Owners Equity as well as 
+// the Registered Capital will also be increased by the same amount. 
 
 // Similar with other motions of the General Meeting, it is only the Members may 
 // propose a Motion to the General Meeting for review and voting. And, for "off-chain"
@@ -286,14 +286,9 @@ async function main() {
     await expect(tx).to.emit(ros, "IssueShare");
     console.log("Passed Evet Test for ros.IssueShare(). \n");
 
-    let receipt = await tx.wait();
-    console.log("receipt:", receipt);
+    let share = await obtainNewShare(tx);
 
-    let headOfShare = parseHeadOfShare(receipt.logs[4].topics[1]);
-    console.log("headOfShare", headOfShare);
-
-    let share = parseShare(await ros.getShare(headOfShare.seqOfShare));
-
+    expect(share.head.seqOfShare).to.equal(6);
     expect(share.head.shareholder).to.equal(5);
     expect(share.head.priceOfPaid).to.equal('1.8');
     expect(share.body.paid).to.equal('10,000.0');
