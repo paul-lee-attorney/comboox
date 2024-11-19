@@ -457,10 +457,10 @@ async function main() {
 
     let cond = {
       seqOfCond: 1,
-      logicOpr: 2,
-      compOpr1: 4,
+      logicOpr: 2, // ||
+      compOpr1: 4, // <
       para1: 1000,
-      compOpr2: 4,
+      compOpr2: 4, // <
       para2: 100,
       compOpr3: 0,
       para3: 0,
@@ -475,7 +475,7 @@ async function main() {
     expect(retOpt.body.paid).to.equal(500);
     expect(retOpt.body.par).to.equal(500);
     expect(retOpt.body.closingDeadline).to.equal(triggerDate + 86400 * (93));
-    expect(retOpt.body.state).to.equal(0);
+    expect(retOpt.body.state).to.equal("Pending");
     
     console.log("Passed Result Verify Test for op.createOption(). \n");
 
@@ -501,8 +501,8 @@ async function main() {
 
     cond = {
       seqOfCond: 0,
-      logicOpr: 1,
-      compOpr1: 3,
+      logicOpr: 1, // &
+      compOpr1: 3, // >
       para1: 5000,
       compOpr2: 3,
       para2: 500,

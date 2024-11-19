@@ -82,6 +82,10 @@ const getROS = async () => {
   return await readContract("RegisterOfShares", Boox.ROS);
 }
 
+const getGMMKeeper = async () => {
+  return await readContract("GMMKeeper", Boox.GMMKeeper);
+}
+
 module.exports = {
   refreshBoox,
   getRC,
@@ -98,6 +102,7 @@ module.exports = {
   getROO,
   getROP,
   getROS,
+  getGMMKeeper,
 };
 
   

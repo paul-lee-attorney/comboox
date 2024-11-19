@@ -81,7 +81,7 @@ function parseOption(arr) {
             rightholder: arr[2][1],
             paid: Number(arr[2][2]) / 10000,
             par: Number(arr[2][3]) / 10000,
-            state: arr[2][4],
+            state: stateOfOpt[arr[2][4]],
             para: arr[2][5],
             argu: arr[2][6],
         },

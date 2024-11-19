@@ -12,7 +12,7 @@ const { Bytes32Zero, parseTimestamp, parseUnits } = require("./utils");
 
 const typeOfMotion = [
   'ZeroPoint', 'Elect Officer', 'Remove Officer', 'Approve Doc',
-  'Apporove Action', 'Transfer Fund', 'Distribute Profits', 'Deprecate GK'
+  'Approve Action', 'Transfer Fund', 'Distribute Profits', 'Deprecate GK'
 ];
 
 const stateOfMotion = [
@@ -29,7 +29,7 @@ const parseMotion = (arr) => {
       creator: arr[0][3],
       executor: arr[0][4],
       createDate: parseTimestamp(arr[0][5]),
-      data: arr[0][5],
+      data: arr[0][6],
     },
     body: {
       proposer: arr[1][0],

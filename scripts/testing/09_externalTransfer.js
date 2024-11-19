@@ -182,6 +182,9 @@ async function main() {
     expect(await ia.isSigner(5)).to.equal(true);
     console.log("Parssed Result Verify Test for gk.signIA(). by User_5 \n ");
 
+    await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(BigNumber.from(6), BigNumber.from(10000 * 10 ** 4));
+    console.log("Passed Evet Test for ros.DecreaseCleanPaid(). \n");
+
     const doc = BigInt(ia.address);
 
     await expect(gk.connect(signers[5]).proposeDocOfGM(doc, 1, 1)).to.be.revertedWith("GMMK: not established");
