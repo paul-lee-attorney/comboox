@@ -86,6 +86,10 @@ const getGMMKeeper = async () => {
   return await readContract("GMMKeeper", Boox.GMMKeeper);
 }
 
+const getLOOKeeper = async () => {
+  return await readContract("LOOKeeper", Boox.LOOKeeper);
+}
+
 module.exports = {
   refreshBoox,
   getRC,
@@ -103,6 +107,7 @@ module.exports = {
   getROP,
   getROS,
   getGMMKeeper,
+  getLOOKeeper,
 };
 
   

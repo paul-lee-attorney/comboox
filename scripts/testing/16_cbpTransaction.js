@@ -11,8 +11,6 @@ const { BigNumber } = require("ethers");
 const { getGK, getRC, getGMM, getROM, getFT, getGMMKeeper, } = require("./boox");
 const { increaseTime, parseUnits, Bytes32Zero, now, } = require("./utils");
 const { getLatestSeqOfMotion, allSupportMotion, parseMotion } = require("./gmm");
-const { getLatestShare } = require("./ros");
-const { parseOption, parseOracle, parseSwap } = require("./roo");
 const { royaltyTest } = require("./rc");
 
 async function main() {

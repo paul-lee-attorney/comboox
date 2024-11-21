@@ -35,7 +35,7 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/testing/14_pledge.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/15_options.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/17_listing.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/17_listing.js', '--network', 'localhost']);
     // await runScript('npx', ['hardhat', 'run', './scripts/testing/18_deposits.js', '--network', 'localhost']);
     console.log('All tests are passed successfully !');
   } catch (err) {
