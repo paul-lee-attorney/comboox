@@ -192,17 +192,17 @@ async function main() {
       if (orderPlaced.length > 0) {
         seqOfOrder = await loo.counterOfOrders(2, orderPlaced[0].isOffer);
         orderPlaced[0].seqOfOrder = seqOfOrder;
-        console.log('Order Placed: \n', orderPlaced, '\n');
+        // console.log('Order Placed: \n', orderPlaced, '\n');
       }
 
       if (orderWithdrawn?.data?.classOfShare > 0) 
-        console.log('Orders withdrawn: \n', orderWithdrawn, '\n');
+        // console.log('Orders withdrawn: \n', orderWithdrawn, '\n');
 
       if (orderExpired.length > 0) 
-        console.log('Orders expired: \n', orderExpired, '\n');
+        // console.log('Orders expired: \n', orderExpired, '\n');
 
       if (dealClosed.length > 0) 
-        console.log('Deals closed: \n', dealClosed, '\n');
+        // console.log('Deals closed: \n', dealClosed, '\n');
 
       return [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed];
     }
