@@ -21,7 +21,7 @@ const { ethers } = require("hardhat");
 async function main() {
 
     console.log('\n********************************');
-    console.log('**       First Refusal        **');
+    console.log('**     13. First Refusal      **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -132,7 +132,7 @@ async function main() {
     await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
 
     expect(await ia.established()).to.equal(true);
-    console.log("Passed Result Verify Test for gk.signIA() & ia.established(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");
 
     // ==== Exec First Refusal ====
 
@@ -152,7 +152,7 @@ async function main() {
       expect(cls[0]).to.deep.equal({seqOfDeal:i, claimer:1});
       expect(cls[1]).to.deep.equal({seqOfDeal:i, claimer:2});
 
-      console.log("Passed Result Verify Test for gk.execFirstRefusal(). \n");
+      console.log(" \u2714 Passed Result Verify Test for gk.execFirstRefusal(). \n");
     }
 
     // ==== Compute FR Deals ====
@@ -161,14 +161,14 @@ async function main() {
 
     for (let i=1; i<=4; i++) {
       await expect(gk.connect(signers[6]).computeFirstRefusal(ia.address, i)).to.be.revertedWith("SHAKeeper.computeFR: not member");
-      console.log("Passed Access Control Test for gk.computeFirstRefusal(). \n");
+      console.log(" \u2714 Passed Access Control Test for gk.computeFirstRefusal(). \n");
 
       tx = await gk.computeFirstRefusal(ia.address, i);
 
       await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.computeFirstRefusal().");
 
       await expect(tx).to.emit(ia, "RegDeal")
-      console.log("Passed Event Test for ia.RegDeal(). \n");
+      console.log(" \u2714 Passed Event Test for ia.RegDeal(). \n");
 
       let deal = parseDeal(await ia.getDeal(3+2*i));
       expect(deal.body.buyer).to.equal(2);
@@ -176,7 +176,7 @@ async function main() {
       deal = parseDeal(await ia.getDeal(4+2*i));
       expect(deal.body.buyer).to.equal(1);
 
-      console.log("Passed Result Verify Test for gk.computeFirstRefusal(). \n");
+      console.log(" \u2714 Passed Result Verify Test for gk.computeFirstRefusal(). \n");
     }
 
     // const dealsList = (await ia.getSeqList()).map(v => Number(v));
@@ -189,7 +189,7 @@ async function main() {
     // }
 
     expect(await ia.established()).to.equal(true);
-    console.log("Passed Establishment Test for FirstRefusal. \n");
+    console.log(" \u2714 Passed Establishment Test for FirstRefusal. \n");
     
     // ==== Vote for IA ====
 
@@ -201,7 +201,7 @@ async function main() {
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     expect(await gmm.isProposed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.proposeDocOfGM(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.proposeDocOfGM(). \n");
 
     await increaseTime(86400);
 
@@ -213,7 +213,7 @@ async function main() {
     await gk.voteCountingOfGM(seqOfMotion);
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
-    console.log("Passed Result Verify Test for gk.castVoteOfGM() & gk.voteAccountingOfGM(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM() & gk.voteAccountingOfGM(). \n");
 
     // ---- Exec IA ----
 
@@ -233,7 +233,7 @@ async function main() {
       expect(share.head.shareholder).to.equal(buyer);
       expect(share.body.paid).to.equal(longDataParser(ethers.utils.formatUnits(paid.toString(), 4)));
 
-      console.log("Passed Result Verify Test for First Refusal of Share", share.head.seqOfShare, "\n");
+      console.log(" \u2714 Passed Result Verify Test for First Refusal of Share", share.head.seqOfShare, "\n");
     }
 
     for (let i=12; i>=9; i--)
@@ -242,7 +242,7 @@ async function main() {
     for (let i=8; i>=5; i--)
         await payOffDeal(i);
     
-    console.log("Passed All Tests for First Refusal. \n");
+    console.log(" \u2714 Passed All Tests for First Refusal. \n");
 }
 
 main()

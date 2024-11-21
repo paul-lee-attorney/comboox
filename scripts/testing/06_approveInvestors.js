@@ -5,11 +5,6 @@
  * All Rights Reserved.
  * */
 
-const { expect } = require("chai");
-const { getGK, getLOO, getRC } = require("./boox");
-const { parseInvestor } = require("./loo");
-const { royaltyTest } = require("./rc");
-
 // This section shows how to register, approve and revoke Investors in 
 // ComBoox. Only approved Investors may enter into Investment Agreements
 // as buyers or involve in listing orders on Register of Orders.
@@ -26,10 +21,15 @@ const { royaltyTest } = require("./rc");
 // 1.2 function approveInvestor(uint userNo, uint seqOfLR) external;
 // 1.3 function revokeInvestor(uint userNo, uint seqOfLR) external;
 
+const { expect } = require("chai");
+const { getGK, getLOO, getRC } = require("./boox");
+const { parseInvestor } = require("./loo");
+const { royaltyTest } = require("./rc");
+
 async function main() {
 
     console.log('\n********************************');
-    console.log('**     Approve Investors      **');
+    console.log('**   06. Approve Investors    **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -57,31 +57,31 @@ async function main() {
       await royaltyTest(rc.address, signers[signerNo].address, gk.address, tx, 36n, "gk.regInvestor().");
 
       await expect(tx).to.emit(loo, "RegInvestor").withArgs(userNo, userNo, ethers.utils.id(signers[signerNo].address));
-      console.log("Passed Event Test for gk.regInvestor(). \n");
+      console.log(" \u2714 Passed Event Test for gk.regInvestor(). \n");
 
       let info = parseInvestor(await loo.getInvestor(userNo));
       
       expect(info.userNo).to.equal(userNo);
       expect(info.approved).to.equal('Pending');
-      console.log('Passed Result Verify Test for gk.regInvestor().\n');     
+      console.log(' \u2714 Passed Result Verify Test for gk.regInvestor().\n');     
     
       tx = await gk.approveInvestor(userNo, 1024);
 
       await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.approveInvestor().");
 
       await expect(tx).to.emit(loo, "ApproveInvestor").withArgs(userNo, 1);
-      console.log("Passed Event Test for loo.ApproveInvestor(). \n");
+      console.log(" \u2714 Passed Event Test for loo.ApproveInvestor(). \n");
 
       info = parseInvestor(await loo.getInvestor(userNo));
       
       expect(info.userNo).to.equal(userNo);
       expect(info.approved).to.equal('Approved'); 
 
-      console.log('Passed Result Verify Test for gk.approveInvestor().\n');
+      console.log(' \u2714 Passed Result Verify Test for gk.approveInvestor().\n');
     }
 
     await expect(gk.connect(signers[1]).approveInvestor(1, 1024)).to.be.revertedWith("LOOK.apprInv: no rights");
-    console.log('Passed Access Control Test for gk.approveInvestor(). \n');
+    console.log(' \u2714 Passed Access Control Test for gk.approveInvestor(). \n');
 
     for (let i=0; i<10; i++) {
       await regAndApproveInvestor(i);
@@ -96,7 +96,7 @@ async function main() {
       await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.revokeIvnestor().");
 
       await expect(tx).to.emit(loo, "RevokeInvestor").withArgs(userNo, 1);
-      console.log('Passed Event Test for gk.revokeInvestor(). \n');
+      console.log(' \u2714 Passed Event Test for gk.revokeInvestor(). \n');
       
       const info = parseInvestor(await loo.getInvestor(userNo));
       

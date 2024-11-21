@@ -1,6 +1,5 @@
 const { spawn } = require('child_process');
 
-// Run a script using spawn for more control over streaming
 const runScript = (command, args) => {
   return new Promise((resolve, reject) => {
     const process = spawn(command, args, { stdio: 'inherit' });
@@ -15,7 +14,6 @@ const runScript = (command, args) => {
   });
 };
 
-// Run scripts sequentially
 (async () => {
   try {
     await runScript('npx', ['hardhat', 'run', './scripts/deployMasterBase.js', '--network', 'localhost']);
@@ -36,8 +34,8 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/testing/15_options.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/17_listing.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/18_deposits.js', '--network', 'localhost']);
-    console.log('All tests are passed successfully !');
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/18_deposits.js', '--network', 'localhost']);
+    console.log('All tests are passed successfully !\n');
   } catch (err) {
     console.error('Error in script execution:', err);
   }

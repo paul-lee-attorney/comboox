@@ -5,10 +5,6 @@
  * All Rights Reserved.
  * */
 
-const { BigNumber } = require("ethers");
-const { expect } = require("chai");
-const { getRC, getFT, getGK } = require("./boox");
-
 // This section we will test the IPR and Ownership control
 // functions of the Platform. Or, more specificly, the 
 // functions of the smart contract of RegCenter.
@@ -56,11 +52,15 @@ const { getRC, getFT, getGK } = require("./boox");
 // 2. Ownable
 // 2.1 function setNewOwner(address acct) onlyOwner public;
 
+const { BigNumber } = require("ethers");
+const { expect } = require("chai");
+const { getRC, getFT, getGK } = require("./boox");
+
 async function main() {
 
     console.log('\n');
     console.log('********************************');
-    console.log('**       Config ComBoox       **');
+    console.log('**   03. Config ComBoox       **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -76,21 +76,21 @@ async function main() {
     // error message.
     
     await expect(rc.connect(signers[1]).transferOwnership(gk.address)).to.be.revertedWith("UR.mf.OO: not owner");
-    console.log("Passed Access Control Test for rc.transferOwnership(). \n");
+    console.log(" \u2714 Passed Access Control Test for rc.transferOwnership(). \n");
 
     await expect(rc.transferOwnership(gk.address)).to.emit(rc, "TransferOwnership");
-    console.log("Passed Event Test for rc.TransferOwnership(). \n");
+    console.log(" \u2714 Passed Event Test for rc.TransferOwnership(). \n");
 
     let newOwner = (await rc.getOwner()).toLowerCase();
     expect(newOwner).to.equal(gk.address.toLowerCase());
-    console.log('Passed Result Verify Test for rc.transferOwnership(). \n');
+    console.log(' \u2714 Passed Result Verify Test for rc.transferOwnership(). \n');
 
     // ==== Transfer Ownership of Fuel Tank to Company ====
 
     await ft.setNewOwner(gk.address);
     newOwner = (await ft.getOwner()).toLowerCase();
     expect(newOwner).to.equal(gk.address.toLowerCase());
-    console.log('Passed Result Verify Test for ft.setNewOwner(). \n');
+    console.log(' \u2714 Passed Result Verify Test for ft.setNewOwner(). \n');
 
     // ==== Transfer IPR of Templates to Company ====
 
@@ -100,7 +100,7 @@ async function main() {
       await tx.wait();
       
       await expect(tx).to.emit(rc, "TransferIPR").withArgs(BigNumber.from(i), BigNumber.from(1), BigNumber.from(8));
-      console.log('Passed Event Test for rc.transferIPR() with typeOfDoc', i, ' version 1. \n');
+      console.log(' \u2714 Passed Event Test for rc.transferIPR() with typeOfDoc', i, ' version 1. \n');
     }
     
 }

@@ -5,14 +5,6 @@
  * All Rights Reserved.
  * */
 
-const { expect } = require("chai");
-const { BigNumber } = require("ethers");
-const { getGK, getBMM, getGMM, getROD, getRC } = require('./boox');
-const { positionParser } = require('./sha');
-const { Bytes32Zero, increaseTime, parseTimestamp, now } = require('./utils');
-const { royaltyTest } = require("./rc");
-const { motionSnParser, getLatestSeqOfMotion } = require("./gmm");
-
 // This section shows how to nominate candidate and cast vote for officers.
 // Usually, directors' board seat will be allocated among Members in SHA.
 // So, Members may nominate their candidates as per the SHA. In case any
@@ -55,10 +47,18 @@ const { motionSnParser, getLatestSeqOfMotion } = require("./gmm");
 // 1.14 function castVote(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
 // 1.15 function voteCounting(uint256 seqOfMotion) external;
 
+const { expect } = require("chai");
+const { BigNumber } = require("ethers");
+const { getGK, getBMM, getGMM, getROD, getRC } = require('./boox');
+const { positionParser } = require('./sha');
+const { Bytes32Zero, increaseTime, parseTimestamp, now } = require('./utils');
+const { royaltyTest } = require("./rc");
+const { motionSnParser, getLatestSeqOfMotion } = require("./gmm");
+
 async function main() {
 
     console.log('\n********************************');
-    console.log('**        Elect Officers      **');
+    console.log('**    05. Elect Officers      **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -74,7 +74,7 @@ async function main() {
     // ---- Nominate ----
 
     await expect(gk.connect(signers[1]).nominateDirector(1, 1)).to.be.revertedWith("GMMK: has no right");
-    console.log("Passed Access Control Test for gk.nominateDirector(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.nominateDirector(). \n");
 
     let tx = await gk.nominateDirector(1, 1);
 
@@ -83,7 +83,7 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 72n, "gk.nominateDirector().");
     
     await expect(tx).to.emit(gmm, "CreateMotion");
-    console.log("Passed Event Test for gmm.CreateMotion(). \n");
+    console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
 
     let headOfMotion = motionSnParser(receipt.logs[1].topics[1]);
     let contents = parseInt(receipt.logs[1].topics[2].toString());
@@ -94,50 +94,50 @@ async function main() {
     expect(headOfMotion.seqOfVR).to.equal(9); // voting rule no.
     expect(contents).to.equal(1); // position no.
 
-    console.log("Passed Result Verify Test for gk.nominateDirector(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.nominateDirector(). \n");
 
     // ---- Propose ----
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
 
     await expect(gk.connect(signers[5]).proposeMotionToGeneralMeeting(seqOfMotion)).to.be.revertedWith("MR.PMTGM: has no proposalRight");
-    console.log("Passed Access Control Test for gk.proposeMotionToGeneralMeeting() \n");
+    console.log(" \u2714 Passed Access Control Test for gk.proposeMotionToGeneralMeeting() \n");
 
     tx = await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 72n, "gk.proposeMotionToGeneralMeeting()");
 
     await expect(tx).to.emit(gmm, "ProposeMotionToGeneralMeeting").withArgs(seqOfMotion, 1);
-    console.log("Passed Event Test for gmm.ProposeMotionToGeneralMeeting() \n");
+    console.log(" \u2714 Passed Event Test for gmm.ProposeMotionToGeneralMeeting() \n");
 
     expect(await gmm.isProposed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify for gk.ProposeMotionToGeneralMeeting() \n");
+    console.log(" \u2714 Passed Result Verify for gk.ProposeMotionToGeneralMeeting() \n");
 
     // ---- Cast Vote ----
 
     await expect(gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero)).to.be.revertedWith("Checkpoints: block not yet mined");
-    console.log("Passed Procedure Test for gk.castVoteOfGM(). \n");
+    console.log(" \u2714 Passed Procedure Test for gk.castVoteOfGM(). \n");
 
     await increaseTime(86400);
 
     await expect(gk.connect(signers[5]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero)).to.be.revertedWith("MR.castVoteInGM: not Member");
-    console.log("Passed Access Control Test for gk.castVoteOfGM(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.castVoteOfGM(). \n");
 
     tx = await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 72n, "gk.castVoteOfGM().");
 
     await expect(tx).to.emit(gmm, "CastVoteInGeneralMeeting").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1), BigNumber.from(1), Bytes32Zero);
-    console.log("Passed Event Control Test for gmm.CastVoteInGeneralMeeting(). \n");
+    console.log(" \u2714 Passed Event Control Test for gmm.CastVoteInGeneralMeeting(). \n");
 
     expect(await gmm.isVotedFor(seqOfMotion, 1, 1)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.castVoteOfGM(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). \n");
 
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
     await expect(gk.voteCountingOfGM(seqOfMotion)).to.be.revertedWith("MR.VT: vote not ended yet");
-    console.log("Passed Procedure Control Test for gmm.voteCountingOfGM(). \n");
+    console.log(" \u2714 Passed Procedure Control Test for gmm.voteCountingOfGM(). \n");
 
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
@@ -148,30 +148,30 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 88n, "gk.voteCountingOfGM().");
 
     await expect(tx).to.emit(gmm, "VoteCounting").withArgs(BigNumber.from(seqOfMotion), 3);
-    console.log("Passed Event Control Test for gmm.VoteCounting(). \n");
+    console.log(" \u2714 Passed Event Control Test for gmm.VoteCounting(). \n");
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.voteCountingOfGM(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.voteCountingOfGM(). \n");
 
     // ---- Take Position ----
 
     await expect(gk.connect(signers[1]).takeSeat(seqOfMotion, 1)).to.be.revertedWith("MR.ER: not executor");
-    console.log("Passed Access Control Test for gk.takeSeat(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.takeSeat(). \n");
         
     tx = await gk.takeSeat(seqOfMotion, 1);
 
     await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
-    console.log("Passed Event Control Test for gmm.ExecResolution(). \n");
+    console.log(" \u2714 Passed Event Control Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(rod, "TakePosition").withArgs(BigNumber.from(1), BigNumber.from(1));
-    console.log("Passed Event Control Test for rod.TakePosition(). \n");
+    console.log(" \u2714 Passed Event Control Test for rod.TakePosition(). \n");
 
     let pos = positionParser(await rod.getPosition(1));
 
     expect(pos.nominator).to.equal(1);
     expect(pos.titleOfNominator).to.equal(1);
     expect(pos.acct).to.equal(1);
-    console.log("Passed Result Verify Test for gk.takeSeat(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.takeSeat(). \n");
     
     // ---- Propose to Remove Chairman ----
 
@@ -184,7 +184,7 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 116n, "gk.createMotionToRemoveDirector().");
 
     await expect(tx).to.emit(gmm, "CreateMotion");
-    console.log("Passed Event Test for gmm.CreateMotion(). \n");
+    console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
     
     headOfMotion = motionSnParser(receipt.logs[1].topics[1]);
     contents = parseInt(receipt.logs[1].topics[2].toString());
@@ -195,7 +195,7 @@ async function main() {
     expect(headOfMotion.seqOfVR).to.equal(9); // voting rule no.
     expect(contents).to.equal(1); // position no.
 
-    console.log("Passed Result Verify Test for gk.createMotionToRemoveDirector(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.createMotionToRemoveDirector(). \n");
 
     // ---- Propose, Vote and Exec Motion ----
 
@@ -213,20 +213,20 @@ async function main() {
     await gk.voteCountingOfGM(seqOfMotion);
 
     await expect(gk.connect(signers[1]).removeDirector(seqOfMotion, 1)).to.be.revertedWith("MR.ER: not executor");
-    console.log("Passed Access Control Test for gk.removeDirector(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.removeDirector(). \n");
 
     tx = await gk.removeDirector(seqOfMotion, 1);
     
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.removeDirector().");
 
     await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
-    console.log("Passed Event Test for gmm.ExecResolution(). \n");
+    console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(rod, "RemoveOfficer").withArgs(BigNumber.from(1));
-    console.log("Passed Event Test for rod.RemoveOfficer(). \n");
+    console.log(" \u2714 Passed Event Test for rod.RemoveOfficer(). \n");
 
     expect(await rod.isOccupied(1)).to.equal(false);
-    console.log("Passed Result Verify Test for gk.removeDirector(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.removeDirector(). \n");
 
     // ---- Reposition of Chairman ----
 
@@ -252,7 +252,7 @@ async function main() {
     // ---- Nominate ----
 
     await expect(gk.connect(signers[1]).nominateOfficer(2, 2)).to.be.revertedWith("BMMKeeper.nominateOfficer: no rights");
-    console.log("Passed Access Control Test for gk.nominateOfficer(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.nominateOfficer(). \n");
 
     tx = await gk.nominateOfficer(2, 2);
 
@@ -261,7 +261,7 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.nominateOfficer().");
 
     await expect(tx).to.emit(bmm, "CreateMotion");
-    console.log("Passed Event Test for bmm.CreateMotion(). \n");
+    console.log(" \u2714 Passed Event Test for bmm.CreateMotion(). \n");
 
     headOfMotion = motionSnParser(receipt.logs[1].topics[1]);
     contents = parseInt(receipt.logs[1].topics[2].toString());
@@ -272,7 +272,7 @@ async function main() {
     expect(headOfMotion.seqOfVR).to.equal(11);
     expect(contents).to.equal(2); 
 
-    console.log("Passed Result Verify Test for gk.nominateOfficer(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.nominateOfficer(). \n");
 
     // ---- Propose ---
 
@@ -280,39 +280,39 @@ async function main() {
     seqOfMotion = bmmList[bmmList.length - 1];
 
     await expect(gk.connect(signers[1]).proposeMotionToBoard(seqOfMotion)).to.be.revertedWith("BMMK: not director");
-    console.log("Passed Access Control Test for gk.proposeMotionToBoard(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.proposeMotionToBoard(). \n");
 
     tx = await gk.proposeMotionToBoard(seqOfMotion);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.proposeMotionToBoard().");
 
     await expect(tx).to.be.emit(bmm, "ProposeMotionToBoard").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
-    console.log("Passed Event Test for bmm.ProposeMotionToBoard(). \n");
+    console.log(" \u2714 Passed Event Test for bmm.ProposeMotionToBoard(). \n");
 
     expect(await bmm.isProposed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.proposeMotionToBoard(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.proposeMotionToBoard(). \n");
 
     // ---- Cast Vote ----
 
     await expect(gk.connect(signers[1]).castVote(seqOfMotion, 1, Bytes32Zero)).to.be.revertedWith("MR.CVBM: not Director");
-    console.log("Passed Access Control Test for gk.castVote(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.castVote(). \n");
 
     tx = await gk.castVote(seqOfMotion, 1, Bytes32Zero);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.castVote().");
 
     await expect(tx).to.emit(bmm, "CastVoteInBoardMeeting").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1), BigNumber.from(1), Bytes32Zero);
-    console.log("Passed Event Test for bmm.CastVoteInBoardMeeting(). \n");
+    console.log(" \u2714 Passed Event Test for bmm.CastVoteInBoardMeeting(). \n");
 
     expect(await bmm.isVoted(seqOfMotion, 1)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.castVote(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.castVote(). \n");
 
     tx = await gk.voteCounting(seqOfMotion);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.voteCounting().");
 
     await expect(tx).to.emit(bmm, "VoteCounting").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(3));
-    console.log("Passed Event Test for bmm.VoteCounting(). \n");
+    console.log(" \u2714 Passed Event Test for bmm.VoteCounting(). \n");
 
     expect(await bmm.isPassed(seqOfMotion)).to.equal(true);
 
@@ -321,17 +321,17 @@ async function main() {
     await royaltyTest(rc.address, signers[1].address, gk.address, tx, 36n, "gk.takePosition().");
 
     await expect(tx).to.emit(bmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(2));
-    console.log("Passed Event Control Test for gmm.ExecResolution(). \n");
+    console.log(" \u2714 Passed Event Control Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(rod, "TakePosition").withArgs(BigNumber.from(2), BigNumber.from(2));
-    console.log("Passed Event Control Test for rod.TakePosition(). \n");
+    console.log(" \u2714 Passed Event Control Test for rod.TakePosition(). \n");
 
     pos = positionParser(await rod.getPosition(2));
 
     expect(pos.nominator).to.equal(0);
     expect(pos.titleOfNominator).to.equal(2);
     expect(pos.acct).to.equal(2);
-    console.log("Passed Result Verify Test for gk.takePosition(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.takePosition(). \n");
         
     // ==== Manager ====
 
@@ -349,22 +349,22 @@ async function main() {
     expect(pos.nominator).to.equal(0);
     expect(pos.titleOfNominator).to.equal(6);
     expect(pos.acct).to.equal(3);
-    console.log("Passed Result Verify Test for gk.takePosition(). witht the title of Manager \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.takePosition(). witht the title of Manager \n");
 
     // ---- Quit ----
 
     await expect(gk.quitPosition(3)).to.be.revertedWith("OR.quitPosition: not the officer");
-    console.log("Passed Access Control Test for gk.quitPosition(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.quitPosition(). \n");
     
     tx = await gk.connect(signers[3]).quitPosition(3);
     
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 18n, "gk.quitPosition().");
   
     await expect(tx).to.emit(rod, "QuitPosition").withArgs(BigNumber.from(3), BigNumber.from(3));
-    console.log("Passed Event Test for rod.quitPosition(). \n");
+    console.log(" \u2714 Passed Event Test for rod.quitPosition(). \n");
 
     expect(await rod.isOccupied(3)).to.equal(false);
-    console.log("Passed Result Verify Test for gk.quitPosition(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.quitPosition(). \n");
 
     // ---- Reposition of Manager ----
 
@@ -378,7 +378,7 @@ async function main() {
     await gk.connect(signers[3]).takePosition(seqOfMotion, 3);
 
     expect(await rod.isOccupied(3)).to.equal(true);
-    console.log("Passed Result Verify Test for  Reposition of Manager. \n");
+    console.log(" \u2714 Passed Result Verify Test for  Reposition of Manager. \n");
 
 }
 

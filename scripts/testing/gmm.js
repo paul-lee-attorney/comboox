@@ -16,7 +16,7 @@ const typeOfMotion = [
 ];
 
 const stateOfMotion = [
-  'ZeroPoint', 'Created', 'Proposed', 'Passed', 'Rejected', 
+  'ZeroPoint', 'Created', 'Proposed', ' \u2714 Passed', 'Rejected', 
   'Rejected_NotToBuy', 'Rejected_ToBuy', 'Executed'
 ];
 

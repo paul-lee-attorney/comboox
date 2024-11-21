@@ -10,16 +10,16 @@ const { BigNumber } = require("ethers");
 
 const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
-const { parseTimestamp, increaseTime, Bytes32Zero, now, parseUnits, } = require("./utils");
+const { increaseTime, Bytes32Zero, now, } = require("./utils");
 const { codifyHeadOfDeal, parseDeal } = require("./roa");
-const { obtainNewShare, getLatestShare } = require("./ros");
+const { getLatestShare } = require("./ros");
 const { royaltyTest } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 
 async function main() {
 
     console.log('\n********************************');
-    console.log('**    Drag / Tag Alongs       **');
+    console.log('**    12. Drag/Tag Alongs     **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -76,7 +76,7 @@ async function main() {
     });
     expect(deal.hashLock).to.equal(Bytes32Zero);
 
-    console.log("Passed Result Verify Test for ia.addDeal(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ia.addDeal(). \n");
 
     // ---- Config SigPage of IA ----
 
@@ -90,14 +90,14 @@ async function main() {
     await ia.finalizeIA();
     await gk.circulateIA(ia.address, Bytes32Zero, Bytes32Zero);
     expect(await ia.circulated()).to.equal(true);
-    console.log("Passed Result Verify Test for gk.circulateIA(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.circulateIA(). \n");
 
     // ---- Sign IA ----
 
     await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
     await gk.signIA(ia.address, Bytes32Zero);
     expect(await ia.established()).to.equal(true);
-    console.log("Passed Result Verify Test for gk.signIA() & ia.established(). \n");    
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");    
 
     // ==== Exec TagAlong ====
 
@@ -108,25 +108,25 @@ async function main() {
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 88n, "gk.execTagAlong().");
 
     await expect(tx).to.emit(roa, "ExecAlongRight");
-    console.log("Passed Event Test for roa.ExecAlongRight(). \n");
+    console.log(" \u2714 Passed Event Test for roa.ExecAlongRight(). \n");
 
     tx = await gk.execDragAlong(ia.address, 1, 4, 9000 * 10 ** 4, 9000 * 10 ** 4, ethers.utils.id(signers[0].address));
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 88n, "gk.execDragAlong().");
 
     await expect(tx).to.emit(roa, "ExecAlongRight");
-    console.log("Passed Event Test for roa.ExecAlongRight(). \n");
+    console.log(" \u2714 Passed Event Test for roa.ExecAlongRight(). \n");
 
     // ==== Accept Alongs ====
     await increaseTime(86400);
 
     await expect(gk.connect(signers[1]).acceptAlongDeal(ia.address, 1, ethers.utils.id(signers[5].address))).to.be.revertedWith("SHAK.AAD: not buyer");
-    console.log("Passed Access Control Test for gk.acceptAlongDeal(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.acceptAlongDeal(). \n");
 
     const doc = BigInt(ia.address);
 
     await expect(gk.proposeDocOfGM(doc, 1, 1)).to.be.revertedWith("GMMK: Claims outstanding");
-    console.log("Passed Procedure Control Test for gk.proposeDocOfGM(). ClaimsOutStandingBlock \n");
+    console.log(" \u2714 Passed Procedure Control Test for gk.proposeDocOfGM(). ClaimsOutStandingBlock \n");
 
     tx = await gk.connect(signers[5]).acceptAlongDeal(ia.address, 1, ethers.utils.id(signers[5].address));
 
@@ -134,11 +134,11 @@ async function main() {
 
     await expect(tx).to.emit(ia, "RegDeal").withArgs(2);
     await expect(tx).to.emit(ia, "RegDeal").withArgs(3);
-    console.log("Passed Event Test for ia.RegDeal(). \n ");  
+    console.log(" \u2714 Passed Event Test for ia.RegDeal(). \n ");  
     
     await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(BigNumber.from(3), BigNumber.from(20000 * 10 ** 4));
     await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(BigNumber.from(4), BigNumber.from(9000 * 10 ** 4));
-    console.log("Passed Event Test for ros.DecreaseCleanPaid(). \n ");
+    console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n ");
     
     // ==== Vote for IA ====
 
@@ -147,7 +147,7 @@ async function main() {
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     
     expect(await gmm.isProposed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.proposeDocOfGM(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.proposeDocOfGM(). \n");
 
     await increaseTime(86400);
 
@@ -158,7 +158,7 @@ async function main() {
     await gk.voteCountingOfGM(seqOfMotion);
     
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.castVote(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.castVote(). \n");
 
     // ---- Exec IA ----
 
@@ -186,12 +186,12 @@ async function main() {
     let value = await getValueOfDeal(1);
 
     await expect(gk.connect(signers[5]).payOffApprovedDeal(ia.address, 1, {value: value})).to.be.revertedWith("ROAK.shareTransfer: Along Deal Open");
-    console.log("Passed Procedural Control Test for gk.shareTransfer(). \n");
+    console.log(" \u2714 Passed Procedural Control Test for gk.shareTransfer(). \n");
     
     for (let i=3; i>=1; i--) 
         await payOffDeal(i);
 
-    console.log("Passed All Tests for Alongs. \n");
+    console.log(" \u2714 Passed All Tests for Alongs. \n");
 
 }
 

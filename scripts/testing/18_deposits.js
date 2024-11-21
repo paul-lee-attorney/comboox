@@ -5,17 +5,18 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
+const { expect } = require("chai");
+const { BigNumber } = require("ethers");
 
-const { getGK, getROM, getLOO, getROS, getFT, getRC, getGMM, } = require("./boox");
-const { parseShare } = require("./ros");
+const { getGK, getROM, getFT, getRC, getGMM, } = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { getLatestSeqOfMotion, parseMotion, allSupportMotion } = require("./gmm");
+const { royaltyTest } = require("./rc");
 
 async function main() {
 
-    console.log('********************************');
-    console.log('**         Deposits           **');
+    console.log('\n********************************');
+    console.log('**      18. Deposits          **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -24,22 +25,7 @@ async function main() {
     const ft = await getFT();
     const gk = await getGK();
     const gmm = await getGMM() ;
-    const ros = await getROS();
     const rom = await getROM();
-
-    // ==== Events Liseners ====
-
-    gk.on("SaveToCoffer", (acct, value, reason) => {
-      console.log('ETH amount to', ethers.utils.formatUnits(value.toString(), 18), 'deposit to account of User', acct.toString(), 'for reason of', ethers.utils.parseBytes32String(reason), '\n');
-    });
-
-    gk.on("DistributeProfits", (amt, expireDate, seqOfMotion) => {
-      console.log('ETH amount to', ethers.utils.formatUnits(amt.toString(), 18), 'distributed to Members. \n');
-    });
-
-    gk.on("PickupDeposit", (to, caller, amt)=>{
-      console.log("ETH amount to", ethers.utils.formatUnits(amt.toString(), 18), 'is picked up by User', caller, 'to its Account', to, "\n");
-    });
 
     // ==== ETH of Comp ====
 
@@ -48,36 +34,40 @@ async function main() {
       let balaOfFT = await ethers.provider.getBalance(ft.address);
       let totalDeposits = await gk.totalDeposits();
       let ethOfComp = BigInt(balaOfGK) + BigInt(balaOfFT) - BigInt(totalDeposits);
-      // console.log('ETH of Comp:', ethOfComp, '\n');
-      console.log('ETH of Company:', ethers.utils.formatUnits(ethOfComp.toString(), 18), '\n');
+
       return ethOfComp;
     }
 
-    await getEthOfComp();
-
-    // ==== Pay In Capital ====
-    const centPrice = await gk.getCentPrice();
-    let value = 100n * 8000n * BigInt(centPrice) + 100n;
-
-    console.log('paid of Share No. 4 before:', parseShare(await ros.getShare(4)).body.paid, '\n');
-    await gk.connect(signers[4]).payInCapital(4, 8000 * 10 ** 4, {value: value});
-    console.log('pay in capital by 8000 \n');
-    console.log('paid of Share No. 4 after:', parseShare(await ros.getShare(4)).body.paid, '\n');
-
     // ==== Propose Distribution ====
+
     const today = await now();
     const expireDate = today + 86400 * 10;
 
     const ethOfComp = await getEthOfComp();
     const distAmt = ethOfComp / 20n;
 
-    await gk.proposeToDistributeProfits(distAmt, expireDate, 10, 1);
+    let tx = await gk.proposeToDistributeProfits(distAmt, expireDate, 10, 1);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 68n, "gk.proposeToDistributeProfits().");
+
+    await expect(tx).to.emit(gmm, "CreateMotion");
+    console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
+    
+    let seqOfMotion = await getLatestSeqOfMotion(gmm);
+
+    await expect(tx).to.emit(gmm, "ProposeMotionToGeneralMeeting").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
+    console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
+
+    let motion = parseMotion(await gmm.getMotion(seqOfMotion));
+
+    expect(motion.head.typeOfMotion).to.equal("Distribute Profits");
+    expect(motion.head.seqOfVR).to.equal(10);
+    expect(motion.head.creator).to.equal(1);
+    expect(motion.body.proposer).to.equal(1);
+
+    console.log(" \u2714 Passed Result Verify Test for gk.proposeToDistributeProfits(). \n");
 
     // ==== Vote for Distribution Motion ====
-
-    let seqOfMotion = await getLatestSeqOfMotion(gmm);
-    let motion = parseMotion(await gmm.getMotion(seqOfMotion));
-    console.log('Distribution Motion:', motion, '\n');
 
     await increaseTime(86400);
 
@@ -86,13 +76,30 @@ async function main() {
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
-    console.log('latest motion', seqOfMotion, 'is passed ?', await gmm.isPassed(seqOfMotion), '\n');
+
+    expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
+    console.log(' \u2714 Passed Result Verify Test for motion voting. \n');
 
     // ==== Distribute ====
 
-    await gk.distributeProfits(distAmt, expireDate, seqOfMotion);
+    await expect(gk.connect(signers[1]).distributeProfits(distAmt, expireDate, seqOfMotion)).to.be.revertedWith("MR.ER: not executor");
+    console.log(" \u2714 Passed Access Control Test for gk.distributeProfits(). \n");
+    
 
-    await getEthOfComp()
+    let balaBefore = await getEthOfComp();
+    tx = await gk.distributeProfits(distAmt, expireDate, seqOfMotion);
+    let balaAfter = await getEthOfComp();
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.distributeProfits().");
+
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
+    console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
+
+    let diff = balaBefore - balaAfter;
+
+    expect(diff).to.equal(distAmt);
+    console.log(" \u2714 Passed Result Verify Test for gk.distributeProfits(). \n");
+
     // ==== Pickup Deposits ====
 
     for (let i=0; i<7; i++) {
@@ -100,25 +107,28 @@ async function main() {
       if (i == 2) continue;
 
       const userNo = await rc.connect(signers[i]).getMyUserNo();
-      const bala = await gk.connect(signers[i]).depositOfMine(userNo);
+      const depo = await gk.connect(signers[i]).depositOfMine(userNo);
 
-      console.log('User', userNo, 'ETH Balance before:', ethers.utils.formatUnits((await ethers.provider.getBalance(signers[i].address)).toString(), 18), '\n');
+      balaBefore = BigInt((await ethers.provider.getBalance(signers[i].address)).toString());
+      tx = await gk.connect(signers[i]).pickupDeposit();
+      balaAfter = BigInt((await ethers.provider.getBalance(signers[i].address)).toString());
+      
+      await royaltyTest(rc.address, signers[i].address, gk.address, tx, 18n, "gk.pickupDeposit().");
 
-      await gk.connect(signers[i]).pickupDeposit();
+      await expect(tx).to.emit(gk, "PickupDeposit").withArgs(signers[i].address, userNo, depo);
+      console.log(" \u2714 Passed Event Test for gk.PickupDeposit(). \n");
 
-      console.log('User', userNo, 'deposit balance', ethers.utils.formatUnits(bala.toString(), 18), 'is picked up. \n');
+      const reciept = await tx.wait();
 
-      console.log('User', userNo, 'ETH Balance after:', ethers.utils.formatUnits((await ethers.provider.getBalance(signers[i].address)).toString(), 18), '\n');
+      let gas = BigInt(reciept.gasUsed.mul(tx.gasPrice).toString());
+      
+      diff = balaAfter + gas - balaBefore;
+
+      expect(diff).to.equal(BigInt(depo.toString()));
+
+      console.log(" \u2714 Passed Result Verify Test for gk.pickupDeposit(). for User", parseInt(userNo.toString()), " \n");
 
     }
-
-    // ==== Release Events Liseners ====
-
-    gk.off("SaveToCoffer");
-
-    gk.off("DistributeProfits");
-
-    gk.off("PickupDeposit");
 
 }
 

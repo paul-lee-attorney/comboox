@@ -5,16 +5,6 @@
  * All Rights Reserved.
  * */
 
-const { BigNumber } = require("ethers");
-const { expect } = require("chai");
-const { saveBooxAddr } = require("./saveTool");
-const { codifyHeadOfShare, printShares, parseShare } = require('./ros');
-const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
-const { now, increaseTime } = require("./utils");
-const { parseCompInfo } = require("./gk");
-const { readContract } = require("../readTool");
-const { royaltyTest } = require("./rc");
-
 // First step to use ComBoox system is to set up a Company Boox.
 // This section displays how the owner of a company creates 
 // the entire booking system for their company in ComBoox. 
@@ -77,10 +67,20 @@ const { royaltyTest } = require("./rc");
 // 7.3 function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 // 7.4 function payInCapital(uint seqOfShare, uint amt) external payable;
 
+const { BigNumber } = require("ethers");
+const { expect } = require("chai");
+const { saveBooxAddr } = require("./saveTool");
+const { codifyHeadOfShare, parseShare } = require('./ros');
+const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
+const { now, increaseTime } = require("./utils");
+const { parseCompInfo } = require("./gk");
+const { readContract } = require("../readTool");
+const { royaltyTest } = require("./rc");
+
 async function main() {
 
-    console.log('********************************');
-    console.log('**    Create Company Boox     **');
+    console.log('\n********************************');
+    console.log('**   02. Create Company Boox  **');
     console.log('********************************\n');
 
     // ==== Get Instances ====
@@ -95,7 +95,7 @@ async function main() {
     let receipt = await tx.wait();
 
     await expect(tx).to.emit(rc, "CreateDoc");
-    console.log("Passed Event Test for rc.CreateDoc(). \n");
+    console.log(" \u2714 Passed Event Test for rc.CreateDoc(). \n");
 
     const GK = ethers.utils.getAddress(`0x${receipt.logs[0].topics[2].substring(26)}`);
     saveBooxAddr("GK", GK);
@@ -103,7 +103,7 @@ async function main() {
     const gk = await getGK(GK);
     
     await expect(tx).to.emit(gk, "SetDirectKeeper").withArgs(signers[1].address);
-    console.log("Passed Event Test for gk.SetDirectKeeper(). \n");
+    console.log(" \u2714 Passed Event Test for gk.SetDirectKeeper(). \n");
 
     const ROC = await gk.getROC();
     saveBooxAddr("ROC", ROC);
@@ -171,21 +171,25 @@ async function main() {
 
     const symbol = ethers.utils.hexlify(ethers.utils.toUtf8Bytes("COMBOOX")).padEnd(40, '0');
     
-    // User No.1 is NOT the secretary of the company, thus, below call
-    // shall be blocked and reversed with error message.
     await expect(gk.setCompInfo(0, symbol, "ComBoox DAO LLC")).to.be.revertedWith("AC.onlyDK: not");
-    console.log("Passed Access Control Test for OnlyDK. \n");
+    console.log(" \u2714 Passed Access Control Test for ac.OnlyDK(). \n");
     
     await gk.connect(signers[1]).setCompInfo(0, symbol, "ComBoox DAO LLC");
     
     const info = parseCompInfo(await gk.getCompInfo());
-    console.log('CompInfo:', info, "\n");
+
+    expect(info.regNum).to.equal(8);
+    expect(info.currency).to.equal('USD');
+    expect(info.symbol).to.equal('COMBOOX');
+    expect(info.name).to.equal("ComBoox DAO LLC");
+
+    console.log(' \u2714 Passed Result Verify Test for gk.setCompInfo(). \n');
     
     const rom = await getROM();
     
     await rom.connect(signers[1]).setMaxQtyOfMembers(50);
     expect(await rom.maxQtyOfMembers()).to.equal(50);
-    console.log("Passed Result Verify Test for rom.setMaxQtyOfMembers(). \n");
+    console.log(" \u2714 Passed Result Verify Test for rom.setMaxQtyOfMembers(). \n");
 
     const ros = await getROS();
 
@@ -207,19 +211,17 @@ async function main() {
 
     tx = await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), issueDate, 100000 * 10 ** 4, 100000 * 10 ** 4, 100);
     
-    await tx.wait();
-
     await expect(tx).to.emit(ros, "IssueShare").withArgs(codifyHeadOfShare(head), BigNumber.from(100000 * 10 ** 4), BigNumber.from(100000 * 10 ** 4));
-    console.log("Passed Event Test for ros.IssueShare(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IssueShare(). \n");
 
     await expect(tx).to.emit(rom, "AddMember").withArgs(BigNumber.from(1), BigNumber.from(1));
-    console.log("Passed Event Test for rom.AddMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.AddMember(). \n");
 
     await expect(tx).to.emit(rom, "CapIncrease").withArgs(BigNumber.from(100), BigNumber.from(100000 * 10 ** 4), BigNumber.from(100000 * 10 ** 4), BigNumber.from(100));
-    console.log("Passed Event Test for rom.CapIncrease(). \n");
+    console.log(" \u2714 Passed Event Test for rom.CapIncrease(). \n");
 
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(1), BigNumber.from(1));
-    console.log("Passed Event Test for rom.AddShareToMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     head = {
       class: 1,
@@ -280,13 +282,13 @@ async function main() {
     await tx.wait();
 
     await expect(tx).to.emit(rom, "CapDecrease").withArgs(BigNumber.from(100), BigNumber.from(20000 * 10 ** 4), BigNumber.from(20000 * 10 ** 4), 100);
-    console.log("Passed Event Test for rom.CapDecrease(). \n");
+    console.log(" \u2714 Passed Event Test for rom.CapDecrease(). \n");
 
     await expect(tx).to.emit(rom, "RemoveShareFromMember").withArgs(BigNumber.from(5), BigNumber.from(5));
-    console.log("Passed Event Test for rom.RemoveShareFromMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.RemoveShareFromMember(). \n");
 
     await expect(tx).to.emit(ros, "DeregisterShare").withArgs(BigNumber.from(5));
-    console.log("Passed Event Test for ros.DeregisterShare(). \n");
+    console.log(" \u2714 Passed Event Test for ros.DeregisterShare(). \n");
 
     // ==== Turn Over Direct Keeper Rights ====
 
@@ -294,13 +296,13 @@ async function main() {
 
     let dk = await ros.getDK();
     expect(dk).to.equal(ROMKeeper);
-    console.log("Passed Result Verify Test for ros.setDirectKeeper(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ros.setDirectKeeper(). \n");
     
     await rom.connect(signers[1]).setDirectKeeper(ROMKeeper);
     
     dk = await rom.getDK();
     expect(dk).to.equal(ROMKeeper);
-    console.log("Passed Result Verify Test for rom.setDirectKeeper(). \n");
+    console.log(" \u2714 Passed Result Verify Test for rom.setDirectKeeper(). \n");
 
     // ==== Pay In Capital by Hash Lock ====
 
@@ -311,20 +313,20 @@ async function main() {
     await tx.wait();
 
     await expect(tx).to.emit(ros, "SetPayInAmt");
-    console.log("Passed Event Test for ros.SetPayInAmt(). \n");
+    console.log(" \u2714 Passed Event Test for ros.SetPayInAmt(). \n");
 
     tx = await gk.connect(signers[4]).requestPaidInCapital(hashLock, 'Today is Monday.');
 
     await tx.wait();
 
     await expect(tx).to.emit(rom, "CapIncrease").withArgs(BigNumber.from(100), BigNumber.from(5000 * 10 ** 4), 0, BigNumber.from(100));
-    console.log("Passed Event Test for rom.CapIncrease(). \n");
+    console.log(" \u2714 Passed Event Test for rom.CapIncrease(). \n");
 
     await expect(tx).to.emit(rom, "ChangeAmtOfMember").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4), 0, true);
-    console.log("Passed Event Test for rom.ChangeAmtOfMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.ChangeAmtOfMember(). \n");
 
     await expect(tx).to.emit(ros, "PayInCapital").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4));
-    console.log("Passed Event Test for ros.PayInCapital(). \n");
+    console.log(" \u2714 Passed Event Test for ros.PayInCapital(). \n");
 
     // ==== Withdraw Locked Capital ====
 
@@ -337,7 +339,7 @@ async function main() {
     tx = await gk.connect(signers[1]).withdrawPayInAmt(hashLock, 4);
 
     await expect(tx).to.emit(ros, "WithdrawPayInAmt").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4));
-    console.log("Passed Event Test for ros.WithdrawPayInAmt(). \n");
+    console.log(" \u2714 Passed Event Test for ros.WithdrawPayInAmt(). \n");
 
     // ==== Pay In Capital in ETH ====
 
@@ -349,20 +351,18 @@ async function main() {
     await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "gk.payInCapital().");
 
     await expect(tx).to.emit(gk, "SaveToCoffer");
-    console.log("Passed Event Test for gk.SaveToCoffer(). \n");
+    console.log(" \u2714 Passed Event Test for gk.SaveToCoffer(). \n");
 
     const romKeeper = await readContract("ROMKeeper", ROMKeeper);
 
     await expect(tx).to.emit(romKeeper, "PayInCapital");
-    console.log("Passed Event Test for romKeeper.PayInCapital(). \n");
+    console.log(" \u2714 Passed Event Test for romKeeper.PayInCapital(). \n");
     
     let share = parseShare(await ros.getShare(4));
 
     expect(share.body.paid).to.equal("20,000.0");
-    console.log("Passed Result Verify Test for gk.payInCapital(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.payInCapital(). \n");
     
-    await printShares(ros);
-
 }
 
 main()

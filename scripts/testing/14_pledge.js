@@ -17,7 +17,7 @@ const { royaltyTest } = require("./rc");
 async function main() {
 
     console.log('\n********************************');
-    console.log('**        Pledges             **');
+    console.log('**      14. Pledges           **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -43,17 +43,17 @@ async function main() {
     };
 
     await expect(gk.createPledge(codifyHeadOfPledge(headOfPld), 8000 * 10 ** 4, 8000 * 10 ** 4, 4000 * 10 ** 4, 5)).to.be.revertedWith("BOPK.createPld: NOT shareholder");
-    console.log("Passed Access Control Test for gk.createPledge(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.createPledge(). \n");
 
     let tx = await gk.connect(signers[3]).createPledge(codifyHeadOfPledge(headOfPld), 8000 * 10 ** 4, 8000 * 10 ** 4, 4000 * 10 ** 4, 5);
     
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 66n, "gk.createPledge().");
 
     await expect(tx).to.emit(rop, "CreatePledge").withArgs(BigNumber.from(8), BigNumber.from(1), BigNumber.from(6), BigNumber.from(8000 * 10 ** 4), BigNumber.from(8000 * 10 ** 4));
-    console.log("Passed Event Test for rop.CreatePledge(). \n");
+    console.log(" \u2714 Passed Event Test for rop.CreatePledge(). \n");
     
     await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(BigNumber.from(8), BigNumber.from(8000 * 10 ** 4));
-    console.log("Passed Event Test for ros.CreatePledge(). \n");
+    console.log(" \u2714 Passed Event Test for ros.CreatePledge(). \n");
 
     let pld = parsePledge(await rop.getPledge(8, 1));
     
@@ -71,7 +71,7 @@ async function main() {
 
     expect(share.body.cleanPaid).to.equal("2,000.0");
 
-    console.log("Passed Result Verify Test for gk.createPledge(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.createPledge(). \n");
 
     // ==== Transfer Pledge ====
 
@@ -80,7 +80,7 @@ async function main() {
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 36n, "gk.transferPledge().");
 
     await expect(tx).to.emit(rop, "TransferPledge").withArgs(BigNumber.from(pld.head.seqOfShare), BigNumber.from(1), BigNumber.from(2), BigNumber.from(5), BigNumber.from(4000 * 10 ** 4), BigNumber.from(4000 * 10 ** 4));
-    console.log("Passed Event Test for rop.TransferPledge(). \n");
+    console.log(" \u2714 Passed Event Test for rop.TransferPledge(). \n");
 
     pld = parsePledge(await rop.getPledge(8, 2));
 
@@ -94,7 +94,7 @@ async function main() {
     expect(pld.head.state).to.equal("Issued");
     expect(pld.body.paid).to.equal("4,000.0");
 
-    console.log('Passed Result Verify Test for gk.transferPledge(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.transferPledge(). \n');
 
     // ==== Refund Debts ====
 
@@ -103,10 +103,10 @@ async function main() {
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.refundDebt().");
 
     await expect(tx).to.emit(rop, "RefundDebt").withArgs(BigNumber.from(pld.head.seqOfShare), BigNumber.from(pld.head.seqOfPld), BigNumber.from(1000 * 10 ** 4));
-    console.log("Passed Event Test for rop.RefundDebt(). \n");
+    console.log(" \u2714 Passed Event Test for rop.RefundDebt(). \n");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(pld.head.seqOfShare), BigNumber.from(2000 * 10 ** 4));
-    console.log("Passed Event Test for ros.IncreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
 
     pld = parsePledge(await rop.getPledge(8, 2));
 
@@ -116,24 +116,24 @@ async function main() {
     
     expect(share.body.cleanPaid).to.equal("4,000.0");
 
-    console.log('Passed Result Verify Test for gk.refundDebt(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.refundDebt(). \n');
 
     // ==== Extend Pledge ====
 
     await expect(gk.connect(signers[6]).extendPledge(8, 1, 10)).to.be.revertedWith("PR.extendPld: not pledgor");
-    console.log("Passed Acceess Control Test for gk.extendPledge(). \n");
+    console.log(" \u2714 Passed Acceess Control Test for gk.extendPledge(). \n");
 
     tx = await gk.connect(signers[3]).extendPledge(8, 1, 10);
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 18n, "gk.extendPledge().");
 
     await expect(tx).to.emit(rop, "ExtendPledge").withArgs(BigNumber.from(8), BigNumber.from(1), BigNumber.from(10));
-    console.log("Passed Event Test for rop.ExtendPledge(). \n");
+    console.log(" \u2714 Passed Event Test for rop.ExtendPledge(). \n");
 
     pld = parsePledge(await rop.getPledge(8, 1));
     expect(pld.head.guaranteeDays).to.equal(20);
     
-    console.log('Passed Result Verify Test for gk.extendPledge(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.extendPledge(). \n');
 
     // ==== Lock & Release Pledge ====
 
@@ -142,17 +142,17 @@ async function main() {
     const hashLock = ethers.utils.id('Spring is coming');
 
     await expect(gk.connect(signers[3]).lockPledge(8, 2, hashLock)).to.be.revertedWith("PR.lockPld: not creditor");
-    console.log("Passed Acceess Control Test for gk.lockPledge(). \n");
+    console.log(" \u2714 Passed Acceess Control Test for gk.lockPledge(). \n");
 
     await expect(gk.connect(signers[5]).lockPledge(8, 2, Bytes32Zero)).to.be.revertedWith("PR.lockPld: zero hashLock");
-    console.log("Passed Parameter Control Test for gk.lockPledge(). \n");
+    console.log(" \u2714 Passed Parameter Control Test for gk.lockPledge(). \n");
 
     tx = await gk.connect(signers[5]).lockPledge(8, 2, hashLock);
 
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 58n, "gk.lockPledge().");
 
     await expect(tx).to.emit(rop, "LockPledge").withArgs(BigNumber.from(8), BigNumber.from(2), hashLock);
-    console.log("Passed Event Test for rop.LockPledge(). \n");
+    console.log(" \u2714 Passed Event Test for rop.LockPledge(). \n");
 
     pld = parsePledge(await rop.getPledge(8, 2));
 
@@ -167,20 +167,20 @@ async function main() {
     expect(pld.body.paid).to.equal("1,000.0");
     expect(pld.hashLock).to.equal(hashLock);
 
-    console.log('Passed Result Verify Test for gk.lockPledge(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.lockPledge(). \n');
 
     // ==== Release Pledge ====
 
     await expect(gk.connect(signers[3]).releasePledge(8, 2, 'Spring is came')).to.be.revertedWith("PR.releasePld: wrong Key");
-    console.log("Passed Wrong Hashkey Check Test for gk.releasePledge(). \n");
+    console.log(" \u2714 Passed Wrong Hashkey Check Test for gk.releasePledge(). \n");
 
     tx = await gk.connect(signers[3]).releasePledge(8, 2, 'Spring is coming');
 
     await expect(tx).to.emit(rop, "ReleasePledge").withArgs(BigNumber.from(8), BigNumber.from(2), "Spring is coming");
-    console.log("Passed Event Test for rop.ReleasePledge(). \n");
+    console.log(" \u2714 Passed Event Test for rop.ReleasePledge(). \n");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(8), BigNumber.from(1000 * 10 ** 4));
-    console.log("Passed Event Test for ros.IncreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
 
     pld = parsePledge(await rop.getPledge(8, 2));
 
@@ -199,7 +199,7 @@ async function main() {
 
     expect(share.body.cleanPaid).to.equal("5,000.0");
 
-    console.log('Passed Result Verify Test for gk.releasePledge(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.releasePledge(). \n');
 
     // ==== Execute Pledge ====
 
@@ -210,19 +210,19 @@ async function main() {
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 88n, "gk.execPledge().");
 
     await expect(tx).to.emit(rop, "ExecPledge").withArgs(BigNumber.from(8), BigNumber.from(1));
-    console.log("Passed Event Test for rop.ExecPledge(). \n");
+    console.log(" \u2714 Passed Event Test for rop.ExecPledge(). \n");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(8), BigNumber.from(4000 * 10 ** 4));
-    console.log("Passed Event Test for ros.IncreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
 
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(BigNumber.from(8), BigNumber.from(4000 * 10 ** 4), BigNumber.from(4000 * 10 ** 4));
-    console.log("Passed Event Test for ros.SubAmountFromShare(). \n");
+    console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
     await expect(tx).to.emit(rom, "AddMember").withArgs(BigNumber.from(6), BigNumber.from(5));
-    console.log("Passed Event Test for rom.AddMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.AddMember(). \n");
 
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(23), BigNumber.from(6));
-    console.log("Passed Event Test for rom.AddShareToMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     pld = parsePledge(await rop.getPledge(8, 1));
 
@@ -243,36 +243,36 @@ async function main() {
     expect(share.body.paid).to.equal("4,000.0");
     expect(share.body.cleanPaid).to.equal("4,000.0");
     
-    console.log('Passed Result Verify Test for gk.execPledge(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.execPledge(). \n');
 
     // ==== Pledge Expire ====
 
     await expect(gk.connect(signers[6]).transferPledge(8, 3, 5, 500 * 10 ** 4)).to.be.revertedWith("PR.splitPld: pledge expired");
-    console.log("Passed Expiration Test for gk.transferPledge(). \n");    
+    console.log(" \u2714 Passed Expiration Test for gk.transferPledge(). \n");    
 
     await expect(gk.connect(signers[6]).refundDebt(8, 3, 500 * 10 ** 4)).to.be.revertedWith("PR.splitPld: pledge expired");
-    console.log("Passed Expiration Test for gk.refundPledge(). \n");    
+    console.log(" \u2714 Passed Expiration Test for gk.refundPledge(). \n");    
 
     await expect(gk.connect(signers[3]).extendPledge(8, 3, 10)).to.be.revertedWith("PR.UP: pledge expired");
-    console.log("Passed Expiration Test for gk.extendPledge(). \n");    
+    console.log(" \u2714 Passed Expiration Test for gk.extendPledge(). \n");    
 
     await expect(gk.connect(signers[6]).lockPledge(8, 3, hashLock)).to.be.revertedWith("PR.lockPld: pledge expired");
-    console.log("Passed Expiration Test for gk.lockPledge(). \n");    
+    console.log(" \u2714 Passed Expiration Test for gk.lockPledge(). \n");    
 
     // ==== Revoke Pledge ====
 
     await expect(gk.connect(signers[2]).revokePledge(8, 3)).to.be.revertedWith("BOPK.RP: not pledgor");
-    console.log("Passed Access Control Test for gk.revokePledge(). \n");    
+    console.log(" \u2714 Passed Access Control Test for gk.revokePledge(). \n");    
 
     tx = await gk.connect(signers[3]).revokePledge(8, 3);
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.revokePledge().");
 
     await expect(tx).to.emit(rop, "RevokePledge").withArgs(BigNumber.from(8), BigNumber.from(3));
-    console.log("Passed Event Test for rop.RevokePledge(). \n");
+    console.log(" \u2714 Passed Event Test for rop.RevokePledge(). \n");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(8), BigNumber.from(1000 * 10 ** 4));
-    console.log("Passed Event Test for ros.IncreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
 
     pld = parsePledge(await rop.getPledge(8, 3));
 
@@ -290,7 +290,7 @@ async function main() {
 
     expect(share.body.cleanPaid).to.equal("6,000.0");
 
-    console.log('Passed Result Verify Test for gk.revokePledge(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.revokePledge(). \n');
       
 }
 

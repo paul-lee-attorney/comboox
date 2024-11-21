@@ -20,7 +20,7 @@ const { getLatestSeqOfMotion } = require("./gmm");
 async function main() {
 
     console.log('\n********************************');
-    console.log('**       Anti-Dilution        **');
+    console.log('**     11. Anti-Dilution      **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -77,7 +77,7 @@ async function main() {
     });
     expect(deal.hashLock).to.equal(Bytes32Zero);
 
-    console.log("Passed Result Verify Test for ia.addDeal(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ia.addDeal(). \n");
 
     // ---- Config SigPage of IA ----
 
@@ -86,7 +86,7 @@ async function main() {
     expect(await ia.getSigningDays()).to.equal(1);
     expect(await ia.getClosingDays()).to.equal(90);
 
-    console.log("Passed Result Verify Test for ia.setTiming(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ia.setTiming(). \n");
 
     await ia.addBlank(true, false, 1, 1);
 
@@ -100,7 +100,7 @@ async function main() {
     expect(await ia.isSeller(true, 5)).to.equal(false);
     expect(await ia.isBuyer(true, 5)).to.equal(true);
 
-    console.log("Passed Result Verify Test for ia.addBlank(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ia.addBlank(). \n");
 
     // ---- Circulate IA ----
 
@@ -108,14 +108,14 @@ async function main() {
     expect(await ia.isFinalized()).to.equal(true);
 
     await expect(gk.connect(signers[3]).execAntiDilution(ia.address, 1, 3, Bytes32Zero)).to.be.revertedWith("SHAK.execAD: wrong file state");
-    console.log("Passed IA State Control Test for gk.execAntiDilution(). \n ");
+    console.log(" \u2714 Passed IA State Control Test for gk.execAntiDilution(). \n ");
 
     tx = await gk.circulateIA(ia.address, Bytes32Zero, Bytes32Zero);
     
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.circulateIA().");
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(Addr, 2);
-    console.log("Passed Event Test for roa.UpdateStateOfFile(). \n");
+    console.log(" \u2714 Passed Event Test for roa.UpdateStateOfFile(). \n");
 
     expect(await ia.circulated()).to.equal(true);
 
@@ -123,12 +123,12 @@ async function main() {
     expect(await ia.getSigDeadline()).to.equal(circulateDate + 86400);
     expect(await ia.getClosingDeadline()).to.equal(circulateDate + 86400 * 90);
 
-    console.log("Passed Result Verify Test for gk.circulateIA(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.circulateIA(). \n");
 
     // ---- Exec AntiDilution ----
 
     await expect(gk.connect(signers[1]).execAntiDilution(ia.address, 1, 3, Bytes32Zero)).to.be.revertedWith("SHAK.execAD: not shareholder");
-    console.log("Passed Access Control Test for gk.execAntiDilution(). ShareholderOnly \n ");
+    console.log(" \u2714 Passed Access Control Test for gk.execAntiDilution(). ShareholderOnly \n ");
 
     // ---- User_3 ----
 
@@ -137,10 +137,10 @@ async function main() {
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 88n, "gk.execAntiDilution().");    
     
     await expect(tx).to.emit(ia, "RegDeal").withArgs(2);
-    console.log("Passed Event Test for ia.RegDeal(). \n ");    
+    console.log(" \u2714 Passed Event Test for ia.RegDeal(). \n ");    
 
     await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(BigNumber.from(2), BigNumber.from(10000 * 10 ** 4));
-    console.log("Passed Event Test for ros.DecreaseCleanPaid(). \n ");    
+    console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n ");    
     
     // ---- User_4 ----
 
@@ -149,10 +149,10 @@ async function main() {
     await royaltyTest(rc.address, signers[4].address, gk.address, tx, 88n, "gk.execAntiDilution().");
     
     await expect(tx).to.emit(ia, "RegDeal").withArgs(3);
-    console.log("Passed Event Test for ia.RegDeal(). \n ");    
+    console.log(" \u2714 Passed Event Test for ia.RegDeal(). \n ");    
 
     await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(BigNumber.from(2), BigNumber.from(5000 * 10 ** 4));
-    console.log("Passed Event Test for ros.DecreaseCleanPaid(). \n ");
+    console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n ");
 
     // ---- Sign IA ----
 
@@ -160,7 +160,7 @@ async function main() {
     await gk.signIA(ia.address, Bytes32Zero);
 
     expect(await ia.established()).to.equal(true);
-    console.log("Passed Result Verify Test for gk.signIA() & ia.established(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");
 
     // ==== Voting For IA ====
 
@@ -173,13 +173,13 @@ async function main() {
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     
     expect(await gmm.isProposed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.proposeDocOfGM(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.proposeDocOfGM(). \n");
 
     await increaseTime(86400*2);
 
     await gk.voteCountingOfGM(seqOfMotion);
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.voteCounting(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.voteCounting(). \n");
 
     // ---- Exec IA ----
 
@@ -188,7 +188,7 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.issueNewShare().");
 
     await expect(tx).to.emit(ros, "IssueShare");
-    console.log("Passed Evet Test for ros.IssueShare(). \n");
+    console.log(" \u2714 Passed Evet Test for ros.IssueShare(). \n");
 
     let share = await obtainNewShare(tx);
 
@@ -197,27 +197,27 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('1.2');
     expect(share.body.paid).to.equal('10,000.0');
     
-    console.log('Passed Result Verify Test for gk.closeDeal(). \n');
+    console.log(' \u2714 Passed Result Verify Test for gk.closeDeal(). \n');
     
     // ---- Take Gift Share ----
 
     await expect(gk.connect(signers[1]).takeGiftShares(ia.address, 2)).to.be.revertedWith("caller is not buyer");
-    console.log("Passed Access Control Test for gk.takeGiftShares(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.takeGiftShares(). \n");
 
     tx = await gk.connect(signers[3]).takeGiftShares(ia.address, 2);
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.takeGiftShares().");
 
     await expect(tx).to.emit(ia, "CloseDeal").withArgs(BigNumber.from(2), "0");
-    console.log("Passed Event Control Test for ia.CloseDeal(). \n");
+    console.log(" \u2714 Passed Event Control Test for ia.CloseDeal(). \n");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(2), BigNumber.from(10000 * 10 ** 4));
-    console.log("Passed Event Test for ros.increaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.increaseCleanPaid(). \n");
 
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(BigNumber.from(2), BigNumber.from(10000 * 10 ** 4), BigNumber.from(10000 * 10 ** 4));
-    console.log("Passed Event Test for ros.SubAmountFromShare(). \n");
+    console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(10), BigNumber.from(3));
-    console.log("Passed Event Test for rom.AddShareToMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     share = await getLatestShare(ros);
 
@@ -226,12 +226,12 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('1.2');
     expect(share.body.paid).to.equal('10,000.0');
     
-    console.log('Passed Result Verify Test for gk.takeGiftShares(). \n'); 
+    console.log(' \u2714 Passed Result Verify Test for gk.takeGiftShares(). \n'); 
 
     tx = await gk.connect(signers[4]).takeGiftShares(ia.address, 3);
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(ia.address, BigNumber.from(6));
-    console.log("Passed Event Test for roa.UpdateStateOfFile(). User_3 \n");
+    console.log(" \u2714 Passed Event Test for roa.UpdateStateOfFile(). User_3 \n");
 
     share = await getLatestShare(ros);
 
@@ -240,7 +240,7 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('1.2');
     expect(share.body.paid).to.equal('5,000.0');
 
-    console.log('Passed Result Verify Test for gk.takeGiftShares(). User_4 \n'); 
+    console.log(' \u2714 Passed Result Verify Test for gk.takeGiftShares(). User_4 \n'); 
 
 }
 

@@ -6,17 +6,16 @@
  * */
 
 const { expect } = require("chai");
-const { BigNumber, ethers } = require("ethers");
 
 const { getGK, getROM, getLOO, getROS, getRC, getLOOKeeper, } = require("./boox");
-const { parseShare, parseHeadOfShare, getLatestShare } = require("./ros");
+const { getLatestShare } = require("./ros");
 const { parseNode, parseDeal, parseData } = require("./loo");
 const { royaltyTest } = require("./rc");
 
 async function main() {
 
     console.log('\n********************************');
-    console.log('**    17.  Listing Deals       **');
+    console.log('**    17.  Listing Deals      **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -25,31 +24,7 @@ async function main() {
     const gk = await getGK();
     const loo = await getLOO();
     const ros = await getROS();
-    const rom = await getROM();
     const looKeeper = await getLOOKeeper();
-
-    // // ==== Events Listeners ====
-    
-    // ros.on("IssueShare", (sn, paid, par)=>{
-    //   const head = parseHeadOfShare(sn);
-    //   console.log('Share', head.seqOfShare, 'with Paid', ethers.utils.formatUnits(paid.toString(), 4), 'and Par', ethers.utils.formatUnits(par.toString(), 4), 'issued to User', head.shareholder, '\n');
-    // });
-
-    // rom.on("AddShareToMember", async (seqOfShare, acct)=>{
-    //   console.log('Share', parseShare(await ros.getShare(seqOfShare)), '\n', 'transferred to User', acct.toString(), '\n');
-    // });
-
-    // gk.on("SaveToCoffer", (acct, value, reason) => {
-    //   console.log('ETH amount to', ethers.utils.formatUnits(value.toString(), 18), 'deposit to account of User', acct.toString(), 'for reason of', ethers.utils.parseBytes32String(reason), '\n');
-    // });
-
-    // gk.on("ReceivedCash", (acct, value) => {
-    //   console.log('ETH amount to', ethers.utils.formatUnits(value.toString(), 18), 'received from', acct.toString(), '\n');
-    // });
-
-    // gk.on("ReleaseCustody", (from, to, amt, reason) => {
-    //   console.log('Custody ETH amount to', ethers.utils.formatUnits(amt.toString(), 18), 'released from', from.toString(), 'to', to.toString(), 'for reason of', ethers.utils.parseBytes32String(reason), '\n');
-    // });
 
     // ==== Parse Logs ====
 
@@ -191,18 +166,7 @@ async function main() {
 
       if (orderPlaced.length > 0) {
         seqOfOrder = await loo.counterOfOrders(2, orderPlaced[0].isOffer);
-        orderPlaced[0].seqOfOrder = seqOfOrder;
-        // console.log('Order Placed: \n', orderPlaced, '\n');
       }
-
-      if (orderWithdrawn?.data?.classOfShare > 0) 
-        // console.log('Orders withdrawn: \n', orderWithdrawn, '\n');
-
-      if (orderExpired.length > 0) 
-        // console.log('Orders expired: \n', orderExpired, '\n');
-
-      if (dealClosed.length > 0) 
-        // console.log('Deals closed: \n', dealClosed, '\n');
 
       return [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed];
     }
@@ -224,23 +188,23 @@ async function main() {
     // ==== List Initial Offer ====
 
     await expect(gk.connect(signers[1]).placeInitialOffer(2, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024)).to.be.revertedWith("LOOK.placeIO: not entitled");
-    console.log("Passed Access Control Test for gk.placeInitialOffer(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.placeInitialOffer(). \n");
 
     await expect(gk.placeInitialOffer(1, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024)).to.be.revertedWith("LOOK.placeIO: wrong class");
-    console.log("Passed Parameter Control Test for gk.placeInitialOffer(). classOfShare \n");
+    console.log(" \u2714 Passed Parameter Control Test for gk.placeInitialOffer(). classOfShare \n");
 
     await expect(gk.placeInitialOffer(2, 1, 20 * 10 ** 10, 3.6 * 10 ** 4, 1024)).to.be.revertedWith("LOOK.placeIO: paid overflow");
-    console.log("Passed Parameter Control Test for gk.placeInitialOffer(). paid \n");
+    console.log(" \u2714 Passed Parameter Control Test for gk.placeInitialOffer(). paid \n");
 
     let tx = await gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.placeInitialOffer().");
 
     await expect(tx).to.emit(ros, "IncreaseEquityOfClass");
-    console.log("Passed Event Test for ros.IncreaseEquityOfClass(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IncreaseEquityOfClass(). \n");
 
     await expect(tx).to.emit(loo, "OrderPlaced");
-    console.log("Passed Event Test for ros.OrderPlaced(). \n");
+    console.log(" \u2714 Passed Event Test for loo.OrderPlaced(). \n");
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -253,7 +217,7 @@ async function main() {
     expect(orderPlaced[0].order.distrWeight).to.equal(100);
     expect(orderPlaced[0].isOffer).to.equal(true);
 
-    console.log("Passed Event Test for loo.OrderPlaced(). \n");
+    console.log(" \u2714 Passed Event Test for loo.OrderPlaced(). \n");
 
     tx = await gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 3.8 * 10 ** 4, 1024);
 
@@ -276,7 +240,7 @@ async function main() {
     expect(orderWithdrawn.data.votingWeight).to.equal(100);
     expect(orderWithdrawn.data.distrWeight).to.equal(100);
 
-    console.log("Passed Event Test for loo.OrderWithdrawn(). \n");
+    console.log(" \u2714 Passed Event Test for loo.OrderWithdrawn(). \n");
 
     // ==== Place Buy Order ====
 
@@ -289,7 +253,7 @@ async function main() {
     value = getDealValue(370n, 80n);
     
     await expect(gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 3.7 * 10 ** 4, 1, {value: value - 200n})).to.be.revertedWith("OR.placeBuyOrder: insufficient msgValue");
-    console.log("Passed Value Check Test for gk.placeBuyOrder(). \n");
+    console.log(" \u2714 Passed Value Check Test for gk.placeBuyOrder(). \n");
     
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 3.7 * 10 ** 4, 1, {value: value + 100n});
 
@@ -310,7 +274,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(360n, 80n));
     
-    console.log("Passed Event Test for loo.DealClosed(). \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
 
@@ -321,7 +285,7 @@ async function main() {
     expect(toCoffer[0].value).to.equal(value + 100n - consideration);
     expect(toCoffer[0].reason).to.equal("DepositBalanceOfBidOrder");
 
-    console.log("Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
+    console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
     share = await getLatestShare(ros);
 
@@ -329,7 +293,7 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('3.6');
     expect(share.body.paid).to.equal('80.0');
 
-    console.log("Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
 
     // ---- Buy Order 2 ----
 
@@ -351,7 +315,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(380n, 60n));
 
-    console.log("Passed Event Test for loo.DealClosed(). deals[0] \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). deals[0] \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
 
@@ -360,7 +324,7 @@ async function main() {
 
     value -= consideration;
 
-    console.log("Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
+    console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
     deal = dealClosed[1].deal;
     consideration = dealClosed[1].consideration;
@@ -375,7 +339,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(360n, 20n));
 
-    console.log("Passed Event Test for loo.DealClosed(). deals[1] \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). deals[1] \n");
 
     expect(toComp[1].buyer).to.equal(2);
     expect(toComp[1].value).to.equal(consideration);
@@ -384,7 +348,7 @@ async function main() {
     expect(toCoffer[0].value).to.equal(value + 100n - consideration);
     expect(toCoffer[0].reason).to.equal("DepositBalanceOfBidOrder");
 
-    console.log("Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
+    console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
     share = await getLatestShare(ros);
 
@@ -392,7 +356,7 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('3.6');
     expect(share.body.paid).to.equal('20.0');
 
-    console.log("Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
 
     // ---- Buy Order 3 ----
 
@@ -414,7 +378,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(380n, 40n));
     
-    console.log("Passed Event Test for loo.DealClosed(). \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
     expect(orderPlaced[0].order.seqOfShare).to.equal(0);
@@ -425,7 +389,7 @@ async function main() {
     expect(orderPlaced[0].order.distrWeight).to.equal(0);
     expect(orderPlaced[0].isOffer).to.equal(false);
 
-    console.log("Passed Event Test for loo.OrderPlaced(). \n");
+    console.log(" \u2714 Passed Event Test for loo.OrderPlaced(). \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
 
@@ -436,7 +400,7 @@ async function main() {
     expect(toCoffer[0].value).to.equal(value + 100n - consideration);
     expect(toCoffer[0].reason).to.equal("CustodyValueOfBidOrder");
 
-    console.log("Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
+    console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
     share = await getLatestShare(ros);
 
@@ -444,7 +408,7 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('3.8');
     expect(share.body.paid).to.equal('40.0');
 
-    console.log("Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
 
     // ---- Buy Order 4 ----
 
@@ -483,7 +447,7 @@ async function main() {
     expect(orderWithdrawn.data.votingWeight).to.equal(0);
     expect(orderWithdrawn.data.distrWeight).to.equal(0);
 
-    console.log("Passed Event Test for loo.OrderWithdrawn(). \n");
+    console.log(" \u2714 Passed Event Test for loo.OrderWithdrawn(). \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
     
@@ -501,7 +465,7 @@ async function main() {
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.placeSellOrder().");    
 
     await expect(tx).to.emit(ros, "DecreaseCleanPaid");
-    console.log("Passed Event Test for ros.DecreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n");
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -514,7 +478,7 @@ async function main() {
     expect(orderPlaced[0].order.distrWeight).to.equal(100);
     expect(orderPlaced[0].isOffer).to.equal(true);
 
-    console.log("Passed Result Verify Test for gk.placeSellOrder(). Sell Order 1 \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placeSellOrder(). Sell Order 1 \n");
 
     // ---- Sell Order 2 ----
 
@@ -535,7 +499,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(400n, 40n));
     
-    console.log("Passed Event Test for loo.DealClosed(). \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
 
@@ -551,7 +515,7 @@ async function main() {
     expect(fromCustody[1].value).to.equal(balance);
     expect(fromCustody[1].reason).to.equal("RefundValueOfBidOrder");
 
-    console.log("Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
+    console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
     share = await getLatestShare(ros);
 
@@ -559,7 +523,7 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('4.0');
     expect(share.body.paid).to.equal('40.0');
 
-    console.log("Passed Result Verify Test for gk.placedSellOrder(). share issued \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placedSellOrder(). share issued \n");
 
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
     // expect(orderPlaced[0].order.seqOfShare).to.equal(0);
@@ -570,7 +534,7 @@ async function main() {
     expect(orderPlaced[0].order.distrWeight).to.equal(100);
     expect(orderPlaced[0].isOffer).to.equal(true);
 
-    console.log("Passed Event Test for loo.OrderPlaced(). \n");
+    console.log(" \u2714 Passed Event Test for loo.OrderPlaced(). \n");
     
     // ---- Sell Order 3 ----
 
@@ -587,7 +551,7 @@ async function main() {
     expect(orderPlaced[0].order.distrWeight).to.equal(100);
     expect(orderPlaced[0].isOffer).to.equal(true);
 
-    console.log("Passed Result Verify Test for gk.placeSellOrder(). Sell Order 3 \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placeSellOrder(). Sell Order 3 \n");
 
     // ---- Sell Order 4 ----
 
@@ -604,7 +568,7 @@ async function main() {
     expect(orderPlaced[0].order.distrWeight).to.equal(100);
     expect(orderPlaced[0].isOffer).to.equal(true);
 
-    console.log("Passed Result Verify Test for gk.placeSellOrder(). Sell Order 4 \n");    
+    console.log(" \u2714 Passed Result Verify Test for gk.placeSellOrder(). Sell Order 4 \n");    
 
     tx = await gk.connect(signers[3]).withdrawSellOrder(2, seqOfOrder);
 
@@ -620,7 +584,7 @@ async function main() {
     expect(orderWithdrawn.data.votingWeight).to.equal(100);
     expect(orderWithdrawn.data.distrWeight).to.equal(100);
 
-    console.log("Passed Event Test for loo.OrderWithdrawn(). \n");
+    console.log(" \u2714 Passed Event Test for loo.OrderWithdrawn(). \n");
 
     // ==== Place Market Buy Order ====
 
@@ -642,7 +606,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(400n, 60n));
     
-    console.log("Passed Event Test for loo.DealClosed(). deal-0 \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). deal-0 \n");
 
     deal = dealClosed[1].deal;
     consideration = dealClosed[1].consideration;
@@ -656,7 +620,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(380n, 100n));
     
-    console.log("Passed Event Test for loo.DealClosed(). deal-1 \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). deal-1 \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
 
@@ -674,7 +638,7 @@ async function main() {
     expect(toCoffer[2].value).to.equal(balance);
     expect(toCoffer[2].reason).to.equal("DepositBalanceOfBidOrder");
     
-    console.log("Passed Event Test for gk.SaveToCoffer(). \n");
+    console.log(" \u2714 Passed Event Test for gk.SaveToCoffer(). \n");
 
     share = await getLatestShare(ros);
 
@@ -682,7 +646,7 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('3.8');
     expect(share.body.paid).to.equal('100.0');
 
-    console.log("Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
     
     // ==== Place Market Buy Order ====
 
@@ -724,7 +688,7 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(400n, 80n));
     
-    console.log("Passed Event Test for loo.DealClosed(). \n");
+    console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
 
@@ -733,7 +697,7 @@ async function main() {
     expect(fromCustody[0].value).to.equal(consideration);
     expect(fromCustody[0].reason).to.equal("CloseOfferAgainstBid");
 
-    console.log("Passed Event Test for gk.ReleaseCustody(). \n");
+    console.log(" \u2714 Passed Event Test for gk.ReleaseCustody(). \n");
 
     share = await getLatestShare(ros);
 
@@ -741,13 +705,7 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('4.0');
     expect(share.body.paid).to.equal('80.0');
 
-    console.log("Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
-
-    // ros.off("IssueShare");
-    // rom.off("AddShareToMember");
-    // gk.off("SaveToCoffer");
-    // gk.off("ReceivedCash");
-    // gk.off("ReleaseCustody");
+    console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
 
 }
 

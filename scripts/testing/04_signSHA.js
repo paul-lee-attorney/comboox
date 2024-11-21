@@ -5,15 +5,6 @@
  * All Rights Reserved.
  * */
 
-const { expect } = require("chai");
-const { BigNumber, ethers } = require("ethers");
-const { readContract } = require("../readTool"); 
-const { Bytes32Zero, now } = require('./utils');
-const { getROC, getGK, getRC, getROO, getROD } = require("./boox");
-const { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, lrParser, lrCodifier, alongRuleCodifier, alongRuleParser } = require("./sha");
-const { codifyHeadOfOption, codifyCond, parseOption } = require("./roo");
-const { royaltyTest } = require("./rc");
-
 // This section shows how to create and initiate Shareholders Agreement ("SHA")
 // for the company registered in ComBoox. As the consitutional document, SHA
 // regulate almost all important governance matters for a company. 
@@ -83,12 +74,20 @@ const { royaltyTest } = require("./rc");
 // 8.3 function addObligorIntoOpt(uint256 seqOfOpt, uint256 obligor) external;
 // 8.4 function removeObligorFromOpt(uint256 seqOfOpt, uint256 obligor) external
 
+const { expect } = require("chai");
+const { BigNumber, ethers } = require("ethers");
+const { readContract } = require("../readTool"); 
+const { Bytes32Zero, now } = require('./utils');
+const { getROC, getGK, getRC, getROO, getROD } = require("./boox");
+const { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, lrParser, lrCodifier, alongRuleCodifier, alongRuleParser } = require("./sha");
+const { codifyHeadOfOption, codifyCond, parseOption } = require("./roo");
+const { royaltyTest } = require("./rc");
 
 async function main() {
 
     console.log('\n');
     console.log('********************************');
-    console.log('**        Create SHA          **');
+    console.log('**    04. Create SHA          **');
     console.log('********************************\n');
 
     // ==== Get Instances ====
@@ -107,18 +106,18 @@ async function main() {
     // only Member of the Company may call GK to create a Draft SHA.
 
     await expect(gk.connect(signers[5]).createSHA(1) ).to.be.revertedWith("not MEMBER");
-    console.log("Passed Access Control Test of rocKeeper.createSHA() for OnlyMember. \n");
+    console.log(" \u2714 Passed Access Control Test of rocKeeper.createSHA() for OnlyMember. \n");
 
     let tx = await gk.createSHA(1);
 
     let SHA = await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.createSHA().");
 
     await expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(SHA, 1);
-    console.log("Passed Event Test for roc.UpdateStateOfFile(). \n");
+    console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile(). \n");
     
     const shaList = await roc.getFilesList();
     expect(shaList[shaList.length - 1]).to.equal(SHA);
-    console.log("Passed Result Verify Test for roc.regFile(). \n");
+    console.log(" \u2714 Passed Result Verify Test for roc.regFile(). \n");
 
     const sha = await readContract("ShareholdersAgreement", SHA);
 
@@ -130,17 +129,17 @@ async function main() {
     // calling shall be blocked and reverted with error message.
 
     await expect(sha.connect(signers[1]).setRoleAdmin(ATTORNEYS, signers[0].address)).to.be.revertedWith("O.onlyOwner: NOT");
-    console.log("Passed Access Control Test for sha.setRoleAdmin(). \n");
+    console.log(" \u2714 Passed Access Control Test for sha.setRoleAdmin(). \n");
     
     tx = await sha.setRoleAdmin(ATTORNEYS, signers[0].address);
 
     await tx.wait();
 
     await expect(tx).to.emit(sha, "SetRoleAdmin").withArgs(ATTORNEYS, signers[0].address);
-    console.log("Passed Event Test for sha.SetRoleAdmin(). \n");
+    console.log(" \u2714 Passed Event Test for sha.SetRoleAdmin(). \n");
     
     expect(await sha.getRoleAdmin(ATTORNEYS)).to.equal(signers[0].address);
-    console.log("Passed Result Verify Test for sha.setRoleAdmin(). \n");
+    console.log(" \u2714 Passed Result Verify Test for sha.setRoleAdmin(). \n");
 
     // ---- Set Rules and Terms ----
 
@@ -162,13 +161,13 @@ async function main() {
     // be blocked and reverted with error message.
 
     await expect(sha.connect(signers[1]).addRule(grCodifier(gr))).to.be.revertedWith("AC.onlyAttorney: NOT");
-    console.log("Passed Access Control Test for sha.addRule().OnlyAttorney(). \n");
+    console.log(" \u2714 Passed Access Control Test for sha.addRule().OnlyAttorney(). \n");
 
     await sha.addRule(grCodifier(gr));
 
     let newGR = grParser(await sha.getRule(0));
     expect(newGR).to.deep.equal(gr);
-    console.log("Passed Result Verify Test for sha.addRule() with Governance Rule. \n");
+    console.log(" \u2714 Passed Result Verify Test for sha.addRule() with Governance Rule. \n");
 
     // ---- Voting Rule ----
 
@@ -190,7 +189,7 @@ async function main() {
 
       const newVR = vrParser(await sha.getRule(i));
       expect(newVR).to.deep.equal(vr);
-      console.log("Passed Result Verify Test for sha.addRule() with Voting Rule No.", i, ". \n");
+      console.log(" \u2714 Passed Result Verify Test for sha.addRule() with Voting Rule No.", i, ". \n");
     }
 
     // ---- Position Rule ----
@@ -198,7 +197,7 @@ async function main() {
     const verifyPR = async (seq, pr) => {
       const newPR = prParser(await sha.getRule(seq));
       expect(newPR).to.deep.equal(pr);
-      console.log("Passed Result Verify Test for sha.addRule() with Position Rule No.", seq, ". \n");
+      console.log(" \u2714 Passed Result Verify Test for sha.addRule() with Position Rule No.", seq, ". \n");
     }
 
     // ---- Chairman ----
@@ -262,7 +261,7 @@ async function main() {
     const verifyLR = async (seq, lr) => {
       const newLR = lrParser(await sha.getRule(seq));
       expect(newLR).to.deep.equal(lr);
-      console.log("Passed Result Verify Test for sha.addRule() with Listing Rule No.", seq, ". \n");
+      console.log(" \u2714 Passed Result Verify Test for sha.addRule() with Listing Rule No.", seq, ". \n");
     }
 
     let lr = lrParser(await sha.getRule(1024));
@@ -290,31 +289,31 @@ async function main() {
     // and reverted with error message.
 
     await expect(ad.connect(signers[1]).addBenchmark(2, 15000)).to.be.revertedWith("AC.onlyAttorney: NOT");
-    console.log("Passed Access Control Test for ad.OnlyAttorney(). \n");
+    console.log(" \u2714 Passed Access Control Test for ad.OnlyAttorney(). \n");
 
     // set floor price of class No.2 as 1.5 USD
     await ad.addBenchmark(2, 15000);            
     let floor = await ad.getFloorPriceOfClass(2);
     expect(floor).to.equal(15000);
-    console.log('Passed Result Verify Test for ad.addBenckmark(). \n');
+    console.log(' \u2714 Passed Result Verify Test for ad.addBenckmark(). \n');
         
     // set floor price of class No.1 as 1.5 USD.
     await ad.addBenchmark(1, 12000);
     // remove benchmark set for class No.1
     await ad.removeBenchmark(1);
     expect(await ad.isMarked(1)).to.equal(false);
-    console.log("Passed Result Verify Test for ad.removeBenchmark(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ad.removeBenchmark(). \n");
 
     // add User_2 as obligor under class 2.
     await ad.addObligor(2, 2);
     expect(await ad.isObligor(2, 2)).to.equal(true);
-    console.log("Passed Result Verify Test for ad.addObligor(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ad.addObligor(). \n");
 
     // add User_1 as obligor under class 2.
     await ad.addObligor(2, 1);
     await ad.removeObligor(2, 1);
     expect(await ad.isObligor(2, 1)).to.equal(false);
-    console.log("Passed Result Verify Test for ad.removeObligor(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ad.removeObligor(). \n");
     
     // ---- Lockup ----
 
@@ -328,12 +327,12 @@ async function main() {
     // Lock Share_1 till expDate;
     await lu.setLocker(1, expDate);
     expect(await lu.isLocked(1)).to.equal(true);
-    console.log("Passed Result Verify Test for lu.setLocker(). \n");
+    console.log(" \u2714 Passed Result Verify Test for lu.setLocker(). \n");
 
     await lu.setLocker(2, expDate);
     await lu.delLocker(2);
     expect(await lu.isLocked(2)).to.equal(false);
-    console.log("Passed Result Verify Test for lu.delLocker(). \n");
+    console.log(" \u2714 Passed Result Verify Test for lu.delLocker(). \n");
     
     await lu.addKeyholder(1, 3);
     await lu.addKeyholder(1, 4);
@@ -342,7 +341,7 @@ async function main() {
 
     expect(locker[0]).to.equal(BigNumber.from(expDate));
     expect(locker[1]).to.deep.equal([BigNumber.from(3), BigNumber.from(4)]);    
-    console.log("Passed Result Verify Test for lu.setLocker() and lu.addKeyholder(). \n");
+    console.log(" \u2714 Passed Result Verify Test for lu.setLocker() and lu.addKeyholder(). \n");
 
     // ---- Drag Along ----
 
@@ -371,7 +370,7 @@ async function main() {
     let retAlongRule = alongRuleParser(await da.getLinkRule(1));    
     expect(retAlongRule).to.deep.equal(alongRule);
 
-    console.log("Passed Result Verify Test for ad.addDragger(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ad.addDragger(). \n");
 
     await da.addDragger(alongRuleCodifier(alongRule), 2);
     expect(await da.isDragger(2)).to.equal(true);
@@ -379,16 +378,16 @@ async function main() {
     await da.removeDragger(2);
     expect(await da.isDragger(2)).to.equal(false);
     
-    console.log("Passed Result Verify Test for ad.removeDragger(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ad.removeDragger(). \n");
     
     await da.addFollower(1, 3);
     expect(await da.isFollower(1, 3)).to.equal(true);
-    console.log("Passed Result Verify Test for ad.addFollower(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ad.addFollower(). \n");
     
     await da.addFollower(1, 4);
     await da.removeFollower(1, 4);
     expect(await da.isFollower(1, 4)).to.equal(false);
-    console.log("Passed Result Verify Test for ad.removeFollower(). \n");
+    console.log(" \u2714 Passed Result Verify Test for ad.removeFollower(). \n");
 
     await da.addFollower(1, 4);
 
@@ -398,7 +397,7 @@ async function main() {
     let followers = (await da.getFollowers(1)).map(v => parseInt(v));
     expect(followers).to.deep.equal([3, 4]);    
     
-    console.log("Passed Result Verify Test for Drag Along. \n");
+    console.log(" \u2714 Passed Result Verify Test for Drag Along. \n");
 
     // ---- Tag Along ----
     
@@ -432,7 +431,7 @@ async function main() {
     followers = (await ta.getFollowers(1)).map(v => parseInt(v));
     expect(followers).to.deep.equal([3, 4]);    
     
-    console.log("Passed Result Verify Test for Tag Along. \n");
+    console.log(" \u2714 Passed Result Verify Test for Tag Along. \n");
 
     // ---- Call / Put Option ----
 
@@ -477,7 +476,7 @@ async function main() {
     expect(retOpt.body.closingDeadline).to.equal(triggerDate + 86400 * (93));
     expect(retOpt.body.state).to.equal("Pending");
     
-    console.log("Passed Result Verify Test for op.createOption(). \n");
+    console.log(" \u2714 Passed Result Verify Test for op.createOption(). \n");
 
     await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), 2, 500 * 10 ** 4, 500 * 10 ** 4);
     expect(await op.isOption(2)).to.equal(true);
@@ -485,7 +484,7 @@ async function main() {
     await op.delOption(2);
     expect(await op.isOption(2)).to.equal(false);
     
-    console.log("Passed Result Verify Test for op.delOption(). \n");
+    console.log(" \u2714 Passed Result Verify Test for op.delOption(). \n");
         
     headOfOpt = {
       seqOfOpt: 2,
@@ -514,11 +513,11 @@ async function main() {
 
     await op.addObligorIntoOpt(3, 1);
     expect(await op.isObligor(3, 1)).to.equal(true);
-    console.log("Passed Result Verify Test for op.addObligorIntoOpt(). \n");
+    console.log(" \u2714 Passed Result Verify Test for op.addObligorIntoOpt(). \n");
     
     await op.removeObligorFromOpt(3, 1);
     expect(await op.isObligor(3, 1)).to.equal(false);
-    console.log("Passed Result Verify Test for op.removeObligorFromOpt(). \n");
+    console.log(" \u2714 Passed Result Verify Test for op.removeObligorFromOpt(). \n");
     
     // ---- Config SigPage of SHA ----
 
@@ -527,19 +526,19 @@ async function main() {
     expect(await sha.getSigningDays()).to.equal(1);
     expect(await sha.getClosingDays()).to.equal(90);
 
-    console.log("Passed Result Verify Test for sha.setTiming(). \n");
+    console.log(" \u2714 Passed Result Verify Test for sha.setTiming(). \n");
 
     await sha.addBlank(true, false, 1, 1);
     expect(await sha.isParty(1)).to.equal(true);
     expect(await sha.isSeller(true, 1)).to.equal(true);
     expect(await sha.isBuyer(true, 1)).to.equal(false);
 
-    console.log("Passed Result Verify Test for sha.addBlank(). \n");
+    console.log(" \u2714 Passed Result Verify Test for sha.addBlank(). \n");
 
     await sha.removeBlank(true, 1, 1);
     expect(await sha.isParty(1)).to.equal(false);
 
-    console.log("Passed Result Verify Test for sha.removeBlank(). \n");
+    console.log(" \u2714 Passed Result Verify Test for sha.removeBlank(). \n");
 
     await sha.addBlank(true, false, 1, 1);
     await sha.addBlank(true, false, 1, 2);
@@ -549,12 +548,12 @@ async function main() {
     const parties = (await sha.getParties()).map(v=> parseInt(v.toString()));
     expect(parties).to.deep.equal([3, 4, 1, 2]);
 
-    console.log("Passed Result Verify Test for Parties of SHA. \n");
+    console.log(" \u2714 Passed Result Verify Test for Parties of SHA. \n");
 
     // ==== Circulate SHA ====
 
     await expect(gk.circulateSHA(sha.address, Bytes32Zero, Bytes32Zero)).to.be.revertedWith("BOHK.CSHA: SHA not finalized");
-    console.log("Passed State Control Test for gk.circulateSHA(). \n");  
+    console.log(" \u2714 Passed State Control Test for gk.circulateSHA(). \n");  
 
     await sha.finalizeSHA();
 
@@ -565,7 +564,7 @@ async function main() {
     expect(await ta.isFinalized()).to.equal(true);
     expect(await op.isFinalized()).to.equal(true);
     
-    console.log("Passed Resutl Verify Test for sha.finalizeSHA(). \n");    
+    console.log(" \u2714 Passed Resutl Verify Test for sha.finalizeSHA(). \n");    
 
     await expect(gk.connect(signers[5]).circulateSHA(sha.address, Bytes32Zero, Bytes32Zero)).to.be.revertedWith("NOT Party of Doc");
     console.log("Parssed Access Control Test for gk.circulateSHA().OnlyParty(). \n ");
@@ -579,7 +578,7 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.createSHA().");
 
     expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(sha.address, 2);
-    console.log("Passed Event Test for roc.UpdateStateOfFile().\n");
+    console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");
 
     expect(await sha.circulated()).to.equal(true);
 
@@ -587,7 +586,7 @@ async function main() {
     expect(await sha.getSigDeadline()).to.equal(circulateDate + 86400);
     expect(await sha.getClosingDeadline()).to.equal(circulateDate + 86400 * 90);
 
-    console.log("Passed Result Verify Test for gk.circulateSHA().\n");
+    console.log(" \u2714 Passed Result Verify Test for gk.circulateSHA().\n");
 
     // ==== Sign SHA ====
 
@@ -599,14 +598,14 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.signSHA().");
 
     expect(await sha.isSigner(1)).to.equal(true);
-    console.log("Passed Result Verify Test for gk.signSHA().\n");
+    console.log(" \u2714 Passed Result Verify Test for gk.signSHA().\n");
 
     await gk.connect(signers[1]).signSHA(sha.address, Bytes32Zero);
     await gk.connect(signers[3]).signSHA(sha.address, Bytes32Zero);
     await gk.connect(signers[4]).signSHA(sha.address, Bytes32Zero);
 
     expect(await sha.established()).to.equal(true);
-    console.log("Passed Result Verify Test for all gk.signSHA().\n");
+    console.log(" \u2714 Passed Result Verify Test for all gk.signSHA().\n");
 
     // ==== Enactivate SHA ====
 
@@ -618,17 +617,17 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.activateSHA().");
 
     expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(sha.address, 6);
-    console.log("Passed Event Test for roc.UpdateStateOfFile().\n");
+    console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");
 
     expect(tx).to.emit(roo, "CreateOpt");
-    console.log("Passed Event Test for roo.CreateOpt().\n");
+    console.log(" \u2714 Passed Event Test for roo.CreateOpt().\n");
 
     expect(tx).to.emit(rod, "AddPosition");
-    console.log("Passed Event Test for rod.AddPosition().\n");
+    console.log(" \u2714 Passed Event Test for rod.AddPosition().\n");
 
     const governingSHA = await gk.getSHA();
     expect(governingSHA).to.equal(sha.address);
-    console.log("Passed Result Verify Test for gk.activateSHA().\n");
+    console.log(" \u2714 Passed Result Verify Test for gk.activateSHA().\n");
 
 }
 

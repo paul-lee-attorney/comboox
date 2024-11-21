@@ -69,7 +69,7 @@ async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
           expect(parsedLog.args[0]).to.equal(from);
           expect(parsedLog.args[1]).to.equal(to);
           expect(parsedLog.args[2]).to.equal(BigNumber.from(rate * 10n ** 13n));
-          console.log("Passed Royalty Test for", func, "\n");
+          console.log(" \u2714 Passed Royalty Test for", func, "\n");
         }
       } catch (err) {
         console.log("Parse Log Error:", err);

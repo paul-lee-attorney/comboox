@@ -16,7 +16,7 @@ const { royaltyTest } = require("./rc");
 async function main() {
 
     console.log('\n********************************');
-    console.log('**      Call / Put Option     **');
+    console.log('**  15. Call/Put Options      **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -30,12 +30,12 @@ async function main() {
     // ==== Update Oracles ====
 
     await expect(gk.updateOracle(1, 5600 * 10 ** 4, 550 * 10 ** 4, 0)).to.be.revertedWith("AC.onlyDK: not");
-    console.log("Passed Access Control Test for gk.updateOracle(). \n");
+    console.log(" \u2714 Passed Access Control Test for gk.updateOracle(). \n");
 
     let tx = await gk.connect(signers[1]).updateOracle(1, 4500 * 10 ** 4, 550 * 10 ** 4, 0);
 
     await expect(tx).to.emit(roo, "UpdateOracle").withArgs(BigNumber.from(1), BigNumber.from(4500 * 10 ** 4), BigNumber.from(550 * 10 ** 4), BigNumber.from(0));
-    console.log("Passed Event Test for roo.UpdateOracle(). \n");
+    console.log(" \u2714 Passed Event Test for roo.UpdateOracle(). \n");
 
     let oracle = parseOracle(await roo.getLatestOracle(1)); 
 
@@ -43,16 +43,16 @@ async function main() {
     expect(oracle.data2).to.equal("550.0");
     expect(oracle.data3).to.equal("0.0");
 
-    console.log("Passed Result Verify Test for gk.updateOracle(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.updateOracle(). \n");
 
         
     // ==== Execute Option ====
 
     await expect(gk.connect(signers[1]).execOption(1)).to.be.revertedWith("OR.mf.onlyRightholder: not");
-    console.log("Passed Access Control Test for gk.execOption(). \n");  
+    console.log(" \u2714 Passed Access Control Test for gk.execOption(). \n");  
 
     await expect(gk.connect(signers[3]).execOption(1)).to.be.revertedWith("OR.EO: conds not satisfied");
-    console.log("Passed Condition Check Test for gk.execOption(). \n");  
+    console.log(" \u2714 Passed Condition Check Test for gk.execOption(). \n");  
 
     await gk.connect(signers[1]).updateOracle(1, 5500 * 10 ** 4, 550 * 10 ** 4, 0);
 
@@ -61,13 +61,13 @@ async function main() {
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 18n, "gk.execOption().");
 
     await expect(tx).to.emit(roo, "ExecOpt").withArgs(BigNumber.from(1));
-    console.log("Passed Event Test for roo.ExecOpt(). \n");
+    console.log(" \u2714 Passed Event Test for roo.ExecOpt(). \n");
 
     let opt = parseOption(await roo.getOption(1));
 
     expect(opt.body.state).to.equal("Executed");
     
-    console.log("Passed Result Verify Test for gk.execOption(). \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.execOption(). \n");
 
     // ==== Update Oracles & Exec Option 2 ====
 
@@ -77,19 +77,19 @@ async function main() {
     // ==== Create Swap ====
     
     await expect(gk.connect(signers[1]).createSwap(1, 3, 500 * 10 ** 4, 2)).to.be.revertedWith("OR.mf.onlyRightholder: not");
-    console.log("Passed Access Control Test for gk.createSwap(). \n");  
+    console.log(" \u2714 Passed Access Control Test for gk.createSwap(). \n");  
 
     tx = await gk.connect(signers[3]).createSwap(1, 3, 500 * 10 ** 4, 2);
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 36n, "gk.createSwap().");
 
     await expect(tx).to.emit(roo, "RegSwap");
-    console.log("Passed Event Test for roo.RegSwap(). \n");
+    console.log(" \u2714 Passed Event Test for roo.RegSwap(). \n");
 
     await expect(tx).to.emit(ros, "DecreaseCleanPaid");
-    console.log("Passed Event Test for ros.DecreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n");
 
-    console.log("Passed Event Test for ros.DecreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n");
 
     let swap = parseSwap(await roo.getSwap(1, 1));
 
@@ -99,7 +99,7 @@ async function main() {
     expect(swap.priceOfDeal).to.equal("1.8");
     expect(swap.seqOfPledge).to.equal(2);
 
-    console.log("Passed Result Verify Test for gk.execOption(). PutOption \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.execOption(). PutOption \n");
   
     await gk.connect(signers[1]).createSwap(2, 3, 500 * 10 ** 4, 2);
 
@@ -111,7 +111,7 @@ async function main() {
     expect(swap.priceOfDeal).to.equal("1.1");
     expect(swap.seqOfPledge).to.equal(2);
 
-    console.log("Passed Result Verify Test for gk.execOption(). CallOption \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.execOption(). CallOption \n");
 
     // ==== Exec Call Option ====
 
@@ -119,25 +119,25 @@ async function main() {
     let value = 110n * 500n * BigInt(centPrice) - 100n;
 
     await expect(gk.connect(signers[1]).payOffSwap(2, 1, {value:value})).to.be.revertedWith("SWR.payOffSwap: insufficient amt");
-    console.log("Passed Value Check Test for gk.payOffSwap(). \n");  
+    console.log(" \u2714 Passed Value Check Test for gk.payOffSwap(). \n");  
 
     value += 200n;
 
     await expect(gk.payOffSwap(2, 1, {value:value})).to.be.revertedWith("ROOK.payOffSwap: wrong payer");    
-    console.log("Passed Access Control Test for gk.payOffSwap(). \n");  
+    console.log(" \u2714 Passed Access Control Test for gk.payOffSwap(). \n");  
 
     tx = await gk.connect(signers[1]).payOffSwap(2, 1, {value:value});
 
     await royaltyTest(rc.address, signers[1].address, gk.address, tx, 58n, "gk.payOffSwap().");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(3), BigNumber.from(500 * 10 ** 4));
-    console.log("Passed Event Test for ros.IncreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
 
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(BigNumber.from(3), BigNumber.from(500 * 10 ** 4), BigNumber.from(500 * 10 ** 4));
-    console.log("Passed Event Test for ros.SubAmountFromShare(). \n");
+    console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(24), BigNumber.from(2));
-    console.log("Passed Event Test for rom.AddShareToMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     let share = await getLatestShare(ros);
 
@@ -146,7 +146,7 @@ async function main() {
     expect(share.body.paid).to.equal("500.0");
     expect(share.body.cleanPaid).to.equal("500.0");
 
-    console.log("Passed Result Verify Test for rom.payOffSwap(). \n");
+    console.log(" \u2714 Passed Result Verify Test for rom.payOffSwap(). \n");
 
     // ==== Exec Put Option ====
 
@@ -157,13 +157,13 @@ async function main() {
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.payOffSwap().");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid");
-    console.log("Passed Event Test for ros.IncreaseCleanPaid(). \n");
+    console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
 
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(BigNumber.from(2), BigNumber.from(300 * 10 ** 4), BigNumber.from(300 * 10 ** 4));
-    console.log("Passed Event Test for ros.SubAmountFromShare(). \n");
+    console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(25), BigNumber.from(3));
-    console.log("Passed Event Test for rom.AddShareToMember(). \n");
+    console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     share = await getLatestShare(ros);
 
@@ -172,7 +172,7 @@ async function main() {
     expect(share.body.paid).to.equal("300.0");
     expect(share.body.cleanPaid).to.equal("300.0");
 
-    console.log("Passed Result Verify Test for rom.terminateSwap(). \n");
+    console.log(" \u2714 Passed Result Verify Test for rom.terminateSwap(). \n");
 
 }
 
