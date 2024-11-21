@@ -5,6 +5,27 @@
  * All Rights Reserved.
  * */
 
+// To run the testing codes by a single command:
+// (1) launch a solo testing net of HardHat in one termina by calling the command:
+//     "npx hardhat node";
+// (2) run this JS code by calling the command:
+//     "node testReport.js".
+
+// To run the testing codes one by one:
+// (1) launch a solo testing net of HardHat in one termina by calling the command:
+//     "npx hardhat node";
+// (2) run the testing JS code one by one:
+//     "npx hardhat run ./scripts/testing/01_regUsers.js";
+//     "npx hardhat run ./scripts/testing/02_createComp.js";
+//     ... ...
+
+// Due to the testing needs to be conducted with predefined share holding structure, 
+// officer title, Sharehodlers Agreement， as well as other corporate governance 
+// elements, the testing shall be conducted in strict sequence order.
+
+// For detailed explanation, please see the instructions in each of the testing
+// JS code.
+
 
 const { spawn } = require('child_process');
 
