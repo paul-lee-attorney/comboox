@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section shows how to entrust proxy to propose a motion to the General Meeting,
+// This section shows and tests how to entrust proxy to propose a motion to the General Meeting,
 // or, on the other hand, how to solicitate voting proxy for a motion. Once entrust a 
 // proxy, the principal can NOT cast vote for the Motion directly by itself.  It's the 
 // proxy that may cast vote on behalf of its principals.

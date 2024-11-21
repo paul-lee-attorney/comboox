@@ -4,6 +4,68 @@
  * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
+
+// This section shows and tests how to execute Call/Put Options sepecified in SHA.
+
+// A call option in the context of a shareholders’ agreement is a contractual right
+// granted to a party (the “option holder”) to purchase equity shares from another 
+// shareholder or the company at a pre-agreed price or formula, within a specified 
+// time period or upon the occurrence of certain predefined events.
+
+// Call options are often used to provide flexibility for investors, founders, or 
+// strategic partners to increase their ownership stake under specific circumstances, 
+// such as meeting performance milestones, resolving shareholder disputes, or upon a 
+// shareholder’s exit.
+
+// While the call option grants the right to purchase shares, it does not impose an 
+// obligation to do so, allowing the option holder to exercise this right at their 
+// discretion during the option period.
+
+// A put option in a shareholders’ agreement is a contractual right granted to a 
+// shareholder (the “option holder”) to sell their equity shares to another party 
+// (such as another shareholder or the company) at a pre-agreed price or valuation 
+// formula, within a specified time frame or upon the occurrence of certain events.
+
+// Put options are typically included to protect shareholders, particularly minority 
+// shareholders or investors, by providing a guaranteed exit mechanism. They are often
+// triggered in scenarios such as disputes, breach of agreement terms, significant 
+// changes in the company’s structure, or upon the occurrence of specific events like 
+// the shareholder’s retirement, disability, or death.
+
+// This right ensures that the option holder can sell their shares at a fair value, 
+// even if there is no open market or willing buyer, mitigating potential liquidity 
+// risks.
+
+// The scenario for testing in this section are as follows:
+// 1. User_2 as secretary of the Company input oracle data indicating the general 
+//    revenue and net profits into the system;
+// 2. Due the trigger condition is satisfied (i.e. general revenue is greater than
+//    $5,500,000 and net profits is greater than $550,000), User_3 as the operating
+//    Member of the Company executes his Put Option to sell his shares at a price of
+//    $1.80 per share to the controlling Members User_1 and User_2;
+// 3. User_3 creates a Put Option Swap to sell Share_3 amount to $500, and set Share_2
+//    as Pledge to the Put Option;
+// 4. After the expiration of the Swap, User_3 terminate the Swap by obtaining the 
+//    Pledged shares by the difference value between the target share's issue value 
+//    and the value calculated based on the Put Option price;
+// 5. Whe another trigger condition is satisfied (i.e. general revenue is lower than
+//    $1,000,000 or net profits is lower than $100,000), User_2 as the controlling
+//    Members of the Company executes his Call Option to purchase shares of User_3
+//    at a lower price of $1.20 per share so as to adjust their investment cost;
+// 6. User_2 create a Call Option Swap to purchase Share_3 amount to $500, and set
+//    his Share_2 as Pledge to guarantee the Swap.
+// 7. User_2 pay off the Put Option Swap, so that get the $500 target shares by 
+//    paying at the Call Option price of $1.20 per share.
+
+// The Write APIs tested in this section include:
+// 1. General Keper
+// 1.1 function updateOracle(uint256 seqOfOpt, uint d1, uint d2, uint d3) external;
+// 1.2 function execOption(uint256 seqOfOpt) external;
+// 1.3 function createSwap(uint256 seqOfOpt, uint seqOfTarget, uint paidOfTarget,
+//     uint seqOfPledge) external;
+// 1.4 function payOffSwap(uint256 seqOfOpt, uint256 seqOfSwap) external payable;
+// 1.5 function terminateSwap(uint256 seqOfOpt, uint256 seqOfSwap) external;
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 

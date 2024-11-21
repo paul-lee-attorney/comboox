@@ -5,12 +5,59 @@
  * All Rights Reserved.
  * */
 
-const { expect } = require("chai");
+// This section shows and tests how to trade equity shares by listing on the List of Orders.
 
-const { getGK, getROM, getLOO, getROS, getRC, getLOOKeeper, } = require("./boox");
+// Companies may set out their listing rules in SHA. Thereafter, the authorized officer may 
+// place initial offers on the List of Orders, and, Members of the class of shares concerned 
+// may place limited sell orders with intended sell price or market sell order. Accredited 
+// Investors approved by the authorized officers may place limited buy orders with specific 
+// bid price or market buy order. 
+
+// The listing trades are made via ETH as cosideration. Buyers shall pay ETH together with 
+// placing buy orders. In case of closing, consideration ETH will be automatically saved 
+// into the deposit account of Seller, and balance amount of ETH will be refunded back to
+// the deposit account of Buyer. As for the listed Buy Order, the ETH paid will be stored
+// into the custody account of the Buyer, and which will be released to Seller in case of 
+// closing, or be refunded back to the Buyer in case of expiration.
+
+// Exchange rate between ETH and the booking currencies is retrieved from the reliable 
+// oracle provider of crypto maket prices like ChainLink. 
+
+// The scenario for testing in this section are as follows:
+// 1. User_1 as Chairman of the DAO places and withdraws initial offers as per the listing rule;
+// 2. User_2 as an accredited Investor places and withdraws limited buy orders with the 
+//    List of Orders ("LOO"), thus, matching and closing certain initial offers. Upone closing, 
+//    ETH paid by User_2 will be saved in General Keeper as capital contribution income of 
+//    the DAO, and certain new Shares will be issued to User_2;
+// 3. Balance of the limited buy orders placed by User_2 will be listed on the List of Orders,
+//    and, the ETH paid will be stored in the custody account of User_2;
+// 4. User_3 as Member of the DAO, places and withdraw limited sell orders with the List
+//    of Orders. Thereafter, some of the sell orders will be matched with the listed buy
+//    orders placed by User_2.  Upon closing, the shares of the sell order will be transferred
+//    to User_2, and the ETH under custody will be released to User_3 as consideration, or
+//    be released to User_2 as refunded balance amount.
+// 5. User_2 places market buy order so as to purchase off listed offers from the LOO;
+// 6. User_3 places market sell order so as to match off listed bids from the LOO; 
+
+// The Write APIs tested in this section include:
+// 1. General Keper
+// 1.1 function placeInitialOffer(uint classOfShare, uint execHours, uint paid, uint price,
+//     uint seqOfLR) external;
+// 1.2 function withdrawInitialOffer(uint classOfShare, uint seqOfOrder, 
+//     uint seqOfLR) external;
+// 1.3 function placeSellOrder(uint seqOfClass, uint execHours, uint paid,
+//     uint price, uint seqOfLR) external;
+// 1.4 function withdrawSellOrder(uint classOfShare, uint seqOfOrder) external;    
+// 1.5 function placeBuyOrder(uint classOfShare, uint paid, uint price,
+//     uint execHours) external payable;
+// 1.6 function withdrawBuyOrder(uint classOfShare, uint seqOfOrder) external;
+
+const { expect } = require("chai");
+const { getGK, getLOO, getROS, getRC, getLOOKeeper, } = require("./boox");
 const { getLatestShare } = require("./ros");
 const { parseNode, parseDeal, parseData } = require("./loo");
 const { royaltyTest } = require("./rc");
+const { getDealValue } = require("./roa");
 
 async function main() {
 
@@ -246,11 +293,11 @@ async function main() {
 
     const centPrice = BigInt(await gk.getCentPrice());
 
-    const getDealValue = (priceInCent, paidInDollar) => {
-      return priceInCent * paidInDollar * centPrice;
-    }
+    // const getDealValue = (priceInCent, paidInDollar) => {
+    //   return priceInCent * paidInDollar * centPrice;
+    // }
 
-    value = getDealValue(370n, 80n);
+    value = getDealValue(370n, 80n, centPrice);
     
     await expect(gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 3.7 * 10 ** 4, 1, {value: value - 200n})).to.be.revertedWith("OR.placeBuyOrder: insufficient msgValue");
     console.log(" \u2714 Passed Value Check Test for gk.placeBuyOrder(). \n");
@@ -272,7 +319,7 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(360n, 80n));
+    expect(consideration).to.equal(getDealValue(360n, 80n, centPrice));
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
@@ -297,7 +344,7 @@ async function main() {
 
     // ---- Buy Order 2 ----
 
-    value = getDealValue(390n, 80n);
+    value = getDealValue(390n, 80n, centPrice);
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 3.9 * 10 ** 4, 1, {value: value + 100n});
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
@@ -313,7 +360,7 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(380n, 60n));
+    expect(consideration).to.equal(getDealValue(380n, 60n, centPrice));
 
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deals[0] \n");
 
@@ -337,7 +384,7 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(360n, 20n));
+    expect(consideration).to.equal(getDealValue(360n, 20n, centPrice));
 
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deals[1] \n");
 
@@ -360,7 +407,7 @@ async function main() {
 
     // ---- Buy Order 3 ----
 
-    value = getDealValue(400n, 80n);
+    value = getDealValue(400n, 80n, centPrice);
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4 * 10 ** 4, 1, {value: value + 100n});
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
@@ -376,7 +423,7 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(380n, 40n));
+    expect(consideration).to.equal(getDealValue(380n, 40n, centPrice));
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
@@ -412,7 +459,7 @@ async function main() {
 
     // ---- Buy Order 4 ----
 
-    value = getDealValue(420n, 80n);
+    value = getDealValue(420n, 80n, centPrice);
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4.2 * 10 ** 4, 1, {value: value + 100n});
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
@@ -497,7 +544,7 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(400n, 40n));
+    expect(consideration).to.equal(getDealValue(400n, 40n, centPrice));
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
@@ -508,7 +555,7 @@ async function main() {
     expect(fromCustody[0].value).to.equal(consideration);
     expect(fromCustody[0].reason).to.equal("CloseOfferAgainstBid");
 
-    let balance = getDealValue(400n, 80n) + 100n - getDealValue(380n, 40n) - consideration;
+    let balance = getDealValue(400n, 80n, centPrice) + 100n - getDealValue(380n, 40n, centPrice) - consideration;
 
     expect(fromCustody[1].from).to.equal(2);
     expect(fromCustody[1].to).to.equal(2);
@@ -588,7 +635,7 @@ async function main() {
 
     // ==== Place Market Buy Order ====
 
-    value = getDealValue(400n, 160n);
+    value = getDealValue(400n, 160n, centPrice);
 
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 160 * 10 ** 4, 0, 1, {value: value + 100n});
 
@@ -604,7 +651,7 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(400n, 60n));
+    expect(consideration).to.equal(getDealValue(400n, 60n, centPrice));
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deal-0 \n");
 
@@ -618,21 +665,21 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(380n, 100n));
+    expect(consideration).to.equal(getDealValue(380n, 100n, centPrice));
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deal-1 \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
 
     expect(toCoffer[0].acct).to.equal(3);
-    expect(toCoffer[0].value).to.equal(getDealValue(400n, 60n));
+    expect(toCoffer[0].value).to.equal(getDealValue(400n, 60n, centPrice));
     expect(toCoffer[0].reason).to.equal("CloseBidAgainstOffer");
 
     expect(toCoffer[1].acct).to.equal(3);
-    expect(toCoffer[1].value).to.equal(getDealValue(380n, 100n));
+    expect(toCoffer[1].value).to.equal(getDealValue(380n, 100n, centPrice));
     expect(toCoffer[1].reason).to.equal("CloseBidAgainstOffer");
 
-    balance = value + 100n - getDealValue(380n, 100n) - getDealValue(400n, 60n);
+    balance = value + 100n - getDealValue(380n, 100n, centPrice) - getDealValue(400n, 60n, centPrice);
 
     expect(toCoffer[2].acct).to.equal(2);
     expect(toCoffer[2].value).to.equal(balance);
@@ -650,7 +697,7 @@ async function main() {
     
     // ==== Place Market Buy Order ====
 
-    value = getDealValue(400n, 80n);
+    value = getDealValue(400n, 80n, centPrice);
 
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4 * 10 ** 4, 1, {value: value + 100n});
 
@@ -686,7 +733,7 @@ async function main() {
     expect(deal.votingWeight).to.equal(100);
     expect(deal.distrWeight).to.equal(100);
 
-    expect(consideration).to.equal(getDealValue(400n, 80n));
+    expect(consideration).to.equal(getDealValue(400n, 80n, centPrice));
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 

@@ -5,13 +5,64 @@
  * All Rights Reserved.
  * */
 
+// This section shows and tests how to draft, propose and close an Internal
+// Share Transfer deal by means of Investment Agreement. Seller shall 
+// create a Draft of Invesment Agreement (the "Draft") first, and then,
+// appoint an attorney to set up the deal, signing deadline and parties of
+// the agreement.  Thereafter, the Seller shall circulate the draft to the Buyer
+// concerned, and afther all parties signed, the sales deal in the Draft 
+// will be established in leagal sense, and the target shall will be locked for
+// for the subject amount. Thereafter, the Seller shall propose the Investment 
+// Agreement to the General Meeting of Members for approval.  
+// After approval, Buyer and Seller may close the deal on-chain or off-chain.
+// A new shall will be issued to the Buyer, and the transferred amount will be 
+// deduced from the target share concerned. In case there is no balance amount
+// left in the target Share, it will be deregistered from the Register of Shares 
+// ("ROS") accordingly.
+
+// The scenario for testing in this section are as follows:
+// 1. User_1 creates an Investment Agreement (the "Draft") by cloning the Template of IA;
+// 2. User_1 appoints himself as its Attorney to the Draft;
+// 3. User_1 set up the Darft with respect to the deal, signing days, closing days and
+//    parties to the IA accordingly;
+// 4. User_6 as Seller and Member circulate the Draft to Buyer (User_3);
+// 5. User_6 and User_3 signed the Draft to make it "established" in law;
+// 6. User_6 propose the IA to the General Meeting of Members for voting;
+// 7. All other Members vote "for" the proposed IA;
+// 8. After counting the vote results, User_6 triggers the "payOffApprovedDeal" API
+//    to directly close the deal by paying ETH;
+// 9. User_6 is removed from the Register of Members, and Share_7 is deregistered from ROS;
+// 10. A new share No.8 is issued to Buyer (User_3).
+
+// The Write APIs tested in this section:
+// 1. General Keeper
+// 1.1 function createIA(uint256 snOfIA) external;
+// 1.2 function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external;
+// 1.3 function signIA(address ia, bytes32 sigHash) external;
+// 1.4 function proposeDocOfGM(uint doc, uint seqOfVR, uint executor) external;
+// 1.6 function castVoteOfGM(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
+// 1.7 function voteCountingOfGM(uint256 seqOfMotion) external;
+// 1.8 function payOffApprovedDeal(address ia, uint seqOfDeal) external payable;
+
+// 2. Investment Agreement
+// 2.1 function addDeal(bytes32 sn, uint buyer, uint groupOfBuyer, uint paid,
+//     uint par, uint distrWeight) external;
+// 2.2 function finalizeIA() external; 
+
+// 3. Draft Control
+// 3.1 function setRoleAdmin(bytes32 role, address acct) external;
+
+// 4. Sig Page
+// 4.1 function setTiming(bool initPage, uint signingDays, uint closingDays) external;
+// 4.2 function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)external;
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
 const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now, } = require("./utils");
-const { codifyHeadOfDeal, parseDeal } = require("./roa");
+const { codifyHeadOfDeal, parseDeal, getDealValue } = require("./roa");
 const { getLatestShare } = require("./ros");
 const { royaltyTest } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
@@ -122,23 +173,23 @@ async function main() {
     // ---- Sign IA ----
 
     await expect(gk.connect(signers[1]).signIA(ia.address, Bytes32Zero)).to.be.revertedWith("ROAK.md.OPO: NOT Party");
-    console.log("Parssed Access Control Test for gk.signIA(). \n ");
+    console.log(" \u2714 Passed Access Control Test for gk.signIA(). \n ");
 
     tx = await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 36n, "gk.signIA().");
     expect(await ia.isSigner(6)).to.equal(true);
-    console.log("Parssed Result Verify Test for gk.signIA(). by User_6 \n ");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_6 \n ");
 
     const doc = BigInt(ia.address);
 
     await expect(gk.connect(signers[6]).proposeDocOfGM(doc, 1, 1)).to.be.revertedWith("GMMK: not established");
-    console.log("Parssed Procedure Control Test for gk.proposeDocOfGM(). \n ");
+    console.log(" \u2714 Passed Procedure Control Test for gk.proposeDocOfGM(). \n ");
 
     tx = await gk.connect(signers[3]).signIA(ia.address, Bytes32Zero);
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 36n, "gk.signIA().");
     expect(await ia.isSigner(3)).to.equal(true);
-    console.log("Parssed Result Verify Test for gk.signIA(). by User_3 \n ");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_3 \n ");
 
     expect(await ia.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");
@@ -179,19 +230,22 @@ async function main() {
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.voteCounting(). \n");
 
-    const centPrice = await gk.getCentPrice();
-    let value = 210n * 8000n * BigInt(centPrice) + 100n;
+    const centPrice = BigInt(await gk.getCentPrice());
 
-    await expect(gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value})).to.be.revertedWith("ROAK.payApprDeal: insufficient msgValue");
+    let value = getDealValue(210n, 8000n, centPrice);
+
+    // ==== PayOffApprovedDeal() ====
+
+    await expect(gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value + 100n})).to.be.revertedWith("ROAK.payApprDeal: insufficient msgValue");
     console.log(" \u2714 Passed Amount Check Test for gk.payOffApprovedDeal(). \n");
 
-    value = 210n * 10000n * BigInt(centPrice) + 100n;
+    value = getDealValue(210n, 10000n, centPrice);
 
-    tx = await gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value});
+    tx = await gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value + 100n});
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.payOffApprovedDeal().");
 
-    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(1), BigNumber.from(value));
+    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(1), BigNumber.from(value + 100n));
     console.log(" \u2714 Passed Event Test for ia.PayOffApprovedDeal(). \n");
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(ia.address, BigNumber.from(6));

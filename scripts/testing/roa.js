@@ -7,6 +7,12 @@
 
 const { ethers } = require("hardhat");
 const { parseUnits, longDataParser } = require("./utils");
+const { getGK } = require("./boox");
+
+
+function getDealValue(priceInCent, paidInDollar, centPrice) {
+  return priceInCent * paidInDollar * centPrice;
+}
 
 function parseHeadOfDeal(arr) {
   return {
@@ -57,6 +63,7 @@ function codifyHeadOfDeal(head) {
 }
 
 module.exports = {
+    getDealValue,
     parseHeadOfDeal,
     codifyHeadOfDeal,
     parseDeal,

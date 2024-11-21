@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section shows how to nominate candidate and cast vote for officers.
+// This section shows and tests how to nominate candidate and cast vote for officers.
 // Usually, directors' board seat will be allocated among Members in SHA.
 // So, Members may nominate their candidates as per the SHA. In case any
 // special position are defined as "nominated by Chairman", such position

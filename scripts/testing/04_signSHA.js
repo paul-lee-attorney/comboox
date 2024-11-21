@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section shows how to create and initiate Shareholders Agreement ("SHA")
+// This section shows and tests how to create and initiate Shareholders Agreement ("SHA")
 // for the company registered in ComBoox. As the consitutional document, SHA
 // regulate almost all important governance matters for a company. 
 // We defined the governance rules of a SHA as rules and terms. Rules define
@@ -567,10 +567,10 @@ async function main() {
     console.log(" \u2714 Passed Resutl Verify Test for sha.finalizeSHA(). \n");    
 
     await expect(gk.connect(signers[5]).circulateSHA(sha.address, Bytes32Zero, Bytes32Zero)).to.be.revertedWith("NOT Party of Doc");
-    console.log("Parssed Access Control Test for gk.circulateSHA().OnlyParty(). \n ");
+    console.log(" \u2714 Passed Access Control Test for gk.circulateSHA().OnlyParty(). \n ");
 
     await expect(gk.signSHA(sha.address, Bytes32Zero)).to.be.revertedWith("SHA not in Circulated State");
-    console.log("Parssed State Control Test for gk.signSHA(). \n ");
+    console.log(" \u2714 Passed State Control Test for gk.signSHA(). \n ");
 
 
     tx = await gk.circulateSHA(sha.address, Bytes32Zero, Bytes32Zero);
@@ -591,7 +591,7 @@ async function main() {
     // ==== Sign SHA ====
 
     await expect(gk.connect(signers[5]).signSHA(sha.address, Bytes32Zero)).to.be.revertedWith("NOT Party of Doc");
-    console.log("Parssed Access Control Test for gk.signSHA().OnlyParty(). \n ");
+    console.log(" \u2714 Passed Access Control Test for gk.signSHA().OnlyParty(). \n ");
 
     tx = await gk.signSHA(sha.address, Bytes32Zero);
 
@@ -610,7 +610,7 @@ async function main() {
     // ==== Enactivate SHA ====
 
     await expect(gk.connect(signers[5]).activateSHA(sha.address)).to.be.revertedWith("NOT Party of Doc");
-    console.log("Parssed Access Control Test for gk.activateSHA().OnlyParty(). \n ");
+    console.log(" \u2714 Passed Access Control Test for gk.activateSHA().OnlyParty(). \n ");
 
     tx = await gk.activateSHA(sha.address);
 

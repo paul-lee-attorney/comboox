@@ -5,6 +5,44 @@
  * All Rights Reserved.
  * */
 
+// This section shows and tests how to execute First Refusal right sepecified in SHA.
+
+// First refusal rights are a contractual provision that grants the right holder
+// (typically an existing shareholder or investor) the priority to purchase equity
+// being offered for sale by another shareholder before it is sold to an external 
+// buyer. Under these rights, the selling shareholder must first offer the equity 
+// to the right holder on the same terms and conditions as those agreed upon with 
+// the potential buyer. The right holder can then choose to accept the offer and 
+// purchase the equity, ensuring they have the opportunity to maintain or increase 
+// their ownership stake in the company. First refusal rights are designed to 
+// protect existing shareholders by giving them the ability to prevent dilution 
+// of their ownership or control by external parties.
+
+// The scenario for testing in this section are as follows:
+// 1. User_5 creates a Draft of Investment Agreement (the "Draft IA"), with four 
+//    External Transfer deals that transfer all its equity shares to User_6 at the
+//    price of $3.00 per share;
+// 2. After User_5 and User_6 signed the Draft, User_1 and User_2 executes First
+//    Refusal right against each of the deals said above. 
+// 3. After the expiration of the Frist Refusal period predefined by the Voting Rule
+//    concerned, any Member may call the API of gk.computeFirstRefusal() to calculate
+//    the First Refusal claims for each of the deals concenered. Then, the original 
+//    deals will be automatically terminated and new deals with the claiming Member
+//    as buyer will be added with the same price and other terms. 
+// 4. After obtaining the voting approval from the General Meeting of Members, User_1
+//    and User_2 close the deals by calling gk.payOffApprovedDeal(). 
+// 5. Some important points are deserved attention that:
+//    (1) First Refusal right does not need acceptance of the original seller;
+//    (2) In case more than one rightholder claim to purchase the same deal, the 
+//        target share will be allocated to the claimers as per their voting 
+//        powers collectively owned through equity shares.
+
+// The Write APIs tested in this section include:
+// 1. General Keper
+// 1.1 function execFirstRefusal(uint256 seqOfRule, uint256 seqOfRightholder, address ia,
+//     uint256 seqOfDeal, bytes32 sigHash) external;
+// 1.2 function computeFirstRefusal(address ia, uint256 seqOfDeal) external;
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
@@ -12,11 +50,10 @@ const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now, longDataParser, } = require("./utils");
 const { codifyHeadOfDeal, parseDeal } = require("./roa");
-const { getLatestShare, parseShare } = require("./ros");
+const { getLatestShare } = require("./ros");
 const { royaltyTest } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { ethers } = require("hardhat");
-
 
 async function main() {
 
@@ -178,15 +215,6 @@ async function main() {
 
       console.log(" \u2714 Passed Result Verify Test for gk.computeFirstRefusal(). \n");
     }
-
-    // const dealsList = (await ia.getSeqList()).map(v => Number(v));
-
-    // let len = dealsList.length;
-    // while (len > 0) {
-    //   const dl = parseDeal(await ia.getDeal(dealsList[len-1]));
-    //   console.log("deal:", dl, "\n");
-    //   len --;
-    // }
 
     expect(await ia.established()).to.equal(true);
     console.log(" \u2714 Passed Establishment Test for FirstRefusal. \n");

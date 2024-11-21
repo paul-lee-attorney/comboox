@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section shows how to register, approve and revoke Investors in 
+// This section shows and tests how to register, approve and revoke Investors in 
 // ComBoox. Only approved Investors may enter into Investment Agreements
 // as buyers or involve in listing orders on Register of Orders.
 

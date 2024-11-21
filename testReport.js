@@ -1,3 +1,11 @@
+// SPDX-License-Identifier: UNLICENSED
+
+/* *
+ * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * All Rights Reserved.
+ * */
+
+
 const { spawn } = require('child_process');
 
 const runScript = (command, args) => {

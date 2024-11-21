@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section we will test the IPR and Ownership control
+// This section shows and tests the IPR and Ownership control
 // functions of the Platform. Or, more specificly, the 
 // functions of the smart contract of RegCenter.
 

@@ -5,6 +5,26 @@
  * All Rights Reserved.
  * */
 
+// This section shows and tests how to distribute profits of the DAO, and how to 
+// check ETH balance and pickup the same from the deposit account in General
+// Keeper. 
+
+// The scenario for testing in this section are as follows:
+// 1. User_1 proposes a Motion to the General Meeting of Members (the "GMM") to 
+//    distribute 5% of the total ETH of the DAO to Members as per the distribution
+//    powers thereof;
+// 2. Upon approval of the GMM, User_1 as the executor of the Motion, executes
+//    the Motion to distribute the predefined amount of ETH to Members;
+// 3. User_1 to User_6 as Members and Sellers of listed shares, query the balance
+//    ETH in their deposit account and pickup the same from the General Keeper.
+
+// The Write APIs tested in this section include:
+// 1. General Keper
+// 1.2 function proposeToDistributeProfits(uint amt, uint expireDate, uint seqOfVR,
+//     uint executor) external;
+// 1.3 function distributeProfits(uint amt, uint expireDate, uint seqOfMotion) external; 
+// 1.4 function pickupDeposit() external;
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 

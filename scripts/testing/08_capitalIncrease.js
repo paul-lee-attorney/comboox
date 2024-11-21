@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section shows how to draft, propose and close a Capital Increase deal
+// This section shows and tests how to draft, propose and close a Capital Increase deal
 // by an Investment Agreement. Afther approval of the General Meeting, only 
 // the controlling Member may confirm all conditions precedents are satisfied, 
 // so as to enable the Deal being able to closed. Upon closing, a new share will 
@@ -199,22 +199,22 @@ async function main() {
     // ---- Sign IA ----
 
     await expect(gk.connect(signers[3]).signIA(ia.address, Bytes32Zero)).to.be.revertedWith("ROAK.md.OPO: NOT Party");
-    console.log("Parssed Access Control Test for gk.signIA(). \n ");
+    console.log(" \u2714 Passed Access Control Test for gk.signIA(). \n ");
 
     tx = await gk.signIA(ia.address, Bytes32Zero);
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.signIA().");
     expect(await ia.isSigner(1)).to.equal(true);
-    console.log("Parssed Result Verify Test for gk.signIA(). by User_1 \n ");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_1 \n ");
 
     const doc = BigInt(ia.address);
 
     await expect(gk.proposeDocOfGM(doc, 1, 1)).to.be.revertedWith("GMMK: not established");
-    console.log("Parssed Procedure Control Test for gk.proposeDocOfGM(). \n ");
+    console.log(" \u2714 Passed Procedure Control Test for gk.proposeDocOfGM(). \n ");
 
     tx = await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.signIA().");
     expect(await ia.isSigner(5)).to.equal(true);
-    console.log("Parssed Result Verify Test for gk.signIA(). by User_5 \n ");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_5 \n ");
 
     expect(await ia.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");

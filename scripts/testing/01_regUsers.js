@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section is to test the functions for registering new
+// This section shows and tests the functions for registering new
 // users in ComBoox. Each new user may obtain a sum of awards
 // for its registration, rate of which is defined in Platform 
 // Rule. And, the Platform Rule can only be set and revised by

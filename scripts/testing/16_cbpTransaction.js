@@ -5,6 +5,56 @@
  * All Rights Reserved.
  * */
 
+// This section shows and tests how does the ComBoox DAO LLC (the "DAO") mint, supply the 
+// CBP to the market, and how to collect ETH income incurred back to the General Keeper.
+
+// In exchange of the initial capital, the Founding Member invested the ownerhip to the
+// platform of ComBoox to the DAO as his capital contribution. Thereafter, the DAO may
+// mint CBP as per the General Meeting's resolution, and, may transfer the CBP to the 
+// smart contract of Fuel Tank to sell to the market. Thereafter, the DAO may collect
+// ETH income back from the Fuel Tank to General Keeper. 
+
+// Users of ComBoox need to pay CBP as royalty when calling the relevant write API of
+// smart contracts cloned from the Template of the ComBoox. Thus, they need to puchase 
+// CBP from Fuel Tank as per the exchang rate predefined therein. This process is called
+// as "refuel".
+
+// The scenario for testing in this section are as follows:
+// 1. User_1 creates Motion to Mint 88 CBP to the address of General Keeper, which 
+//    representing the legal person of the DAO;
+// 2. After obtained the voting approval from the General Meeting of Members (the "GMM"),
+//    User_1 as the executor of the Motion, triggers the API to execute the Action to
+//    Mint 88 CBP to General Keeper;
+// 3. User_1 further proposes a Motion to transfer 88 CBP to the Fuel Tank with the GMM;
+// 4. User_1 as the executor of the Motion, triggers the API to transfer the 88 CBP
+//    to Fuel Tank;
+// 5. User_3 refuel CBP from the Fuel Tank by paying equivalent amount of ETH;
+// 6. User_1 creates and proposes a Motion to the GMM to pickup ETH income back from 
+//    the Fuel Tank;
+// 7. After obtainning the voting approval from the GMM, User_1 executes the Motion 
+//    to pickup the ETH back from Fuel Tank to General Keeper;
+// 8. User_1 creates, proposes and executes Motion to withdraw CBP back from Fuel Tank.
+
+// The Write APIs tested in this section include:
+// 1. General Keper
+// 1.1 function createActionOfGM(uint seqOfVR, address[] memory targets, uint256[] memory values, 
+//     bytes[] memory params, bytes32 desHash, uint executor) external;
+// 1.2 function execActionOfGM(uint seqOfVR, address[] memory targets, uint256[] memory values,
+//     bytes[] memory params, bytes32 desHash, uint256 seqOfMotion) external;
+// 1.3 function proposeToTransferFund(bool toBMM, address to, bool isCBP, uint amt,
+//     uint expireDate, uint seqOfVR, uint executor) external;
+// 1.4 function transferFund(bool fromBMM, address to, bool isCBP, uint amt, uint expireDate,
+//     uint seqOfMotion) external;
+
+// 2. Registration Center
+// 2.1 function mint(address to, uint amt) external;
+// 2.2 function transfer(address to, uint256 amount) public;
+
+// 3. Fuel Tank
+// 3.1 function refuel() external payable;
+// 3.2 function withdrawIncome(uint amt) external;
+// 3.3 function withdrawFuel(uint amt) external;
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 

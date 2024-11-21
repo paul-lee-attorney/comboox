@@ -5,17 +5,7 @@
  * All Rights Reserved.
  * */
 
-const { expect } = require("chai");
-const { BigNumber } = require("ethers");
-const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
-const { readContract } = require("../readTool"); 
-const { increaseTime, Bytes32Zero, now, } = require("./utils");
-const { codifyHeadOfDeal, parseDeal } = require("./roa");
-const { getLatestShare } = require("./ros");
-const { royaltyTest } = require("./rc");
-const { getLatestSeqOfMotion } = require("./gmm");
-
-// This section shows how to draft, propose and close an External
+// This section shows and tests how to draft, propose and close an External
 // Share Transfer deal by means of Investment Agreement. Seller shall 
 // create a Draft of Invesment Agreement (the "Draft") first, and then,
 // appoint an attorney to set up the deal, signing deadline and parties of
@@ -67,6 +57,16 @@ const { getLatestSeqOfMotion } = require("./gmm");
 // 4. Sig Page
 // 4.1 function setTiming(bool initPage, uint signingDays, uint closingDays) external;
 // 4.2 function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)external;
+
+const { expect } = require("chai");
+const { BigNumber } = require("ethers");
+const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
+const { readContract } = require("../readTool"); 
+const { increaseTime, Bytes32Zero, now, } = require("./utils");
+const { codifyHeadOfDeal, parseDeal } = require("./roa");
+const { getLatestShare } = require("./ros");
+const { royaltyTest } = require("./rc");
+const { getLatestSeqOfMotion } = require("./gmm");
 
 async function main() {
 
@@ -174,13 +174,13 @@ async function main() {
     // ---- Sign IA ----
 
     await expect(gk.connect(signers[3]).signIA(ia.address, Bytes32Zero)).to.be.revertedWith("ROAK.md.OPO: NOT Party");
-    console.log("Parssed Access Control Test for gk.signIA(). \n ");
+    console.log(" \u2714 Passed Access Control Test for gk.signIA(). \n ");
 
     tx = await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
 
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.signIA().");
     expect(await ia.isSigner(5)).to.equal(true);
-    console.log("Parssed Result Verify Test for gk.signIA(). by User_5 \n ");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_5 \n ");
 
     await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(BigNumber.from(6), BigNumber.from(10000 * 10 ** 4));
     console.log(" \u2714 Passed Evet Test for ros.DecreaseCleanPaid(). \n");
@@ -188,13 +188,13 @@ async function main() {
     const doc = BigInt(ia.address);
 
     await expect(gk.connect(signers[5]).proposeDocOfGM(doc, 1, 1)).to.be.revertedWith("GMMK: not established");
-    console.log("Parssed Procedure Control Test for gk.proposeDocOfGM(). \n ");
+    console.log(" \u2714 Passed Procedure Control Test for gk.proposeDocOfGM(). \n ");
 
     tx = await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
 
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 36n, "gk.signIA().");
     expect(await ia.isSigner(6)).to.equal(true);
-    console.log("Parssed Result Verify Test for gk.signIA(). by User_6 \n ");
+    console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_6 \n ");
 
     expect(await ia.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");

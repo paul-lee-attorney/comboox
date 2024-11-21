@@ -5,6 +5,60 @@
  * All Rights Reserved.
  * */
 
+// This section shows and tests how to execute Drag Along and Tag Along rights 
+// sepecified in SHA.
+
+// Drag-along rights are a contractual provision in a shareholder agreement that allows 
+// majority shareholders to require minority shareholders to participate in the sale of 
+// the company under the same terms and conditions. The purpose of drag-along rights is
+// to facilitate the smooth execution of a sale or merger of the company by ensuring 
+// that potential buyers can acquire 100% ownership without being impeded by minority 
+// shareholders. When exercised, these rights obligate minority shareholders to sell 
+// their shares, provided that the transaction meets certain pre-defined conditions, 
+// such as approval by a specified majority of shareholders or compliance with 
+// valuation thresholds. Drag-along rights protect majority shareholders by preventing 
+// minority shareholders from blocking a sale, while ensuring that all shareholders 
+// receive equitable treatment in the transaction.
+
+// Tag-along rights are a contractual provision in a shareholder agreement that 
+// protects minority shareholders by allowing them to participate in a sale of shares
+// initiated by majority shareholders. When majority shareholders decide to sell their
+// shares to a third party, tag-along rights give minority shareholders the option to 
+// sell their shares on the same terms and conditions as those offered to the majority.
+// This ensures that minority shareholders can benefit from a liquidity event and avoid
+// being left behind in a company with new ownership dynamics. Tag-along rights are 
+// designed to promote fairness by enabling minority shareholders to “tag along” in 
+// transactions, preserving their financial interests and providing them with equal 
+// opportunities in exit events.
+
+// The scenario for testing in this section are as follows:
+// 1. User_1 creates a Draft of Investment Agreement (the "Draft IA"), with a 
+//    External Transfer deal that transfer $95,000 No.1 Share to User_5 at the price
+//    of $2.80 per share;
+// 2. After User_1 and User_5 signed the Draft, User_3 executes "Tag-Along" right to
+//    sell his No.3 Share amount to $20,000; and, User_1 executes "Drag-Along" right
+//    against No.4 Share held by User_4 amount to $9,000.  
+// 3. Upon Acceptance by User_5 with the Tag/Drag Along rights, new deals are added
+//    into the Draft IA that: No.3 Share amount to $20,000 and No.4 Share amount to
+//    $9,000 will be sold at the same term with No.1 share;
+// 4. After closing of the Tag/Drag Along shares, User_5 may further close the External
+//    Transfer deal for No.1 Share.
+// 5. Some important points are deserved attention that:
+//    (1) only if User_5 accepts the Tag/Drag Along claims that the Draft IA may be 
+//        proposed to the General Meeting of Members for voting; and
+//    (2) only if the Tag/Drag Along deals are closed that the original External 
+//        Transfer deal may be closed thereafter.
+
+// The Write APIs tested in this section include:
+// 1. General Keper
+// 1.1 function execTagAlong(address ia, uint256 seqOfDeal, uint256 seqOfShare,
+//     uint paid, uint par, bytes32 sigHash) external;
+// 1.2 function execDragAlong(address ia, uint256 seqOfDeal, uint256 seqOfShare,
+//     uint paid, uint par, bytes32 sigHash) external;
+// 1.3 function acceptAlongDeal(address ia, uint256 seqOfDeal, bytes32 sigHash
+//      ) external;
+// 1.4 function payOffApprovedDeal(address ia, uint seqOfDeal) external payable;
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
@@ -29,7 +83,6 @@ async function main() {
     const roa = await getROA();
     const gmm = await getGMM();
     const ros = await getROS();
-    const rom = await getROM();
     
     // ==== Create Investment Agreement ====
 
