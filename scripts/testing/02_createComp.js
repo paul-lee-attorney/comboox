@@ -5,37 +5,37 @@
  * All Rights Reserved.
  * */
 
-// First step to use ComBoox system is to set up a Company Boox.
-// This section displays how the owner of a company creates 
-// the entire booking system for their company in ComBoox. 
+// First step to use ComBoox system is to set up a Records-Keeping System for
+// the company. This section displays how the owner of a company creates the 
+// entire Records-Keeping System for its company in ComBoox. 
 
 // Scenarios for testing included in this section:
-// 1. User No.1 create the entire booking system in ComBoox with
-//    appointing User No.2 as "the secretary" of the company;
-// 2. User No.2 (as the secretary) sets the following general  
-//    information of the company: 
-//    (1) the maximum quantity of members; 
-//    (2) the symbol of the company; and
-//    (3) the full name of the company.
-// 3. User No.2 (as the secretary) set up the initial status
-//    of the "Register of Shares" ("ROS") of the company.
-//    (1) Share_1: shareholder: User_1, paid: 100k, par: 100k;
-//    (2) Share_2: shareholder: User_2, paid: 80k, par: 80k;
-//    (3) Share_3: shareholder: User_3, paid: 40k, par: 40k;
-//    (4) Share_4: shareholder: User_4, paid: 10k, par: 20k;
-// 4. User No.2 (as the secretary) turn over the Direct Keeper 
-//    rights to ROS and "Register of Members" ("ROM") back to 
-//    ROMKeeper. 
-// 5. User No.2 (as the secretary) lock paid-in capital amount to 
-//    5000 on Share_4 with hashLock.
-// 6. User No.4 unlock the hash lock with right string key,
-//    so that obtained the paid-in capital.
-// 7. User No.2 (as the secretary) lock paid-in capital amount to
-//    5000 on Share_4 with hashLock again.
-// 8. After the pay in deadline, User No.2 withdraw the locked 
-//    paid-in amount back from hash lock.
-// 9. User No.4 pay in ETH directly to exchange paid-in capital 
-//    of Share_4 amount to 5000. 
+// (1) User_1 creates the entire Records-Keeping System in ComBoox with 
+//     appointing User_2 as "the secretary" of the company;
+// (2) User_2 (as the secretary) sets the following general information of the
+//     company: 
+//       A.the maximum quantity of members: 50; 
+//       B.the symbol of the company: “COMBOOX”; and
+//       C.the full name of the company: “ComBoox DAO LLC”.
+// (3) User_2 (as the secretary) sets up the initial status of the "Register of
+//     Shares" (the "ROS") of the company.
+//       A. Share_1: shareholder: User_1, paid: 100k, par: 100k;
+//       B. Share_2: shareholder: User_2, paid: 80k, par: 80k;
+//       C. Share_3: shareholder: User_3, paid: 40k, par: 40k;
+//       D. Share_4: shareholder: User_4, paid: 10k, par: 20k;
+// (4) User_2 (as the secretary) turns over the Direct Keeper rights of ROS and
+//     the "Register of Members" (the "ROM") back to ROMKeeper. 
+// (5) User_2 (as the secretary) locks paid-in capital amount to $5,000 on 
+//     Share_4 with hash lock.
+// (6) User_4 unlock the hash locks with the correct string key, which indicates
+//     it has already paid consideration in exchange of the key, so that obtained
+//     the paid-in capital.
+// (7) User_2 (as the secretary) locks paid-in capital amount to $5,000 again on
+//     Share_4 with hash lock.
+// (8) After the expiration of the pay in deadline, User_2 withdraws the locked 
+//     amount back from the hash lock.
+// (9) User_4 pays in ETH directly to increase the paid-in capital of Share_4 by
+//     $5,000. 
 
 // Write APIs tested in this section:
 // 1. CreateNewComp

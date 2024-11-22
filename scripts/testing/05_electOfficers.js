@@ -5,29 +5,63 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests how to nominate candidate and cast vote for officers.
-// Usually, directors' board seat will be allocated among Members in SHA.
-// So, Members may nominate their candidates as per the SHA. In case any
-// special position are defined as "nominated by Chairman", such position
-// can only be nominated after the "Chairman" was elected by the General 
-// Meeting of Members. Thereafter, the Chairman may further nominate 
-// candidate accordingly. All officers will be elected as per the Position
-// Rules of SHA. Some can be elected by voting of GMM, while, others
-// may be elected by the Board. 
+// This section shows and tests how to nominate and elect directors and officers.
 
-// The scenario for testing include in this section:
-// 1. User_1 nominates himself as the candidate for Chaireman as per SHA;
-// 2. All Members cast "agree" vote for the Chairman nomination;
-// 3. User_1 count the voting result and take the seat of Chairman;
-// 4. User_1 (as the Chairman) nominates User_2 as the candidate of CEO;
-// 5. User_1 (as the only Director on Board) proposes and cast "agree" vote
-//    for the CEO nomination motion;
-// 6. User_1 count the voting result and User_2 take the position of CEO;
-// 7. User_2 as CEO nominates User_3 as the candidate of Manager;
-// 8. User_1 as the only Director propose the nomination motion for Manager, 
-//    and cast "agree" vote for it.
-// 9. User_1 count the voting result of Board Meeting;
-// 10. User_3 take the position of Manager.
+// Nomination rights for the positions of Directors and Officers are allocated
+// among the Members in accordance with the Position Rules in the Shareholders'
+// Agreement, which also stipulates the Voting Rules for the approval of the
+// relevant nominated candidates.
+
+// In the SHA activated in the section 4, the Position Rules are set out as
+// follows:
+
+// ________________________________________________________________
+// |     SN of Rule       |	    256     |     257 	 |     258    |
+// |    SN of Position    |	     1      |	     2     |      3     |
+// |   Title of Position  |  Chairman   |	    CEO    |   Manager  |
+// |     Nominator        |	    1       |	     0     |      0     |
+// |  Title of Nominator  | Shareholder |  Chairman  |     CEO    |
+// |   SN of Voting Rule  |	    9	      |     11	   |     11     |
+// | End Date of Position |	2026-12-31	| 2026-12-31 | 2026-12-31 |
+// ----------------------------------------------------------------
+
+// The above Position Rules mean that:
+// (1) Chairman shall be nominated by User_1 as Member and approved by the GMM
+//     pursuant to the Voting Rule No. 9 (Simple Majority);
+// (2) CEO shall be nominated by Chairman and approved by the Board pursuant to
+//     the Voting Rule No. 11 (Simple Majority);
+// (3) Manager shall be nominated by CEO and approved by the Board pursuant to 
+//     the Voting Rule No. 11 too.
+
+// The scenario for testing included in this section is as follows:
+// (1) User_1 nominates himself as the candidate for Chairman as per the SHA;
+// (2) All Members vote "for" the motion of Chairman nomination;
+// (3) User_1 counts the voting result and takes the seat of Chairman;
+
+// (4) User_1 creates and proposes the motion to remove itself from the Chairman 
+//     position;
+// (5) All Members vote “for” the motion to remove Chairman;
+// (6) User_1 counts the voting result and remove itself from the position of 
+//     Chairman;
+// (7) User_1 creates and proposes motion itself as Chairman;
+// (8) All Members vote “for” the motion to nomination of Chairman;
+// (9) User_1 counts the voting result and take the seat of Chairman;
+// (10) User_1 (as the Chairman) nominates User_2 as the candidate for CEO;
+// (11) User_1 (as the only Director on Board) proposes and votes "for" the motion
+//      of CEO nomination;
+// (12) User_1 counts the voting result;
+// (13) User_2 takes the position of CEO;
+// (14) User_2 (as CEO) nominates User_3 as the candidate for Manager;
+// (15) User_1 (as the only Director) proposes and votes “for” the motion of 
+//      Manager nomination;
+// (16) User_1 counts the voting result of the Board Meeting;
+// (17) User_3 takes the position of Manager.
+// (18) User_3 quits from the position of Manager;
+// (19) User_2 nominates User_3 as candidate for Manager;
+// (20) User_1 proposes and votes “for” the nomination;
+// (21) User_1 counts the vote result;
+// (22) User_3 take the position of Manager.
+
 
 // Write APIs tested in this section:
 // 1. GeneralKeeper
@@ -71,7 +105,7 @@ async function main() {
     
     // ==== Chairman ====
 
-    // ---- Nominate ----
+    // ---- Nominate Chairman ----
 
     await expect(gk.connect(signers[1]).nominateDirector(1, 1)).to.be.revertedWith("GMMK: has no right");
     console.log(" \u2714 Passed Access Control Test for gk.nominateDirector(). \n");
@@ -96,7 +130,7 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for gk.nominateDirector(). \n");
 
-    // ---- Propose ----
+    // ---- Propose Nomination of Chairman ----
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
 
@@ -113,7 +147,7 @@ async function main() {
     expect(await gmm.isProposed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify for gk.ProposeMotionToGeneralMeeting() \n");
 
-    // ---- Cast Vote ----
+    // ---- Cast Vote for Chairman ----
 
     await expect(gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero)).to.be.revertedWith("Checkpoints: block not yet mined");
     console.log(" \u2714 Passed Procedure Test for gk.castVoteOfGM(). \n");
@@ -141,7 +175,7 @@ async function main() {
 
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    // ---- Vote Counting ----    
+    // ---- Vote Counting for Chairman ----    
 
     tx = await gk.voteCountingOfGM(seqOfMotion);
 
@@ -153,7 +187,7 @@ async function main() {
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.voteCountingOfGM(). \n");
 
-    // ---- Take Position ----
+    // ---- Chairman Take Position ----
 
     await expect(gk.connect(signers[1]).takeSeat(seqOfMotion, 1)).to.be.revertedWith("MR.ER: not executor");
     console.log(" \u2714 Passed Access Control Test for gk.takeSeat(). \n");
@@ -197,7 +231,7 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for gk.createMotionToRemoveDirector(). \n");
 
-    // ---- Propose, Vote and Exec Motion ----
+    // ---- Propose, Vote and Exec Motion to Remove Chairman ----
 
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
@@ -306,6 +340,8 @@ async function main() {
 
     expect(await bmm.isVoted(seqOfMotion, 1)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVote(). \n");
+
+    // ---- Take Position ----
 
     tx = await gk.voteCounting(seqOfMotion);
 

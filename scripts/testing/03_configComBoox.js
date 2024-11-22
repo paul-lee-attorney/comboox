@@ -5,50 +5,44 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests the IPR and Ownership control
-// functions of the Platform. Or, more specificly, the 
-// functions of the smart contract of RegCenter.
+// This section shows and tests the IPR and Ownership control functions of the 
+// Platform. Or, more specific, the functions of the smart contract of RegCenter.
 
 // Owner of the Platform has the rights to:
-// (1) set Platform Rule to regulate the award policies
-//     and commission splitting rate;
+// (1) set Platform Rule to regulate the award policies and commission splitting 
+//     rate;
 // (2) collect commission incurred by IPR royalties;
 // (3) mint CBP to any party;
 // (4) transfer the ownerhip title to others.
 
 // Keeper of the Platform has the rights to:
-// (1) incorporate a smart contract as Template, so that 
-//     the author of which may collect royalties when 
-//     users calls the smart contracts cloned therefrom;
-// (2) transfer the Keeper title to others;
+// (1) incorporate a smart contract as Template, so that the author of which may 
+//     collect royalties when users calls the smart contracts cloned therefrom; 
+// (2) transfer the Keeper’s title to others.
 
 // Author of the Template may:
-// (1) automatically collect CBP as royalites for the 
-//     Template they developed;
-// (2) set the Royalty Rule for all its works to regulate 
-//     the promotion policies concerned;
-// (3) transfer the IPR of certain Template to others;
+// (1) automatically collect CBP as royalties for the Template they developed;
+// (2) set the Royalty Rule for all its Templates to regulate the promotion 
+//     policies concerned; and
+// (3) transfer the IPR of its Template to others;
 
 // Scenarios for testing included in this section:
-// 1. User No.1 (as owner of the Platform) transfer 
-//    the ownership to the Company (User No.8), so that
-//    the Company may mint and supply CBP to the users
-//    of the Platform;
-// 2. User No.1 (as owner of the smart contract of 
-//    Fuel Tnak) transfer the ownership to Fuel Tank
-//    to the Company, so that, the Company may sell
-//    CBP via Fuel Tank and collect ETH income therefrom;
-// 3. User No.1 (as author of all Templates) transfer 
-//    the IPRs concerned to the Company, so that
-//    the Company will collect all royalties in CBP when
-//    users call the relevant API of the smart contracts
-//    cloned from the Templates.
+// (1) User_1 (as owner of the Platform) transfers the ownership to the DAO 
+//     (User_8), so that the DAO may mint and supply CBP to the users of the 
+//     Platform;
+// (2) User_1 (as owner of the smart contract of Fuel Tank) transfers the 
+//     ownership of Fuel Tank to the DAO, so that, the DAO may sell CBP via Fuel 
+//     Tank and collect ETH income therefrom;
+// (3) User_1 (as author of all Templates) transfers the IPRs concerned to the 
+//     DAO, so that the DAO may collect royalties incurred therefrom.
 
 // Write APIs tested in this section:
+
 // 1. RegCenter
 // 1.1 function transferOwnership(address newOwner) external;
 // 1.2 function transferIPR(uint typeOfDoc, uint version, 
 //     uint transferee) external;
+
 // 2. Ownable
 // 2.1 function setNewOwner(address acct) onlyOwner public;
 
@@ -70,10 +64,6 @@ async function main() {
     const gk = await getGK();
 
     // ==== Transfer Ownership of Platform to Company ====
-
-    // User_2 is not the owner of RegCenter, thus,
-    // below call will be blocked and reverted with
-    // error message.
     
     await expect(rc.connect(signers[1]).transferOwnership(gk.address)).to.be.revertedWith("UR.mf.OO: not owner");
     console.log(" \u2714 Passed Access Control Test for rc.transferOwnership(). \n");

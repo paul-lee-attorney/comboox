@@ -5,27 +5,27 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests how to create and initiate Shareholders Agreement ("SHA")
-// for the company registered in ComBoox. As the consitutional document, SHA
-// regulate almost all important governance matters for a company. 
-// We defined the governance rules of a SHA as rules and terms. Rules define
-// the simple matters and Terms define complicated matters. Please see White
-// Paper of ComBoox for detailed explanation.
+// This section shows and tests how to create and initiate the Shareholders
+// Agreement (the "SHA") for the company registered in ComBoox. As the
+// constitutional document, SHA regulates almost all important governance 
+// matters for a company. 
+
+// We defined the governance rules of a SHA as Rules and Terms. Rules define
+// the simple matters and Terms define the complicated matters. Please see 
+// the White Paper of ComBoox for detailed explanation.
 
 // The scenario for testing included in this section:
-// 1. User_1 create the Draft of SHA;
-// 2. User_1 (as owner of the Draft SHA) appoint himself as General Counsel
-//    to the Draft, so that it will have role of "Attorney" to the Draft;
-// 3. User_1 (as Attorney to the Draft) create and set all Rules and Terms;
-// 4. User_1 (as Attorney) set signing days and closing days of the Draft;
-// 5. User_1 (as Attorney) set parties to the Draft SHA;
-// 6. User_1 (as Owner to the Draft) circulate the Draft to Members;
-// 7. Members of the Company sign the Draft;
-// 8. After all Members signed the Draft, User_1 as Member and Party to the
-//    Draft enactivate the Draft. After the enactivation, as the first Draft SHA,
-//    it will go into forces. (For later versions of SHA, they have to be proposed
-//    to the General Meeting of Members for voting. After approved by voting,
-//    the Draft can only be enactivated.)
+// (1) User_1 creates the Draft of SHA (the “Draft”);
+// (2) User_1 (as Owner of the Draft) appoints itself as the General Counsel 
+//     to the Draft, so that it may have the role of "Attorney" to the Draft;
+// (3) User_1 (as Attorney to the Draft) creates and sets all Rules and Terms;
+// (4) User_1 (as Attorney) sets signing days and closing days of the Draft;
+// (5) User_1 (as Attorney) sets parties to the Draft;
+// (6) User_1 (as Owner to the Draft) circulates the Draft to Members;
+// (7) Members of the DAO sign the Draft;
+// (8) After all Members signed the Draft, User_1 (as Member and Party thereof)
+//     activates the Draft. After the activation, the Draft goes into forces as
+//     governing SHA to the DAO. 
 
 // Write APIs tested in this section:
 // 1. GeneralKeeper
@@ -85,8 +85,7 @@ const { royaltyTest } = require("./rc");
 
 async function main() {
 
-    console.log('\n');
-    console.log('********************************');
+    console.log('\n********************************');
     console.log('**    04. Create SHA          **');
     console.log('********************************\n');
 
@@ -100,10 +99,6 @@ async function main() {
     const rod = await getROD();
 
     // ==== Create SHA ====
-
-    // User No.5 is not Member of the Company, thus, below calling
-    // will be blocked with a reverted error message. This means
-    // only Member of the Company may call GK to create a Draft SHA.
 
     await expect(gk.connect(signers[5]).createSHA(1) ).to.be.revertedWith("not MEMBER");
     console.log(" \u2714 Passed Access Control Test of rocKeeper.createSHA() for OnlyMember. \n");
@@ -125,9 +120,6 @@ async function main() {
 
     const ATTORNEYS = ethers.utils.formatBytes32String("Attorneys");
 
-    // User_2 is not the owner (creator) of Draft SHA, therefore, below
-    // calling shall be blocked and reverted with error message.
-
     await expect(sha.connect(signers[1]).setRoleAdmin(ATTORNEYS, signers[0].address)).to.be.revertedWith("O.onlyOwner: NOT");
     console.log(" \u2714 Passed Access Control Test for sha.setRoleAdmin(). \n");
     
@@ -147,18 +139,10 @@ async function main() {
 
     const estDate = (new Date('2023-11-08')).getTime()/1000;
 
-    // We use the default Rules to facilitate Users to create their 
-    // SHA. So, hereunder retrieve the default Governance Rule from 
-    // the Draft. Please see White Paper for detailed explanation of 
-    // default rules and the parameters thereof.
-
     let gr = grParser(await sha.getRule(0));
 
     gr.establishedDate = estDate;
     gr.businessTermInYears = 99;
-
-    // User_2 does not have "Attorney" role, thus, below calling shall
-    // be blocked and reverted with error message.
 
     await expect(sha.connect(signers[1]).addRule(grCodifier(gr))).to.be.revertedWith("AC.onlyAttorney: NOT");
     console.log(" \u2714 Passed Access Control Test for sha.addRule().OnlyAttorney(). \n");
