@@ -5,19 +5,23 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests how to entrust proxy to propose a motion to the General Meeting,
-// or, on the other hand, how to solicitate voting proxy for a motion. Once entrust a 
-// proxy, the principal can NOT cast vote for the Motion directly by itself.  It's the 
-// proxy that may cast vote on behalf of its principals.
+// This section shows and tests how to entrust proxy to propose a motion to the 
+// General Meeting of Members (the “GMM”), or, on the other hand, how to solicit 
+// voting proxy for proposing a motion. Once entrust a proxy, the principal can 
+// NOT cast vote for the Motion by itself. It's the proxy that may cast vote on 
+// behalf of its principals.
 
-// The scenario for testing include in this section:
-// 1. User_4 created a motion to mint certain number of CBP to the Company (GeneralKeeper);
-// 2. User_1 entrust User_4 as proxy so as to enable User_4 have enough voting weight to 
-//    propose and vote for the said Motion;
-// 3. User_4 votes "for" the Motion, while User_2 and User_3 vote "against" the Motion, thus
-//    the Motion is rejectd by the General Meeting;
-// 4. User_4 repropose another Motion with the same contents with the General Meeting;
-// 5. All Members support the Motion, therefore, the Motion is passed by the General Meeting.
+// The scenario for testing included in this section is:
+// (1) User_4 creates a motion to mint certain number of CBP to the Company
+//     (i.e. the General Keeper);
+// (2) User_1 entrusts User_4 as proxy so as to enable User_4 have enough voting
+//     weights to propose and vote for the said Motion;
+// (3) User_4 votes "for" the Motion, while User_2 and User_3 vote "against" the
+//     Motion, thus, the Motion is rejectd by the General Meeting;
+// (4) User_4 proposes another Motion with the same contents with the GMM; 
+// (5) All Members vote “for” the Motion, therefore, the Motion is passed 
+//     accordingly.
+
 
 // The write APIs tested in this section:
 // 1. GeneralKeeper;
@@ -78,7 +82,6 @@ async function main() {
     await expect(gk.connect(signers[4]).proposeMotionToGeneralMeeting(seqOfMotion)).to.be.revertedWith("MR.PMTGM: has no proposalRight");
     console.log(" \u2714 Passed Access Control Test for gk.proposeMotionToGneralMeeting(). \n");
     
-    // User_1 entrust User_4 for propose and vote for seqOfMotion;
     tx = await gk.entrustDelegaterForGeneralMeeting(seqOfMotion, 4); 
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.entrustDelegaterForGeneralMeeting().");
@@ -86,8 +89,6 @@ async function main() {
     await expect(tx).to.emit(gmm, "EntrustDelegate").withArgs(seqOfMotion, BigNumber.from(4), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for gmm.EntrustDelegate(). \n");
     
-    // User_4 propose the motion with voting weight entrusted by User_1, so, 
-    // this time, the propose action shall be successful.;
     await gk.connect(signers[4]).proposeMotionToGeneralMeeting(seqOfMotion);
 
     // ==== Vote For Motion (fail) ====
