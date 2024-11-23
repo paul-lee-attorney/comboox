@@ -12,22 +12,25 @@
 // behalf of its principals.
 
 // The scenario for testing included in this section is:
-// (1) User_4 creates a motion to mint certain number of CBP to the Company
-//     (i.e. the General Keeper);
-// (2) User_1 entrusts User_4 as proxy so as to enable User_4 have enough voting
-//     weights to propose and vote for the said Motion;
-// (3) User_4 votes "for" the Motion, while User_2 and User_3 vote "against" the
-//     Motion, thus, the Motion is rejectd by the General Meeting;
-// (4) User_4 proposes another Motion with the same contents with the GMM; 
-// (5) All Members vote “for” the Motion, therefore, the Motion is passed 
-//     accordingly.
-
+// (1) User_4 creates a motion to mint 88 CBP to the Company (i.e. the General 
+//     Keeper);
+// (2) User_4 is blocked to propose the Motion due to it’s voting power is less 
+//     than the threshold specified in the Governing Rule in SHA (10% shares);
+// (3) User_1 entrusts User_4 as proxy so as to enable User_4 have enough voting
+//     power to make the proposal;
+// (4) User_4 votes "for" the Motion, while User_2 and User_3 vote "against" the
+//     Motion, thus, the Motion is rejected by the GMM;
+// (5) User_4 proposes another Motion with the same contents with the GMM; 
+// (6) All Members vote “for” the Motion, therefore, the Motion is passed in the
+//     GMM for this time.
 
 // The write APIs tested in this section:
 // 1. GeneralKeeper;
-// 1.1 function createActionOfGM(uint seqOfVR, address[] memory targets, uint256[] memory values,
-//     bytes[] memory params, bytes32 desHash, uint executor) external;
-// 1.2 function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external;
+// 1.1 function createActionOfGM(uint seqOfVR, address[] memory targets, 
+//     uint256[] memory values, bytes[] memory params, bytes32 desHash, uint 
+//     executor) external;
+// 1.2 function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint 
+//     delegate) external;
 
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
