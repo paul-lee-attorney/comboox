@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests how to execute First Refusal right sepecified in SHA.
+// This section shows and tests how to execute First Refusal right specified in SHA.
 
 // First refusal rights are a contractual provision that grants the right holder
 // (typically an existing shareholder or investor) the priority to purchase equity

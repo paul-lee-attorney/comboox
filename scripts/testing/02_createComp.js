@@ -19,23 +19,28 @@
 //       C.the full name of the company: “ComBoox DAO LLC”.
 // (3) User_2 (as the secretary) sets up the initial status of the "Register of
 //     Shares" (the "ROS") of the company.
-//       A. Share_1: shareholder: User_1, paid: 100k, par: 100k;
-//       B. Share_2: shareholder: User_2, paid: 80k, par: 80k;
-//       C. Share_3: shareholder: User_3, paid: 40k, par: 40k;
-//       D. Share_4: shareholder: User_4, paid: 10k, par: 20k;
-// (4) User_2 (as the secretary) turns over the Direct Keeper rights of ROS and
+//    ________________________________________________ 
+//    |  Share   | Shareholder | Paid Amt |  Par Amt |
+//    | Share_1  |    User_1   | $100,000 | $100,000 |
+//    | Share_2  |    User_2   | $80,000  | $80,000  |
+//    | Share_3  |    User_3   | $40,000  | $40,000  |
+//    | Share_4  |    User_4   | $10,000  | $20,000  |
+//    ------------------------------------------------
+// (4) User_2 (as the secretary) wrongly issues a new Share_5, and removes the 
+//     same off the ROS shortly.
+// (5) User_2 (as the secretary) turns over the Direct Keeper rights of ROS and
 //     the "Register of Members" (the "ROM") back to ROMKeeper. 
-// (5) User_2 (as the secretary) locks paid-in capital amount to $5,000 on 
+// (6) User_2 (as the secretary) locks paid-in capital amount to $5,000 on 
 //     Share_4 with hash lock.
-// (6) User_4 unlock the hash locks with the correct string key, which indicates
+// (7) User_4 unlock the hash locks with the correct string key, which indicates
 //     it has already paid consideration in exchange of the key, so that obtained
 //     the paid-in capital.
-// (7) User_2 (as the secretary) locks paid-in capital amount to $5,000 again on
+// (8) User_2 (as the secretary) locks paid-in capital amount to $5,000 again on
 //     Share_4 with hash lock.
-// (8) After the expiration of the pay in deadline, User_2 withdraws the locked 
+// (9) After the expiration of the pay in deadline, User_2 withdraws the locked 
 //     amount back from the hash lock.
-// (9) User_4 pays in ETH directly to increase the paid-in capital of Share_4 by
-//     $5,000. 
+// (10) User_4 pays in ETH directly to increase the paid-in capital of Share_4 by
+//      $5,000. 
 
 // Write APIs tested in this section:
 // 1. CreateNewComp

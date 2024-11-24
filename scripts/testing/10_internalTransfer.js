@@ -6,33 +6,38 @@
  * */
 
 // This section shows and tests how to draft, propose and close an Internal
-// Share Transfer deal by means of Investment Agreement. Seller shall 
-// create a Draft of Invesment Agreement (the "Draft") first, and then,
-// appoint an attorney to set up the deal, signing deadline and parties of
-// the agreement.  Thereafter, the Seller shall circulate the draft to the Buyer
-// concerned, and afther all parties signed, the sales deal in the Draft 
-// will be established in leagal sense, and the target shall will be locked for
-// for the subject amount. Thereafter, the Seller shall propose the Investment 
-// Agreement to the General Meeting of Members for approval.  
-// After approval, Buyer and Seller may close the deal on-chain or off-chain.
-// A new shall will be issued to the Buyer, and the transferred amount will be 
-// deduced from the target share concerned. In case there is no balance amount
-// left in the target Share, it will be deregistered from the Register of Shares 
-// ("ROS") accordingly.
+// Share Transfer Deal by means of Investment Agreement. Seller shall create a
+// Draft of Investment Agreement (the "Draft") first, and then, appoint an 
+// attorney to set out the terms of the Deal, signing deadline and parties of 
+// the Investment Agreement (the “IA”).  
 
-// The scenario for testing in this section are as follows:
-// 1. User_1 creates an Investment Agreement (the "Draft") by cloning the Template of IA;
-// 2. User_1 appoints himself as its Attorney to the Draft;
-// 3. User_1 set up the Darft with respect to the deal, signing days, closing days and
-//    parties to the IA accordingly;
-// 4. User_6 as Seller and Member circulate the Draft to Buyer (User_3);
-// 5. User_6 and User_3 signed the Draft to make it "established" in law;
-// 6. User_6 propose the IA to the General Meeting of Members for voting;
-// 7. All other Members vote "for" the proposed IA;
-// 8. After counting the vote results, User_6 triggers the "payOffApprovedDeal" API
-//    to directly close the deal by paying ETH;
-// 9. User_6 is removed from the Register of Members, and Share_7 is deregistered from ROS;
-// 10. A new share No.8 is issued to Buyer (User_3).
+// Thereafter, the Seller shall circulate the draft to the Buyer concerned,
+// and after all parties signed, the sales deal in the Draft will be 
+// established in legal sense, and the Subject Share will be locked for the 
+// equivalent clean paid amount. Thereafter, the Seller shall propose the IA
+// to the General Meeting of Members (the “GMM”) for approval.  
+
+// After obtain the approval, Buyer and Seller may close the deal on-chain
+// or off-chain. A new share will be issued to the Buyer, and the transferred
+// amount will be deduced from the Subject Share concerned. In case there is
+// no balance amount left in the Subject Share, it will be de-registered from
+// the Register of Shares (the "ROS") accordingly.
+
+// The scenarios for testing in this section include:
+// (1) User_1 creates an Investment Agreement (the "Draft") by cloning the
+//     Template of IA;
+// (2) User_1 appoints himself as the Attorney to the Draft;
+// (3) User_1 sets out the Draft with respect to the deal, signing days,
+//     closing days and parties accordingly;
+// (4) User_6 as Seller and Member circulates the Draft to Buyer (User_3);
+// (5) User_6 and User_3 sign the Draft to make it "established" in law;
+// (6) User_6 proposes the IA to the GMM for voting;
+// (7) All other Members vote "for" the proposed IA;
+// (8) After counting the vote results, User_3 triggers the 
+//     "payOffApprovedDeal()" API to directly close the deal by paying ETH;
+// (9) User_6 is removed from the Register of Members, and Share_7 is
+//     deregistered from ROS;
+// (10) A new share No.8 is issued to Buyer (User_3).
 
 // The Write APIs tested in this section:
 // 1. General Keeper
@@ -40,9 +45,9 @@
 // 1.2 function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external;
 // 1.3 function signIA(address ia, bytes32 sigHash) external;
 // 1.4 function proposeDocOfGM(uint doc, uint seqOfVR, uint executor) external;
-// 1.6 function castVoteOfGM(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
-// 1.7 function voteCountingOfGM(uint256 seqOfMotion) external;
-// 1.8 function payOffApprovedDeal(address ia, uint seqOfDeal) external payable;
+// 1.5 function castVoteOfGM(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
+// 1.6 function voteCountingOfGM(uint256 seqOfMotion) external;
+// 1.7 function payOffApprovedDeal(address ia, uint seqOfDeal) external payable;
 
 // 2. Investment Agreement
 // 2.1 function addDeal(bytes32 sn, uint buyer, uint groupOfBuyer, uint paid,

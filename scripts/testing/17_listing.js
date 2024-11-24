@@ -5,39 +5,45 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests how to trade equity shares by listing on the List of Orders.
+// This section shows and tests how to trade equity shares by listing on the List
+// of Orders (the “LOO”).
 
-// Companies may set out their listing rules in SHA. Thereafter, the authorized officer may 
-// place initial offers on the List of Orders, and, Members of the class of shares concerned 
-// may place limited sell orders with intended sell price or market sell order. Accredited 
-// Investors approved by the authorized officers may place limited buy orders with specific 
-// bid price or market buy order. 
+// Companies may set out their listing rules in SHA. Thereafter, the authorized
+// officer may place initial offers on the List of Orders, and, Members of the class
+// of shares concerned may place limited sell orders with intended sell price or
+// market sell order. Accredited Investors approved by the authorized officers may
+// place limited buy orders with specific bid price or market buy order. 
 
-// The listing trades are made via ETH as cosideration. Buyers shall pay ETH together with 
-// placing buy orders. In case of closing, consideration ETH will be automatically saved 
-// into the deposit account of Seller, and balance amount of ETH will be refunded back to
-// the deposit account of Buyer. As for the listed Buy Order, the ETH paid will be stored
-// into the custody account of the Buyer, and which will be released to Seller in case of 
-// closing, or be refunded back to the Buyer in case of expiration.
+// Listed trades are settled via ETH as consideration. Buyers pay ETH together with
+// placing buy orders. In case of closing, the consideration ETH will be
+// automatically saved to the seller's deposit account, and the remaining amount of
+// ETH will be refunded to the buyer's deposit account. As for the listed buy order,
+// the paid ETH will be stored in the buyer's deposit account, and will be released
+// to the seller in case of closing, or refunded back to the buyer in case of
+// expiration.
 
-// Exchange rate between ETH and the booking currencies is retrieved from the reliable 
-// oracle provider of crypto maket prices like ChainLink. 
+// Exchange rate between ETH and the booking currencies is retrieved from the
+// reliable oracle provider of crypto market prices like ChainLink. 
 
 // The scenario for testing in this section are as follows:
-// 1. User_1 as Chairman of the DAO places and withdraws initial offers as per the listing rule;
-// 2. User_2 as an accredited Investor places and withdraws limited buy orders with the 
-//    List of Orders ("LOO"), thus, matching and closing certain initial offers. Upone closing, 
-//    ETH paid by User_2 will be saved in General Keeper as capital contribution income of 
-//    the DAO, and certain new Shares will be issued to User_2;
-// 3. Balance of the limited buy orders placed by User_2 will be listed on the List of Orders,
-//    and, the ETH paid will be stored in the custody account of User_2;
-// 4. User_3 as Member of the DAO, places and withdraw limited sell orders with the List
-//    of Orders. Thereafter, some of the sell orders will be matched with the listed buy
-//    orders placed by User_2.  Upon closing, the shares of the sell order will be transferred
-//    to User_2, and the ETH under custody will be released to User_3 as consideration, or
-//    be released to User_2 as refunded balance amount.
-// 5. User_2 places market buy order so as to purchase off listed offers from the LOO;
-// 6. User_3 places market sell order so as to match off listed bids from the LOO; 
+// (1) User_1 as Chairman of the DAO places and withdraws initial offers as per the
+//     listing rule;
+// (2) User_2 as an accredited Investor places and withdraws limited buy orders
+//     with the LOO, thus, matching and closing certain initial offers. Upon
+//     closing, ETH paid by User_2 will be saved in General Keeper as capital
+//     contribution income of the DAO, and certain new Shares will be issued to
+//     User_2;
+// (3) Balance of the limited buy orders placed by User_2 will be listed on the
+//     List of Orders, and, the ETH paid will be stored in the custody account
+//     of User_2;
+// (4) User_3 as Member of the DAO, places and withdraws limited sell orders with
+//     the List of Orders. Thereafter, some of the sell orders will be matched with
+//     the listed buy orders placed by User_2.  Upon closing, the shares of the
+//     sell order will be transferred to User_2, and the ETH under custody will be
+//     released to User_3 as consideration, or be released to User_2 as refunded
+//     balance amount.
+// (5) User_2 places market buy order so as to purchase off listed offers from the LOO;
+// (6) User_3 places market sell order so as to match off listed bids from the LOO; 
 
 // The Write APIs tested in this section include:
 // 1. General Keper

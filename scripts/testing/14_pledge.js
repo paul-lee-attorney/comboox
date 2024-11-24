@@ -5,43 +5,52 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests how to set up, sell, refund, release, and revoke Pledge attached on
-// equity shares.
+// This section shows and tests how to set up, sell, refund, release, and revoke
+// Pledge attached on equity shares.
 
-// Members may pledge their equity shares as collateral to secure debts owed to relevant creditors. 
-// Upon the establishment of a pledge, the clean (unencumbered) paid of the pledged shares will be 
-// reduced by the amount of the pledge. If the debtor fails to repay the debt on time, the creditor 
-// has the right to enforce the pledge by transferring the pledged shares to a designated party up to 
-// the pledged amount.
+// Members may pledge their equity shares as collateral to secure debts owed
+// to relevant creditors. Upon the establishment of a pledge, the clean
+// (unencumbered) paid of the pledged shares will be reduced by the amount of
+// the pledge. If the debtor fails to repay the debt on time, the creditor has
+// the right to enforce the pledge by transferring the pledged shares to a
+// designated party up to the pledged amount.
 
-// The pledge, along with its attached rights, may be transferred to a new creditor if the debt itself 
-// is assigned. Partial repayment of the debt allows for a proportional release of the pledged shares. 
-// The pledgor may fully repay the debt at any time to release the pledge entirely. Additionally, once 
-// the secured obligation period has expired, the pledgor may revoke the pledge, thereby restoring the 
-// full clean value of the pledged shares.
+// The pledge, along with its attached rights, may be transferred to a new
+// creditor if the debt itself is assigned. Partial repayment of the debt
+// allows for a proportional release of the pledged shares. The pledgor may
+// fully repay the debt at any time to release the pledge entirely.
+// Additionally, once the secured obligation period has expired, the pledgor
+// may revoke the pledge, thereby restoring the full clean value of the
+// pledged shares.
 
 // The scenario for testing in this section are as follows:
-// 1. User_3 creates a Pledge amount to $8,000 on its No.8 Share to secure a debt of $4,000 owed to
-//    User_6 as the creditor;
-// 2. User_6 transfer partial of the debt (amount to $2,000) to User_5 together with the attached 
-//    Pledge (amount to $4,000), thus, a new Pledge No.2 was created on the Share_3 favored to User_5;
-// 3. User_5 as the creditor of the debts and the No.2 Pledge on Share_3, admits a refund amount to 
-//    $1,000. As the consequence, the Pledge No.2 was lowered by its pledged amount down to $2,000.
-//    And the clean paid amount of Share_3 was increased by $2,000. 
-// 4. User_3 extended the guarantee period of Pledge No.1 on Share_3 for more 10 days;
-// 5. User_5 transfers partial of its debts (amount to $500) back to User_6, together with the 
-//    attached Pledge.  Therefore, a new Pledge No.3 was creaed on Share_3 amount to $1,000 in favor
-//    to User_6.
-// 6. User_5 set up a hash lock on Pledge No.2 on Share_3 so as to enable User_3 may refund off-chain
-//    the debt concerned.
-// 7. User_3 input the hash key to the above hash lock so that release the pledged amount locked by 
-//    Pledge No.2 on Share_3. This indicates that User_3 has refund the debt off-chain and obtained 
-//    the hash key from User_5. As consequences, the clean paid amount of Share_3 was recovered by
-//    $1,000, and the total clean paid amount of Share_3 was increased to $5,000.
-// 8. Upon maturity of the debt, User_6 execute the Plege No.1 to request transfer of Share_3 by the
-//    paid amount to himself.  Thus, Share_3 is transferred to User_6 by the amount of $4,000.
-// 9. After expiration of Pledge No.3, User_3 as pledgor revokes the Pledge so released $1,000 clean
-//    paid amount of Share_3. The total clean paid amount thereof is recovered to $6,000.
+// (1) User_3 creates a pledge amount to $8,000 (the “Pledge_1”) on its
+//     Share_8 to secure a debt amount to $4,000 owed to User_6 (the
+//     “Debt_1”), which we summarize as Pledge_1 ($8,000 Share_8 for $4,000
+//     owed to User_6) to describe the guarantee arrangement concerned.
+// (2) User_6 transfers partial of Debt_1 ($2,000) to User_5 together with
+//     the attached Pledge_1, thus, a new Pledge_2 ($4,000 Share_8 for
+//     $2,000 owed to User_5) was created;
+// (3) User_5 as the creditor of the Debt_2, confirms receiving a refund
+//     amount to $1,000. As the consequence, Pledge_2 is released by
+//     $2,000 pledged amount, and turns into Pledge_2 ($2,000 Share_8 for
+//     $1,000 owed to User5). 
+// (4) User_3 extends the guarantee period of Pledge_1 for more 10 days;
+// (5) User_5 transfers partial of its Debt_2 ($500) back to User_6,
+//     together with the attached Pledge_2. Therefore, a new Pledge_3
+//     ($1,000 Share_8 for $500 owed to User_6) was created accordingly.
+// (6) User_5 sets up a hash lock on Pledge_2 so as to enable User_3
+//     refund off-chain the Debt_2 concerned.
+// (7) User_3 inputs the hash key releasing the Pledge_2, which
+//     indicates that User_3 has refund the balance of Debt_2 off-chain
+//     and obtained the hash key from User_5. As consequences, the clean
+//     paid amount of Share_3 is recovered by $1,000 into $5,000.
+// (8) Upon maturity of the Debt_1, User_6 executes the Pledge_1 to
+//     request transferring the pledged amount of Share_3 to himself.
+//     Thus, $4,000 Share_3 is transferred to User_6.
+// (9) After expiration of Pledge_3, User_3 revokes the Pledge_3.
+//     Therefore, the total clean paid amount of Share_3 is recovered
+//     by $1,000 into $6,000.
 
 // The Write APIs tested in this section include:
 // 1. General Keper

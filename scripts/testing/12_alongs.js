@@ -6,7 +6,7 @@
  * */
 
 // This section shows and tests how to execute Drag Along and Tag Along rights 
-// sepecified in SHA.
+// specified in SHA.
 
 // Drag-along rights are a contractual provision in a shareholder agreement that allows 
 // majority shareholders to require minority shareholders to participate in the sale of 

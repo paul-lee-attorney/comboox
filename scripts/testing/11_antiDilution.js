@@ -5,35 +5,36 @@
  * All Rights Reserved.
  * */
 
-// This section shows and tests how to execute the Anti-Dilution rights set out in 
-// the SHA. Anti-dilution rights refer to a contractual mechanism designed to 
-// protect investors from the adverse effects of a subsequent issuance of equity at
-// a valuation lower than the original subscription price paid by the investor. 
-// These rights enable the investor (the rightholder) to maintain their economic 
-// position in the company by compensating for the dilution of their ownership 
-// and investment value.
+// This section shows and tests how to exercise the Anti-Dilution rights stipulated in SHA. 
 
-// In practice, anti-dilution provisions typically entitle the investor to request
-// the transfer of additional equity shares from the operating and controlling 
-// member of the company (the obligor) at no additional cost (zero consideration). 
-// This adjustment effectively reduces the investor’s average per-share investment 
-// cost, aligning it with the lower issuance price of the newly issued equity. 
-// Anti-dilution rights are triggered when the issuance price of new shares falls 
-// below a predefined threshold set forth in the original subscription agreement.
+// Anti-Dilution rights refer to a contractual mechanism designed to protect investors from 
+// the adverse effects of a subsequent issuance of equity at a valuation lower than the 
+// original subscription price paid by the investor. These rights enable the investor (the
+// right holder) to maintain their economic position in the company by compensating for the
+// dilution of their ownership and investment value.
+
+// In practice, Anti-Dilution provisions typically entitle the investor to request the
+// transfer of additional equity shares from the operating and controlling Member of the
+// company (the obligor) at no additional cost (zero consideration). 
+
+// This adjustment effectively reduces the investor’s average per-share investment cost,
+// aligning it with the lower issuance price of the newly issued equity. Anti-dilution
+// rights are triggered when the issuance price of new shares falls below a predefined
+// threshold set forth in the original subscription agreement.
 
 // The scenario for testing in this section are as follows:
-// 1. User_1 creates a Draft of Investment Agreement (the "Draft IA"), with a 
-//    Capital Increase deal that issue $10,000 equity shares to User_5 at the price
-//    of $1.20 per share;
-// 2. After User_1 circutes the Draft, User_3 and User_4 execute their "Anti-Dilution"
-//    rights as per the Shareholder Agreement (the "SHA"). The threshold price of 
-//    Class_2 shares is set out as $1.50 per share in the SHA;
-// 3. As consequnces of the execution of Anti-Dilution rights, new deals are added
-//    into the Draft IA that: $10,000 and $5,000 shares will be given for free to 
-//    User_3 and User_4 so as to lower their average investment cost down to $1.20
-//    per share;
-// 4. After closing of the Capital Increase deal, User_3 and User_4 take the 
-//    gift shares by calling the API of gk.takeGiftShares().
+// (1) User_1 creates a Draft of Investment Agreement (the "Draft IA"), with a Capital
+//     Increase deal that issue $10,000 equity shares to User_5 at the price of $1.20 per
+//     share;
+// (2) After User_1 circulates the Draft, User_3 and User_4 execute their "Anti-Dilution"
+//     rights as per the Shareholder Agreement (the "SHA"). The threshold price of Class_2
+//     shares is set out as $1.50 per share in the SHA;
+// (3) As consequences of the execution of Anti-Dilution rights, new deals are added into
+//     the Draft IA that: $10,000 and $5,000 shares will be given for free to User_3 and
+//     User_4 so as to lower their average investment cost down to $1.20 per share;
+// (4) After closing of the Capital Increase deal, User_3 and User_4 take the gift
+//     shares by calling the API of gk.takeGiftShares().
+
 
 // The Write APIs tested in this section include:
 // 1. General Keper
