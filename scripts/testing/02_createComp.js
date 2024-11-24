@@ -72,6 +72,29 @@
 // 7.3 function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 // 7.4 function payInCapital(uint seqOfShare, uint amt) external payable;
 
+// Events verified in this scetion:
+// 1. RegCenter
+// 1.1 event CreateDoc(bytes32 indexed snOfDoc, address indexed body);
+
+// 2. Access Control
+// 2.2 event SetDirectKeeper(address indexed keeper);
+
+// 3. Register of Shares
+// 3.1 event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par);
+// 3.2 event SetPayInAmt(bytes32 indexed headSn, bytes32 indexed hashLock);
+// 3.3 event DeregisterShare(uint256 indexed seqOfShare);
+// 3.4 event PayInCapital(uint256 indexed seqOfShare, uint indexed amount);
+// 3.5 event WithdrawPayInAmt(uint indexed seqOfShare, uint indexed amount);
+
+// 4. Register of Members
+// 4.1 event AddMember(uint256 indexed acct, uint indexed qtyOfMembers);
+// 4.2 event CapIncrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
+// 4.3 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
+// 4.4 event CapDecrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
+// 4.5 event RemoveShareFromMember(uint indexed seqOfShare, uint indexed acct);
+// 4.6 event ChangeAmtOfMember(uint indexed acct, uint indexed paid, 
+//     uint indexed par, bool increase);
+
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
 const { saveBooxAddr } = require("./saveTool");

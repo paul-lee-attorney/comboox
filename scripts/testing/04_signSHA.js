@@ -72,7 +72,15 @@
 //     uint paid, uint par) external
 // 8.2 function delOption(uint256 seqOfOpt) external returns(bool flag);
 // 8.3 function addObligorIntoOpt(uint256 seqOfOpt, uint256 obligor) external;
-// 8.4 function removeObligorFromOpt(uint256 seqOfOpt, uint256 obligor) external
+// 8.4 function removeObligorFromOpt(uint256 seqOfOpt, uint256 obligor) external;
+
+// Events verified in this section:
+// 1. Register of Constitution
+// 1.1 event UpdateStateOfFile(address indexed body, uint indexed state);
+
+// 2. Draft Control
+// 2.1 event SetRoleAdmin(bytes32 indexed role, address indexed acct);   
+// 2.2 event LockContents();
 
 const { expect } = require("chai");
 const { BigNumber, ethers } = require("ethers");
@@ -539,7 +547,10 @@ async function main() {
     await expect(gk.circulateSHA(sha.address, Bytes32Zero, Bytes32Zero)).to.be.revertedWith("BOHK.CSHA: SHA not finalized");
     console.log(" \u2714 Passed State Control Test for gk.circulateSHA(). \n");  
 
-    await sha.finalizeSHA();
+    tx = await sha.finalizeSHA();
+
+    await expect(tx).to.emit(sha, "LockContents");
+    console.log(" \u2714 Passed Event Test for sha.LockContents(). \n");
 
     expect(await sha.isFinalized()).to.equal(true);
     expect(await ad.isFinalized()).to.equal(true);

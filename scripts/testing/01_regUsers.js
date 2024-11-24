@@ -24,10 +24,15 @@
 // (4)User_3 to User_7 obtain New User Awards as per the Platform Rule.
 
 // Write APIs tested in this section:
-// Smart Contract: RegCenter
-// 1. function setPlatformRule(bytes32 snOfRule) external;
-// 2. function mint(address to, uint amt) external;
-// 3. function regUser() external;
+// 1. RegCenter
+// 1.1 function setPlatformRule(bytes32 snOfRule) external;
+// 1.2 function mint(address to, uint amt) external;
+// 1.3 function regUser() external;
+
+// Events verified in this scetion:
+// 1. RegCenter
+// 1.1 event Transfer(address indexed from, address indexed to, uint256 indexed value);
+// 1.2 event SetPlatformRule(bytes32 indexed snOfRule);
 
 const { pfrCodifier, pfrParser } = require('./rc');
 const { getRC } = require("./boox");

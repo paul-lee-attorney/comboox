@@ -37,7 +37,6 @@
 //     DAO, so that the DAO may collect royalties incurred therefrom.
 
 // Write APIs tested in this section:
-
 // 1. RegCenter
 // 1.1 function transferOwnership(address newOwner) external;
 // 1.2 function transferIPR(uint typeOfDoc, uint version, 
@@ -45,6 +44,13 @@
 
 // 2. Ownable
 // 2.1 function setNewOwner(address acct) onlyOwner public;
+
+// Events Verified in this section:
+// 1. RegCenter
+// 1.1 event TransferOwnership(address indexed newOwner);
+// 1.2 event TransferIPR(uint indexed typeOfDoc, uint indexed version,
+//     uint indexed transferee);
+
 
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
