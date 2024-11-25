@@ -25,6 +25,16 @@
 // 1.3 function distributeProfits(uint amt, uint expireDate, uint seqOfMotion) external; 
 // 1.4 function pickupDeposit() external;
 
+// Events verified in this section:
+// 1. General Meeting Minutes
+// 1.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
+// 1.2 event ProposeMotionToGeneralMeeting(uint256 indexed seqOfMotion,
+//     uint256 indexed proposer);
+// 1.3 ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
+
+// 3. General Keeper
+// 3.1 event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 

@@ -58,6 +58,24 @@
 //     uint execHours) external payable;
 // 1.6 function withdrawBuyOrder(uint classOfShare, uint seqOfOrder) external;
 
+// Events verified in this section:
+// 1. Register of Shares
+// 1.1 event IncreaseEquityOfClass(bool indexed isIncrease, uint indexed class, uint indexed amt);
+
+// 2. List of Orders
+// 2.1 event OrderPlaced(bytes32 indexed order, bool indexed isOffer);
+// 2.2 event OrderWithdrawn(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
+// 2.3 event DealClosed(bytes32 indexed deal, uint indexed consideration);
+// 2.4 event OrderExpired(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
+
+// 3. General Keeper
+// 3.1 event SaveToCoffer(uint indexed acct, uint256 indexed value, bytes32 indexed reason);
+// 3.2 event ReleaseCustody(uint indexed from, uint indexed to, uint indexed amt, bytes32 reason);
+
+// 4. LOO Keeper
+// 4.1 event CloseBidAgainstInitOffer(uint indexed buyer, uint indexed amt)
+
+
 const { expect } = require("chai");
 const { getGK, getLOO, getROS, getRC, getLOOKeeper, } = require("./boox");
 const { getLatestShare } = require("./ros");

@@ -82,7 +82,7 @@
 // 1.15 function voteCounting(uint256 seqOfMotion) external;
 
 // Events verified in this section:
-// 1. Meeting Minutes
+// 1. General Meeting Minutes
 // 1.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
 // 1.2 event ProposeMotionToGeneralMeeting(uint256 indexed seqOfMotion, uint256 indexed proposer);
 // 1.3 event CastVoteInGeneralMeeting(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);

@@ -67,6 +67,28 @@
 // 3.2 function withdrawIncome(uint amt) external;
 // 3.3 function withdrawFuel(uint amt) external;
 
+// Events verified in this section:
+// 1. General Meeting Minutes
+// 1.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
+// 1.2 event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
+// 1.3 event ProposeMotionToGeneralMeeting(uint256 indexed seqOfMotion,
+//     uint256 indexed proposer);
+
+// 2. GMMKeeper
+// 2.1 event ExecAction(address indexed targets, uint indexed values,
+//     bytes indexed params, uint seqOfMotion, uint caller);
+// 2.2 event TransferFund(address indexed to, bool indexed isCBP, uint indexed amt,
+//     uint seqOfMotion, uint caller);
+
+// 3. General Keeper
+// 3.1 event ExecAction(uint256 indexed contents);
+
+// 4. Registration Center
+// 4.1 event Transfer(address indexed from, address indexed to, uint256 indexed value);
+
+// 5. Fuel Tank
+// 5.1 event Refuel (address indexed buyer, uint indexed amtOfEth, uint indexed amtOfCbp);
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 

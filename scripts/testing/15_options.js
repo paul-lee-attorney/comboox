@@ -66,6 +66,22 @@
 // 1.4 function payOffSwap(uint256 seqOfOpt, uint256 seqOfSwap) external payable;
 // 1.5 function terminateSwap(uint256 seqOfOpt, uint256 seqOfSwap) external;
 
+// Events verified in this section:
+// 1. Register of Options
+// 1.1 event UpdateOracle(uint256 indexed seqOfOpt, uint indexed data1,
+//     uint indexed data2, uint data3);
+// 1.2 event ExecOpt(uint256 indexed seqOfOpt);
+// 1.3 event RegSwap(uint256 indexed seqOfOpt, bytes32 indexed snOfSwap);
+
+// 2. Register of Shares
+// 2.1 event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
+// 2.2 event IncreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
+// 2.3 event SubAmountFromShare(uint256 indexed seqOfShare, uint indexed paid,
+//     uint indexed par);
+
+// 3 Register of Members
+// 3.1 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
