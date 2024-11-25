@@ -73,6 +73,21 @@
 // 4.2 function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256
 //     acct)external;
 
+// Events verified in this section:
+// 1. Register of Agreements
+// 1.1 event UpdateStateOfFile(address indexed body, uint indexed state);
+
+// 2. Investment Agreement (Draft Control)
+// 2.1 event SetRoleAdmin(bytes32 indexed role, address indexed acct);
+
+// 3. General Meeting Minutes
+// 3.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
+// 3.2 event ClearDealCP(uint256 indexed seq, bytes32 indexed hashLock,
+//     uint indexed closingDeadline);
+
+// 4. Register of Shares
+// 4.1 event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par);
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 

@@ -23,6 +23,13 @@
 // 1.2 function approveInvestor(uint userNo, uint seqOfLR) external;
 // 1.3 function revokeInvestor(uint userNo, uint seqOfLR) external;
 
+// Events verified in this section:
+// 1. List of Orders
+// 1.1 event RegInvestor(uint indexed investor, uint indexed groupRep, bytes32 indexed idHash);
+// 1.2 event ApproveInvestor(uint indexed investor, uint indexed verifier);
+// 1.3 event RevokeInvestor(uint indexed investor, uint indexed verifier);
+
+
 const { expect } = require("chai");
 const { getGK, getLOO, getRC } = require("./boox");
 const { parseInvestor } = require("./loo");

@@ -32,6 +32,12 @@
 // 1.2 function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint 
 //     delegate) external;
 
+// The Events verified in this section:
+// 1. General Meeting Minutes
+// 1.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
+// 1.2 event EntrustDelegate(uint256 indexed seqOfMotion, uint256 indexed delegate,
+//     uint256 indexed principal);
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { Bytes32Zero, increaseTime, parseUnits } = require("./utils");

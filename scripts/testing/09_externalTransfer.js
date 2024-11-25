@@ -58,6 +58,27 @@
 // 4.1 function setTiming(bool initPage, uint signingDays, uint closingDays) external;
 // 4.2 function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)external;
 
+// Events verified in this section:
+// 1. Register of Agreement
+// 1.1 event UpdateStateOfFile(address indexed body, uint indexed state);
+
+// 2. Register of Shares
+// 2.1 event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
+// 2.2 event IncreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
+// 2.3 event DeregisterShare(uint256 indexed seqOfShare);
+
+// 3. General Meeting Minutes
+// 3.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
+
+// 4. Investment Agreement
+// 4.1 event CloseDeal(uint256 indexed seq, string indexed hashKey);
+
+// 5. Register of Members
+// 5.1 event RemoveShareFromMember(uint indexed seqOfShare, uint indexed acct);
+// 5.2 event AddMember(uint256 indexed acct, uint indexed qtyOfMembers);
+// 5.3 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
+
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
