@@ -63,6 +63,32 @@
 // 1.7 function execPledge(uint seqOfShare, uint256 seqOfPld, uint buyer, uint groupOfBuyer) external;
 // 1.8 function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external;
 
+// Events verified in this section:
+// 1. Register of Pledge;
+// 1.1 event CreatePledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld,
+//     uint256 creditor, uint256 indexed paid, uint256 par);
+// 1.2 event TransferPledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld,
+//     uint256 indexed newSeqOfPld, uint256 buyer, uint256 paid, uint256 par);
+// 1.3 event RefundDebt(uint256 indexed seqOfShare, uint256 indexed seqOfPld,
+//     uint256 indexed refundAmt);
+// 1.4 event ExtendPledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld,
+//     uint256 indexed extDays);
+// 1.5 event LockPledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld,
+//     bytes32 indexed hashLock);
+// 1.6 event ReleasePledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld,
+//     string indexed hashKey);
+// 1.7 event ExecPledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld);
+// 1.8 event RevokePledge(uint256 indexed seqOfShare, uint256 indexed seqOfPld);
+
+// 2. Register of Shares
+// 2.1 event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
+// 2.2 event IncreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
+// 2.3 event SubAmountFromShare(uint256 indexed seqOfShare, uint indexed paid,
+//     uint indexed par);
+
+// 3. Register of Members
+// 3.1 event AddMember(uint256 indexed acct, uint indexed qtyOfMembers);
+// 3.2 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
 
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");

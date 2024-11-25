@@ -59,6 +59,16 @@
 //      ) external;
 // 1.4 function payOffApprovedDeal(address ia, uint seqOfDeal) external payable;
 
+// Events verified in this section:
+// 1. Register of Agreement
+// 1.1 event ExecAlongRight(address indexed ia, bytes32 indexed snOfDTClaim, bytes32 sigHash);
+
+// 2. Investment Agreement
+// 2.1 event RegDeal(uint indexed seqOfDeal);
+
+// 3. Register of Shares
+// 3.1 event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 

@@ -43,6 +43,14 @@
 //     uint256 seqOfDeal, bytes32 sigHash) external;
 // 1.2 function computeFirstRefusal(address ia, uint256 seqOfDeal) external;
 
+// Events verified in this section:
+// 1. Register of Agreement
+// 1.1 event ClaimFirstRefusal(address indexed ia, uint256 indexed seqOfDeal, uint256 indexed caller);
+
+// 2. Investment Agreement
+// 2.1 event TerminateDeal(uint256 indexed seq);
+// 2.2 event RegDeal(uint indexed seqOfDeal);
+
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
