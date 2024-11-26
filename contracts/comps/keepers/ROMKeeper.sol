@@ -62,7 +62,7 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
             _ros.getShare(seqOfShare);
 
         uint centPrice = _gk.getCentPrice();
-        uint valueOfDeal = amt * centPrice / 100;
+        uint valueOfDeal = share.head.priceOfPaid * amt * centPrice / 10 ** 6;
         
         require(share.head.shareholder == caller,
             "ROMK.payInCap: not shareholder");
