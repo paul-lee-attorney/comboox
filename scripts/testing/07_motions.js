@@ -41,9 +41,11 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { Bytes32Zero, increaseTime, parseUnits } = require("./utils");
-const { getGK, getGMM, getRC } = require("./boox");
+const { getGK, getGMM, getRC, getROS } = require("./boox");
 const { getLatestSeqOfMotion, parseMotion } = require("./gmm");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
+const { printShares } = require("./ros");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -56,7 +58,10 @@ async function main() {
     const rc = await getRC();
     const gk = await getGK();
     const gmm = await getGMM();
-    
+    const ros = await getROS();
+
+
+
     // ==== propos motion ====
 
     // ---- Create Motion ----
@@ -139,6 +144,9 @@ async function main() {
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Test for approved motion. \n");
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()

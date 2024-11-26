@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-const { parseTimestamp } = require("./utils");
+const { parseTimestamp, longDataParser } = require("./utils");
 
 const currencies = [
   'USD', 'GBP', 'EUR', 'JPY', 'KRW', 'CNY',
@@ -13,7 +13,21 @@ const currencies = [
   'SGD', 'NGN', 'ZAR', 'RUB', 'INR', 'BRL'
 ]
 
+const depositOfUsers = async (rc, gk) => {
+  const signers = await ethers.getSigners();
+  
+  for (let i=0; i<7; i++) {
+    const userNo = await rc.connect(signers[i]).getMyUserNo();
+    const dep = await gk.connect(signers[i]).depositOfMine(userNo);
+    console.log('Deposit of User_', userNo, ':', longDataParser(ethers.utils.formatUnits(dep.toString(), 9)), '(GWei). \n');
+  }
 
+  const ethOfGK = await ethers.provider.getBalance(gk.address);
+  const totalDep = await gk.totalDeposits();
+  const ethOfComp = ethOfGK - totalDep;
+
+  console.log('ETH of Comp:', longDataParser(ethers.utils.formatUnits(ethOfComp.toString(), 9)), '(GWei). \n');
+}
 
 const parseCompInfo = (arr) => {
   const info = {
@@ -29,6 +43,7 @@ const parseCompInfo = (arr) => {
 }
 
 module.exports = {
+  depositOfUsers,
   parseCompInfo,
 };
 

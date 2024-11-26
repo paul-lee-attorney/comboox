@@ -92,10 +92,12 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getRC, getGMM, getROM, getFT, getGMMKeeper, } = require("./boox");
+const { getGK, getRC, getGMM, getROM, getFT, getGMMKeeper, getROS, } = require("./boox");
 const { increaseTime, parseUnits, Bytes32Zero, now, } = require("./utils");
 const { getLatestSeqOfMotion, allSupportMotion, parseMotion } = require("./gmm");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
+const { printShares } = require("./ros");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -110,6 +112,7 @@ async function main() {
     const gk = await getGK();
     const rom = await getROM();
     const gmm = await getGMM();
+    const ros = await getROS();
     const gmmKeeper = await getGMMKeeper();
 
     // ==== Motion for Mint CBP to DAO ====
@@ -319,6 +322,9 @@ async function main() {
     expect(balaBefore - balaAfter).to.equal(ethers.utils.parseUnits("8", 18));
     console.log(" \u2714 Passed Result Verify Test for ft.withdrawFuel(). \n");
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()

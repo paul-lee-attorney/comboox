@@ -94,10 +94,11 @@ const { BigNumber } = require("ethers");
 const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now } = require("./utils");
-const { obtainNewShare } = require("./ros");
+const { obtainNewShare, printShares } = require("./ros");
 const { codifyHeadOfDeal, parseDeal } = require("./roa");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -317,6 +318,10 @@ async function main() {
     expect(share.body.paid).to.equal('10,000.0');
     
     console.log(' \u2714 Passed Result Verify Test for gk.closeDeal(). \n');
+
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 
 }
 

@@ -54,7 +54,10 @@
 
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
-const { getRC, getFT, getGK } = require("./boox");
+const { getRC, getFT, getGK, getROS } = require("./boox");
+const { printShare, printShares } = require("./ros");
+const { depositOfUsers } = require("./gk");
+const { cbpOfUsers } = require("./rc");
 
 async function main() {
 
@@ -68,6 +71,7 @@ async function main() {
     const rc = await getRC();
     const ft = await getFT();
     const gk = await getGK();
+    const ros = await getROS();
 
     // ==== Transfer Ownership of Platform to Company ====
     
@@ -98,6 +102,10 @@ async function main() {
       await expect(tx).to.emit(rc, "TransferIPR").withArgs(BigNumber.from(i), BigNumber.from(1), BigNumber.from(8));
       console.log(' \u2714 Passed Event Test for rc.transferIPR() with typeOfDoc', i, ' version 1. \n');
     }
+
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
     
 }
 

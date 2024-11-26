@@ -34,7 +34,7 @@
 // 1.1 event Transfer(address indexed from, address indexed to, uint256 indexed value);
 // 1.2 event SetPlatformRule(bytes32 indexed snOfRule);
 
-const { pfrCodifier, pfrParser } = require('./rc');
+const { pfrCodifier, pfrParser, cbpOfUsers } = require('./rc');
 const { getRC } = require("./boox");
 const { expect } = require("chai");
 const { AddrZero } = require('./utils');
@@ -97,6 +97,7 @@ async function main() {
     expect(ethers.utils.formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
     console.log(' \u2714 Passed NewUserAwards Test for signers[', 2, '].', '\n');
 
+    await cbpOfUsers(rc, AddrZero);
 }
 
 main()

@@ -86,10 +86,12 @@ const { expect } = require("chai");
 const { BigNumber, ethers } = require("ethers");
 const { readContract } = require("../readTool"); 
 const { Bytes32Zero, now } = require('./utils');
-const { getROC, getGK, getRC, getROO, getROD } = require("./boox");
+const { getROC, getGK, getRC, getROO, getROD, getROS } = require("./boox");
 const { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, lrParser, lrCodifier, alongRuleCodifier, alongRuleParser } = require("./sha");
 const { codifyHeadOfOption, codifyCond, parseOption } = require("./roo");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
+const { printShare, printShares } = require("./ros");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -105,6 +107,7 @@ async function main() {
     const roc = await getROC();
     const roo = await getROO();
     const rod = await getROD();
+    const ros = await getROS();
 
     // ==== Create SHA ====
 
@@ -624,6 +627,9 @@ async function main() {
     expect(governingSHA).to.equal(sha.address);
     console.log(" \u2714 Passed Result Verify Test for gk.activateSHA().\n");
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 

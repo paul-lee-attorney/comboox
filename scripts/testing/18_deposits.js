@@ -38,10 +38,12 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getROM, getFT, getRC, getGMM, } = require("./boox");
+const { getGK, getROM, getFT, getRC, getGMM, getROS, } = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { getLatestSeqOfMotion, parseMotion, allSupportMotion } = require("./gmm");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
+const { printShares } = require("./ros");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -54,8 +56,9 @@ async function main() {
     const rc = await getRC();
     const ft = await getFT();
     const gk = await getGK();
-    const gmm = await getGMM() ;
+    const gmm = await getGMM();
     const rom = await getROM();
+    const ros = await getROS();
 
     // ==== ETH of Comp ====
 
@@ -159,6 +162,10 @@ async function main() {
       console.log(" \u2714 Passed Result Verify Test for gk.pickupDeposit(). for User", parseInt(userNo.toString()), " \n");
 
     }
+
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 
 }
 

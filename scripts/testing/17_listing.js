@@ -78,10 +78,11 @@
 
 const { expect } = require("chai");
 const { getGK, getLOO, getROS, getRC, getLOOKeeper, } = require("./boox");
-const { getLatestShare } = require("./ros");
+const { getLatestShare, printShares } = require("./ros");
 const { parseNode, parseDeal, parseData } = require("./loo");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getDealValue } = require("./roa");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -778,6 +779,9 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()

@@ -99,11 +99,13 @@
 
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
-const { getGK, getBMM, getGMM, getROD, getRC } = require('./boox');
+const { getGK, getBMM, getGMM, getROD, getRC, getROS } = require('./boox');
 const { positionParser } = require('./sha');
 const { Bytes32Zero, increaseTime, parseTimestamp, now } = require('./utils');
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
 const { motionSnParser, getLatestSeqOfMotion } = require("./gmm");
+const { printShares } = require("./ros");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -118,6 +120,7 @@ async function main() {
     const bmm = await getBMM();
     const gmm = await getGMM();
     const rod = await getROD();
+    const ros = await getROS();
     
     // ==== Chairman ====
 
@@ -432,6 +435,9 @@ async function main() {
     expect(await rod.isOccupied(3)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for  Reposition of Manager. \n");
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()

@@ -15,7 +15,17 @@ const printShare = async (ros, seqOfShare) => {
 
 
 const printShares = async (ros) => {
-  const shares = (await ros.getSharesList()).map(v => parseShare(v));
+  const shares = (await ros.getSharesList()).map(v => {
+    let share = parseShare(v);
+    return({
+      classOfShare: share.head.class,
+      seqOfShare: share.head.seqOfShare,
+      shareholder: share.head.shareholder,
+      paid: share.body.paid,
+      par: share.body.par,
+      cleanPaid: share.body.cleanPaid,      
+    });
+  });
   console.log('Shares of the Comp:', shares, '\n');
 }
 

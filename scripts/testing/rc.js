@@ -7,8 +7,20 @@
 
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
-const { getRC, getGK } = require('./boox');
-const { parseUnits, parseHexToBigInt, AddrZero } = require('./utils');
+const { parseUnits, parseHexToBigInt, AddrZero, longDataParser } = require('./utils');
+
+const cbpOfUsers = async (rc, addrOfGK) => {
+  const signers = await ethers.getSigners();
+  for (let i=0; i<7; i++) {
+    const userNo = await rc.connect(signers[i]).getMyUserNo();
+    const bala = await rc.balanceOf(signers[i].address);
+    console.log('CBP Balance of User_', userNo, ':', longDataParser(ethers.utils.formatUnits(bala.toString(), 9)), '(GLee). \n');
+  }
+  if (addrOfGK != AddrZero) {
+    const cbpOfComp = await rc.balanceOf(addrOfGK);
+    console.log('CBP Balance of Comp:', longDataParser(ethers.utils.formatUnits(cbpOfComp.toString(), 9)), '(GLee). \n');
+  }
+}
 
 function parseSnOfPFR(sn) {
   sn = sn.substring(2);
@@ -81,6 +93,7 @@ async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
 }
 
 module.exports = {
+    cbpOfUsers,
     parseSnOfPFR,
     pfrParser,
     pfrCodifier,

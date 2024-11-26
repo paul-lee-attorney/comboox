@@ -85,9 +85,10 @@ const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now, } = require("./utils");
 const { codifyHeadOfDeal, parseDeal } = require("./roa");
-const { getLatestShare } = require("./ros");
-const { royaltyTest } = require("./rc");
+const { getLatestShare, printShares } = require("./ros");
+const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -292,6 +293,9 @@ async function main() {
     
     console.log(' \u2714 Passed Result Verify Test for gk.transferTargetShare(). \n'); 
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()

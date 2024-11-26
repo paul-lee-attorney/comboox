@@ -31,9 +31,11 @@
 
 
 const { expect } = require("chai");
-const { getGK, getLOO, getRC } = require("./boox");
+const { getGK, getLOO, getRC, getROS } = require("./boox");
 const { parseInvestor } = require("./loo");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
+const { printShares } = require("./ros");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -46,6 +48,7 @@ async function main() {
     const rc = await getRC();
     const gk = await getGK();
     const loo = await getLOO();
+    const ros = await getROS();
 
     // ==== Reg New Users ==== 
 
@@ -113,6 +116,9 @@ async function main() {
       expect(info.approved).to.equal('Revoked'); 
     }
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()

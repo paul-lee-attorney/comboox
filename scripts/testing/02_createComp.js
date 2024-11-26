@@ -98,12 +98,12 @@
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
 const { saveBooxAddr } = require("./saveTool");
-const { codifyHeadOfShare, parseShare } = require('./ros');
+const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
 const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
 const { now, increaseTime } = require("./utils");
-const { parseCompInfo } = require("./gk");
+const { parseCompInfo, depositOfUsers } = require("./gk");
 const { readContract } = require("../readTool");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
 
 async function main() {
 
@@ -391,6 +391,9 @@ async function main() {
     expect(share.body.paid).to.equal("20,000.0");
     console.log(" \u2714 Passed Result Verify Test for gk.payInCapital(). \n");
     
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()

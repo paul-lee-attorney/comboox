@@ -87,9 +87,10 @@ const { BigNumber } = require("ethers");
 
 const { getGK, getROS, getROO, getRC, getROM, } = require("./boox");
 const { increaseTime, } = require("./utils");
-const { getLatestShare } = require("./ros");
+const { getLatestShare, printShares } = require("./ros");
 const { parseOption, parseOracle, parseSwap } = require("./roo");
-const { royaltyTest } = require("./rc");
+const { royaltyTest, cbpOfUsers } = require("./rc");
+const { depositOfUsers } = require("./gk");
 
 async function main() {
 
@@ -252,6 +253,9 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for rom.terminateSwap(). \n");
 
+    await printShares(ros);
+    await cbpOfUsers(rc, gk.address);
+    await depositOfUsers(rc, gk);
 }
 
 main()
