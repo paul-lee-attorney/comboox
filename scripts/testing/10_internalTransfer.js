@@ -82,8 +82,6 @@
 // 6. General Keeper
 // 6.1 event SaveToCoffer(uint indexed acct, uint256 indexed value, bytes32 indexed reason);
 
-
-
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
@@ -95,7 +93,7 @@ const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { minusCBPFromUser, addCBPToUser, transferCBP } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -118,8 +116,7 @@ async function main() {
 
     let Addr = await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.createIA().");
 
-    minusCBPFromUser(58n * 10n ** 13n, "1");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("1", "8", 58n);
 
     let ia = await readContract("InvestmentAgreement", Addr);
 
@@ -193,8 +190,7 @@ async function main() {
     
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 36n, "gk.circulateIA().");
 
-    minusCBPFromUser(36n * 10n ** 13n, "6");
-    addCBPToUser(36n * 10n ** 13n, "8");
+    transferCBP("6", "8", 36n);
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(Addr, 2);
     console.log(" \u2714 Passed Event Test for roa.UpdateStateOfFile(). \n");
@@ -215,8 +211,7 @@ async function main() {
     tx = await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 36n, "gk.signIA().");
 
-    minusCBPFromUser(36n * 10n ** 13n, "6");
-    addCBPToUser(36n * 10n ** 13n, "8");
+    transferCBP("6", "8", 36n);
 
     expect(await ia.isSigner(6)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_6 \n ");
@@ -230,8 +225,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 36n, "gk.signIA().");
 
-    minusCBPFromUser(36n * 10n ** 13n, "3");
-    addCBPToUser(36n * 10n ** 13n, "8");
+    transferCBP("3", "8", 36n);
 
     expect(await ia.isSigner(3)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_3 \n ");
@@ -247,8 +241,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 116n, "gk.proposeDocOfGM().");
     
-    minusCBPFromUser(116n * 10n ** 13n, "6");
-    addCBPToUser(116n * 10n ** 13n, "8");
+    transferCBP("6", "8", 116n);
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Evet Test for gmm.CreateMotion(). \n");
@@ -262,24 +255,21 @@ async function main() {
 
     await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    minusCBPFromUser(72n * 10n ** 13n, "1");
-    addCBPToUser(72n * 10n ** 13n, "8");
+    transferCBP("1", "8", 72n);
 
     expect(await gmm.isVoted(seqOfMotion, 1)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). with User_1 \n");
 
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    minusCBPFromUser(72n * 10n ** 13n, "2");
-    addCBPToUser(72n * 10n ** 13n, "8");
+    transferCBP("2", "8", 72n);
 
     expect(await gmm.isVoted(seqOfMotion, 2)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). with User_2 \n");
 
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    minusCBPFromUser(72n * 10n ** 13n, "4");
-    addCBPToUser(72n * 10n ** 13n, "8");
+    transferCBP("4", "8", 72n);
 
     expect(await gmm.isVoted(seqOfMotion, 4)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). with User_4 \n");
@@ -288,8 +278,7 @@ async function main() {
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    minusCBPFromUser(88n * 10n ** 13n, "1");
-    addCBPToUser(88n * 10n ** 13n, "8");
+    transferCBP("1", "8", 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.voteCounting(). \n");

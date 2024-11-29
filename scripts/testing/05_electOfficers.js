@@ -106,7 +106,7 @@ const { royaltyTest, cbpOfUsers } = require("./rc");
 const { motionSnParser, getLatestSeqOfMotion } = require("./gmm");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
-const { minusCBPFromUser, addCBPToUser, transferCBP } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 

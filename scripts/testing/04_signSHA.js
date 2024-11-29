@@ -95,7 +95,7 @@ const { codifyHeadOfOption, codifyCond, parseOption } = require("./roo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
-const { minusCBPFromUser, addCBPToUser } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -125,8 +125,7 @@ async function main() {
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.createSHA().");
     console.log(" \u2714 Passed Royalty Check Test for gk.createSHA(). \n");
 
-    minusCBPFromUser(18n * 10n ** 13n, "1");
-    addCBPToUser(18n * 10n ** 13n, "8");
+    transferCBP("1", "8", 18n);
 
     await expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(SHA, 1);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile(). \n");
@@ -583,8 +582,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.createSHA().");
 
-    minusCBPFromUser(18n * 10n ** 13n, "1");
-    addCBPToUser(18n * 10n ** 13n, "8");
+    transferCBP("1", "8", 18n);
 
     expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(sha.address, 2);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");
@@ -609,26 +607,22 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.signSHA().");
 
-    minusCBPFromUser(18n * 10n ** 13n, "1");
-    addCBPToUser(18n * 10n ** 13n, "8");
+    transferCBP("1", "8", 18n);
 
     expect(await sha.isSigner(1)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signSHA().\n");
 
     await gk.connect(signers[1]).signSHA(sha.address, Bytes32Zero);
 
-    minusCBPFromUser(18n * 10n ** 13n, "2");
-    addCBPToUser(18n * 10n ** 13n, "8");
+    transferCBP("2", "8", 18n);
 
     await gk.connect(signers[3]).signSHA(sha.address, Bytes32Zero);
 
-    minusCBPFromUser(18n * 10n ** 13n, "3");
-    addCBPToUser(18n * 10n ** 13n, "8");
+    transferCBP("3", "8", 18n);
 
     await gk.connect(signers[4]).signSHA(sha.address, Bytes32Zero);
 
-    minusCBPFromUser(18n * 10n ** 13n, "4");
-    addCBPToUser(18n * 10n ** 13n, "8");
+    transferCBP("4", "8", 18n);
 
     expect(await sha.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for all gk.signSHA().\n");
@@ -642,8 +636,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.activateSHA().");
 
-    minusCBPFromUser(58n * 10n ** 13n, "1");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("1", "8", 58n);
 
     expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(sha.address, 6);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");

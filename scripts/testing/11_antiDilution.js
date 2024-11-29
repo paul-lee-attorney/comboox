@@ -74,7 +74,7 @@ const { obtainNewShare, getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { minusCBPFromUser, addCBPToUser, transferCBP } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -258,8 +258,7 @@ async function main() {
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    minusCBPFromUser(88n * 10n ** 13n, "1");
-    addCBPToUser(88n * 10n ** 13n, "8");
+    transferCBP("1", "8", 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.voteCounting(). \n");
@@ -270,8 +269,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.issueNewShare().");
 
-    minusCBPFromUser(58n * 10n ** 13n, "1");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("1", "8", 58n);
 
     await expect(tx).to.emit(ros, "IssueShare");
     console.log(" \u2714 Passed Evet Test for ros.IssueShare(). \n");
@@ -293,8 +291,7 @@ async function main() {
     tx = await gk.connect(signers[3]).takeGiftShares(ia.address, 2);
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.takeGiftShares().");
 
-    minusCBPFromUser(58n * 10n ** 13n, "3");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("3", "8", 58n);
 
     await expect(tx).to.emit(ia, "CloseDeal").withArgs(BigNumber.from(2), "0");
     console.log(" \u2714 Passed Event Control Test for ia.CloseDeal(). \n");
@@ -319,8 +316,7 @@ async function main() {
 
     tx = await gk.connect(signers[4]).takeGiftShares(ia.address, 3);
 
-    minusCBPFromUser(58n * 10n ** 13n, "4");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("4", "8", 58n);
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(ia.address, BigNumber.from(6));
     console.log(" \u2714 Passed Event Test for roa.UpdateStateOfFile(). User_3 \n");

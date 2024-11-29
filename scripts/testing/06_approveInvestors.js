@@ -36,7 +36,7 @@ const { parseInvestor } = require("./loo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
-const { setUserCBP, minusCBPFromUser, addCBPToUser } = require("./saveTool");
+const { setUserCBP } = require("./saveTool");
 
 async function main() {
 
@@ -70,8 +70,7 @@ async function main() {
       
       await royaltyTest(rc.address, signers[signerNo].address, gk.address, tx, 36n, "gk.regInvestor().");
 
-      minusCBPFromUser(36n * 10n ** 13n, userNo.toString());
-      addCBPToUser(36n * 10n ** 13n, "8");
+      transferCBP(userNo.toString(), "8", 36n);
   
       await expect(tx).to.emit(loo, "RegInvestor").withArgs(userNo, userNo, ethers.utils.id(signers[signerNo].address));
       console.log(" \u2714 Passed Event Test for gk.regInvestor(). \n");
@@ -86,8 +85,7 @@ async function main() {
 
       await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.approveInvestor().");
 
-      minusCBPFromUser(18n * 10n ** 13n, "1");
-      addCBPToUser(18n * 10n ** 13n, "8");
+      transferCBP("1", "8", 18n);
 
       await expect(tx).to.emit(loo, "ApproveInvestor").withArgs(userNo, 1);
       console.log(" \u2714 Passed Event Test for loo.ApproveInvestor(). \n");
@@ -115,8 +113,7 @@ async function main() {
       
       await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.revokeIvnestor().");
 
-      minusCBPFromUser(18n * 10n ** 13n, "1");
-      addCBPToUser(18n * 10n ** 13n, "8");
+      transferCBP("1", "8", 18n);
 
       await expect(tx).to.emit(loo, "RevokeInvestor").withArgs(userNo, 1);
       console.log(' \u2714 Passed Event Test for gk.revokeInvestor(). \n');

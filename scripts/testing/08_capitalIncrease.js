@@ -110,7 +110,7 @@ const { codifyHeadOfDeal, parseDeal, getDealValue } = require("./roa");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { minusCBPFromUser, addCBPToUser } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -137,8 +137,7 @@ async function main() {
 
     let Addr = await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.createIA().");
 
-    minusCBPFromUser(58n * 10n ** 13n, "1");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("1", "8", 58n);
 
     let ia = await readContract("InvestmentAgreement", Addr);
 
@@ -259,8 +258,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.circulateIA().");
 
-    minusCBPFromUser(36n * 10n ** 13n, "1");
-    addCBPToUser(36n * 10n ** 13n, "8");
+    transferCBP("1", "8", 36n);
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(Addr, 2);
     console.log(" \u2714 Passed Event Test for roa.UpdateStateOfFile(). \n");
@@ -281,8 +279,7 @@ async function main() {
     tx = await gk.signIA(ia.address, Bytes32Zero);
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.signIA().");
 
-    minusCBPFromUser(36n * 10n ** 13n, "1");
-    addCBPToUser(36n * 10n ** 13n, "8");
+    transferCBP("1", "8", 36n);
 
     expect(await ia.isSigner(1)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_1 \n ");
@@ -295,8 +292,7 @@ async function main() {
     tx = await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.signIA().");
 
-    minusCBPFromUser(36n * 10n ** 13n, "5");
-    addCBPToUser(36n * 10n ** 13n, "8");
+    transferCBP("5", "8", 36n);
 
     expect(await ia.isSigner(5)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_5 \n ");
@@ -318,8 +314,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 116n, "gk.proposeDocOfGM().");
 
-    minusCBPFromUser(116n * 10n ** 13n, "1");
-    addCBPToUser(116n * 10n ** 13n, "8");
+    transferCBP("1", "8", 116n);
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Evet Test for gmm.CreateMotion(). \n");
@@ -333,8 +328,7 @@ async function main() {
 
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    minusCBPFromUser(72n * 10n ** 13n, "2");
-    addCBPToUser(72n * 10n ** 13n, "8");
+    transferCBP("2", "8", 72n);
 
     expect(await gmm.isVoted(seqOfMotion, 2)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). with User_2 \n");
@@ -344,13 +338,11 @@ async function main() {
 
     await royaltyTest(rc.address, signers[4].address, gk.address, tx, 36n, "gk.entrustDelegaterForGM().");
 
-    minusCBPFromUser(36n * 10n ** 13n, "4");
-    addCBPToUser(36n * 10n ** 13n, "8");
+    transferCBP("4", "8", 36n);
 
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    minusCBPFromUser(72n * 10n ** 13n, "3");
-    addCBPToUser(72n * 10n ** 13n, "8");
+    transferCBP("3", "8", 72n);
 
     expect(await gmm.isVoted(seqOfMotion, 3)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). with User_3 \n");
@@ -359,8 +351,7 @@ async function main() {
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    minusCBPFromUser(88n * 10n ** 13n, "1");
-    addCBPToUser(88n * 10n ** 13n, "8");
+    transferCBP("1", "8", 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.votingCounting(). \n");
@@ -374,8 +365,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.pushToCoffer().");
 
-    minusCBPFromUser(58n * 10n ** 13n, "1");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("1", "8", 58n);
 
     await expect(tx).to.emit(ia, "ClearDealCP").withArgs(1, ethers.utils.id('Today is Friday.'), BigNumber.from(closingDL));
     console.log(" \u2714 Passed Evet Test for ia.ClearDealCP(). \n");
@@ -411,8 +401,7 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.payOffApprovedDeal().");
 
-    minusCBPFromUser(58n * 10n ** 13n, "1");
-    addCBPToUser(58n * 10n ** 13n, "8");
+    transferCBP("1", "8", 58n);
 
     await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(2), BigNumber.from(value + 100n));
     console.log(" \u2714 Passed Event Test for ia.PayOffApprovedDeal(). \n");

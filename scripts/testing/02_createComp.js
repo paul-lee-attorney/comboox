@@ -97,7 +97,7 @@
 
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
-const { saveBooxAddr, addCBPToUser, minusCBPFromUser, setUserCBP } = require("./saveTool");
+const { saveBooxAddr, addCBPToUser, minusCBPFromUser, setUserCBP, transferCBP } = require("./saveTool");
 const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
 const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
 const { now, increaseTime } = require("./utils");
@@ -375,8 +375,7 @@ async function main() {
     await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "gk.payInCapital().");
 
     // User_4 pays royalty to User_1 (author of Templates);
-    minusCBPFromUser(36n * 10n ** 13n, "4");
-    addCBPToUser(36n * 10n ** 13n, "1");
+    transferCBP("4", "1", 36n);
 
     await expect(tx).to.emit(gk, "SaveToCoffer");
     console.log(" \u2714 Passed Event Test for gk.SaveToCoffer(). \n");
