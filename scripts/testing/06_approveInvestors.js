@@ -36,7 +36,7 @@ const { parseInvestor } = require("./loo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
-const { setUserCBP } = require("./saveTool");
+const { setUserCBP, transferCBP } = require("./saveTool");
 
 async function main() {
 

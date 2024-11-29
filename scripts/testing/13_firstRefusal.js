@@ -61,7 +61,6 @@ const { codifyHeadOfDeal, parseDeal } = require("./roa");
 const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
-const { ethers } = require("hardhat");
 const { depositOfUsers } = require("./gk");
 const { transferCBP } = require("./saveTool");
 
