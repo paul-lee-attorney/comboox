@@ -153,7 +153,7 @@ async function main() {
 
     await increaseTime(86400*1);
 
-    allSupportMotion(gk, rom, seqOfMotion);
+    await allSupportMotion(gk, rom, seqOfMotion);
 
     await increaseTime(86400*1);
 

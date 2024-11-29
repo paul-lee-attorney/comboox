@@ -5,6 +5,8 @@
  * All Rights Reserved.
  * */
 
+const { expect } = require("chai");
+const { getUserDepo } = require("./saveTool");
 const { parseTimestamp, longDataParser } = require("./utils");
 
 const currencies = [
@@ -19,12 +21,19 @@ const depositOfUsers = async (rc, gk) => {
   for (let i=0; i<7; i++) {
     const userNo = await rc.connect(signers[i]).getMyUserNo();
     const dep = await gk.connect(signers[i]).depositOfMine(userNo);
+
+    const depExpected = getUserDepo(userNo.toString());
+    expect(depExpected).to.equal(BigInt(dep.toString()));
+
     console.log('Deposit of User_', userNo, ':', longDataParser(ethers.utils.formatUnits(dep.toString(), 9)), '(GWei). \n');
   }
 
   const ethOfGK = await ethers.provider.getBalance(gk.address);
   const totalDep = await gk.totalDeposits();
-  const ethOfComp = ethOfGK - totalDep;
+  const ethOfComp = BigInt(ethOfGK.toString()) - BigInt(totalDep.toString());
+
+  const depExpected = getUserDepo("8");    
+  expect(depExpected).to.equal(ethOfComp);
 
   console.log('ETH of Comp:', longDataParser(ethers.utils.formatUnits(ethOfComp.toString(), 9)), '(GWei). \n');
 }

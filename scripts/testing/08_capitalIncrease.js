@@ -110,7 +110,7 @@ const { codifyHeadOfDeal, parseDeal, getDealValue } = require("./roa");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -398,6 +398,9 @@ async function main() {
     let value = getDealValue(180n, 10000n, centPrice);
 
     tx = await gk.payOffApprovedDeal(ia.address, 2, {value: value + 100n});
+
+    addEthToUser(value, "8");
+    addEthToUser(100n, "1");
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.payOffApprovedDeal().");
 

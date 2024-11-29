@@ -10,5 +10,3 @@ artifacts
 test
 
 server/src/contracts/
-
-scripts/testing/*.json

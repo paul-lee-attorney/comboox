@@ -62,7 +62,7 @@ const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -301,12 +301,17 @@ async function main() {
 
       const deal = await ia.getDeal(seqOfDeal);
       console.log("deal: ", parseDeal(deal), "\n");
+      
       const paid = deal[1][2];
-      const value = 300n * BigInt(paid) / 10000n * BigInt(centPrice) + 100n;
+      const value = 300n * BigInt(paid) / 10000n * BigInt(centPrice);
 
+      const seller = Number(deal[0][5]);
       const buyer = Number(deal[1][0]);
   
-      await gk.connect(signers[buyer - 1]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value});
+      await gk.connect(signers[buyer - 1]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value + 100n});
+
+      addEthToUser(value, seller.toString());
+      addEthToUser(100n, buyer.toString());
 
       transferCBP((buyer).toString(), "8", 58n);
 

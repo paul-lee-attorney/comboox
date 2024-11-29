@@ -99,7 +99,7 @@ const { getLatestSeqOfMotion, allSupportMotion, parseMotion } = require("./gmm")
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
-const { transferCBP, addCBPToUser, minusCBPFromUser } = require("./saveTool");
+const { transferCBP, addCBPToUser, minusCBPFromUser, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -321,6 +321,8 @@ async function main() {
 
     await expect(tx).to.emit(gk, "ReceivedCash").withArgs(ft.address, ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Event Verify Test for gk.ReceivedCash(). \n")
+
+    addEthToUser(80n*10n**18n, "8");
 
     expect(balaBefore - balaAfter).to.equal(ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Result Verify Test for ft.withdrawIncome(). \n");

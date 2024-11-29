@@ -97,13 +97,14 @@
 
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
-const { saveBooxAddr, addCBPToUser, minusCBPFromUser, setUserCBP, transferCBP } = require("./saveTool");
+const { saveBooxAddr, addCBPToUser, minusCBPFromUser, setUserCBP, transferCBP, addEthToUser, setUserDepo } = require("./saveTool");
 const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
 const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { parseCompInfo, depositOfUsers } = require("./gk");
 const { readContract } = require("../readTool");
 const { royaltyTest, cbpOfUsers } = require("./rc");
+const { getDealValue } = require("./roa");
 
 async function main() {
 
@@ -367,10 +368,20 @@ async function main() {
 
     // ==== Pay In Capital in ETH ====
 
-    const centPrice = await gk.getCentPrice();
-    let value = 150n * 5000n * BigInt(centPrice);
+    const centPrice = BigInt(await gk.getCentPrice());
+    let value = getDealValue(150n, 5000n, centPrice);
 
     tx = await gk.connect(signers[4]).payInCapital(4, 5000 * 10 ** 4, {value: value + 100n});
+
+    setUserDepo("8", value);
+    setUserDepo("4", 100n);
+    
+    setUserDepo("1", 0n);
+    setUserDepo("2", 0n);
+    setUserDepo("3", 0n);
+    setUserDepo("5", 0n);
+    setUserDepo("6", 0n);
+    setUserDepo("7", 0n);
 
     await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "gk.payInCapital().");
 

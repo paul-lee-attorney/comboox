@@ -91,7 +91,7 @@ const { getLatestShare, printShares } = require("./ros");
 const { parseOption, parseOracle, parseSwap } = require("./roo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -214,6 +214,9 @@ async function main() {
     console.log(" \u2714 Passed Access Control Test for gk.payOffSwap(). \n");  
 
     tx = await gk.connect(signers[1]).payOffSwap(2, 1, {value:value + 100n});
+
+    addEthToUser(value, "3");
+    addEthToUser(100n, "2");
 
     await royaltyTest(rc.address, signers[1].address, gk.address, tx, 58n, "gk.payOffSwap().");
 

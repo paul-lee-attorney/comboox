@@ -83,7 +83,7 @@ const { parseNode, parseDeal, parseData } = require("./loo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getDealValue } = require("./roa");
 const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -352,6 +352,8 @@ async function main() {
     expect(deal.distrWeight).to.equal(100);
 
     expect(consideration).to.equal(getDealValue(360n, 80n, centPrice));
+
+    addEthToUser(consideration, "8");
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
@@ -360,9 +362,13 @@ async function main() {
     expect(toComp[0].buyer).to.equal(2);
     expect(toComp[0].value).to.equal(consideration);
 
+    let balance = value + 100n - consideration;
+
     expect(toCoffer[0].acct).to.equal(2);
-    expect(toCoffer[0].value).to.equal(value + 100n - consideration);
+    expect(toCoffer[0].value).to.equal(balance);
     expect(toCoffer[0].reason).to.equal("DepositBalanceOfBidOrder");
+
+    addEthToUser(balance, "2");
 
     console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
@@ -396,6 +402,8 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(380n, 60n, centPrice));
 
+    addEthToUser(consideration, "8");
+
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deals[0] \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
@@ -420,14 +428,20 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(360n, 20n, centPrice));
 
+    addEthToUser(consideration, "8");
+
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deals[1] \n");
 
     expect(toComp[1].buyer).to.equal(2);
     expect(toComp[1].value).to.equal(consideration);
 
+    balance = value + 100n - consideration;
+
     expect(toCoffer[0].acct).to.equal(2);
-    expect(toCoffer[0].value).to.equal(value + 100n - consideration);
+    expect(toCoffer[0].value).to.equal(balance);
     expect(toCoffer[0].reason).to.equal("DepositBalanceOfBidOrder");
+
+    addEthToUser(balance, "2");
 
     console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
@@ -460,6 +474,8 @@ async function main() {
     expect(deal.distrWeight).to.equal(100);
 
     expect(consideration).to.equal(getDealValue(380n, 40n, centPrice));
+
+    addEthToUser(consideration, "8");
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
@@ -479,8 +495,10 @@ async function main() {
     expect(toComp[0].buyer).to.equal(2);
     expect(toComp[0].value).to.equal(consideration);
 
+    balance = value + 100n - consideration;
+
     expect(toCoffer[0].acct).to.equal(parseInt("0x20000000002", 16));
-    expect(toCoffer[0].value).to.equal(value + 100n - consideration);
+    expect(toCoffer[0].value).to.equal(balance);
     expect(toCoffer[0].reason).to.equal("CustodyValueOfBidOrder");
 
     console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
@@ -543,6 +561,8 @@ async function main() {
     expect(fromCustody[0].value).to.equal(value + 100n);
     expect(fromCustody[0].reason).to.equal("RefundValueOfBidOrder");
 
+    addEthToUser(value + 100n, "2");
+
     // ==== Place Sell Order ====
 
     // ---- Sell Order 1 ----
@@ -587,6 +607,8 @@ async function main() {
     expect(deal.distrWeight).to.equal(100);
 
     expect(consideration).to.equal(getDealValue(400n, 40n, centPrice));
+
+    addEthToUser(consideration, "3");
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
@@ -597,12 +619,14 @@ async function main() {
     expect(fromCustody[0].value).to.equal(consideration);
     expect(fromCustody[0].reason).to.equal("CloseOfferAgainstBid");
 
-    let balance = getDealValue(400n, 80n, centPrice) + 100n - getDealValue(380n, 40n, centPrice) - consideration;
+    balance = getDealValue(400n, 80n, centPrice) + 100n - getDealValue(380n, 40n, centPrice) - consideration;
 
     expect(fromCustody[1].from).to.equal(2);
     expect(fromCustody[1].to).to.equal(2);
     expect(fromCustody[1].value).to.equal(balance);
     expect(fromCustody[1].reason).to.equal("RefundValueOfBidOrder");
+
+    addEthToUser(balance, "2");
 
     console.log(" \u2714 Passed Event Test for looKeeper.CloseBidAgainstInitOffer() & gk.SaveToCoffer(). \n");
 
@@ -699,6 +723,8 @@ async function main() {
     expect(deal.distrWeight).to.equal(100);
 
     expect(consideration).to.equal(getDealValue(400n, 60n, centPrice));
+
+    addEthToUser(consideration, "3");
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deal-0 \n");
 
@@ -714,6 +740,8 @@ async function main() {
 
     expect(consideration).to.equal(getDealValue(380n, 100n, centPrice));
     
+    addEthToUser(consideration, "3");
+
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deal-1 \n");
 
     [toComp, toCoffer, fromCustody] = await parseEthLogs(tx);
@@ -731,7 +759,9 @@ async function main() {
     expect(toCoffer[2].acct).to.equal(2);
     expect(toCoffer[2].value).to.equal(balance);
     expect(toCoffer[2].reason).to.equal("DepositBalanceOfBidOrder");
-    
+
+    addEthToUser(balance, "2");
+
     console.log(" \u2714 Passed Event Test for gk.SaveToCoffer(). \n");
 
     share = await getLatestShare(ros);
@@ -742,7 +772,7 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
     
-    // ==== Place Market Buy Order ====
+    // ==== Place Buy Order ====
 
     value = getDealValue(400n, 80n, centPrice);
 
@@ -785,6 +815,8 @@ async function main() {
     expect(deal.distrWeight).to.equal(100);
 
     expect(consideration).to.equal(getDealValue(400n, 80n, centPrice));
+
+    addEthToUser(consideration, "3");
     
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
@@ -794,6 +826,17 @@ async function main() {
     expect(fromCustody[0].to).to.equal(3);
     expect(fromCustody[0].value).to.equal(consideration);
     expect(fromCustody[0].reason).to.equal("CloseOfferAgainstBid");
+
+    console.log(" \u2714 Passed Event Test for gk.ReleaseCustody(). \n");
+
+    balance = 100n;
+
+    expect(fromCustody[1].from).to.equal(2);
+    expect(fromCustody[1].to).to.equal(2);
+    expect(fromCustody[1].value).to.equal(balance);
+    expect(fromCustody[1].reason).to.equal("RefundValueOfBidOrder");
+
+    addEthToUser(balance, "2");
 
     console.log(" \u2714 Passed Event Test for gk.ReleaseCustody(). \n");
 

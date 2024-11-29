@@ -7,8 +7,6 @@
 
 const { ethers } = require("hardhat");
 const { parseUnits, longDataParser } = require("./utils");
-const { getGK } = require("./boox");
-
 
 function getDealValue(priceInCent, paidInDollar, centPrice) {
   return priceInCent * paidInDollar * centPrice;

@@ -49,7 +49,7 @@ const { getLatestSeqOfMotion, parseMotion, allSupportMotion } = require("./gmm")
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, minusEthFromUser, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -76,6 +76,32 @@ async function main() {
       let ethOfComp = BigInt(balaOfGK) + BigInt(balaOfFT) - BigInt(totalDeposits);
 
       return ethOfComp;
+    }
+
+    // ==== Distribute Profits ====
+
+    const distributeProfits = async (amt) => {
+
+      const totalPts = BigInt((await rom.ownersPoints())[4]);
+      let sum = 0n;
+
+      const members = (await rom.membersList()).map(v => Number(v));
+
+      let len = members.length;
+
+      while (len > 1) {
+        const member = members[len - 1];
+        const ptsOfMember = BigInt((await rom.pointsOfMember(member))[4]);
+
+        const val = ptsOfMember * amt / totalPts;
+
+        addEthToUser(val, member.toString());
+        sum += val;
+
+        len--;
+      }
+
+      addEthToUser(amt - sum, members[0].toString());
     }
 
     // ==== Propose Distribution ====
@@ -131,6 +157,10 @@ async function main() {
     
     let balaBefore = await getEthOfComp();    
     tx = await gk.distributeProfits(distAmt, expireDate, seqOfMotion);
+
+    minusEthFromUser(distAmt, "8");
+    await distributeProfits(distAmt);
+
     let balaAfter = await getEthOfComp();
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.distributeProfits().");
@@ -162,6 +192,9 @@ async function main() {
 
       balaBefore = BigInt((await ethers.provider.getBalance(signers[i].address)).toString());
       tx = await gk.connect(signers[i]).pickupDeposit();
+
+      minusEthFromUser(BigInt(depo.toString()), userNo.toString());
+
       balaAfter = BigInt((await ethers.provider.getBalance(signers[i].address)).toString());
       
       await royaltyTest(rc.address, signers[i].address, gk.address, tx, 18n, "gk.pickupDeposit().");

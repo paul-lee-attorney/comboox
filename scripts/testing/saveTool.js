@@ -23,6 +23,8 @@ function saveBooxAddr(targetName, addr) {
     console.log('save ', targetName, 'with its address: ', addr, "\n");  
 };
 
+// ==== CBP ====
+
 function setUserCBP(userNo, bala) {
 
   const balaList = path.join(__dirname, "cbp.json");
@@ -45,7 +47,6 @@ function getUserCBP(userNo) {
 
   return bala;
 };
-
 
 function addCBPToUser(amt, userNo) {
 
@@ -71,7 +72,52 @@ function transferCBP(from, to, amt) {
   addCBPToUser(amtInLee, to);
 }
 
+// ==== ETH ====
+
+function setUserDepo(userNo, bala) {
+
+  const balaList = path.join(__dirname, "eth.json");
+
+  const objBalaList = JSON.parse(fs.readFileSync(balaList,"utf-8"));
+  objBalaList[userNo] = bala.toString();
+
+  fs.writeFileSync(
+    balaList,
+    JSON.stringify(objBalaList, undefined, 2)
+  );
+};
+
+function getUserDepo(userNo) {
+
+  const balaList = path.join(__dirname, "eth.json");
+
+  const objBalaList = JSON.parse(fs.readFileSync(balaList,"utf-8"));
+  const bala = BigInt(objBalaList[userNo]);
+
+  return bala;
+};
+
+function addEthToUser(amt, userNo) {
+
+  let bala = getUserDepo(userNo);
+  bala += amt;
+
+  setUserDepo(userNo, bala);
+};
+
+function minusEthFromUser(amt, userNo) {
+
+  let bala = getUserDepo(userNo);
+  bala -= amt;
+
+  setUserDepo(userNo, bala);
+};
+
 module.exports = {
+    minusEthFromUser,
+    addEthToUser,
+    getUserDepo,
+    setUserDepo,
     transferCBP,
     setUserCBP,
     getUserCBP,

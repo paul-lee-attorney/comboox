@@ -80,7 +80,7 @@ const { printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -261,24 +261,25 @@ async function main() {
 
     // ---- Exec IA ----
 
-
-    const getValueOfDeal = async (seqOfDeal) => {
-
-      const centPrice = await gk.getCentPrice();
-      const deal = await ia.getDeal(seqOfDeal);
-      const paid = deal[1][2];
-      const value = 280n * BigInt(paid) / 10000n * BigInt(centPrice) + 500n;
-
-      return value;
-    }
+    const centPrice = await gk.getCentPrice();
 
     const payOffDeal = async (seqOfDeal) => {
-      const value = await getValueOfDeal(seqOfDeal);
-      await gk.connect(signers[5]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value});
+
+      const deal = await ia.getDeal(seqOfDeal);
+      const seller = Number(deal[0][5]);
+
+      const paid = BigInt(deal[1][2]);
+      const value = 280n * paid / 10000n * BigInt(centPrice);
+
+      await gk.connect(signers[5]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value + 500n});
+
+      addEthToUser(value, seller.toString());
+      addEthToUser(500n,"5");
+
       transferCBP("5", "8", 58n);
     }
 
-    let value = await getValueOfDeal(1);
+    let value = 280n * 95000n * BigInt(centPrice);
 
     await expect(gk.connect(signers[5]).payOffApprovedDeal(ia.address, 1, {value: value})).to.be.revertedWith("ROAK.shareTransfer: Along Deal Open");
     console.log(" \u2714 Passed Procedural Control Test for gk.shareTransfer(). \n");

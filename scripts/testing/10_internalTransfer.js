@@ -93,7 +93,7 @@ const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, addEthToUser } = require("./saveTool");
 
 async function main() {
 
@@ -295,6 +295,9 @@ async function main() {
     value = getDealValue(210n, 10000n, centPrice);
 
     tx = await gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value + 100n});
+
+    addEthToUser(value, "6");
+    addEthToUser(100n, "3");
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.payOffApprovedDeal().");
 
