@@ -454,7 +454,7 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
             // reason: DistributeProfits
         _gk.saveToCoffer(members[0], amt-sum, bytes32(0x4469737472696275746550726f66697473000000000000000000000000000000));
 
-        emit DistributeProfits(sum, seqOfMotion, caller);
+        emit DistributeProfits(amt, seqOfMotion, caller);
     }
 
     function transferFund(

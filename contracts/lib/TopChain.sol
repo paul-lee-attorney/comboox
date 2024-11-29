@@ -372,6 +372,8 @@ library TopChain {
 
         chain.nodes[next].prev = uint40(acct);
         n.next = uint40(next);
+        
+        _increaseQtyOfBranches(chain);
     }
 
     function _vInsert(
