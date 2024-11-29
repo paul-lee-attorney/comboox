@@ -82,6 +82,7 @@
 
 // 3. General Keeper
 // 3.1 event ExecAction(uint256 indexed contents);
+// 3.2 event ReceivedCash(address indexed from, uint indexed amt);
 
 // 4. Registration Center
 // 4.1 event Transfer(address indexed from, address indexed to, uint256 indexed value);
@@ -98,6 +99,7 @@ const { getLatestSeqOfMotion, allSupportMotion, parseMotion } = require("./gmm")
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
+const { transferCBP, addCBPToUser, minusCBPFromUser } = require("./saveTool");
 
 async function main() {
 
@@ -130,6 +132,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 99n, "gk.createActionOfGM().");
 
+    transferCBP("1", "8", 99n);
+
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
 
@@ -146,6 +150,8 @@ async function main() {
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
+    transferCBP("1", "8", 72n);
+
     motion = parseMotion(await gmm.getMotion(seqOfMotion));
     expect(motion.body.state).to.equal("Proposed");
 
@@ -155,6 +161,8 @@ async function main() {
 
     await allSupportMotion(gk, rom, seqOfMotion);
     await gk.voteCountingOfGM(seqOfMotion);
+
+    transferCBP("1", "8", 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
@@ -168,6 +176,10 @@ async function main() {
 
     tx = await gk.execActionOfGM(9, [rc.address], [0], [payload], ethers.utils.id('9'+rc.address+payload), seqOfMotion);
 
+    transferCBP("1", "8", 36n);
+    
+    addCBPToUser(88n * 10n ** 18n, "8");
+    
     // await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.execActionOfGM().");
 
     await expect(tx).to.emit(gmmKeeper, "ExecAction").withArgs(rc.address, BigNumber.from(0), payload, BigNumber.from(seqOfMotion), BigNumber.from(1));
@@ -193,6 +205,8 @@ async function main() {
     tx = await gk.proposeToTransferFund(false, ft.address, true, ethers.utils.parseUnits("88", 18) , expireDate, 9, 1);
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 99n, "gk.proposeToTransferFund().");
 
+    transferCBP("1", "8", 99n);
+
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
 
@@ -215,6 +229,9 @@ async function main() {
 
     await allSupportMotion(gk, rom, seqOfMotion);
     await gk.voteCountingOfGM(seqOfMotion);
+
+    transferCBP("1", "8", 88n);
+
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
     console.log(" \u2714 Passed Result Verify Test for gk.castVote() & gk.voteCounting(). \n");
@@ -225,6 +242,10 @@ async function main() {
 
     tx = await gk.transferFund(false, ft.address, true, ethers.utils.parseUnits("88", 18), expireDate, seqOfMotion);
 
+    transferCBP("1", "8", 76n);
+
+    minusCBPFromUser(88n * 10n ** 18n, "8");
+    
     // await royaltyTest(rc.address, signers[0].address, gk.address, tx, 76n, "gk.transferFund().");
     
     await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
@@ -246,6 +267,8 @@ async function main() {
     balaBefore = BigInt(await rc.balanceOf(signers[3].address));
 
     tx = await ft.connect(signers[3]).refuel({value: ethers.utils.parseUnits("80", 18)});
+
+    addCBPToUser(80n * 10n ** 18n, "3");
 
     await expect(tx).to.emit(ft, "Refuel").withArgs(signers[3].address, ethers.utils.parseUnits("80", 18), ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Event Test for ft.Refuel(). \n");
@@ -269,14 +292,20 @@ async function main() {
 
     await gk.createActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), 1);
 
+    transferCBP("1", "8", 99n);
+
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
-    await gk.proposeMotionToGeneralMeeting(seqOfMotion);   
+    await gk.proposeMotionToGeneralMeeting(seqOfMotion);
+
+    transferCBP("1", "8", 72n);
 
     await increaseTime(86400);
 
     await allSupportMotion(gk, rom, seqOfMotion);
     await gk.voteCountingOfGM(seqOfMotion);
+
+    transferCBP("1", "8", 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
@@ -286,7 +315,12 @@ async function main() {
 
     tx = await gk.execActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), seqOfMotion)
 
+    transferCBP("1", "8", 36n);
+
     balaAfter = BigInt(await ethers.provider.getBalance(ft.address));
+
+    await expect(tx).to.emit(gk, "ReceivedCash").withArgs(ft.address, ethers.utils.parseUnits("80", 18));
+    console.log(" \u2714 Passed Event Verify Test for gk.ReceivedCash(). \n")
 
     expect(balaBefore - balaAfter).to.equal(ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Result Verify Test for ft.withdrawIncome(). \n");
@@ -302,20 +336,30 @@ async function main() {
 
     await gk.createActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), 1);
 
+    transferCBP("1", "8", 99n);
+
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
+
+    transferCBP("1", "8", 72n);
 
     await increaseTime(86400);
 
     await allSupportMotion(gk, rom, seqOfMotion);
     await gk.voteCountingOfGM(seqOfMotion);
     
+    transferCBP("1", "8", 88n);
+
     // ---- Withdraw Fuel ----
 
     balaBefore = BigInt(await rc.balanceOf(ft.address));
 
     await gk.execActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), seqOfMotion)
+
+    transferCBP("1", "8", 36n);
+
+    addCBPToUser(8n * 10n ** 18n, "8");
 
     balaAfter = BigInt(await rc.balanceOf(ft.address));
 

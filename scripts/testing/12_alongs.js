@@ -75,11 +75,12 @@ const { BigNumber } = require("ethers");
 const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now, } = require("./utils");
-const { codifyHeadOfDeal, parseDeal } = require("./roa");
+const { codifyHeadOfDeal, parseDeal, getDealValue } = require("./roa");
 const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -100,6 +101,9 @@ async function main() {
     let tx = await gk.createIA(1);
 
     let Addr = await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.createIA().");
+
+    transferCBP("1", "8", 58n);
+
     let ia = await readContract("InvestmentAgreement", Addr);
 
     // ---- Set GC ----
@@ -152,14 +156,29 @@ async function main() {
     // ---- Circulate IA ----
 
     await ia.finalizeIA();
-    await gk.circulateIA(ia.address, Bytes32Zero, Bytes32Zero);
+    tx = await gk.circulateIA(ia.address, Bytes32Zero, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.circulateIA().");
+
+    transferCBP("1", "8", 36n);
+
     expect(await ia.circulated()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.circulateIA(). \n");
 
     // ---- Sign IA ----
 
-    await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
-    await gk.signIA(ia.address, Bytes32Zero);
+    tx = await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.signIA().");
+
+    transferCBP("5", "8", 36n);
+
+    tx = await gk.signIA(ia.address, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.signIA().");
+
+    transferCBP("1", "8", 36n);
+
     expect(await ia.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");    
 
@@ -171,12 +190,16 @@ async function main() {
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 88n, "gk.execTagAlong().");
 
+    transferCBP("3", "8", 88n);
+
     await expect(tx).to.emit(roa, "ExecAlongRight");
     console.log(" \u2714 Passed Event Test for roa.ExecAlongRight(). \n");
 
     tx = await gk.execDragAlong(ia.address, 1, 4, 9000 * 10 ** 4, 9000 * 10 ** 4, ethers.utils.id(signers[0].address));
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 88n, "gk.execDragAlong().");
+
+    transferCBP("1", "8", 88n);
 
     await expect(tx).to.emit(roa, "ExecAlongRight");
     console.log(" \u2714 Passed Event Test for roa.ExecAlongRight(). \n");
@@ -196,6 +219,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.acceptAlongDeal().");
 
+    transferCBP("5", "8", 36n);
+
     await expect(tx).to.emit(ia, "RegDeal").withArgs(2);
     await expect(tx).to.emit(ia, "RegDeal").withArgs(3);
     console.log(" \u2714 Passed Event Test for ia.RegDeal(). \n ");  
@@ -206,7 +231,11 @@ async function main() {
     
     // ==== Vote for IA ====
 
-    await gk.proposeDocOfGM(doc, 1, 1);
+    tx = await gk.proposeDocOfGM(doc, 1, 1);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 116n, "gk.proposeDocOfGM().");
+
+    transferCBP("1", "8", 116n);
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     
@@ -215,16 +244,23 @@ async function main() {
 
     await increaseTime(86400);
 
-    await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+    tx = await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[1].address, gk.address, tx, 72n, "gk.castVoteOfGM().");
+
+    transferCBP("2", "8", 72n);
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
-    
+
+    transferCBP("1", "8", 88n);
+
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVote(). \n");
 
     // ---- Exec IA ----
+
 
     const getValueOfDeal = async (seqOfDeal) => {
 
@@ -237,14 +273,9 @@ async function main() {
     }
 
     const payOffDeal = async (seqOfDeal) => {
-
       const value = await getValueOfDeal(seqOfDeal);
-
       await gk.connect(signers[5]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value});
-      console.log('seqOfDeal', seqOfDeal, 'was paid out \n');
-
-      const share = await getLatestShare(ros);
-      console.log("New Share Issued:", share, "\n");
+      transferCBP("5", "8", 58n);
     }
 
     let value = await getValueOfDeal(1);

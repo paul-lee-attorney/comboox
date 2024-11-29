@@ -9,6 +9,7 @@ const hre = require("hardhat");
 const { BigNumber } = require("ethers");
 const { getAllMembers } = require("./rom");
 const { Bytes32Zero, parseTimestamp, parseUnits } = require("./utils");
+const { transferCBP } = require("./saveTool");
 
 const typeOfMotion = [
   'ZeroPoint', 'Elect Officer', 'Remove Officer', 'Approve Doc',
@@ -88,6 +89,7 @@ const allSupportMotion = async (gk, rom, seqOfMotion) => {
     } else {
       await castSupportVote(gk, signers[userNo], seqOfMotion);
     }
+    transferCBP(userNo.toString(), "8", 72n);
     len--;
   }
 }

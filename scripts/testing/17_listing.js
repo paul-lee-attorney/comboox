@@ -83,6 +83,7 @@ const { parseNode, parseDeal, parseData } = require("./loo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getDealValue } = require("./roa");
 const { depositOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -272,6 +273,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.placeInitialOffer().");
 
+    transferCBP("1", "8", 18n);
+
     await expect(tx).to.emit(ros, "IncreaseEquityOfClass");
     console.log(" \u2714 Passed Event Test for ros.IncreaseEquityOfClass(). \n");
 
@@ -293,11 +296,17 @@ async function main() {
 
     tx = await gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 3.8 * 10 ** 4, 1024);
 
+    transferCBP("1", "8", 18n);
+
     tx = await gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 4 * 10 ** 4, 1024);
+
+    transferCBP("1", "8", 18n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     tx = await gk.withdrawInitialOffer(2, seqOfOrder, 1024);
+
+    transferCBP("1", "8", 18n);
     
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -318,10 +327,6 @@ async function main() {
 
     const centPrice = BigInt(await gk.getCentPrice());
 
-    // const getDealValue = (priceInCent, paidInDollar) => {
-    //   return priceInCent * paidInDollar * centPrice;
-    // }
-
     value = getDealValue(370n, 80n, centPrice);
     
     await expect(gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 3.7 * 10 ** 4, 1, {value: value - 200n})).to.be.revertedWith("OR.placeBuyOrder: insufficient msgValue");
@@ -331,6 +336,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[1].address, gk.address, tx, 88n, "gk.placeBuyOrder().");
     
+    transferCBP("2", "8", 88n);
+
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     deal = dealClosed[0].deal;
@@ -371,6 +378,8 @@ async function main() {
 
     value = getDealValue(390n, 80n, centPrice);
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 3.9 * 10 ** 4, 1, {value: value + 100n});
+
+    transferCBP("2", "8", 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -435,6 +444,8 @@ async function main() {
     value = getDealValue(400n, 80n, centPrice);
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4 * 10 ** 4, 1, {value: value + 100n});
 
+    transferCBP("2", "8", 88n);
+
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     deal = dealClosed[0].deal;
@@ -487,6 +498,8 @@ async function main() {
     value = getDealValue(420n, 80n, centPrice);
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4.2 * 10 ** 4, 1, {value: value + 100n});
 
+    transferCBP("2", "8", 88n);
+
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
@@ -505,6 +518,8 @@ async function main() {
     expect(toCoffer[0].reason).to.equal("CustodyValueOfBidOrder");
 
     tx = await gk.connect(signers[1]).withdrawBuyOrder(2, seqOfOrder);
+
+    transferCBP("2", "8", 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -536,13 +551,14 @@ async function main() {
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.placeSellOrder().");    
 
+    transferCBP("3", "8", 58n);
+
     await expect(tx).to.emit(ros, "DecreaseCleanPaid");
     console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n");
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
-    // expect(orderPlaced[0].order.seqOfShare).to.equal(0);
     expect(orderPlaced[0].order.buyer).to.equal(0);
     expect(orderPlaced[0].order.paid).to.equal("100.0");
     expect(orderPlaced[0].order.price).to.equal("4.2");
@@ -556,13 +572,14 @@ async function main() {
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 4 * 10 ** 4, 1024);
 
+    transferCBP("3", "8", 58n);
+
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     deal = dealClosed[0].deal;
     consideration = dealClosed[0].consideration;
 
     expect(deal.classOfShare).to.equal(2);
-    // expect(deal.seqOfShare).to.equal(0);
     expect(deal.buyer).to.equal(2);
     expect(deal.paid).to.equal("40.0");
     expect(deal.price).to.equal("4.0");
@@ -598,7 +615,6 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for gk.placedSellOrder(). share issued \n");
 
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
-    // expect(orderPlaced[0].order.seqOfShare).to.equal(0);
     expect(orderPlaced[0].order.buyer).to.equal(0);
     expect(orderPlaced[0].order.paid).to.equal("60.0");
     expect(orderPlaced[0].order.price).to.equal("4.0");
@@ -612,10 +628,11 @@ async function main() {
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 3.8 * 10 ** 4, 1024);
 
+    transferCBP("3", "8", 58n);
+
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
-    // expect(orderPlaced[0].order.seqOfShare).to.equal(0);
     expect(orderPlaced[0].order.buyer).to.equal(0);
     expect(orderPlaced[0].order.paid).to.equal("100.0");
     expect(orderPlaced[0].order.price).to.equal("3.8");
@@ -629,10 +646,11 @@ async function main() {
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024);
 
+    transferCBP("3", "8", 58n);
+
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
     
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
-    // expect(orderPlaced[0].order.seqOfShare).to.equal(0);
     expect(orderPlaced[0].order.buyer).to.equal(0);
     expect(orderPlaced[0].order.paid).to.equal("100.0");
     expect(orderPlaced[0].order.price).to.equal("3.6");
@@ -643,6 +661,8 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for gk.placeSellOrder(). Sell Order 4 \n");    
 
     tx = await gk.connect(signers[3]).withdrawSellOrder(2, seqOfOrder);
+
+    transferCBP("3", "8", 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -663,6 +683,8 @@ async function main() {
     value = getDealValue(400n, 160n, centPrice);
 
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 160 * 10 ** 4, 0, 1, {value: value + 100n});
+
+    transferCBP("2", "8", 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
     
@@ -726,6 +748,8 @@ async function main() {
 
     tx = await gk.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4 * 10 ** 4, 1, {value: value + 100n});
 
+    transferCBP("2", "8", 88n);
+
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     expect(orderPlaced[0].order.classOfShare).to.equal(2);
@@ -745,6 +769,8 @@ async function main() {
     // ---- Market Sell Order ----
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 80 * 10 ** 4, 0, 1024);
+
+    transferCBP("3", "8", 58n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 

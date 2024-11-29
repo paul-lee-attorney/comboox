@@ -46,6 +46,7 @@ const { getLatestSeqOfMotion, parseMotion } = require("./gmm");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
+const { minusCBPFromUser, addCBPToUser } = require("./saveTool");
 
 async function main() {
 
@@ -59,8 +60,6 @@ async function main() {
     const gk = await getGK();
     const gmm = await getGMM();
     const ros = await getROS();
-
-
 
     // ==== propos motion ====
 
@@ -78,6 +77,9 @@ async function main() {
     tx = await gk.connect(signers[4]).createActionOfGM(9, [rc.address], [0], [payload], ethers.utils.id('9'+rc.address+payload), 1);
 
     await royaltyTest(rc.address, signers[4].address, gk.address, tx, 99n, "gk.createActionOfGM().");
+
+    minusCBPFromUser(99n * 10n ** 13n, "4");
+    addCBPToUser(99n * 10n ** 13n, "8");
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
@@ -100,10 +102,16 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.entrustDelegaterForGeneralMeeting().");
 
+    minusCBPFromUser(36n * 10n ** 13n, "1");
+    addCBPToUser(36n * 10n ** 13n, "8");
+
     await expect(tx).to.emit(gmm, "EntrustDelegate").withArgs(seqOfMotion, BigNumber.from(4), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for gmm.EntrustDelegate(). \n");
     
     await gk.connect(signers[4]).proposeMotionToGeneralMeeting(seqOfMotion);
+
+    minusCBPFromUser(72n * 10n ** 13n, "4");
+    addCBPToUser(72n * 10n ** 13n, "8");
 
     // ==== Vote For Motion (fail) ====
     await increaseTime(86400*1);
@@ -112,34 +120,73 @@ async function main() {
     console.log(" \u2714 Passed Access Control Test for Principal having Delegate for gk.castVoteOfGM(). \n");
     
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "4");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 2, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "2");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 2, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "3");
+    addCBPToUser(72n * 10n ** 13n, "8");
 
     await increaseTime(86400*1);
 
     await gk.voteCountingOfGM(seqOfMotion);
+
+    minusCBPFromUser(88n * 10n ** 13n, "1");
+    addCBPToUser(88n * 10n ** 13n, "8");
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(false);
     console.log(" \u2714 Passed Result Test for rejected motion. \n");
 
     // ==== Vote For Motion (passed) ====
 
-    await gk.createActionOfGM(9, [rc.address], [0], [payload], ethers.utils.id('9'+rc.address+payload), 1);
+    tx = await gk.createActionOfGM(9, [rc.address], [0], [payload], ethers.utils.id('9'+rc.address+payload), 1);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 99n, "gk.createActionOfGM().");
+
+    minusCBPFromUser(99n * 10n ** 13n, "1");
+    addCBPToUser(99n * 10n ** 13n, "8");
     
     seqOfMotion = await getLatestSeqOfMotion(gmm);
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
+    minusCBPFromUser(72n * 10n ** 13n, "1");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     await increaseTime(86400*1);
 
     await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "1");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
-    
+
+    minusCBPFromUser(72n * 10n ** 13n, "2");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 2, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "3");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 2, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "4");
+    addCBPToUser(72n * 10n ** 13n, "8");
 
     await increaseTime(86400*1);
 
     await gk.voteCountingOfGM(seqOfMotion);
+
+    minusCBPFromUser(88n * 10n ** 13n, "1");
+    addCBPToUser(88n * 10n ** 13n, "8");
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Test for approved motion. \n");

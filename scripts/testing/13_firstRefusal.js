@@ -63,6 +63,7 @@ const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { ethers } = require("hardhat");
 const { depositOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -84,6 +85,9 @@ async function main() {
     let tx = await gk.connect(signers[5]).createIA(1);
 
     let Addr = await royaltyTest(rc.address, signers[5].address, gk.address, tx, 58n, "gk.createIA().");
+
+    transferCBP("5", "8", 58n);
+
     let ia = await readContract("InvestmentAgreement", Addr);
 
     // ---- Set GC ----
@@ -103,7 +107,7 @@ async function main() {
       seqOfDeal: 1,
       preSeq: 0,
       classOfShare: 2,
-      seqOfShare: 9,
+      seqOfShare: 10,
       seller: 5,
       priceOfPaid: 3,
       priceOfPar: 0,
@@ -118,7 +122,7 @@ async function main() {
       seqOfDeal: 2,
       preSeq: 0,
       classOfShare: 2,
-      seqOfShare: 12,
+      seqOfShare: 13,
       seller: 5,
       priceOfPaid: 3,
       priceOfPar: 0,
@@ -133,7 +137,7 @@ async function main() {
       seqOfDeal: 3,
       preSeq: 0,
       classOfShare: 2,
-      seqOfShare: 13,
+      seqOfShare: 14,
       seller: 5,
       priceOfPaid: 3,
       priceOfPar: 0,
@@ -148,7 +152,7 @@ async function main() {
       seqOfDeal: 4,
       preSeq: 0,
       classOfShare: 1,
-      seqOfShare: 14,
+      seqOfShare: 15,
       seller: 5,
       priceOfPaid: 3,
       priceOfPar: 0,
@@ -169,13 +173,27 @@ async function main() {
     await ia.connect(signers[5]).finalizeIA();
     expect(await ia.isFinalized()).to.equal(true);
 
-    await gk.connect(signers[5]).circulateIA(ia.address, Bytes32Zero, Bytes32Zero);
+    tx = await gk.connect(signers[5]).circulateIA(ia.address, Bytes32Zero, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.circulateIA().");
+
+    transferCBP("5", "8", 36n);
+
     expect(await ia.circulated()).to.equal(true);
 
     // ---- Sign IA ----
 
-    await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
-    await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
+    tx = await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.signIA().");
+
+    transferCBP("5", "8", 36n);
+
+    tx = await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[6].address, gk.address, tx, 36n, "gk.signIA().");
+
+    transferCBP("6", "8", 36n);
 
     expect(await ia.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");
@@ -189,10 +207,16 @@ async function main() {
 
       await royaltyTest(rc.address, signers[0].address, gk.address, tx, 88n, "gk.execFirstRefusal().");
 
+      transferCBP("1", "8", 88n);
+
       await expect(tx).to.emit(roa, "ClaimFirstRefusal").withArgs(ia.address, i, 1);
       await expect(tx).to.emit(ia, "TerminateDeal").withArgs(BigNumber.from(i));
 
       tx = await gk.connect(signers[1]).execFirstRefusal(513, 2, ia.address, i, ethers.utils.id(signers[1].address));
+
+      await royaltyTest(rc.address, signers[1].address, gk.address, tx, 88n, "gk.execFirstRefusal().");
+
+      transferCBP("2", "8", 88n);
 
       const cls = (await roa.getFRClaimsOfDeal(ia.address, i)).map(v => ({seqOfDeal: v[0], claimer: v[1]}));
       expect(cls[0]).to.deep.equal({seqOfDeal:i, claimer:1});
@@ -212,6 +236,8 @@ async function main() {
       tx = await gk.computeFirstRefusal(ia.address, i);
 
       await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.computeFirstRefusal().");
+
+      transferCBP("1", "8", 18n);
 
       await expect(tx).to.emit(ia, "RegDeal")
       console.log(" \u2714 Passed Event Test for ia.RegDeal(). \n");
@@ -234,7 +260,11 @@ async function main() {
 
     const doc = BigInt(ia.address);
 
-    await gk.connect(signers[5]).proposeDocOfGM(doc, 1, 1);
+    tx = await gk.connect(signers[5]).proposeDocOfGM(doc, 1, 1);
+
+    await royaltyTest(rc.address, signers[5].address, gk.address, tx, 116n, "gk.acceptAlongDeal().");
+
+    transferCBP("5", "8", 116n);
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     expect(await gmm.isProposed(seqOfMotion)).to.equal(true);
@@ -242,28 +272,44 @@ async function main() {
 
     await increaseTime(86400);
 
-    await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
-    await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+    tx = await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[3].address, gk.address, tx, 72n, "gk.castVoteOfGM().");
+
+    transferCBP("3", "8", 72n);
+
+    tx = await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[4].address, gk.address, tx, 72n, "gk.castVoteOfGM().");
+
+    transferCBP("4", "8", 72n);
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
+
+    transferCBP("1", "8", 88n);
+
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM() & gk.voteAccountingOfGM(). \n");
 
     // ---- Exec IA ----
 
+    const centPrice = await gk.getCentPrice();
+
     const payOffDeal = async (seqOfDeal) => {
 
-      const centPrice = await gk.getCentPrice();
       const deal = await ia.getDeal(seqOfDeal);
+      console.log("deal: ", parseDeal(deal), "\n");
       const paid = deal[1][2];
-      const value = 300n * BigInt(paid) / 10000n * BigInt(centPrice) + 500n;
+      const value = 300n * BigInt(paid) / 10000n * BigInt(centPrice) + 100n;
 
       const buyer = Number(deal[1][0]);
   
       await gk.connect(signers[buyer - 1]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value});
+
+      transferCBP((buyer).toString(), "8", 58n);
 
       const share = await getLatestShare(ros);
       
@@ -273,10 +319,7 @@ async function main() {
       console.log(" \u2714 Passed Result Verify Test for First Refusal of Share", share.head.seqOfShare, "\n");
     }
 
-    for (let i=12; i>=9; i--)
-        await payOffDeal(i);
-
-    for (let i=8; i>=5; i--)
+    for (let i=12; i>=5; i--)
         await payOffDeal(i);
     
     console.log(" \u2714 Passed All Tests for First Refusal. \n");

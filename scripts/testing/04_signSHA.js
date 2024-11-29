@@ -82,6 +82,9 @@
 // 2.1 event SetRoleAdmin(bytes32 indexed role, address indexed acct);   
 // 2.2 event LockContents();
 
+// 3. SigPage
+// 3.1 event CirculateDoc();
+
 const { expect } = require("chai");
 const { BigNumber, ethers } = require("ethers");
 const { readContract } = require("../readTool"); 
@@ -90,8 +93,9 @@ const { getROC, getGK, getRC, getROO, getROD, getROS } = require("./boox");
 const { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, lrParser, lrCodifier, alongRuleCodifier, alongRuleParser } = require("./sha");
 const { codifyHeadOfOption, codifyCond, parseOption } = require("./roo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
-const { printShare, printShares } = require("./ros");
+const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
+const { minusCBPFromUser, addCBPToUser } = require("./saveTool");
 
 async function main() {
 
@@ -118,6 +122,12 @@ async function main() {
 
     let SHA = await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.createSHA().");
 
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.createSHA().");
+    console.log(" \u2714 Passed Royalty Check Test for gk.createSHA(). \n");
+
+    minusCBPFromUser(18n * 10n ** 13n, "1");
+    addCBPToUser(18n * 10n ** 13n, "8");
+
     await expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(SHA, 1);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile(). \n");
     
@@ -135,8 +145,6 @@ async function main() {
     console.log(" \u2714 Passed Access Control Test for sha.setRoleAdmin(). \n");
     
     tx = await sha.setRoleAdmin(ATTORNEYS, signers[0].address);
-
-    await tx.wait();
 
     await expect(tx).to.emit(sha, "SetRoleAdmin").withArgs(ATTORNEYS, signers[0].address);
     console.log(" \u2714 Passed Event Test for sha.SetRoleAdmin(). \n");
@@ -575,8 +583,14 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.createSHA().");
 
+    minusCBPFromUser(18n * 10n ** 13n, "1");
+    addCBPToUser(18n * 10n ** 13n, "8");
+
     expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(sha.address, 2);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");
+
+    expect(tx).to.emit(sha, "CirculateDoc");
+    console.log(" \u2714 Passed Event Test for sha.CirculateDoc().\n");    
 
     expect(await sha.circulated()).to.equal(true);
 
@@ -595,12 +609,26 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.signSHA().");
 
+    minusCBPFromUser(18n * 10n ** 13n, "1");
+    addCBPToUser(18n * 10n ** 13n, "8");
+
     expect(await sha.isSigner(1)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signSHA().\n");
 
     await gk.connect(signers[1]).signSHA(sha.address, Bytes32Zero);
+
+    minusCBPFromUser(18n * 10n ** 13n, "2");
+    addCBPToUser(18n * 10n ** 13n, "8");
+
     await gk.connect(signers[3]).signSHA(sha.address, Bytes32Zero);
+
+    minusCBPFromUser(18n * 10n ** 13n, "3");
+    addCBPToUser(18n * 10n ** 13n, "8");
+
     await gk.connect(signers[4]).signSHA(sha.address, Bytes32Zero);
+
+    minusCBPFromUser(18n * 10n ** 13n, "4");
+    addCBPToUser(18n * 10n ** 13n, "8");
 
     expect(await sha.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for all gk.signSHA().\n");
@@ -613,6 +641,9 @@ async function main() {
     tx = await gk.activateSHA(sha.address);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.activateSHA().");
+
+    minusCBPFromUser(58n * 10n ** 13n, "1");
+    addCBPToUser(58n * 10n ** 13n, "8");
 
     expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(sha.address, 6);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");

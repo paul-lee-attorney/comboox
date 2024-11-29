@@ -89,6 +89,7 @@ const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
+const { minusCBPFromUser, addCBPToUser } = require("./saveTool");
 
 async function main() {
 
@@ -110,6 +111,10 @@ async function main() {
     let tx = await gk.createIA(1);
 
     let Addr = await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.createIA().");
+
+    minusCBPFromUser(58n * 10n ** 13n, "1");
+    addCBPToUser(58n * 10n ** 13n, "8");
+
     let ia = await readContract("InvestmentAgreement", Addr);
 
     // ---- Set GC ----
@@ -182,6 +187,9 @@ async function main() {
 
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.circulateIA().");
 
+    minusCBPFromUser(36n * 10n ** 13n, "5");
+    addCBPToUser(36n * 10n ** 13n, "8");
+
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(Addr, 2);
     console.log(" \u2714 Passed Event Test for roa.UpdateStateOfFile(). \n");
 
@@ -201,6 +209,10 @@ async function main() {
     tx = await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
 
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.signIA().");
+
+    minusCBPFromUser(36n * 10n ** 13n, "5");
+    addCBPToUser(36n * 10n ** 13n, "8");
+
     expect(await ia.isSigner(5)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_5 \n ");
 
@@ -215,6 +227,10 @@ async function main() {
     tx = await gk.connect(signers[6]).signIA(ia.address, Bytes32Zero);
 
     await royaltyTest(rc.address, signers[6].address, gk.address, tx, 36n, "gk.signIA().");
+
+    minusCBPFromUser(36n * 10n ** 13n, "6");
+    addCBPToUser(36n * 10n ** 13n, "8");
+
     expect(await ia.isSigner(6)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA(). by User_6 \n ");
 
@@ -229,6 +245,9 @@ async function main() {
 
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 116n, "gk.proposeDocOfGM().");
 
+    minusCBPFromUser(116n * 10n ** 13n, "5");
+    addCBPToUser(116n * 10n ** 13n, "8");
+
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Evet Test for gmm.CreateMotion(). \n");
 
@@ -240,19 +259,38 @@ async function main() {
     await increaseTime(86400);
 
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "2");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     expect(await gmm.isVoted(seqOfMotion, 2)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). with User_2 \n");
 
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
+    minusCBPFromUser(72n * 10n ** 13n, "4");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     await gk.entrustDelegaterForGeneralMeeting(seqOfMotion, 3);
+
+    minusCBPFromUser(36n * 10n ** 13n, "1");
+    addCBPToUser(36n * 10n ** 13n, "8");
+
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    minusCBPFromUser(72n * 10n ** 13n, "3");
+    addCBPToUser(72n * 10n ** 13n, "8");
+
     expect(await gmm.isVoted(seqOfMotion, 3)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). with User_3 \n");
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
+
+    minusCBPFromUser(88n * 10n ** 13n, "1");
+    addCBPToUser(88n * 10n ** 13n, "8");
+
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.voteCounting(). \n");
 
@@ -262,6 +300,9 @@ async function main() {
     tx = await gk.connect(signers[5]).transferTargetShare(ia.address, 1);
 
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 58n, "gk.transferTargetShare().");
+
+    minusCBPFromUser(58n * 10n ** 13n, "5");
+    addCBPToUser(58n * 10n ** 13n, "8");
 
     await expect(tx).to.emit(ia, "CloseDeal").withArgs(BigNumber.from(1), "");
     console.log(" \u2714 Passed Event Test for ia.loseDeal(). \n");
@@ -281,12 +322,12 @@ async function main() {
     await expect(tx).to.emit(rom, "AddMember").withArgs(BigNumber.from(6), BigNumber.from(5));
     console.log(" \u2714 Passed Event Test for rom.AddMember(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(7), BigNumber.from(6));
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(8), BigNumber.from(6));
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
   
     let share = await getLatestShare(ros);
 
-    expect(share.head.seqOfShare).to.equal(7);
+    expect(share.head.seqOfShare).to.equal(8);
     expect(share.head.shareholder).to.equal(6);
     expect(share.head.priceOfPaid).to.equal('2.0');
     expect(share.body.paid).to.equal('10,000.0');

@@ -30,20 +30,26 @@
 // 1.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
 // 1.2 event ProposeMotionToGeneralMeeting(uint256 indexed seqOfMotion,
 //     uint256 indexed proposer);
-// 1.3 ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
+// 1.3 event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
 
-// 3. General Keeper
-// 3.1 event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);
+// 2. General Keeper
+// 2.1 event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);
+// 2.2 event DistributeProfits(uint indexed amt, uint indexed expireDate, uint indexed seqOfMotion);
+
+// 3. GMM Keeper
+// 3.1 event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, uint indexed caller);
+
 
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getROM, getFT, getRC, getGMM, getROS, } = require("./boox");
+const { getGK, getROM, getFT, getRC, getGMM, getROS, getGMMKeeper, } = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { getLatestSeqOfMotion, parseMotion, allSupportMotion } = require("./gmm");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -59,6 +65,7 @@ async function main() {
     const gmm = await getGMM();
     const rom = await getROM();
     const ros = await getROS();
+    const gmmKeeper = await getGMMKeeper();
 
     // ==== ETH of Comp ====
 
@@ -82,6 +89,8 @@ async function main() {
     let tx = await gk.proposeToDistributeProfits(distAmt, expireDate, 10, 1);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 68n, "gk.proposeToDistributeProfits().");
+
+    transferCBP("1", "8", 68n);
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
@@ -110,6 +119,8 @@ async function main() {
 
     await gk.voteCountingOfGM(seqOfMotion);
 
+    transferCBP("1", "8", 88n);
+
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(' \u2714 Passed Result Verify Test for motion voting. \n');
 
@@ -118,15 +129,22 @@ async function main() {
     await expect(gk.connect(signers[1]).distributeProfits(distAmt, expireDate, seqOfMotion)).to.be.revertedWith("MR.ER: not executor");
     console.log(" \u2714 Passed Access Control Test for gk.distributeProfits(). \n");
     
-
-    let balaBefore = await getEthOfComp();
+    let balaBefore = await getEthOfComp();    
     tx = await gk.distributeProfits(distAmt, expireDate, seqOfMotion);
     let balaAfter = await getEthOfComp();
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.distributeProfits().");
 
+    transferCBP("1", "8", 18n);
+
     await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
+
+    await expect(tx).to.emit(gk, "DistributeProfits").withArgs(BigNumber.from(distAmt.toString()), BigNumber.from(expireDate), BigNumber.from(seqOfMotion));
+    console.log(" \u2714 Passed Event Test for gk.DistributeProfits(). \n");
+
+    await expect(tx).to.emit(gmmKeeper, "DistributeProfits").withArgs(BigNumber.from(distAmt.toString()), BigNumber.from(seqOfMotion), BigNumber.from(1));
+    console.log(" \u2714 Passed Event Test for gmmKeeper.DistributeProfits(). \n");
 
     let diff = balaBefore - balaAfter;
 
@@ -147,6 +165,8 @@ async function main() {
       balaAfter = BigInt((await ethers.provider.getBalance(signers[i].address)).toString());
       
       await royaltyTest(rc.address, signers[i].address, gk.address, tx, 18n, "gk.pickupDeposit().");
+
+      transferCBP(userNo.toString(), "8", 18n);
 
       await expect(tx).to.emit(gk, "PickupDeposit").withArgs(signers[i].address, userNo, depo);
       console.log(" \u2714 Passed Event Test for gk.PickupDeposit(). \n");

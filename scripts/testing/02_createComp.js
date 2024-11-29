@@ -97,7 +97,7 @@
 
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
-const { saveBooxAddr } = require("./saveTool");
+const { saveBooxAddr, addCBPToUser, minusCBPFromUser, setUserCBP } = require("./saveTool");
 const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
 const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
 const { now, increaseTime } = require("./utils");
@@ -132,6 +132,8 @@ async function main() {
     
     await expect(tx).to.emit(gk, "SetDirectKeeper").withArgs(signers[1].address);
     console.log(" \u2714 Passed Event Test for gk.SetDirectKeeper(). \n");
+
+    setUserCBP("8", 0n); // No rewards will be granted for CA User;
 
     const ROC = await gk.getROC();
     saveBooxAddr("ROC", ROC);
@@ -307,8 +309,6 @@ async function main() {
 
     tx = await ros.connect(signers[1]).decreaseCapital(5, 20000 * 10 ** 4, 20000 * 10 ** 4);
 
-    await tx.wait();
-
     await expect(tx).to.emit(rom, "CapDecrease").withArgs(BigNumber.from(100), BigNumber.from(20000 * 10 ** 4), BigNumber.from(20000 * 10 ** 4), 100);
     console.log(" \u2714 Passed Event Test for rom.CapDecrease(). \n");
 
@@ -338,14 +338,10 @@ async function main() {
     let hashLock = ethers.utils.id('Today is Monday.');
     tx = await gk.connect(signers[1]).setPayInAmt(4, 5000 * 10 ** 4, expireDate, hashLock);
 
-    await tx.wait();
-
     await expect(tx).to.emit(ros, "SetPayInAmt");
     console.log(" \u2714 Passed Event Test for ros.SetPayInAmt(). \n");
 
     tx = await gk.connect(signers[4]).requestPaidInCapital(hashLock, 'Today is Monday.');
-
-    await tx.wait();
 
     await expect(tx).to.emit(rom, "CapIncrease").withArgs(BigNumber.from(100), BigNumber.from(5000 * 10 ** 4), 0, BigNumber.from(100));
     console.log(" \u2714 Passed Event Test for rom.CapIncrease(). \n");
@@ -377,6 +373,10 @@ async function main() {
     tx = await gk.connect(signers[4]).payInCapital(4, 5000 * 10 ** 4, {value: value + 100n});
 
     await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "gk.payInCapital().");
+
+    // User_4 pays royalty to User_1 (author of Templates);
+    minusCBPFromUser(36n * 10n ** 13n, "4");
+    addCBPToUser(36n * 10n ** 13n, "1");
 
     await expect(tx).to.emit(gk, "SaveToCoffer");
     console.log(" \u2714 Passed Event Test for gk.SaveToCoffer(). \n");

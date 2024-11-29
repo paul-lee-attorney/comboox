@@ -106,6 +106,7 @@ const { royaltyTest, cbpOfUsers } = require("./rc");
 const { motionSnParser, getLatestSeqOfMotion } = require("./gmm");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
+const { minusCBPFromUser, addCBPToUser, transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -134,6 +135,8 @@ async function main() {
     let receipt = await tx.wait();
     
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 72n, "gk.nominateDirector().");
+
+    transferCBP("1", "8", 72n);
     
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
@@ -160,6 +163,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 72n, "gk.proposeMotionToGeneralMeeting()");
 
+    transferCBP("1", "8", 72n);
+
     await expect(tx).to.emit(gmm, "ProposeMotionToGeneralMeeting").withArgs(seqOfMotion, 1);
     console.log(" \u2714 Passed Event Test for gmm.ProposeMotionToGeneralMeeting() \n");
 
@@ -180,6 +185,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 72n, "gk.castVoteOfGM().");
 
+    transferCBP("1", "8", 72n);
+
     await expect(tx).to.emit(gmm, "CastVoteInGeneralMeeting").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1), BigNumber.from(1), Bytes32Zero);
     console.log(" \u2714 Passed Event Control Test for gmm.CastVoteInGeneralMeeting(). \n");
 
@@ -187,18 +194,27 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for gk.castVoteOfGM(). \n");
 
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    transferCBP("2", "8", 72n);
+
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
+
+    transferCBP("3", "8", 72n);
 
     await expect(gk.voteCountingOfGM(seqOfMotion)).to.be.revertedWith("MR.VT: vote not ended yet");
     console.log(" \u2714 Passed Procedure Control Test for gmm.voteCountingOfGM(). \n");
 
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
+    transferCBP("4", "8", 72n);
+
     // ---- Vote Counting for Chairman ----    
 
     tx = await gk.voteCountingOfGM(seqOfMotion);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 88n, "gk.voteCountingOfGM().");
+
+    transferCBP("1", "8", 88n);
 
     await expect(tx).to.emit(gmm, "VoteCounting").withArgs(BigNumber.from(seqOfMotion), 3);
     console.log(" \u2714 Passed Event Control Test for gmm.VoteCounting(). \n");
@@ -212,6 +228,10 @@ async function main() {
     console.log(" \u2714 Passed Access Control Test for gk.takeSeat(). \n");
         
     tx = await gk.takeSeat(seqOfMotion, 1);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.takeSeat().");
+
+    transferCBP("1", "8", 36n);
 
     await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
     console.log(" \u2714 Passed Event Control Test for gmm.ExecResolution(). \n");
@@ -236,6 +256,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 116n, "gk.createMotionToRemoveDirector().");
 
+    transferCBP("1", "8", 116n);
+
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
     
@@ -256,6 +278,8 @@ async function main() {
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
+    transferCBP("1", "8", 72n);
+
     await increaseTime(86400);
 
     await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
@@ -263,7 +287,14 @@ async function main() {
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
+    transferCBP("1", "8", 72n);
+    transferCBP("2", "8", 72n);
+    transferCBP("3", "8", 72n);
+    transferCBP("4", "8", 72n);
+
     await gk.voteCountingOfGM(seqOfMotion);
+
+    transferCBP("1", "8", 88n);
 
     await expect(gk.connect(signers[1]).removeDirector(seqOfMotion, 1)).to.be.revertedWith("MR.ER: not executor");
     console.log(" \u2714 Passed Access Control Test for gk.removeDirector(). \n");
@@ -271,6 +302,8 @@ async function main() {
     tx = await gk.removeDirector(seqOfMotion, 1);
     
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.removeDirector().");
+
+    transferCBP("1", "8", 58n);
 
     await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
@@ -285,9 +318,13 @@ async function main() {
 
     await gk.nominateDirector(1, 1);
 
+    transferCBP("1", "8", 72n);
+
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
+
+    transferCBP("1", "8", 72n);
 
     await increaseTime(86400);
 
@@ -296,9 +333,18 @@ async function main() {
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
+    transferCBP("1", "8", 72n);
+    transferCBP("2", "8", 72n);
+    transferCBP("3", "8", 72n);
+    transferCBP("4", "8", 72n);
+
     await gk.voteCountingOfGM(seqOfMotion);
 
+    transferCBP("1", "8", 88n);
+
     await gk.takeSeat(seqOfMotion, 1);
+
+    transferCBP("1", "8", 36n);
 
     // ==== CEO ====
 
@@ -312,6 +358,8 @@ async function main() {
     receipt = await tx.wait();
     
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.nominateOfficer().");
+
+    transferCBP("1", "8", 36n);
 
     await expect(tx).to.emit(bmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for bmm.CreateMotion(). \n");
@@ -339,6 +387,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.proposeMotionToBoard().");
 
+    transferCBP("1", "8", 36n);
+
     await expect(tx).to.be.emit(bmm, "ProposeMotionToBoard").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for bmm.ProposeMotionToBoard(). \n");
 
@@ -354,6 +404,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.castVote().");
 
+    transferCBP("1", "8", 36n);
+
     await expect(tx).to.emit(bmm, "CastVoteInBoardMeeting").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1), BigNumber.from(1), Bytes32Zero);
     console.log(" \u2714 Passed Event Test for bmm.CastVoteInBoardMeeting(). \n");
 
@@ -366,6 +418,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.voteCounting().");
 
+    transferCBP("1", "8", 58n);
+
     await expect(tx).to.emit(bmm, "VoteCounting").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(3));
     console.log(" \u2714 Passed Event Test for bmm.VoteCounting(). \n");
 
@@ -374,6 +428,8 @@ async function main() {
     tx = await gk.connect(signers[1]).takePosition(seqOfMotion, 2);
 
     await royaltyTest(rc.address, signers[1].address, gk.address, tx, 36n, "gk.takePosition().");
+
+    transferCBP("2", "8", 36n);
 
     await expect(tx).to.emit(bmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(2));
     console.log(" \u2714 Passed Event Control Test for gmm.ExecResolution(). \n");
@@ -394,10 +450,23 @@ async function main() {
     bmmList = (await bmm.getSeqList()).map(v => Number(v));
     seqOfMotion = bmmList[bmmList.length - 1];
 
+    transferCBP("2", "8", 36n);
+
     await gk.proposeMotionToBoard(seqOfMotion);
+
+    transferCBP("1", "8", 36n);
+
     await gk.castVote(seqOfMotion, 1, Bytes32Zero);
+
+    transferCBP("1", "8", 36n);
+
     await gk.voteCounting(seqOfMotion);
+
+    transferCBP("1", "8", 58n);
+
     await gk.connect(signers[3]).takePosition(seqOfMotion, 3);
+
+    transferCBP("3", "8", 36n);
 
     pos = positionParser(await rod.getPosition(3));
 
@@ -415,6 +484,8 @@ async function main() {
     
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 18n, "gk.quitPosition().");
   
+    transferCBP("3", "8", 18n);
+
     await expect(tx).to.emit(rod, "QuitPosition").withArgs(BigNumber.from(3), BigNumber.from(3));
     console.log(" \u2714 Passed Event Test for rod.quitPosition(). \n");
 
@@ -427,10 +498,23 @@ async function main() {
     bmmList = (await bmm.getSeqList()).map(v => Number(v));
     seqOfMotion = bmmList[bmmList.length - 1];
 
+    transferCBP("2", "8", 36n);
+
     await gk.proposeMotionToBoard(seqOfMotion);
+
+    transferCBP("1", "8", 36n);
+
     await gk.castVote(seqOfMotion, 1, Bytes32Zero);
+
+    transferCBP("1", "8", 36n);
+
     await gk.voteCounting(seqOfMotion);
+
+    transferCBP("1", "8", 58n);
+
     await gk.connect(signers[3]).takePosition(seqOfMotion, 3);
+
+    transferCBP("3", "8", 36n);
 
     expect(await rod.isOccupied(3)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for  Reposition of Manager. \n");

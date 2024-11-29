@@ -91,6 +91,7 @@ const { getLatestShare, printShares } = require("./ros");
 const { parseOption, parseOracle, parseSwap } = require("./roo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { depositOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
 
 async function main() {
 
@@ -139,6 +140,8 @@ async function main() {
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 18n, "gk.execOption().");
 
+    transferCBP("3", "8", 18n);
+
     await expect(tx).to.emit(roo, "ExecOpt").withArgs(BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for roo.ExecOpt(). \n");
 
@@ -151,7 +154,10 @@ async function main() {
     // ==== Update Oracles & Exec Option 2 ====
 
     await gk.connect(signers[1]).updateOracle(2, 800 * 10 ** 4, 120 * 10 ** 4, 0);
+
     await gk.connect(signers[1]).execOption(2);
+
+    transferCBP("2", "8", 18n);
 
     // ==== Create Swap ====
     
@@ -161,6 +167,8 @@ async function main() {
     tx = await gk.connect(signers[3]).createSwap(1, 3, 500 * 10 ** 4, 2);
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 36n, "gk.createSwap().");
+
+    transferCBP("3", "8", 36n);
 
     await expect(tx).to.emit(roo, "RegSwap");
     console.log(" \u2714 Passed Event Test for roo.RegSwap(). \n");
@@ -182,6 +190,8 @@ async function main() {
   
     await gk.connect(signers[1]).createSwap(2, 3, 500 * 10 ** 4, 2);
 
+    transferCBP("2", "8", 36n);
+
     swap = parseSwap(await roo.getSwap(2, 1));
 
     expect(swap.seqOfSwap).to.equal(1);
@@ -195,19 +205,19 @@ async function main() {
     // ==== Exec Call Option ====
 
     const centPrice = await gk.getCentPrice();
-    let value = 110n * 500n * BigInt(centPrice) - 100n;
+    let value = 110n * 500n * BigInt(centPrice);
 
-    await expect(gk.connect(signers[1]).payOffSwap(2, 1, {value:value})).to.be.revertedWith("SWR.payOffSwap: insufficient amt");
+    await expect(gk.connect(signers[1]).payOffSwap(2, 1, {value:value - 100n})).to.be.revertedWith("SWR.payOffSwap: insufficient amt");
     console.log(" \u2714 Passed Value Check Test for gk.payOffSwap(). \n");  
 
-    value += 200n;
-
-    await expect(gk.payOffSwap(2, 1, {value:value})).to.be.revertedWith("ROOK.payOffSwap: wrong payer");    
+    await expect(gk.payOffSwap(2, 1, {value:value + 100n})).to.be.revertedWith("ROOK.payOffSwap: wrong payer");    
     console.log(" \u2714 Passed Access Control Test for gk.payOffSwap(). \n");  
 
-    tx = await gk.connect(signers[1]).payOffSwap(2, 1, {value:value});
+    tx = await gk.connect(signers[1]).payOffSwap(2, 1, {value:value + 100n});
 
     await royaltyTest(rc.address, signers[1].address, gk.address, tx, 58n, "gk.payOffSwap().");
+
+    transferCBP("2", "8", 58n);
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(3), BigNumber.from(500 * 10 ** 4));
     console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
@@ -215,12 +225,12 @@ async function main() {
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(BigNumber.from(3), BigNumber.from(500 * 10 ** 4), BigNumber.from(500 * 10 ** 4));
     console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(24), BigNumber.from(2));
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(25), BigNumber.from(2));
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     let share = await getLatestShare(ros);
 
-    expect(share.head.seqOfShare).to.equal(24);
+    expect(share.head.seqOfShare).to.equal(25);
     expect(share.head.shareholder).to.equal(2);
     expect(share.body.paid).to.equal("500.0");
     expect(share.body.cleanPaid).to.equal("500.0");
@@ -235,18 +245,20 @@ async function main() {
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.payOffSwap().");
 
+    transferCBP("3", "8", 58n);
+
     await expect(tx).to.emit(ros, "IncreaseCleanPaid");
     console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
 
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(BigNumber.from(2), BigNumber.from(300 * 10 ** 4), BigNumber.from(300 * 10 ** 4));
     console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(25), BigNumber.from(3));
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(26), BigNumber.from(3));
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     share = await getLatestShare(ros);
 
-    expect(share.head.seqOfShare).to.equal(25);
+    expect(share.head.seqOfShare).to.equal(26);
     expect(share.head.shareholder).to.equal(3);
     expect(share.body.paid).to.equal("300.0");
     expect(share.body.cleanPaid).to.equal("300.0");

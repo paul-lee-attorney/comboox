@@ -23,7 +23,8 @@ const printShares = async (ros) => {
       shareholder: share.head.shareholder,
       paid: share.body.paid,
       par: share.body.par,
-      cleanPaid: share.body.cleanPaid,      
+      cleanPaid: share.body.cleanPaid,
+      priceOfPaid: share.head.priceOfPaid,
     });
   });
   console.log('Shares of the Comp:', shares, '\n');

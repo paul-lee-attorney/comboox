@@ -38,6 +38,7 @@ const { pfrCodifier, pfrParser, cbpOfUsers } = require('./rc');
 const { getRC } = require("./boox");
 const { expect } = require("chai");
 const { AddrZero } = require('./utils');
+const { setUserCBP } = require('./saveTool');
 
 async function main() {
 
@@ -72,16 +73,22 @@ async function main() {
     await expect(rc.mint(signers[0].address, 8n * 10n ** 18n)).to.emit(rc, "Transfer").withArgs(AddrZero, signers[0].address, 8n * 10n ** 18n);
     console.log(" \u2714 Passed Event Test for rc.Transfer(). \n");
 
+    setUserCBP("1", BigInt(8n * 10n ** 18n));
+
     const userNo2 = await rc.connect(signers[1]).getMyUserNo();
     expect(userNo2).to.equal(2);
     console.log(" \u2714 Passed UserNo Verify Test for userNo2. \n");
 
     await rc.mint(signers[1].address, 8n * 10n ** 18n);
     expect(ethers.utils.formatUnits((await rc.balanceOf(signers[1].address)).toString(), 18)).to.equal("8.0");
-    console.log(" \u2714 Passed Result Test for rc.mint(). \n");    
+    console.log(" \u2714 Passed Result Test for rc.mint(). \n");
+
+    setUserCBP("2", BigInt(8n * 10n ** 18n));
 
     for (let i = 3; i<7; i++) {
       await rc.connect(signers[i]).regUser();
+
+      setUserCBP(i.toString(), 18n * 10n ** 15n);
 
       expect(await rc.connect(signers[i]).getMyUserNo()).to.equal(i);
       console.log(' \u2714 Passed Result Test for rc.regUser() with signers[', i, '].', '\n');
@@ -93,6 +100,8 @@ async function main() {
     await rc.connect(signers[2]).regUser();
     expect(await rc.connect(signers[2]).getMyUserNo()).to.equal(7);
     console.log(' \u2714 Passed Result Test for rc.regUser() with signers[', 2, '].', '\n');
+
+    setUserCBP("7", 18n * 10n ** 15n);
 
     expect(ethers.utils.formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
     console.log(' \u2714 Passed NewUserAwards Test for signers[', 2, '].', '\n');

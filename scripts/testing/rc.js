@@ -8,16 +8,25 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { parseUnits, parseHexToBigInt, AddrZero, longDataParser } = require('./utils');
+const { getUserCBP } = require("./saveTool");
 
 const cbpOfUsers = async (rc, addrOfGK) => {
   const signers = await ethers.getSigners();
   for (let i=0; i<7; i++) {
     const userNo = await rc.connect(signers[i]).getMyUserNo();
     const bala = await rc.balanceOf(signers[i].address);
+
+    const balaExpected = getUserCBP(userNo.toString());
+    expect(balaExpected).to.equal(BigInt(bala.toString()));
+
     console.log('CBP Balance of User_', userNo, ':', longDataParser(ethers.utils.formatUnits(bala.toString(), 9)), '(GLee). \n');
   }
   if (addrOfGK != AddrZero) {
     const cbpOfComp = await rc.balanceOf(addrOfGK);
+
+    const cbpOfCompExpected = getUserCBP("8");
+    expect(cbpOfCompExpected).to.equal(BigInt(cbpOfComp.toString()));
+
     console.log('CBP Balance of Comp:', longDataParser(ethers.utils.formatUnits(cbpOfComp.toString(), 9)), '(GLee). \n');
   }
 }
