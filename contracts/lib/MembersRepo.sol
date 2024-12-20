@@ -111,6 +111,7 @@ library MembersRepo {
                     uint64 amt = _basedOnPar ? cp.par : cp.paid;
 
                     cp.rate = uint16(sumOfVotes * 100 / amt);
+                    cp.points = uint64(sumOfVotes);
                     m.votesInHand.push(cp.rate, cp.paid, cp.par, cp.points);
 
                     cp.rate = uint16(sumOfDistrs * 100 / amt);
