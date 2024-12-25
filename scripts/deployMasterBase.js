@@ -252,6 +252,7 @@ async function main() {
 	let ros = await deployTool(signers[0], "RegisterOfShares", libraries, params);
 
 	libraries = {
+		"Checkpoints": libCheckpoints.address,
 		"MembersRepo": libMembersRepo.address,
 		"TopChain": libTopChain.address
 	}
