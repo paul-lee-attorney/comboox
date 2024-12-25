@@ -93,6 +93,15 @@ library Checkpoints {
         c.points = uint64(points);
     }
 
+    function restoreHistory(History storage self, Checkpoint[] memory list) public {
+        uint len = list.length;
+        while (len > 0) {
+            self.checkpoints[len] = list[len-1];
+            len--;
+        }
+        self.checkpoints[0].timestamp = uint48(list.length);
+    }
+
     //################
     //##    Read    ##
     //################

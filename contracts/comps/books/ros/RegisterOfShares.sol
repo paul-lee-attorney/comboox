@@ -196,6 +196,13 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         newShare = _repo.regShare(newShare);
 
         _rom.addShareToMember(newShare);
+
+        emit TransferShare(
+            share.head.codifyHead(),
+            newShare.head.codifyHead(),
+            paid,
+            par
+        );
     }
 
     // ==== DecreaseCapital ====
@@ -376,6 +383,13 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         _repo.subAmtFromShare(share.head.seqOfShare, paid, par);
     }
 
+    function restoreShares(
+        SharesRepo.Share[] memory shares,
+        SharesRepo.Share[] memory classes
+    ) external onlyDK {
+        _repo.restoreRepo(shares, classes);
+    }
+
     // #################
     // ##   Read I/O  ##
     // #################
@@ -416,6 +430,10 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         return _repo.getSharesList();
     }
 
+    function getShareZero() external view returns (SharesRepo.Share memory) {
+        return _repo.getShareZero();
+    }
+
     // ---- Class ----    
 
     function getQtyOfSharesInClass(
@@ -440,6 +458,10 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint classOfShare
     ) external view returns (SharesRepo.Share[] memory) {
         return _repo.getSharesOfClass(classOfShare);
+    }
+
+    function getPremium() external view returns (uint) {
+        return _repo.getPremium();
     }
 
     // ==== PayInCapital ====

@@ -26,6 +26,7 @@ import "../../common/access/AccessControl.sol";
 contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
+    using Checkpoints for Checkpoints.History;
 
     MembersRepo.Repo private _repo;
 
@@ -166,6 +167,25 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         if (acct == root) emit ChangeGroupRep(root, next);
     }
 
+    // ==== Restore ====
+
+    function restoreSharesInRom(SharesRepo.Share[] memory shares) external onlyDK{
+        _repo.restoreSharesInRepo(shares);
+    }
+
+    function restoreTopChainInRom(TopChain.Node[] memory list, TopChain.Para memory para) external onlyDK {
+        _repo.chain.restoreChain(list, para);
+    }
+
+    function restoreVotesHistoryInRom(
+        uint acct, Checkpoints.Checkpoint[] memory list,
+        Checkpoints.Checkpoint memory distrPts
+    ) external onlyDK {
+        MembersRepo.Member storage member = _repo.members[acct];
+        member.votesInHand.restoreHistory(list);
+        member.votesInHand.updateDistrPoints(distrPts.rate, distrPts.paid, distrPts.par, distrPts.points);
+    }
+
     // ##################
     // ##   Read I/O   ##
     // ##################
@@ -217,6 +237,12 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         returns (Checkpoints.Checkpoint memory)
     {
         return _repo.capAtDate(date); 
+    }
+
+    function ownersEquityHistory() external view 
+        returns (Checkpoints.Checkpoint[] memory)
+    {
+        return _repo.ownersEquityHistory();
     }
 
    function equityOfMember(uint256 acct)

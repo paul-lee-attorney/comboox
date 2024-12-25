@@ -137,16 +137,46 @@ library SharesRepo {
         });
     }
 
+    function codifyPremium(uint premium) public pure returns(Body memory body) {
+        body = Body({
+            payInDeadline: uint48(premium >> 208),
+            paid: uint64(premium >> 144),
+            par: uint64(premium >> 80),
+            cleanPaid: uint64(premium >> 16),
+            distrWeight: uint16(premium)
+        });
+    }
+
+    function _addPremium(
+        Repo storage repo,
+        uint priceOfPaid,
+        uint paid
+    ) private {
+
+        if (priceOfPaid > 10000 && paid > 0) {
+
+            uint premium = getPremium(repo);
+ 
+            premium += ((priceOfPaid - 10000) * paid / 10000);
+
+            repo.shares[0].body = codifyPremium(premium);
+        }
+
+    }
+
     function addShare(Repo storage repo, Share memory share)
         public returns(Share memory newShare) 
     {
         newShare = regShare(repo, share);
 
+        _addPremium(repo, newShare.head.priceOfPaid, newShare.body.paid);
+
         Share storage info = repo.classes[newShare.head.class].info;
 
-        if (info.head.issueDate == 0) 
-            repo.classes[newShare.head.class].info.head = 
-                newShare.head;
+        if (info.head.issueDate == 0) {
+            info.head = newShare.head;
+            info.body.distrWeight = newShare.body.distrWeight;
+        }
     }
 
     function regShare(Repo storage repo, Share memory share)
@@ -227,6 +257,8 @@ library SharesRepo {
 
         share.body.paid += deltaPaid;
         share.body.cleanPaid += deltaPaid;
+
+        _addPremium(repo, share.head.priceOfPaid, share.body.paid);
 
     }
 
@@ -329,6 +361,33 @@ library SharesRepo {
         share.body.payInDeadline = newLine;
     }
 
+    function restoreRepo(
+        Repo storage repo, 
+        Share[] memory shares,
+        Share[] memory classInfos
+    ) public {
+        uint len = shares.length;
+        while (len > 1) {
+            Share memory share = shares[len - 1];
+            repo.shares[share.head.seqOfShare] = share;
+
+            repo.classes[share.head.class].seqList.add(share.head.seqOfShare);
+            repo.classes[0].seqList.add(share.head.seqOfShare);
+
+            len --;
+        }
+
+        repo.shares[0] = shares[0];
+
+        len = classInfos.length;
+        while (len > 0) {
+            Share memory info = classInfos[len - 1];
+            repo.classes[info.head.class].info = info;
+
+            len--;
+        }
+    }
+
     //####################
     //##    Read I/O    ##
     //####################
@@ -384,6 +443,11 @@ library SharesRepo {
         return _getShares(repo, seqList);
     }
 
+    function getShareZero(Repo storage repo) 
+        public view returns(Share memory share) {
+            share = repo.shares[0];
+    }
+
     // ---- Class ----    
 
     function getQtyOfSharesInClass(
@@ -428,6 +492,16 @@ library SharesRepo {
             list[len - 1] = repo.shares[seqList[len - 1]];
             len--;
         }
+    }
+
+    function getPremium(Repo storage repo) public view returns(uint premium) {
+        Body memory body = repo.shares[0].body;
+
+        premium =   (uint(body.payInDeadline) << 208) +
+                    (uint(body.paid) << 144) +
+                    (uint(body.par) << 80) +
+                    (uint(body.cleanPaid) << 16) +
+                    body.distrWeight;
     }
 
 }

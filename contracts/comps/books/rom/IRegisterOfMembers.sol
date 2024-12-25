@@ -101,6 +101,15 @@ interface IRegisterOfMembers {
 
     function removeMemberFromGroup(uint256 acct) external;
 
+    function restoreSharesInRom(SharesRepo.Share[] memory shares) external;
+
+    function restoreTopChainInRom(TopChain.Node[] memory list, TopChain.Para memory para) external;
+
+    function restoreVotesHistoryInRom(
+        uint acct, Checkpoints.Checkpoint[] memory list,
+        Checkpoints.Checkpoint memory distrPts
+    ) external;
+
     // ##############
     // ##   Read   ##
     // ##############
@@ -127,6 +136,9 @@ interface IRegisterOfMembers {
 
     function capAtDate(uint date) external view
         returns (Checkpoints.Checkpoint memory);
+
+    function ownersEquityHistory() external view 
+        returns (Checkpoints.Checkpoint[] memory);
 
    function equityOfMember(uint256 acct) external view
         returns (Checkpoints.Checkpoint memory);

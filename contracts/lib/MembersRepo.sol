@@ -322,6 +322,26 @@ library MembersRepo {
         }
     }
 
+    // ==== Restore ====
+
+    function restoreSharesInRepo(Repo storage repo, SharesRepo.Share[] memory shares) public {
+        uint len = shares.length;
+
+        while (len > 0) {
+            SharesRepo.Share memory share = shares[len - 1];
+            
+            Member storage member = repo.members[share.head.shareholder];
+            member.sharesOfClass[share.head.class].add(share.head.seqOfShare);
+            member.sharesOfClass[0].add(share.head.seqOfShare);
+            member.classesBelonged.add(share.head.class);
+
+            repo.membersOfClass[share.head.class].add(share.head.shareholder);
+            repo.membersOfClass[0].add(share.head.shareholder);
+
+            len--;
+        }
+    }
+
     //##################
     //##    Read      ##
     //##################
@@ -366,6 +386,12 @@ library MembersRepo {
         uint date
     ) public view returns(Checkpoints.Checkpoint memory) {
         return repo.members[0].votesInHand.getAtDate(date);
+    }
+
+    function ownersEquityHistory(Repo storage repo) public view 
+        returns (Checkpoints.Checkpoint[] memory) 
+    {
+        return repo.members[0].votesInHand.pointsOfHistory();
     }
 
     function equityOfMember(

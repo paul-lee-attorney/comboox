@@ -32,6 +32,8 @@ interface IRegisterOfShares {
 
     event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par);
 
+    event TransferShare(bytes32 indexed shareNumber, bytes32 indexed newShareNumber, uint indexed paid, uint par);
+
     event PayInCapital(uint256 indexed seqOfShare, uint indexed amount);
 
     event SubAmountFromShare(uint256 indexed seqOfShare, uint indexed paid, uint indexed par);
@@ -107,6 +109,8 @@ interface IRegisterOfShares {
         uint deltaCleanPaid
     ) external;
 
+    function restoreShares(SharesRepo.Share[] memory shares, SharesRepo.Share[] memory classes) external;
+
     // ##################
     // ##   Read I/O   ##
     // ##################
@@ -133,6 +137,8 @@ interface IRegisterOfShares {
 
     function getSharesList() external view returns (SharesRepo.Share[] memory);
 
+    function getShareZero() external view returns (SharesRepo.Share memory);
+
     // ---- Class ----    
 
     function getQtyOfSharesInClass(
@@ -150,6 +156,8 @@ interface IRegisterOfShares {
     function getSharesOfClass(
         uint classOfShare
     ) external view returns (SharesRepo.Share[] memory);
+
+    function getPremium() external view returns (uint);
 
     // ==== PayInCapital ====
 
