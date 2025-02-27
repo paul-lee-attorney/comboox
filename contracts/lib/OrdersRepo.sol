@@ -224,7 +224,7 @@ library OrdersRepo {
     function getDealValue(
         uint paid, uint price, uint centPrice
     ) public pure returns (uint64) {
-        return uint64(paid * price / 10000 * centPrice / 100);
+        return uint64(paid * price * centPrice / 10 ** 6);
     } 
 
     function _matchOrders(
@@ -273,7 +273,7 @@ library OrdersRepo {
 
                     if (deal.consideration >= n.data.margin) {
                         deal.consideration = n.data.margin;
-                        deal.paid = uint64(deal.consideration * 100 / centPriceInWei * 10000 / deal.price);
+                        deal.paid = uint64(uint(deal.consideration) * 10 ** 6 / centPriceInWei / deal.price);
                         
                         n.data.margin = 0;
                         n.node.paid = 0;
@@ -294,7 +294,7 @@ library OrdersRepo {
                     
                     if (deal.consideration >= order.consideration) {
                         deal.consideration = order.consideration;
-                        deal.paid = uint64(deal.consideration * 100 / centPriceInWei * 10000 / deal.price);
+                        deal.paid = uint64(uint(deal.consideration) * 10 ** 6 / centPriceInWei / deal.price);
 
                         order.paid = deal.paid;
 

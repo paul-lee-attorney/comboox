@@ -188,10 +188,10 @@ library PledgesRepo {
         newPld = pld;
 
         if (amt < pld.body.guaranteedAmt) {
-            uint64 ratio = uint64(amt) * 10000 / newPld.body.guaranteedAmt;
+            // uint64 ratio = uint64(amt) * 10000 / newPld.body.guaranteedAmt;
 
-            newPld.body.paid = pld.body.paid * ratio / 10000;
-            newPld.body.par = pld.body.par * ratio / 10000;
+            newPld.body.paid = uint64(pld.body.paid * amt / newPld.body.guaranteedAmt);
+            newPld.body.par = uint64(pld.body.par * amt / newPld.body.guaranteedAmt);
             newPld.body.guaranteedAmt = uint64(amt);
 
             pld.body.paid -= newPld.body.paid;

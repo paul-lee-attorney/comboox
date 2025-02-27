@@ -32,6 +32,7 @@ contract FuelTank is Ownable {
     rate = _rate;
   }
 
+  event SetRate(uint indexed newRate);
   event Refuel (address indexed buyer, uint indexed amtOfEth, uint indexed amtOfCbp);
   event WithdrawFuel (address indexed owner, uint indexed amt);
   event WithdrawIncome (address indexed owner, uint indexed amt);
@@ -40,8 +41,9 @@ contract FuelTank is Ownable {
   // ##  Write I/O   ##
   // ##################
   
-  function setRate(uint _rate) external onlyOwner {
-    rate = _rate;
+  function setRate(uint newRate) external onlyOwner {
+    rate = newRate;
+    emit SetRate(newRate);
   }
 
   function refuel() external payable {
@@ -49,22 +51,27 @@ contract FuelTank is Ownable {
     uint amt = msg.value * rate / 10000;
 
     if (amt > 0 && _rc.balanceOf(address(this)) >= amt) {
-      _rc.transfer(msg.sender, amt);
       sum += amt;
       emit Refuel (msg.sender, msg.value, amt);
-    } else revert ('zero amt or insufficient balace');
+      if (!_rc.transfer(msg.sender, amt)) {
+        revert ('CBP Transfer Failed');
+      }
+    } else revert ('zero amt or insufficient balance');
 
   }
 
   function withdrawIncome(uint amt) external onlyOwner {
-    Address.sendValue(payable(msg.sender), amt);
+    require(address(this).balance >= amt, 'Insufficient ETH');
     emit WithdrawIncome(msg.sender, amt);
+    Address.sendValue(payable(msg.sender), amt);
   }
 
   function withdrawFuel(uint amt) external onlyOwner {
     if (_rc.balanceOf(address(this)) >= amt) {
-        _rc.transfer(msg.sender, amt);
         emit WithdrawFuel(msg.sender, amt);
+        if (!_rc.transfer(msg.sender, amt)) {
+          revert('CBP Transfer Failed');
+        }
     } else revert('insufficient fuel');
   }
 

@@ -66,7 +66,7 @@ library LinksRepo {
     function removeDragger(Repo storage repo, uint256 dragger) public {
         if (repo.draggersList.remove(dragger))
             delete repo.links[dragger];
-    }
+        }
 
     function addFollower(Repo storage repo, uint256 dragger, uint256 follower) public {
         repo.links[dragger].followersList.add(uint40(follower));
@@ -153,6 +153,6 @@ library LinksRepo {
         require(dealPrice > issuePrice, "ROE: NEGATIVE selling price");
         require(closingDeadline > issueDateOfShare, "ROE: NEGATIVE holding period");
 
-        roe = (dealPrice - issuePrice) * 10000 / issuePrice * 31536000 / (closingDeadline - issueDateOfShare);
+        roe = (dealPrice - issuePrice) * 31536 * 10 ** 7 / issuePrice / (closingDeadline - issueDateOfShare);
     }
 }

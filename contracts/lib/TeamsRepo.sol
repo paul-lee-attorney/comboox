@@ -527,14 +527,12 @@ library TeamsRepo {
 						uint outstandingAmt = m.receivableAmt - m.paidAmt;
 
 						if (outstandingAmt > 0) {
-								uint amt = rate * outstandingAmt / 10000;
+							repo.cashBox[m.userNo] += rate * outstandingAmt / 10000;
 
-								repo.cashBox[m.userNo] += amt;
+							uint32 amtFiat = uint32(rate * outstandingAmt / centPriceInWei / 10 ** 4);
 
-								uint32 amtFiat = uint32((amt * 10 / centPriceInWei + 5)/10);
-
-								m.paidAmt += amtFiat;
-								sum += amtFiat;
+							m.paidAmt += amtFiat;
+							sum += amtFiat;
 						}
 
 						len--;

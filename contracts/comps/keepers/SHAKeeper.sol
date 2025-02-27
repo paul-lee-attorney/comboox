@@ -102,10 +102,10 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             
             if (_rom.basedOnPar())
                 require ( par <= 
-                uint(deal.body.par) * subjectVW / _rom.votesOfGroup(deal.head.seller) * uint(share.body.par) / 100 , 
+                subjectVW * deal.body.par * share.body.par / _rom.votesOfGroup(deal.head.seller) / 100 , 
                 "SHAKeeper.checkAlong: par overflow");
             else require ( paid <=
-                uint(deal.body.paid) * subjectVW / _rom.votesOfGroup(deal.head.seller) * uint(share.body.paid) / 100,
+                 subjectVW * deal.body.paid * share.body.paid / _rom.votesOfGroup(deal.head.seller) / 100,
                 "SHAKeeper.checkAlong: paid overflow");
         }
     }
@@ -223,13 +223,12 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         deal.body.buyer = tShare.head.shareholder;
         deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
 
-        _deductShares(obligors, _gk, _ia, deal, giftPaid, _ros, sigHash);
+        _deductShares(obligors, _ia, deal, giftPaid, _ros, sigHash);
 
     }
 
     function _deductShares(
         uint[] memory obligors,
-        IGeneralKeeper _gk,
         IInvestmentAgreement _ia,
         DealsRepo.Deal memory deal,
         uint64 giftPaid,

@@ -219,7 +219,7 @@ library GoldChain {
         uint next,
         bool sortFromHead,
         bool isAscedning
-    ) public view returns(uint, uint) {
+    ) private view returns(uint, uint) {
         if (sortFromHead) {
             if (isAscedning) {
                 while(next > 0 && chain.orders[next].node.price <= price) {

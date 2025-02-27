@@ -93,8 +93,7 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         require(_ros.notLocked(swap.seqOfTarget, block.timestamp),
             "ROOK.payOffSwap: target locked");
 
-        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 4 * 
-            centPrice / 100;
+        uint valueOfDeal = centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
 
         uint buyer = _ros.getShare(swap.seqOfPledge).head.shareholder;
         
@@ -194,8 +193,7 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         require(_ros.notLocked(swap.seqOfTarget, block.timestamp),
             "ROOK.payOffRejectedDeal: target locked");
 
-        uint valueOfDeal = uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 4 * 
-            centPrice / 100;        
+        uint valueOfDeal = centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;        
         
         _ros.increaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         _ros.increaseCleanPaid(swap.seqOfPledge, swap.paidOfPledge);

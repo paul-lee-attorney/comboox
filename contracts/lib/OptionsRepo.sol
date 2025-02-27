@@ -359,12 +359,12 @@ library OptionsRepo {
             swap.priceOfDeal = opt.head.rate;
         else {
             uint32 ds = uint32(((block.timestamp - headOfTarget.issueDate) + 43200) / 86400);
-            swap.priceOfDeal = headOfTarget.priceOfPaid / 365 * (opt.head.rate * ds + 3650000) / 10000;  
+            swap.priceOfDeal = uint32(uint(headOfTarget.priceOfPaid) * (opt.head.rate * ds + 3650000) / 3650000);  
         }
 
         if (opt.head.typeOfOpt % 2 == 1) {            
             swap.paidOfPledge = (swap.priceOfDeal - headOfTarget.priceOfPaid) * 10000
-                / headOfPledge.priceOfPaid * swap.paidOfTarget / 10000;
+                * swap.paidOfTarget / headOfPledge.priceOfPaid / 10000;
         }
 
         return rcd.swaps.regSwap(swap);

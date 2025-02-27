@@ -587,8 +587,7 @@ library DealsRepo {
     ) public view returns (uint) {
         Deal memory deal = repo.deals[seqOfDeal];
 
-        return (uint(deal.body.paid * deal.head.priceOfPaid) + 
-            uint((deal.body.par - deal.body.paid) * deal.head.priceOfPar)) / 10 ** 4 *
-            centPrice / 100;
+        return centPrice * (deal.body.paid * deal.head.priceOfPaid + 
+            (deal.body.par - deal.body.paid) * deal.head.priceOfPar) / 10 ** 6;
     }    
 }
