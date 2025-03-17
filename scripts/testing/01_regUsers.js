@@ -106,6 +106,10 @@ async function main() {
     expect(ethers.utils.formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
     console.log(' \u2714 Passed NewUserAwards Test for signers[', 2, '].', '\n');
 
+    for (let i=0; i<7; i++) {
+      await rc.connect(signers[i]).setBackupKey(signers[i+10].address);
+    }
+
     await cbpOfUsers(rc, AddrZero);
 }
 

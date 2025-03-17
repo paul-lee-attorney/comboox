@@ -205,6 +205,14 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         }
     }
 
+    function _closeDeal(IInvestmentAgreement _ia, DealsRepo.Deal memory deal) private {
+        if (deal.head.seqOfShare > 0) {
+            _shareTransfer(_ia, deal.head.seqOfDeal);
+        } else {
+            _issueNewShare(_ia, deal.head.seqOfDeal);
+        }
+    }
+
     function closeDeal(
         address ia,
         uint256 seqOfDeal,
@@ -218,9 +226,7 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         if (_ia.closeDeal(deal.head.seqOfDeal, hashKey))
             _gk.getROA().execFile(ia);
 
-        if (deal.head.seqOfShare > 0) 
-            _shareTransfer(_ia, deal.head.seqOfDeal);
-        else _issueNewShare(_ia, deal.head.seqOfDeal);
+        _closeDeal(_ia, deal);
     }
 
     function _lockUpCheck(
@@ -250,9 +256,7 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         return false;
     }
 
-    function _buyerIsVerified(
-        uint buyer
-    ) private view {
+    function _buyerIsVerified(uint buyer) private view {
         require (_gk.getLOO().getInvestor(buyer).state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved), 
             "ROAK.buyerIsVerified: not");
@@ -420,11 +424,7 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 58000);
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
-
-        DealsRepo.Deal memory deal = 
-            _ia.getDeal(seqOfDeal);
-
-        _vrAndSHACheck(_ia);
+        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
         uint centPrice = _gk.getCentPrice();
         uint valueOfDeal = centPrice * (deal.body.paid * deal.head.priceOfPaid + 
@@ -432,17 +432,12 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
 
         require( valueOfDeal <= msgValue, "ROAK.payApprDeal: insufficient msgValue");
 
-        if (_ia.payOffApprovedDeal(seqOfDeal, msgValue, caller)) 
-            _gk.getROA().execFile(ia);
-
         if (deal.head.seqOfShare > 0) {
             _gk.saveToCoffer(
                 deal.head.seller, valueOfDeal, 
                 bytes32(0x4465706f736974436f6e73696465726174696f6e4f6653544465616c00000000)
             ); // DepositConsiderationOfSTDeal 
-            _shareTransfer(_ia, deal.head.seqOfDeal);
         } else {
-            _issueNewShare(_ia, deal.head.seqOfDeal);
             emit PayOffCIDeal(caller, valueOfDeal);
         }
 
@@ -453,6 +448,37 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
                 bytes32(0x4465706f73697442616c616e63654f664f54434465616c000000000000000000)
             ); // DepositBalanceOfOTCDeal 
         }    
+
+        _payOffApprovedDeal(ia, seqOfDeal, valueOfDeal, caller);
     }
-    
+
+    function payOffApprovedDealInUSD(
+        address ia,
+        uint seqOfDeal,
+        uint valueOfDeal,
+        uint caller
+    ) external {
+        require(msg.sender == _gk.getKeeper(12),
+            "ROAK.payOffApprovedDealInUSD: not UsdROAK ");
+
+        _payOffApprovedDeal(ia, seqOfDeal, valueOfDeal, caller);
+    }
+
+    function _payOffApprovedDeal(
+        address ia,
+        uint seqOfDeal,
+        uint valueOfDeal,
+        uint caller
+    ) private {
+        IInvestmentAgreement _ia = IInvestmentAgreement(ia);
+        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
+
+        _vrAndSHACheck(_ia);
+
+        if (_ia.payOffApprovedDeal(seqOfDeal, valueOfDeal, caller)) 
+            _gk.getROA().execFile(ia);
+
+        _closeDeal(_ia, deal);
+    }
+
 }

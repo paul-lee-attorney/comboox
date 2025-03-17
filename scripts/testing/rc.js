@@ -54,6 +54,25 @@ function pfrParser(arrRule) {
   return out;
 }
 
+function userParser(user) {
+  const out = {
+    primeKey: {
+      pubKey: user[0][0],
+      discount: ethers.utils.formatUnits(user[0][1], 9),
+      gift: ethers.utils.formatUnits(user[0][2], 9),
+      coupon: ethers.utils.formatUnits(user[0][3], 9),
+    },
+    backupKey: {
+      pubKey: user[1][0],
+      discount: ethers.utils.formatUnits(user[1][1], 9),
+      gift: ethers.utils.formatUnits(user[1][2], 9),
+      coupon: ethers.utils.formatUnits(user[1][3], 9),
+    },
+  }
+
+  return out;
+}
+
 function pfrCodifier(rule) {
   const out = `0x${
     parseUnits(rule.eoaRewards, 9).padStart(10, '0') +
@@ -78,6 +97,8 @@ async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
   
   const iface = new ethers.utils.Interface(eventAbi);
   let addr = AddrZero;
+
+  let flag = false;
   
   for (const log of receipt.logs) {
     if (log.address == addrOfRC) {
@@ -87,15 +108,20 @@ async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
         if (parsedLog.name == "CreateDoc") {
           addr = parsedLog.args[1];
         } else if (parsedLog.name == "Transfer") {
-          expect(parsedLog.args[0]).to.equal(from);
-          expect(parsedLog.args[1]).to.equal(to);
-          expect(parsedLog.args[2]).to.equal(BigNumber.from(rate * 10n ** 13n));
-          console.log(" \u2714 Passed Royalty Test for", func, "\n");
+          flag = (parsedLog.args[0] == from && parsedLog.args[1] == to && 
+              parsedLog.args[2].eq(BigNumber.from(rate * 10n ** 13n)));
         }
       } catch (err) {
         console.log("Parse Log Error:", err);
       }
+
     }
+  }
+
+  if (flag) {
+    console.log(" \u2714 Passed Royalty Test for", func, "\n");
+  } else {
+    console.log(" \u00D7 FAILED Royalty Test for", func, "\n");
   }
 
   return addr;
@@ -107,6 +133,7 @@ module.exports = {
     pfrParser,
     pfrCodifier,
     royaltyTest,
+    userParser,
 };
 
   

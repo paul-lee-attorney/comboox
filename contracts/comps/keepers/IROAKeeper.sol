@@ -95,4 +95,11 @@ interface IROAKeeper {
         address msgSender
     ) external;    
 
+    function payOffApprovedDealInUSD(
+        address ia,
+        uint seqOfDeal,
+        uint valueOfDeal,
+        uint caller
+    ) external;    
+
 }

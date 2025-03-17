@@ -374,9 +374,9 @@ library OptionsRepo {
     function payOffSwap(
         Repo storage repo,
         uint seqOfOpt,
-        uint seqOfSwap,
-        uint msgValue,
-        uint centPrice
+        uint seqOfSwap
+        // uint msgValue,
+        // uint centPrice
     ) public returns (SwapsRepo.Swap memory ) {
 
         Option storage opt = repo.options[seqOfOpt];
@@ -386,7 +386,7 @@ library OptionsRepo {
         require(block.timestamp < opt.body.closingDeadline, 
             "OR.payOffSwap: option expired");
 
-        return repo.records[seqOfOpt].swaps.payOffSwap(seqOfSwap, msgValue, centPrice);
+        return repo.records[seqOfOpt].swaps.payOffSwap(seqOfSwap);
     }
 
     function terminateSwap(
@@ -542,13 +542,13 @@ library OptionsRepo {
         return repo.records[seqOfOpt].oracles.pointsOfHistory();
     }
 
-    function checkValueOfSwap(
-        Repo storage repo, 
-        uint seqOfOpt, 
-        uint seqOfSwap, 
-        uint centPrice
-    ) public view optExist(repo, seqOfOpt) returns (uint) {
-        return repo.records[seqOfOpt].swaps.checkValueOfSwap(seqOfSwap, centPrice);
-    }
+    // function checkValueOfSwap(
+    //     Repo storage repo, 
+    //     uint seqOfOpt, 
+    //     uint seqOfSwap, 
+    //     uint centPrice
+    // ) public view optExist(repo, seqOfOpt) returns (uint) {
+    //     return repo.records[seqOfOpt].swaps.checkValueOfSwap(seqOfSwap, centPrice);
+    // }
 
 }

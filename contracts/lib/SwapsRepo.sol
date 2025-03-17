@@ -92,9 +92,9 @@ library SwapsRepo {
 
     function payOffSwap(
         Repo storage repo,
-        uint seqOfSwap,
-        uint msgValue,
-        uint centPrice
+        uint seqOfSwap
+        // uint msgValue,
+        // uint centPrice
     ) public returns (Swap memory ) {
 
         Swap storage swap = repo.swaps[seqOfSwap];
@@ -102,8 +102,8 @@ library SwapsRepo {
         require(swap.state == uint8(StateOfSwap.Issued), 
             "SWR.payOffSwap: wrong state");
 
-        require (centPrice * uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 6
-                <= msgValue, "SWR.payOffSwap: insufficient amt");
+        // require (centPrice * uint(swap.paidOfTarget) * uint(swap.priceOfDeal) / 10 ** 6
+        //         <= msgValue, "SWR.payOffSwap: insufficient amt");
 
         swap.state = uint8(StateOfSwap.Closed);
 
@@ -160,14 +160,14 @@ library SwapsRepo {
         return repo.swaps[seqOfSwap];
     }
 
-    function checkValueOfSwap(
-        Repo storage repo,
-        uint seqOfSwap,
-        uint centPrice
-    ) public view returns (uint) {
-        Swap memory swap = getSwap(repo, seqOfSwap);
-        return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
-    }
+    // function checkValueOfSwap(
+    //     Repo storage repo,
+    //     uint seqOfSwap,
+    //     uint centPrice
+    // ) public view returns (uint) {
+    //     Swap memory swap = getSwap(repo, seqOfSwap);
+    //     return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
+    // }
 
     function getAllSwaps(Repo storage repo)
         public view returns (Swap[] memory )

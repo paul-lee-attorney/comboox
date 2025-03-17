@@ -26,6 +26,9 @@ import "./ILOOKeeper.sol";
 
 contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
+    using OrdersRepo for OrdersRepo.Deal;
+
+    event Deprecated(address applicant, uint groupRep, bytes32 idHash);
 
     //###############
     //##   Write   ##
@@ -34,12 +37,42 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     // ==== Investor ====
 
     function regInvestor(
-        address msgSender,
-        uint groupRep,
-        bytes32 idHash
+        address msgSender, uint groupRep, bytes32 idHash
     ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+        emit Deprecated(msgSender, groupRep, idHash);
+    }
+
+    function regInvestor(
+        address msgSender, address bKey, uint groupRep, bytes32 idHash
+    ) external anyKeeper {
+
+        uint caller = _msgSender(msgSender, 18000);
+
+        require(msgSender != bKey, 
+            "LOOK.regInvestor: same key");
+
+        require(caller == _msgSender(bKey, 18000), 
+            "LOOK.regInvestor: wrong backupKey");
+
+        if (_isContract(msgSender)) {
+            require(_rc.getHeadByBody(msgSender).typeOfDoc == 20,
+                "LOOK.RegInvestor: COA applicant not GK");
+        }
+
+        if (_isContract(bKey)) {
+            require(_rc.getHeadByBody(bKey).typeOfDoc == 20,
+                "LOOK.RegInvestor: COA backupKey not GK");
+        }
+
         _gk.getLOO().regInvestor(caller, groupRep, idHash);
+    }
+
+    function _isContract(address acct) private view returns (bool) {
+        uint32 size;
+        assembly {
+            size := extcodesize(acct)
+        }
+        return size != 0;
     }
 
     function approveInvestor(
@@ -115,40 +148,33 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
 
         _ros.increaseEquityOfClass(true, classOfShare, 0, 0, paid);
 
+        OrdersRepo.Deal memory input;
+        
+        input.classOfShare = uint16(classOfShare);
+        input.votingWeight = lr.votingWeight;
+        input.distrWeight = lr.distrWeight;
+        input.paid = uint64(paid);
+        input.price = uint32(price);
+        input.seller = uint40(caller);
+        input.isOffer = true;
+        input.inEth = true;
+
         _placeSellOrder(
-            caller,
-            classOfShare, 
-            0,
-            lr.votingWeight, 
-            lr.distrWeight,
-            paid,
-            price,
+            input,
             execHours,
             _gk.getCentPrice()
         );
     }
 
     function _placeSellOrder(
-        uint caller,
-        uint classOfShare,
-        uint seqOfShare,
-        uint votingWeight,
-        uint distrWeight,
-        uint paid,
-        uint price,
+        OrdersRepo.Deal memory input,
         uint execHours,
         uint centPrice        
     ) private {
         (OrdersRepo.Deal[] memory deals, GoldChain.Order[] memory expired, OrdersRepo.Deal memory offer) = 
             _gk.getLOO().placeSellOrder(
-                caller,
-                classOfShare, 
-                seqOfShare, 
-                votingWeight, 
-                distrWeight,
-                paid, 
-                price, 
-                execHours, 
+                input,
+                execHours,
                 centPrice
             );
         if (deals.length > 0) _closeDeals(deals, true);
@@ -381,14 +407,20 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     ) private {
         _ros.decreaseCleanPaid(share.head.seqOfShare, paid);
 
+        OrdersRepo.Deal memory input;
+
+        input.seller = share.head.shareholder;
+        input.classOfShare = share.head.class;
+        input.seqOfShare = share.head.seqOfShare;
+        input.paid = uint64(paid);
+        input.price = uint32(price);
+        input.votingWeight = share.head.votingWeight;
+        input.distrWeight = share.body.distrWeight;
+        input.isOffer = true;
+        input.inEth = true;
+
         _placeSellOrder(
-            share.head.shareholder,
-            share.head.class,
-            share.head.seqOfShare,
-            share.head.votingWeight,
-            share.body.distrWeight,
-            paid,
-            price,
+            input,
             execHours,
             centPrice
         );
@@ -441,29 +473,29 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
             uint8(InvestorsRepo.StateOfInvestor.Approved),
                 "LOOK.placeBuyOrder: wrong stateOfInvestor");
 
-        _placeBuyOrder(classOfShare, caller, investor.groupRep, paid, price, execHours, centPrice, msgValue);
+        OrdersRepo.Deal memory input;
+
+        input.buyer = uint40(caller);
+        input.groupRep = investor.groupRep;
+        input.classOfShare = uint16(classOfShare);
+        input.paid = uint64(paid);
+        input.price = uint32(price);
+        input.consideration = uint128(msgValue);
+        input.inEth = true;
+
+        _placeBuyOrder(input, execHours, centPrice);
     }
 
     function _placeBuyOrder(
-        uint classOfShare,
-        uint buyer,
-        uint groupRep,
-        uint paid,
-        uint price,
+        OrdersRepo.Deal memory input,
         uint execHours,
-        uint centPrice,
-        uint msgValue
+        uint centPrice
     ) private {
         (OrdersRepo.Deal[] memory deals, GoldChain.Order[] memory expired, OrdersRepo.Deal memory bid) = 
             _gk.getLOO().placeBuyOrder(
-                classOfShare,
-                buyer,
-                groupRep,
-                paid,
-                price,
+                input,
                 execHours,
-                centPrice,
-                msgValue
+                centPrice
             );
 
         if (deals.length > 0) _closeDeals(deals, false);

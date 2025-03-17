@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -47,6 +47,11 @@ function parseHexToBigInt(input) {
 const Bytes32Zero = `0x${'0'.padEnd(64,'0')}`;
 const AddrZero = `0x${'0'.padEnd(40,'0')}`;
 
+const trimAddr = (addr) => {
+  return addr.toLowerCase().substring(2);
+}
+
+
 module.exports = {
     now,
     increaseTime,
@@ -54,6 +59,7 @@ module.exports = {
     longDataParser,
     parseUnits,
     parseHexToBigInt,
+    trimAddr,
     Bytes32Zero,
     AddrZero,
 };

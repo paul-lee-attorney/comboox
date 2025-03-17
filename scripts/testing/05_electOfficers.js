@@ -141,8 +141,8 @@ async function main() {
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
 
-    let headOfMotion = motionSnParser(receipt.logs[1].topics[1]);
-    let contents = parseInt(receipt.logs[1].topics[2].toString());
+    let headOfMotion = motionSnParser(receipt.logs[2].topics[1]);
+    let contents = parseInt(receipt.logs[2].topics[2].toString());
 
     expect(headOfMotion.typeOfMotion).to.equal(1); // typeOfMotion: ElectOfficer
     expect(headOfMotion.creator).to.equal(1); // creator user no.
@@ -261,8 +261,8 @@ async function main() {
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
     
-    headOfMotion = motionSnParser(receipt.logs[1].topics[1]);
-    contents = parseInt(receipt.logs[1].topics[2].toString());
+    headOfMotion = motionSnParser(receipt.logs[2].topics[1]);
+    contents = parseInt(receipt.logs[2].topics[2].toString());
 
     expect(headOfMotion.typeOfMotion).to.equal(2); // typeOfMotion: RemoveOfficer
     expect(headOfMotion.creator).to.equal(1); // creator user no.
@@ -364,8 +364,8 @@ async function main() {
     await expect(tx).to.emit(bmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for bmm.CreateMotion(). \n");
 
-    headOfMotion = motionSnParser(receipt.logs[1].topics[1]);
-    contents = parseInt(receipt.logs[1].topics[2].toString());
+    headOfMotion = motionSnParser(receipt.logs[2].topics[1]);
+    contents = parseInt(receipt.logs[2].topics[2].toString());
 
     expect(headOfMotion.typeOfMotion).to.equal(1);
     expect(headOfMotion.creator).to.equal(1);

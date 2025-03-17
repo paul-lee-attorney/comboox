@@ -112,6 +112,7 @@ async function main() {
         "event SaveToCoffer(uint indexed acct, uint256 indexed value, bytes32 indexed reason)",
         "event ReleaseCustody(uint indexed from, uint indexed to, uint indexed amt, bytes32 reason)", 
         "event CloseBidAgainstInitOffer(uint indexed buyer, uint indexed amt)",
+        "event ChargeRoyalty(uint indexed typeOfDoc, uint version, uint indexed rate, uint indexed user, uint author)",
       ];
       
       const iface = new ethers.utils.Interface(eventAbi);

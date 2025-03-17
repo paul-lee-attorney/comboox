@@ -428,21 +428,21 @@ library DealsRepo {
 
     function payOffSwap(
         Repo storage repo,
-        uint seqOfMotion,
+        // uint seqOfMotion,
         uint seqOfDeal,
-        uint seqOfSwap,
-        uint msgValue,
-        uint centPrice,
-        IMeetingMinutes _gmm
+        uint seqOfSwap
+        // uint msgValue,
+        // uint centPrice,
+        // IMeetingMinutes _gmm
     ) public returns(SwapsRepo.Swap memory){
 
-        MotionsRepo.Motion memory motion = _gmm.getMotion(seqOfMotion);
+        // MotionsRepo.Motion memory motion = _gmm.getMotion(seqOfMotion);
 
-        require(block.timestamp < motion.body.voteEndDate + 
-            uint48(motion.votingRule.execDaysForPutOpt) * 86400, 
-            "DR.payOffSwap: missed deadline");
+        // require(block.timestamp < motion.body.voteEndDate + 
+        //     uint48(motion.votingRule.execDaysForPutOpt) * 86400, 
+        //     "DR.payOffSwap: missed deadline");
  
-        return repo.swaps[seqOfDeal].payOffSwap(seqOfSwap, msgValue, centPrice);
+        return repo.swaps[seqOfDeal].payOffSwap(seqOfSwap);
     }
 
     function terminateSwap(
@@ -571,14 +571,14 @@ library DealsRepo {
 
     // ==== Value Calculation ==== 
 
-    function checkValueOfSwap(
-        Repo storage repo,
-        uint seqOfDeal,
-        uint seqOfSwap,
-        uint centPrice
-    ) public view dealExist(repo, seqOfDeal) returns (uint) {
-        return repo.swaps[seqOfDeal].checkValueOfSwap(seqOfSwap, centPrice);
-    }
+    // function checkValueOfSwap(
+    //     Repo storage repo,
+    //     uint seqOfDeal,
+    //     uint seqOfSwap,
+    //     uint centPrice
+    // ) public view dealExist(repo, seqOfDeal) returns (uint) {
+    //     return repo.swaps[seqOfDeal].checkValueOfSwap(seqOfSwap, centPrice);
+    // }
 
     function checkValueOfDeal(
         Repo storage repo, 

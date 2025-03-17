@@ -51,9 +51,21 @@ const parseCompInfo = (arr) => {
   return info;
 }
 
+const usdOfUsers = async (usdc, addrOfCashier) => {
+  const signers = await ethers.getSigners();
+  let bala = 0n;
+  for (let i=0; i<7; i++) {  
+    bala = await usdc.balanceOf(signers[i].address);
+    console.log("Balance Of Signer", i, ":", bala);
+  }
+  bala = await usdc.balanceOf(addrOfCashier);
+  console.log("Balance Of Comp:", bala);
+}
+
 module.exports = {
   depositOfUsers,
   parseCompInfo,
+  usdOfUsers,
 };
 
   

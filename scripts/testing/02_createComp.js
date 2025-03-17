@@ -166,6 +166,15 @@ async function main() {
     const LOO = await gk.getLOO();
     saveBooxAddr("LOO", LOO);
 
+    const Cashier = await gk.getBook(11);
+    saveBooxAddr("Cashier", Cashier);
+
+    const USDC = await gk.getBook(12);
+    saveBooxAddr("USDC", USDC);
+
+    const UsdLOO = await gk.getBook(13);
+    saveBooxAddr("UsdLOO", UsdLOO);
+
     const ROCKeeper = await gk.getKeeper(1);
     saveBooxAddr("ROCKeeper", ROCKeeper);
 
@@ -195,6 +204,21 @@ async function main() {
 
     const LOOKeeper = await gk.getKeeper(10);
     saveBooxAddr("LOOKeeper", LOOKeeper);
+
+    const UsdROMKeeper = await gk.getKeeper(11);
+    saveBooxAddr("UsdROMKeeper", UsdROMKeeper);
+
+    const UsdROAKeeper = await gk.getKeeper(12);
+    saveBooxAddr("UsdROAKeeper", UsdROAKeeper);
+
+    const UsdLOOKeeper = await gk.getKeeper(13);
+    saveBooxAddr("UsdLOOKeeper", UsdLOOKeeper);
+
+    const UsdROOKeeper = await gk.getKeeper(14);
+    saveBooxAddr("UsdROOKeeper", UsdROOKeeper);
+
+    const UsdKeeper = await gk.getKeeper(15);
+    saveBooxAddr("UsdKeeper", UsdKeeper);
 
     refreshBoox();
 

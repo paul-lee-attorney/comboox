@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,19 +19,27 @@
 
 pragma solidity ^0.8.8;
 
-import "./AccessControl.sol";
+import "./AnyKeeper.sol";
+import "../../../lib/DocsRepo.sol";
 
+contract RoyaltyCharge is AnyKeeper {
 
-contract RoyaltyCharge is AccessControl {
+    event ChargeRoyalty(
+        uint indexed typeOfDoc, uint version, uint indexed rate, 
+        uint indexed user, uint author
+    );
 
     function _msgSender(
         address msgSender,
         uint rate
     ) internal returns(uint40 usr) {
+        DocsRepo.Head memory head = _rc.getHeadByBody(address(this));
+        head.author = _rc.getAuthorByBody(address(this));
         usr = _rc.getUserNo(
-            msgSender, 
-            rate * (10 ** 10), 
-            _rc.getAuthorByBody(address(this))
-        );        
+            msgSender, rate * (10 ** 10), head.author
+        );
+        emit ChargeRoyalty(
+            head.typeOfDoc, head.version, rate, usr, head.author
+        );
     }
 }

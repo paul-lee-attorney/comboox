@@ -148,16 +148,11 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     function payOffSwap(
-        uint seqOfMotion,
         uint seqOfDeal,
-        uint seqOfSwap,
-        uint msgValue,
-        uint centPrice
+        uint seqOfSwap
     ) external onlyKeeper returns(SwapsRepo.Swap memory swap){
-        swap = _repo.payOffSwap(seqOfMotion, seqOfDeal, 
-            seqOfSwap, msgValue, centPrice, _gk.getGMM());
-
-        emit PayOffSwap(seqOfDeal, seqOfSwap, msgValue);
+        swap = _repo.payOffSwap(seqOfDeal, seqOfSwap);
+        emit PayOffSwap(seqOfDeal, seqOfSwap);
     }
 
     function terminateSwap(
@@ -228,7 +223,10 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function checkValueOfSwap(uint seqOfDeal, uint seqOfSwap)
         external view returns(uint)
     {
-        return _repo.checkValueOfSwap(seqOfDeal, seqOfSwap, _gk.getCentPrice());
+        SwapsRepo.Swap memory swap = _repo.getSwap(seqOfDeal, seqOfSwap);        
+        uint centPrice = _gk.getCentPrice();
+        return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
+        // return _repo.checkValueOfSwap(seqOfDeal, seqOfSwap, _gk.getCentPrice());
     }
 
     function checkValueOfDeal(uint seqOfDeal)

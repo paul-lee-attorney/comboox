@@ -31,6 +31,10 @@ const getCNC = async () => {
   return await readContract("CreateNewComp", Temps.CreateNewComp);
 }
 
+const getCNCUSD = async () => {
+  return await readContract("CreateNewCompUSD", Temps.CreateNewCompUSD);
+}
+
 const getFT = async () => {
   return await readContract("FuelTank", Temps.FuelTank);
 }
@@ -82,6 +86,18 @@ const getROS = async () => {
   return await readContract("RegisterOfShares", Boox.ROS);
 }
 
+const getUSDC = async () => {
+  return await readContract("MockUSDC", Boox.USDC);
+}
+
+const getCashier = async () => {
+  return await readContract("Cashier", Boox.Cashier);
+}
+
+const getUsdLOO = async () => {
+  return await readContract("UsdListOfOrders", Boox.UsdLOO);
+}
+
 const getGMMKeeper = async () => {
   return await readContract("GMMKeeper", Boox.GMMKeeper);
 }
@@ -90,10 +106,31 @@ const getLOOKeeper = async () => {
   return await readContract("LOOKeeper", Boox.LOOKeeper);
 }
 
+const getUsdKeeper = async () => {
+  return await readContract("USDKeeper", Boox.UsdKeeper);
+}
+
+const getUsdLOOKeeper = async () => {
+  return await readContract("UsdLOOKeeper", Boox.UsdLOOKeeper);
+}
+
+const getUsdROAKeeper = async () => {
+  return await readContract("UsdROAKeeper", Boox.UsdROAKeeper);
+}
+
+const getUsdROMKeeper = async () => {
+  return await readContract("UsdROMKeeper", Boox.UsdROMKeeper);
+}
+
+const getUsdROOKeeper = async () => {
+  return await readContract("UsdROOKeeper", Boox.UsdROOKeeper);
+}
+
 module.exports = {
   refreshBoox,
   getRC,
   getCNC,
+  getCNCUSD,
   getFT,
   getGK,
   getBMM,
@@ -106,8 +143,16 @@ module.exports = {
   getROO,
   getROP,
   getROS,
+  getUSDC,
+  getCashier,
+  getUsdLOO,
   getGMMKeeper,
   getLOOKeeper,
+  getUsdLOOKeeper,
+  getUsdROAKeeper,
+  getUsdROMKeeper,
+  getUsdROOKeeper,
+  getUsdKeeper,
 };
 
   

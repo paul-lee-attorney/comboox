@@ -36,9 +36,11 @@ interface ILOOKeeper {
     //###############
 
     function regInvestor(
-        address msgSender,
-        uint groupRep,
-        bytes32 idHash
+        address msgSender, uint groupRep, bytes32 idHash
+    ) external;
+
+    function regInvestor(
+        address msgSender, address bKey,uint groupRep, bytes32 idHash
     ) external;
 
     function approveInvestor(

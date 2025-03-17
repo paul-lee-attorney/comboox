@@ -114,11 +114,11 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
 
     function payOffSwap(
         uint seqOfOpt,
-        uint seqOfSwap,
-        uint msgValue,
-        uint centPrice
+        uint seqOfSwap
+        // uint msgValue,
+        // uint centPrice
     ) external returns (SwapsRepo.Swap memory swap) {
-        swap = _repo.payOffSwap(seqOfOpt, seqOfSwap, msgValue, centPrice);
+        swap = _repo.payOffSwap(seqOfOpt, seqOfSwap);
         emit PayOffSwap(seqOfOpt, SwapsRepo.codifySwap(swap));
     }
 
@@ -248,7 +248,9 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     function checkValueOfSwap(uint seqOfOpt, uint seqOfSwap)
         external view returns (uint)
     {
-        return _repo.checkValueOfSwap(seqOfOpt, seqOfSwap, _gk.getCentPrice());
+        SwapsRepo.Swap memory swap = _repo.getSwap(seqOfOpt, seqOfSwap);
+        uint centPrice = _gk.getCentPrice();
+        return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
     }
 
 }

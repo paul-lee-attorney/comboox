@@ -44,7 +44,7 @@ interface IInvestmentAgreement is ISigPage {
     
     event CreateSwap(uint seqOfDeal, bytes32 snOfSwap);
 
-    event PayOffSwap(uint seqOfDeal, uint seqOfSwap, uint msgValue);
+    event PayOffSwap(uint seqOfDeal, uint seqOfSwap);
 
     event TerminateSwap(uint seqOfDeal, uint seqOfSwap);
 
@@ -97,11 +97,8 @@ interface IInvestmentAgreement is ISigPage {
     ) external returns(SwapsRepo.Swap memory swap);
 
     function payOffSwap(
-        uint seqOfMotion,
         uint seqOfDeal,
-        uint seqOfSwap,
-        uint msgValue,
-        uint centPrice
+        uint seqOfSwap
     ) external returns(SwapsRepo.Swap memory swap);
 
     function terminateSwap(

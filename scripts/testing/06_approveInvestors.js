@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -31,9 +31,9 @@
 
 
 const { expect } = require("chai");
-const { getGK, getLOO, getRC, getROS } = require("./boox");
+const { getGK, getLOO, getRC, getROS, getUsdKeeper } = require("./boox");
 const { parseInvestor } = require("./loo");
-const { royaltyTest, cbpOfUsers } = require("./rc");
+const { royaltyTest, cbpOfUsers, userParser } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
 const { setUserCBP, transferCBP } = require("./saveTool");
@@ -56,6 +56,7 @@ async function main() {
     const regNewUser = async (signerNo) => {
       await rc.connect(signers[signerNo]).regUser();
       setUserCBP((signerNo+2).toString(), 18n * 10n ** 15n); 
+      await rc.connect(signers[signerNo]).setBackupKey(signers[signerNo+10].address);
     }
 
     for (let i=7; i<10; i++) {
@@ -66,11 +67,19 @@ async function main() {
 
     const regAndApproveInvestor = async (signerNo) => {
       const userNo = await rc.connect(signers[signerNo]).getMyUserNo();
-      let tx = await gk.connect(signers[signerNo]).regInvestor(userNo, ethers.utils.id(signers[signerNo].address));
-      
-      await royaltyTest(rc.address, signers[signerNo].address, gk.address, tx, 36n, "gk.regInvestor().");
 
-      transferCBP(userNo.toString(), "8", 36n);
+      // let tx = await gk.connect(signers[signerNo]).regInvestor(userNo, ethers.utils.id(signers[signerNo].address));
+
+      let usdKeeper = await getUsdKeeper();
+      let user = userParser(await rc.connect(signers[signerNo]).getUser());
+
+      let tx = await usdKeeper.connect(signers[signerNo]).regInvestor(user.backupKey.pubKey, userNo, ethers.utils.id(signers[signerNo].address));
+      
+      await royaltyTest(rc.address, signers[signerNo].address, gk.address, tx, 18n, "gk.regInvestor().PrimeKeyTest().");
+      transferCBP(userNo.toString(), "8", 18n);
+
+      await royaltyTest(rc.address, signers[signerNo].address, gk.address, tx, 18n, "gk.regInvestor().BackupKeyTest().");
+      transferCBP(userNo.toString(), "8", 18n);
   
       await expect(tx).to.emit(loo, "RegInvestor").withArgs(userNo, userNo, ethers.utils.id(signers[signerNo].address));
       console.log(" \u2714 Passed Event Test for gk.regInvestor(). \n");

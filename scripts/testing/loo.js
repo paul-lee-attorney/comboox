@@ -59,7 +59,7 @@ const parseData = (sn) => {
     votingWeight: parseInt(sn.substring(22, 26), 16),
     distrWeight: parseInt(sn.substring(26, 30), 16),
     margin: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(30, 62)).toString(), 18),
-    state: (sn.substring(62, 64) == '01'),
+    inEth: (sn.substring(62, 64) == '01'),
   };
 }
 

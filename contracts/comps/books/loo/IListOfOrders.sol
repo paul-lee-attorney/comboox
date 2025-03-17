@@ -36,7 +36,7 @@ interface IListOfOrders {
 
     event RevokeInvestor(uint indexed investor, uint indexed verifier);
 
-    event OrderPlaced(bytes32 indexed order, bool indexed isOffer);
+    event OrderPlaced(bytes32 indexed sn, bool indexed isOffer);
 
     event OrderWithdrawn(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
@@ -65,13 +65,7 @@ interface IListOfOrders {
     ) external;
 
     function placeSellOrder(
-        uint caller,
-        uint classOfShare,
-        uint seqOfShare,
-        uint votingWeight,
-        uint distrWeight,
-        uint paid,
-        uint price,
+        OrdersRepo.Deal memory input,
         uint execHours,
         uint centPriceInWei
     ) external returns(
@@ -81,14 +75,9 @@ interface IListOfOrders {
     );
 
     function placeBuyOrder(
-        uint classOfShare,
-        uint caller,
-        uint groupRep,
-        uint paid,
-        uint price,
+        OrdersRepo.Deal memory input,
         uint execHours,
-        uint centPriceInWei,
-        uint msgValue
+        uint centPriceInWei
     ) external returns (
         OrdersRepo.Deal[] memory deals, 
         GoldChain.Order[] memory expired,

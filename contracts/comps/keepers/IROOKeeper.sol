@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.5
  *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -53,6 +52,12 @@ interface IROOKeeper {
         address msgSender
     ) external;
 
+    function payOffSwapInUSD(
+        uint256 seqOfOpt, 
+        uint256 seqOfSwap, 
+        uint caller
+    ) external;
+
     function terminateSwap(
         uint256 seqOfOpt, 
         uint256 seqOfSwap,
@@ -75,6 +80,13 @@ interface IROOKeeper {
         uint seqOfSwap,
         uint msgValue,
         address msgSender
+    ) external;
+
+    function payOffRejectedDealInUSD(
+        address ia,
+        uint seqOfDeal,
+        uint seqOfSwap,
+        uint caller
     ) external;
 
     function pickupPledgedShare(

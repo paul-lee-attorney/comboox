@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,9 +21,9 @@ pragma solidity ^0.8.8;
 
 import "./IRegisterOfMembers.sol";
 
-import "../../common/access/AccessControl.sol";
+import "../../common/access/AnyKeeper.sol";
 
-contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
+contract RegisterOfMembers is IRegisterOfMembers, AnyKeeper {
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
     using Checkpoints for Checkpoints.History;
@@ -46,17 +46,22 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
     // ---- Options Setting ----
 
-    function setMaxQtyOfMembers(uint max) external onlyKeeper {
+    function setMaxQtyOfMembers(uint max) external anyKeeper {
         _repo.chain.setMaxQtyOfMembers(max);
         emit SetMaxQtyOfMembers(max);
     }
 
-    function setMinVoteRatioOnChain(uint min) external onlyKeeper {
+    function setMinVoteRatioOnChain(uint min) external {
+        require(msg.sender == _gk.getKeeper(1),
+            "ROM.OnlyROCKeeper: not");
         _repo.chain.setMinVoteRatioOnChain(min);
         emit SetMinVoteRatioOnChain(min);
     }
 
-    function setVoteBase(bool _basedOnPar) external onlyKeeper {
+    function setVoteBase(bool _basedOnPar) external {
+        require(msg.sender == _gk.getKeeper(1),
+            "ROM.OnlyROCKeeper: not");
+
         IRegisterOfShares _ros = _gk.getROS();
 
         if (_repo.setVoteBase(_ros, _basedOnPar)) 
@@ -147,18 +152,12 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         );
     }
 
-    function addMemberToGroup(uint acct, uint root)
-        external
-        onlyKeeper
-    {
+    function addMemberToGroup(uint acct, uint root) external anyKeeper {
         _repo.chain.top2Sub(acct, root);
         emit AddMemberToGroup(acct, root);
     }
 
-    function removeMemberFromGroup(uint256 acct)
-        external
-        onlyKeeper
-    {
+    function removeMemberFromGroup(uint256 acct) external anyKeeper {
         uint root = _repo.chain.rootOf(acct);
         uint256 next = _repo.chain.nextNode(acct);
 
@@ -173,7 +172,9 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         _repo.restoreSharesInRepo(shares);
     }
 
-    function restoreTopChainInRom(TopChain.Node[] memory list, TopChain.Para memory para) external onlyDK {
+    function restoreTopChainInRom(
+        TopChain.Node[] memory list, TopChain.Para memory para
+    ) external onlyDK {
         _repo.chain.restoreChain(list, para);
     }
 

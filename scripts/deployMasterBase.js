@@ -53,6 +53,7 @@ async function main() {
 	const libSigsRepo = await deployTool(signers[0], "SigsRepo", libraries, params);
 	const libSharesRepo = await deployTool(signers[0], "SharesRepo", libraries, params);
 	const libTeamsRepo = await deployTool(signers[0], "TeamsRepo", libraries, params);
+	const libUsdLockersRepo = await deployTool(signers[0], "UsdLockersRepo", libraries, params);
 
 	libraries = {
 		"Checkpoints": libCheckpoints.address,
@@ -111,6 +112,11 @@ async function main() {
 	libraries = {};
 	params=[];
 
+	let usdc = await deployTool(signers[0], "MockUSDC", libraries, params);
+	await usdc.init(signers[0].address, rc.address);
+	console.log("deployed USDC with owner: ", await usdc.getOwner(), "\n");
+
+	params=[usdc.address];
 	let cnc = await deployTool(signers[0], "CreateNewComp", libraries, params);
 	await cnc.init(signers[0].address, rc.address);
 
@@ -124,6 +130,7 @@ async function main() {
 		"SigsRepo": libSigsRepo.address,
 		"SwapsRepo": libSwapsRepo.address
 	};
+	params=[];
 	let ia = await deployTool(signers[0], "InvestmentAgreement", libraries, params);
 
 	libraries = {
@@ -169,25 +176,27 @@ async function main() {
 
 	let gk = await deployTool(signers[0], "GeneralKeeper", libraries, params);
 
-
-	libraries = {
-	}
+	libraries = {}
 
 	let rooKeeper = await deployTool(signers[0], "ROOKeeper", libraries, params);
 	let romKeeper = await deployTool(signers[0], "ROMKeeper", libraries, params);
 	let rodKeeper = await deployTool(signers[0], "RODKeeper", libraries, params);
+	let usdKeeper = await deployTool(signers[0], "USDKeeper", libraries, params);
+	let usdRomKeeper = await deployTool(signers[0], "UsdROMKeeper", libraries, params);
+	let usdRooKeeper = await deployTool(signers[0], "UsdROOKeeper", libraries, params);
+	let usdRoaKeeper = await deployTool(signers[0], "UsdROAKeeper", libraries, params);
 
 	libraries = {
 		"RulesParser": libRulesParser.address		
 	}
 	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries, params);
 	let looKeeper = await deployTool(signers[0], "LOOKeeper", libraries, params);
+	let usdLooKeeper = await deployTool(signers[0], "UsdLOOKeeper", libraries, params);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
 		"RulesParser": libRulesParser.address		
 	}
-
 	let gmmKeeper = await deployTool(signers[0], "GMMKeeper", libraries, params);
 	let bmmKeeper = await deployTool(signers[0], "BMMKeeper", libraries, params);
 
@@ -267,9 +276,21 @@ async function main() {
 	let loo = await deployTool(signers[0], "ListOfOrders", libraries, params);
 
 	libraries = {
+		"OrdersRepo": libOrdersRepo.address,
+		"GoldChain": libGoldChain.address,
+		"EnumerableSet": libEnumerableSet.address
+	}
+	let usdLoo = await deployTool(signers[0], "UsdListOfOrders", libraries, params);
+
+	libraries = {
 		"TeamsRepo": libTeamsRepo.address,
 	};
 	let lop = await deployTool(signers[0], "ListOfProjects", libraries, params);
+
+	libraries = {
+		"UsdLockersRepo": libUsdLockersRepo.address
+	}
+	let cashier = await deployTool(signers[0], "Cashier", libraries, params);
 
 	libraries = {};
 	params = [rc.address];
@@ -279,7 +300,7 @@ async function main() {
 	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries, params);
 
 	params = [rc.address, 10000];
-	let ft = 	await deployTool(signers[0], "FuelTank", libraries, params);
+	let ft = await deployTool(signers[0], "FuelTank", libraries, params);
 
 	// ==== SetTemplate ====
 
@@ -363,6 +384,27 @@ async function main() {
 
 	await rc.connect(signers[1]).setTemplate( 27, lop.address, 1);
 	console.log("set template for LOP at address: ", lop.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate( 28, cashier.address, 1);
+	console.log("set template for Cashier at address: ", cashier.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate( 29, usdLoo.address, 1);
+	console.log("set template for UsdLOO at address: ", usdLoo.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate( 30, usdKeeper.address, 1);
+	console.log("set template for USDKeeper at address: ", usdKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate( 31, usdRomKeeper.address, 1);
+	console.log("set template for UsdROMKeeper at address: ", usdRomKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate( 32, usdRoaKeeper.address, 1);
+	console.log("set template for UsdROAKeeper at address: ", usdRoaKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate( 33, usdLooKeeper.address, 1);
+	console.log("set template for UsdLOOKeeper at address: ", usdLooKeeper.address, "\n");
+
+	await rc.connect(signers[1]).setTemplate( 34, usdRooKeeper.address, 1);
+	console.log("set template for UsdROOKeeper at address: ", usdRooKeeper.address, "\n");
 
 	await rc.connect(signers[1]).setOracle(pc.address);
 	console.log("set Oracle at address: ", pc.address, "\n");

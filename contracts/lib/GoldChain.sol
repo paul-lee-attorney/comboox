@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -38,13 +38,15 @@ library GoldChain {
         uint16 votingWeight;
         uint16 distrWeight;
         uint128 margin;
-        uint8 state;
+        bool inEth;
+        address pubKey;
+        uint48 date;
+        uint48 issueDate; 
     }
 
     struct Order {
         Node node;
         Data data;
-        // uint margin;
     }
     
     /* node[0] {
@@ -60,15 +62,6 @@ library GoldChain {
     struct Chain {
         mapping (uint => Order) orders;
     }
-
-    //#################
-    //##  Modifier   ##
-    //#################
-
-    // modifier nodeExist(Chain storage chain,uint seqOfOrder) {
-    //     require(isNode(chain, seqOfOrder),"GC.nodeExist: not");
-    //     _;
-    // }
 
     //#################
     //##  Write I/O  ##
@@ -125,7 +118,7 @@ library GoldChain {
         data.votingWeight = uint16(_sn >> 152);
         data.distrWeight = uint16(_sn >> 136);
         data.margin = uint128(_sn >> 8);
-        data.state = uint8(_sn);
+        data.inEth = bool(uint8(_sn) == 1);
     }
 
     function codifyData(
@@ -139,7 +132,7 @@ library GoldChain {
                 data.votingWeight,
                 data.distrWeight,
                 data.margin,
-                data.state
+                uint8(data.inEth ? 1 : 0)
             );
 
         assembly {
@@ -342,12 +335,6 @@ library GoldChain {
     ) public view returns(Data memory data) {
         data = chain.orders[seqOfOrder].data;
     }
-
-    // function getMargin(
-    //     Chain storage chain, uint seqOfOrder
-    // ) public view returns(uint) {
-    //     return chain.orders[seqOfOrder].margin;
-    // }
 
     function getOrder(
         Chain storage chain, uint seqOfOrder

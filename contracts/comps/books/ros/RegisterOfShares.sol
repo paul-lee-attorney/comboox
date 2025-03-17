@@ -20,9 +20,9 @@
 pragma solidity ^0.8.8;
 
 import "./IRegisterOfShares.sol";
-import "../../common/access/AccessControl.sol";
+import "../../common/access/AnyKeeper.sol";
 
-contract RegisterOfShares is IRegisterOfShares, AccessControl {
+contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
     using LockersRepo for LockersRepo.Repo;
     using LockersRepo for bytes32;
     using SharesRepo for SharesRepo.Repo;
@@ -45,7 +45,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint paid,
         uint par,
         uint distrWeight
-    ) external onlyKeeper {
+    ) external anyKeeper {
 
         SharesRepo.Share memory share =
             SharesRepo.createShare(shareNumber, payInDeadline, paid, par, distrWeight);
@@ -55,7 +55,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
     function addShare(
         SharesRepo.Share memory share
-    ) public onlyKeeper {
+    ) public anyKeeper {
 
         IRegisterOfMembers _rom = _gk.getROM();
 
@@ -141,7 +141,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function payInCapital(
         uint seqOfShare, 
         uint amt
-    ) external onlyDK {
+    ) external anyKeeper {
 
         SharesRepo.Share storage share = 
             _repo.shares[seqOfShare];
@@ -158,7 +158,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint to,
         uint priceOfPaid,
         uint priceOfPar
-    ) external onlyKeeper {
+    ) external anyKeeper {
 
         IRegisterOfMembers _rom = _gk.getROM();
 
@@ -243,7 +243,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     ) external {
 
         require(msg.sender == address(_gk.getROP()) ||
-            _gk.isKeeper(msg.sender), 
+            _isKeeper(msg.sender), 
             "ROS.decrClean: access denied");
 
         _repo.increaseCleanPaid(
@@ -261,7 +261,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     ) external {
 
         require(msg.sender == address(_gk.getROP()) ||
-            _gk.isKeeper(msg.sender), "ROS.DCA: neither keeper nor ROP");
+            _isKeeper(msg.sender), "ROS.DCA: neither keeper nor ROP");
 
         _repo.increaseCleanPaid(
             true,
@@ -277,7 +277,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function updatePriceOfPaid(
         uint seqOfShare,
         uint newPrice
-    ) external onlyKeeper {
+    ) external anyKeeper {
         _repo.updatePriceOfPaid(seqOfShare, newPrice);
         emit UpdatePriceOfPaid(seqOfShare, newPrice);
     }
@@ -288,7 +288,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     ) external onlyDK {
 
         _repo.updatePayInDeadline(seqOfShare, deadline);
-
         emit UpdatePaidInDeadline(seqOfShare, deadline);
     }
 
@@ -300,7 +299,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint deltaPaid,
         uint deltaPar,
         uint deltaCleanPaid
-    ) external onlyKeeper {
+    ) external anyKeeper {
         _repo.increaseEquityOfClass(
             isIncrease,
             classOfShare,

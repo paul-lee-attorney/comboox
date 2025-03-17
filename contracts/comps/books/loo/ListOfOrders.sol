@@ -70,13 +70,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     // ==== Order ====
 
     function placeSellOrder(
-        uint caller,
-        uint classOfShare,
-        uint seqOfShare,
-        uint votingWeight,
-        uint distrWeight,
-        uint paid,
-        uint price,
+        OrdersRepo.Deal memory input,
         uint execHours,
         uint centPriceInWei
     ) external onlyDK returns(
@@ -84,16 +78,10 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         GoldChain.Order[] memory expired,
         OrdersRepo.Deal memory offer
     ) {
-        _classesList.add(classOfShare);
+        _classesList.add(input.classOfShare);
 
-        (deals, expired, offer) = _ordersOfClass[classOfShare].placeSellOrder(
-            caller,
-            classOfShare,
-            seqOfShare,
-            votingWeight,
-            distrWeight,
-            paid, 
-            price,
+        (deals, expired, offer) = _ordersOfClass[input.classOfShare].placeSellOrder(
+            input,
             execHours,
             centPriceInWei
         );
@@ -104,13 +92,13 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     }
 
     function _logOrder(OrdersRepo.Deal memory order, bool isOffer) private {
-        emit OrderPlaced(order.codifyDeal(), isOffer);
+        emit OrderPlaced(order.codifyBrief(), isOffer);
     }
 
     function _logDeals(OrdersRepo.Deal[] memory deals) private {
         uint len = deals.length;
         while (len > 0) {
-            emit DealClosed(deals[len - 1].codifyDeal(), deals[len - 1].consideration);
+            emit DealClosed(deals[len - 1].codifyBrief(), deals[len - 1].consideration);
             len--;
         }
     }
@@ -125,31 +113,21 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     }
 
     function placeBuyOrder(
-        uint classOfShare,
-        uint caller,
-        uint groupRep,
-        uint paid,
-        uint price,
+        OrdersRepo.Deal memory input,
         uint execHours,
-        uint centPriceInWei,
-        uint msgValue
+        uint centPriceInWei
     ) external onlyDK returns (
         OrdersRepo.Deal[] memory deals, 
         GoldChain.Order[] memory expired,
         OrdersRepo.Deal memory bid
     ) {
 
-        _classesList.add(classOfShare);
+        _classesList.add(input.classOfShare);
 
-        (deals, expired, bid) = _ordersOfClass[classOfShare].placeBuyOrder(
-            classOfShare,
-            caller,
-            groupRep,
-            paid, 
-            price,
+        (deals, expired, bid) = _ordersOfClass[input.classOfShare].placeBuyOrder(
+            input,
             execHours,
-            centPriceInWei,
-            msgValue
+            centPriceInWei
         );
 
         if (deals.length > 0) _logDeals(deals);

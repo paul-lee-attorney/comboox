@@ -86,9 +86,7 @@ interface IRegisterOfOptions {
 
     function payOffSwap(
         uint seqOfOpt,
-        uint seqOfSwap,
-        uint msgValue,
-        uint centPrice
+        uint seqOfSwap
     ) external returns (SwapsRepo.Swap memory swap);
 
     function terminateSwap(

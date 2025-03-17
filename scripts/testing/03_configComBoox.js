@@ -94,8 +94,8 @@ async function main() {
 
     // ==== Transfer IPR of Templates to Company ====
 
-    for (let i=1; i<28; i++) {
-      
+    for (let i=1; i<35; i++) {
+
       tx = await rc.transferIPR(i, 1, 8);
       await tx.wait();
       
