@@ -12,11 +12,17 @@ module.exports = {
       },
     },
   },
-  defaultNetwork: "localhost",
+  defaultNetwork: "hardhat",
   networks: {
-    localhost: {
+    hardhat: {
+      // forking: {
+      //   url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_ARB_KEY}`,
+      //   enabled: true,
+      // },
+      // chainId:42161,
       chainId: 31337,
-      url: "http://127.0.0.1:8545",
+      // url: "http://127.0.0.1:8545",
+      initialDate: "2025-01-01T00:00:00Z",
     },
     arbitrumSepolia: {
       url: `https://arb-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_SEPOLIA_KEY}`,
