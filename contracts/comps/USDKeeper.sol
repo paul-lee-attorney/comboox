@@ -29,6 +29,11 @@ contract USDKeeper is IUSDKeeper, AccessControl {
     // ---- Keeper ----
 
     function isKeeper(address msgSender) external view returns(bool) {
+        
+        if (msgSender == address(_gk)) {
+            return true;
+        }
+        
         uint i = 1;
         address keeper = _gk.getKeeper(i);
  
@@ -137,33 +142,6 @@ contract USDKeeper is IUSDKeeper, AccessControl {
         IUsdROOKeeper(_gk.getKeeper(14)).payOffRejectedDeal(
             auth, ia, seqOfDeal, seqOfSwap, to, msg.sender
         );
-    }
-
-    // ---- Cash Locker ----
-
-    function lockUsd(
-        ICashier.TransferAuth memory auth, address to, uint expireDate, bytes32 lock
-    ) external {
-        auth.from = msg.sender;
-        ICashier(_gk.getBook(11)).lockUsd(auth, to, expireDate, lock);
-    }
-
-    function lockConsideration(
-        ICashier.TransferAuth memory auth, address to, uint expireDate, 
-        address counterLocker, bytes calldata payload, bytes32 hashLock
-    ) external {
-        auth.from = msg.sender;
-        ICashier(_gk.getBook(11)).lockConsideration(
-            auth, to, expireDate, counterLocker, payload, hashLock
-        );
-    }
-
-    function unlockUsd(bytes32 lock, string memory key) external onlyDK {
-        ICashier(_gk.getBook(11)).unlockUsd(lock, key, msg.sender);
-    }
-
-    function withdrawUsd(bytes32 lock) external {
-        ICashier(_gk.getBook(11)).withdrawUsd(lock, msg.sender);
     }
 
     // ---- RegInvestor ----

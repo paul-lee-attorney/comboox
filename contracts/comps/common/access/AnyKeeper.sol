@@ -20,26 +20,27 @@
 pragma solidity ^0.8.8;
 
 import "./AccessControl.sol";
+import "../../IUSDKeeper.sol";
 
 contract AnyKeeper is AccessControl {
 
     function _isKeeper(address msgSender) internal view returns(bool) {
-        uint i = 1;
-        address keeper = _gk.getKeeper(i);
+        // uint i = 1;
+        // address keeper = _gk.getKeeper(i);
 
         if (msgSender == _dk.addr) {
             return true;
         }
  
-        while(keeper != address(0)) {
-            if (keeper == msgSender) {
-                return true;
-            }
-            i++;
-            keeper = _gk.getKeeper(i);
-        }
+        // while(keeper != address(0)) {
+        //     if (keeper == msgSender) {
+        //         return true;
+        //     }
+        //     i++;
+        //     keeper = _gk.getKeeper(i);
+        // }
 
-        return false;
+        return IUSDKeeper(_gk.getKeeper(15)).isKeeper(msgSender);
     }
 
     modifier anyKeeper() {

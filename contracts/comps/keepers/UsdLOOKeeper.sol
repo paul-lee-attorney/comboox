@@ -43,7 +43,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     function placeInitialOffer(
         address msgSender, uint classOfShare, uint execHours, 
         uint paid, uint price, uint seqOfLR
-    ) external {
+    ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
 
         IRegisterOfShares _ros = _gk.getROS();
@@ -125,11 +125,22 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
                 }
 
                 if (isOffer) {
-                    emit CloseOfferAgainstBid(deal.from, deal.to, _eightToSix(deal.consideration));
-                } else {
-                    emit CloseBidAgainstOffer(deal.from, deal.to, _eightToSix(deal.consideration));
+                    // CloseOfferAgainstBid
+                    _cashier().releaseUsd(
+                        deal.from, deal.to, 
+                        _eightToSix(deal.consideration), 
+                        bytes32(0x436c6f73654f66666572416761696e7374426964000000000000000000000000)
+                    );
+
+                } else {                    
+                    // CloseBidAgainstOffer
+                    _cashier().releaseUsd(
+                        deal.from, deal.to, 
+                        _eightToSix(deal.consideration), 
+                        bytes32(0x436c6f7365426964416761696e73744f66666572000000000000000000000000)
+                    );
+
                 }
-                _cashier().releaseUsd(deal.from, deal.to, _eightToSix(deal.consideration));
 
                 _ros.increaseCleanPaid(deal.seqOfShare, deal.paid);
                 _ros.transferShare(
@@ -143,12 +154,26 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
             } else {
 
-                _cashier().releaseUsd(deal.from, _gk.getBook(11), _eightToSix(deal.consideration));
+
 
                 if (isOffer) {
-                    emit CloseInitOfferAgainstBid(deal.from, _gk.getBook(11), _eightToSix(deal.consideration));
+                    // remark: CloseInitOfferAgainstBid
+                    _cashier().releaseUsd(
+                        deal.from, 
+                        _gk.getBook(11),
+                        _eightToSix(deal.consideration),
+                        bytes32(0x436c6f7365496e69744f66666572416761696e73744269640000000000000000)
+                    );
+
                 } else {
-                    emit CloseBidAgainstInitOffer(deal.from, _eightToSix(deal.consideration));
+                    // remark: CloseBidAgainstInitOffer
+                    _cashier().releaseUsd(
+                        deal.from, 
+                        _gk.getBook(11),
+                        _eightToSix(deal.consideration),
+                        bytes32(0x436c6f7365426964416761696e7374496e69744f666665720000000000000000)
+                    );
+
                 }
 
                 SharesRepo.Share memory share;
@@ -194,8 +219,13 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
                 _ros.increaseEquityOfClass(false, order.data.classOfShare, 0, 0, order.node.paid);
             }
         } else {
-            emit RefundValueOfBidOrder(order.data.pubKey, order.data.pubKey, _eightToSix(order.data.margin));
-            _cashier().releaseUsd(order.data.pubKey, order.data.pubKey, _eightToSix(order.data.margin));
+            // remark: RefundValueOfBidOrder
+            _cashier().releaseUsd(
+                order.data.pubKey,
+                order.data.pubKey, 
+                _eightToSix(order.data.margin),
+                bytes32(0x526566756e6456616c75654f664269644f726465720000000000000000000000)
+            );
         }
     }
 
@@ -209,7 +239,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
     function withdrawInitialOffer(
         address msgSender, uint classOfShare, uint seqOfOrder, uint seqOfLR
-    ) external {
+    ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
 
         IUsdListOfOrders _loo = _looInUSD();
@@ -234,7 +264,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     function placeSellOrder(
         address msgSender, uint seqOfClass, uint execHours,
         uint paid, uint price, uint seqOfLR
-    ) external {
+    ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
 
         require (_gk.getLOO().getInvestor(caller).state == 
@@ -303,7 +333,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
     function withdrawSellOrder(
         address msgSender, uint classOfShare,uint seqOfOrder
-    ) external {
+    ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
         IUsdListOfOrders _loo = _looInUSD();
@@ -331,7 +361,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     function placeBuyOrder(
         ICashier.TransferAuth memory auth, address msgSender, 
         uint classOfShare, uint paid, uint price, uint execHours
-    ) external {
+    ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 
@@ -361,7 +391,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     function placeMarketBuyOrder(
         ICashier.TransferAuth memory auth, address msgSender, 
         uint classOfShare, uint paid, uint execHours
-    ) external {
+    ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 
@@ -390,7 +420,11 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         ICashier.TransferAuth memory auth, OrdersRepo.Deal memory input, uint execHours
     ) private {
 
-        _cashier().custodyUsd(auth);
+        // remark: CustodyValueOfBid
+        _cashier().custodyUsd(
+            auth, 
+            bytes32(0x437573746f647956616c75654f66426964000000000000000000000000000000)
+        );
 
         (   OrdersRepo.Deal[] memory deals, 
             GoldChain.Order[] memory expired, 
@@ -399,17 +433,20 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
         if (deals.length > 0) _closeDeals(deals, false);
         if (expired.length > 0) _restoreExpiredOrders(expired);
-        if (bid.paid > 0 && bid.price > 0) {
-            emit CustodyValueOfBidOrder(bid.from, _eightToSix(bid.consideration));
-        } else if (bid.consideration > 0) {
-            emit RefundBalanceOfBidOrder(bid.from, _eightToSix(bid.consideration));
-            _cashier().releaseUsd(bid.from, bid.from, _eightToSix(bid.consideration));
+        if (bid.paid == 0 && bid.consideration > 0) {
+            // remark: RefundBalanceOfBidOrder
+            _cashier().releaseUsd(
+                bid.from, 
+                bid.from, 
+                _eightToSix(bid.consideration), 
+                bytes32(0x526566756e6442616c616e63654f664269644f72646572000000000000000000)
+            );
         }
     }
 
     function withdrawBuyOrder(
         address msgSender, uint classOfShare, uint seqOfOrder
-    ) external {
+    ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
         IUsdListOfOrders _loo = _looInUSD();

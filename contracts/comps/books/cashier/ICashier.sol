@@ -41,23 +41,19 @@ interface ICashier {
 
     event ReceiveUsd(address indexed from, uint indexed amt);
 
-    event ForwardUsd(address indexed from, address indexed to, uint indexed amt);
+    event ReceiveUsd(address indexed from, uint indexed amt, bytes32 indexed remark);
 
-    event CustodyUsd(address indexed from, uint indexed amt);
+    event ForwardUsd(address indexed from, address indexed to, uint indexed amt, bytes32 remark);
 
-    event ReleaseUsd(address indexed from, address indexed to, uint indexed amt);
+    event CustodyUsd(address indexed from, uint indexed amt, bytes32 indexed remark);
 
-    event TransferUsd(address indexed to, uint indexed amt);
+    event ReleaseUsd(address indexed from, address indexed to, uint indexed amt, bytes32 remark);
 
-    event LockUsd(address indexed from, address indexed to, uint indexed amt,
-        uint expireDate, bytes32 lock);
+    event TransferUsd(address indexed to, uint indexed amt, bytes32 indexed remark);
 
-    event LockConsideration(address indexed from, address indexed to,
-        uint indexed amt, uint expireDate, bytes32 lock);
+    event DistributeUsd(uint indexed amt);
 
-    event UnlockUsd(address indexed from, address indexed to, uint indexed amt, bytes32 lock);
-
-    event WithdrawUsd(address indexed from, uint indexed amt, bytes32 lock);
+    event PickupUsd(address indexed msgSender, uint indexed caller, uint indexed value);
 
     //###############
     //##   Write   ##
@@ -65,50 +61,31 @@ interface ICashier {
 
     function collectUsd(TransferAuth memory auth) external;
 
-    function forwardUsd(TransferAuth memory auth, address to) external;
+    function collectUsd(TransferAuth memory auth, bytes32 remark) external;
 
-    function custodyUsd(TransferAuth memory auth) external;
+    function forwardUsd(TransferAuth memory auth, address to, bytes32 remark) external;
 
-    function releaseUsd(address from, address to, uint amt) external;
+    function custodyUsd(TransferAuth memory auth, bytes32 remark) external;
 
-    function transferUsd(address to, uint amt) external;
+    function releaseUsd(address from, address to, uint amt, bytes32 remark) external;
 
-    function lockUsd(
-        TransferAuth memory auth, address to, uint expireDate, bytes32 lock
-    ) external;
+    function transferUsd(address to, uint amt, bytes32 remark) external;
 
-    function lockConsideration(
-        TransferAuth memory auth, address to, uint expireDate, 
-        address counterLocker, bytes calldata payload, bytes32 hashLock
-    ) external;
+    function distributeUsd(uint amt) external;
 
-    function unlockUsd(
-        bytes32 lock, string memory key, address msgSender
-    ) external;
-
-    function withdrawUsd(
-        bytes32 lock, address msgSender
-    ) external;
+    function pickupUsd() external; 
 
     //##################
     //##   Read I/O   ##
     //##################
 
-    function isLocked(bytes32 lock) external view returns(bool);
-
-    function counterOfLockers() external view returns(uint);
-
-    function getHeadOfLocker(bytes32 lock) external view returns(UsdLockersRepo.Head memory);
-
-    function getLocker(bytes32 lock) external view returns(UsdLockersRepo.Locker memory);
-
-    function getLockersList() external view returns (bytes32[] memory);
-
     function custodyOf(address acct) external view returns(uint);
 
-    function totalCustody() external view returns(uint);
+    function totalEscrow() external view returns(uint);
 
-    function totalLocked() external view returns(uint);
+    function totalDeposits() external view returns(uint);
+
+    function depositOfMine(uint user) external view returns(uint);    
 
     function balanceOfComp() external view returns(uint);
 }

@@ -28,20 +28,6 @@ import "../../lib/InvestorsRepo.sol";
 
 interface IUsdLOOKeeper {
 
-    event CloseBidAgainstInitOffer(address indexed from, uint indexed amt);
-
-    event CloseBidAgainstOffer(address indexed from, address indexed to, uint indexed amt);
-
-    event CloseOfferAgainstBid(address indexed from, address indexed to, uint indexed amt);
-
-    event RefundValueOfBidOrder(address indexed from, address indexed to, uint indexed amt);
-
-    event CloseInitOfferAgainstBid(address indexed from, address indexed to, uint indexed amt);
-
-    event CustodyValueOfBidOrder(address indexed from, uint indexed amt);
-
-    event RefundBalanceOfBidOrder(address indexed from, uint indexed amt);
-
     //###############
     //##   Write   ##
     //###############

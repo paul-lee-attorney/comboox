@@ -34,7 +34,7 @@ contract UsdROOKeeper is IUsdROOKeeper, RoyaltyCharge {
     function payOffSwap(
         ICashier.TransferAuth memory auth, uint256 seqOfOpt, uint256 seqOfSwap, 
         address to, address msgSender
-    ) external {
+    ) external onlyDK {
 
         uint caller = _msgSender(msgSender, 40000);
 
@@ -52,7 +52,12 @@ contract UsdROOKeeper is IUsdROOKeeper, RoyaltyCharge {
         auth.from = msgSender;
         auth.value = valueOfDeal;
 
-        _cashier().forwardUsd(auth, to);
+        // remark: PayOffSwap
+        _cashier().forwardUsd(
+            auth, 
+            to, 
+            bytes32(0x5061794f66665377617000000000000000000000000000000000000000000000)
+        );
         emit PayOffSwap(seqOfOpt, seqOfSwap, msgSender, to, auth.value);
 
         IROOKeeper(_gk.getKeeper(7)).payOffSwapInUSD(
@@ -64,7 +69,7 @@ contract UsdROOKeeper is IUsdROOKeeper, RoyaltyCharge {
     function payOffRejectedDeal(
         ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, uint seqOfSwap, 
         address to, address msgSender
-    ) external {
+    ) external onlyDK {
 
         uint caller = _msgSender(msgSender, 40000);
         IRegisterOfShares _ros = _gk.getROS();
@@ -80,7 +85,12 @@ contract UsdROOKeeper is IUsdROOKeeper, RoyaltyCharge {
         auth.value = valueOfDeal;
         auth.from = msgSender;
 
-        _cashier().forwardUsd(auth, to);
+        // remark: PayOffRejectedDeal
+        _cashier().forwardUsd(
+            auth, 
+            to, 
+            bytes32(0x5061794f666652656a65637465644465616c0000000000000000000000000000)
+        );
         emit PayOffRejectedDeal(ia, seqOfDeal, seqOfSwap, msgSender, to, auth.value);
 
         IROOKeeper(_gk.getKeeper(7)).payOffRejectedDealInUSD(

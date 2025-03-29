@@ -31,12 +31,9 @@ import "../../lib/InvestorsRepo.sol";
 
 interface IUsdROAKeeper{
 
-    event PayOffSTDeal(uint indexed caller, uint indexed valueOfDeal);
-
-    event PayOffCIDeal(uint indexed caller, uint indexed valueOfDeal);
-
     function payOffApprovedDeal(
        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, 
        address to, address msgSender
     ) external;
+    
 }

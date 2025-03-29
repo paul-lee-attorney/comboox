@@ -25,10 +25,10 @@ import "./ICashier.sol";
 import "../../common/access/RoyaltyCharge.sol";
 
 contract Cashier is ICashier, RoyaltyCharge {
-    using UsdLockersRepo for UsdLockersRepo.Repo;
     
-    mapping(address => uint) _coffers;
-    UsdLockersRepo.Repo private _lockers;
+    mapping(address => uint) private _coffers;
+    // userNo => balance
+    mapping(uint => uint) private _lockers;
 
     //###############
     //##   Write   ##
@@ -57,151 +57,126 @@ contract Cashier is ICashier, RoyaltyCharge {
         emit ReceiveUsd(auth.from, auth.value);
     }
 
-    function forwardUsd(TransferAuth memory auth, address to) external anyKeeper{
+    function collectUsd(TransferAuth memory auth, bytes32 remark) external anyKeeper {
         _transferWithAuthorization(auth);
-        require(_usd().transfer(to, auth.value),
-            "Cashier.forwardUsd: transfer failed");
-
-        emit ForwardUsd(auth.from, to, auth.value);
+        emit ReceiveUsd(auth.from, auth.value, remark);
     }
 
-    function custodyUsd(TransferAuth memory auth) external anyKeeper {
+    function forwardUsd(TransferAuth memory auth, address to, bytes32 remark) external anyKeeper{
+        _transferWithAuthorization(auth);
+        emit ForwardUsd(auth.from, to, auth.value, remark);
+
+        require(_usd().transfer(to, auth.value),
+            "Cashier.forwardUsd: transfer failed");
+    }
+
+    function custodyUsd(TransferAuth memory auth, bytes32 remark) external anyKeeper {
         _transferWithAuthorization(auth);
         _coffers[auth.from] += auth.value;
         _coffers[address(0)] += auth.value;
         
-        emit CustodyUsd(auth.from, auth.value);
+        emit CustodyUsd(auth.from, auth.value, remark);
     }
 
-    function releaseUsd(address from, address to, uint amt) external anyKeeper {
+    function releaseUsd(address from, address to, uint amt, bytes32 remark) external anyKeeper {
         require(_coffers[from] >= amt,
             "Cashier.ReleaseUsd: insufficient amt");
 
         _coffers[from] -= amt;
         _coffers[address(0)] -= amt;
 
-        emit ReleaseUsd(from, to, amt);
+        emit ReleaseUsd(from, to, amt, remark);
 
         require(_usd().transfer(to, amt),
             "Cashier.releaseUsd: transfer failed");
     }
 
-    function transferUsd(address to, uint amt) external anyKeeper {
+    function transferUsd(address to, uint amt, bytes32 remark) external anyKeeper {
 
         require(balanceOfComp() >= amt,
             "Cashier.transferUsd: insufficient amt");
         
-        emit TransferUsd(to, amt);
+        emit TransferUsd(to, amt, remark);
 
         require(_usd().transfer(to, amt),
             "Cashier.transferUsd: transfer failed");        
     }
 
-    // ---- Cash Locker ----
+    function distributeUsd(uint amt) external {
 
-    function lockUsd(
-        TransferAuth memory auth, address to, uint expireDate, bytes32 lock
-    ) external onlyDK {
+        require(msg.sender == address(_gk), 
+            "Cashier.DistrUsd: not GK");
 
-        _transferWithAuthorization(auth);
+        require(balanceOfComp() >= amt,
+            "Cashier.DistrUsd: insufficient amt");
 
-        _coffers[auth.from] += auth.value;
-        _coffers[address(1)] += auth.value;
+        IRegisterOfMembers _rom = _gk.getROM();
 
-        _lockers.lockUsd(auth.from, to, expireDate, auth.value, lock);
+        uint[] memory members = _rom.membersList();
+        uint len = members.length;
 
-        emit LockUsd(auth.from, to, auth.value, expireDate, lock);
+        uint totalPoints = _rom.ownersPoints().points;
+        uint sum = 0;
+
+        while (len > 1) {
+            uint member = members[len - 1];
+            uint pointsOfMember = _rom.pointsOfMember(member).points;
+            uint value = pointsOfMember * amt / totalPoints;
+
+            _lockers[member] += value;
+            _lockers[0] += value;
+
+            sum += value;
+
+            len--;
+        }
+
+        _lockers[members[0]] += (amt - sum);
+        _lockers[0] += (amt - sum);
+
+        emit DistributeUsd(amt);
     }
 
-    function lockConsideration(
-        TransferAuth memory auth, address to, uint expireDate,  
-        address counterLocker, bytes calldata payload, bytes32 hashLock
-    ) external onlyDK {
+    function pickupUsd() external {
+        
+        uint caller = _msgSender(msg.sender, 18000);
+        uint value = _lockers[caller];
 
-        _transferWithAuthorization(auth);
+        if (value > 0) {
 
-        _lockers.lockConsideration(
-            auth.from, to, expireDate, auth.value, 
-            counterLocker, payload, hashLock
-        );
+            _lockers[caller] = 0;
+            _lockers[0] -= value;
 
-        emit LockConsideration(auth.from, to, auth.value, expireDate, hashLock);
-    }
+            emit PickupUsd(msg.sender, caller, value);
 
-    function unlockUsd(
-        bytes32 lock, string memory key, address msgSender
-    ) external onlyDK {
+            require(_usd().transfer(msg.sender, value),
+                "Cashier.PickupUsd: transfer failed");
 
-        UsdLockersRepo.Head memory head =
-            _lockers.releaseUsd(lock, key, msgSender);
-
-        require(_coffers[head.from] >= head.amt,
-            "Cashier.releaseUsd: insufficient amt");
-
-        _coffers[head.from] -= head.amt;
-        _coffers[address(1)] -= head.amt;
-
-        emit UnlockUsd(head.from, head.to, head.amt, lock);
-
-        require(_usd().transfer(head.to, head.amt),
-            "Cashier.releaseUsd: transfer failed");
-    }
-
-    function withdrawUsd(bytes32 lock, address msgSender) external onlyDK {
-
-        UsdLockersRepo.Head memory head =
-            _lockers.withdrawUsd(lock, msgSender);
-
-        require(_coffers[head.from] >= head.amt,
-            "Cashier.withdrawUsd: insufficient amt");
-
-        _coffers[head.from] -= head.amt;
-        _coffers[address(1)] -= head.amt;
-
-        emit WithdrawUsd(head.from, head.amt, lock);
-
-        require(_usd().transfer(head.from, head.amt),
-            "Cashier.withdrawUsd: transfer failed");
+        } else revert("Cashier.pickupDeposit: no balance");
     }
 
     //##################
     //##   Read I/O   ##
     //##################
 
-    function isLocked(bytes32 lock) external view returns(bool) {
-        return _lockers.isLocked(lock);
-    }
-
-    function counterOfLockers() external view returns(uint) {
-        return _lockers.counterOfLockers();
-    }
-
-    function getHeadOfLocker(bytes32 lock) external view returns(UsdLockersRepo.Head memory) {
-        return _lockers.getHeadOfLocker(lock);
-    }
-
-    function getLocker(bytes32 lock) external view returns(UsdLockersRepo.Locker memory) {
-        return _lockers.getLocker(lock);
-    }
-
-    function getLockersList() external view returns (bytes32[] memory) {
-        return _lockers.getSnList();
-    }
-
     function custodyOf(address acct) external view returns(uint) {
         return _coffers[acct];
     }
 
-    function totalCustody() external view returns(uint) {
+    function totalEscrow() external view returns(uint) {
         return _coffers[address(0)];
     }
 
-    function totalLocked() external view returns(uint) {
-        return _coffers[address(1)];
+    function totalDeposits() external view returns(uint) {
+        return _lockers[0];
+    }
+
+    function depositOfMine(uint user) external view returns(uint) {
+        return _lockers[user];
     }
 
     function balanceOfComp() public view returns(uint) {
         uint amt = _usd().balanceOf(address(this));        
-        return amt - _coffers[address(0)] - _coffers[address(1)];
+        return amt - _coffers[address(0)] - _lockers[0];
     }
 }

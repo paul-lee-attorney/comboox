@@ -39,18 +39,18 @@ contract UsdROAKeeper is IUsdROAKeeper, RoyaltyCharge {
             (deal.body.par - deal.body.paid) * deal.head.priceOfPar) / 100;
         auth.from = msgSender;
 
-        ICashier(_gk.getBook(11)).forwardUsd(auth, to);
-
         if (deal.head.seqOfShare > 0) {
             require(deal.head.seller == _msgSender(to, 18000),
                "UsdROAK.payOffApprDealInUSD: wrong payee");
 
-            emit PayOffSTDeal(caller,  auth.value);
+            // remark: PayOffShareTransferDeal
+            ICashier(_gk.getBook(11)).forwardUsd(auth, to, bytes32(0x5061794f666653686172655472616e736665724465616c000000000000000000));
         } else {
             require(_gk.getBook(11) == to,
                "UsdROAK.payOffApprDealInUSD: wrong payee");
 
-            emit PayOffCIDeal(caller, auth.value);
+            // remark: PayOffCapIncreaseDeal
+            ICashier(_gk.getBook(11)).forwardUsd(auth, to, bytes32(0x5061794f6666436170496e6372656173654465616c0000000000000000000000));            
         }
 
         IROAKeeper(_gk.getKeeper(6)).payOffApprovedDealInUSD(ia, seqOfDeal, auth.value, caller);

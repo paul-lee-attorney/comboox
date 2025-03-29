@@ -85,17 +85,21 @@ interface IUSDKeeper {
 
     // ---- Cash Locker ----
 
-    function lockUsd(
-        ICashier.TransferAuth memory auth, address to, uint expireDate, bytes32 lock
-    ) external;
+    // function lockUsd(
+    //     ICashier.TransferAuth memory auth, address to, uint expireDate, bytes32 lock
+    // ) external;
 
-    function lockConsideration(
-        ICashier.TransferAuth memory auth, address to, uint expireDate, 
-        address counterLocker, bytes calldata payload, bytes32 hashLock
-    ) external;
+    // function lockConsideration(
+    //     ICashier.TransferAuth memory auth, address to, uint expireDate, 
+    //     address counterLocker, bytes calldata payload, bytes32 hashLock
+    // ) external;
 
-    function unlockUsd(bytes32 lock, string memory key) external;
+    // function unlockUsd(bytes32 lock, string memory key) external;
 
-    function withdrawUsd(bytes32 lock) external;
+    // function withdrawUsd(bytes32 lock) external;
+
+    // ---- RegInvestor ----
+
+    function regInvestor(address bKey, uint groupRep, bytes32 idHash) external;
 
 }
