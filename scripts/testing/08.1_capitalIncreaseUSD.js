@@ -427,9 +427,6 @@ async function main() {
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(ia.address, BigNumber.from(6));
     console.log(" \u2714 Passed Event Test for roa.execFile(). \n");
 
-    await expect(tx).to.emit(usdROAKeeper, "PayOffCIDeal").withArgs(BigNumber.from(1), BigNumber.from(18000n * 10n ** 6n));
-    console.log(" \u2714 Passed Event Test for usdROAKeeper.PayOffCIDeal(). \n");
-
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(7), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 

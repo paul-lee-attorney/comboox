@@ -66,7 +66,7 @@ async function main() {
 
     console.log('\n');
     console.log('********************************');
-    console.log('**   03. Config ComBoox       **');
+    console.log('**   03.1 Config ComBoox     **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -75,6 +75,42 @@ async function main() {
     const ft = await getFT();
     const gk = await getGK();
     const ros = await getROS();
+
+
+    // ==== Pay In Capital in USD ====
+
+    const cashier = await getCashier();
+    const usdKeeper = await getUsdKeeper();
+    const usdROMKeeper = await getUsdROMKeeper();
+
+    let auth = await generateAuth(signers[4], cashier.address, 7500);
+    console.log("auth:", auth);
+
+    tx = await usdKeeper.connect(signers[4]).payInCapital(auth, 4, 5000 * 10 ** 4);
+
+    setUserDepo("8", 0n);
+    setUserDepo("4", 0n);
+    
+    setUserDepo("1", 0n);
+    setUserDepo("2", 0n);
+    setUserDepo("3", 0n);
+    setUserDepo("5", 0n);
+    setUserDepo("6", 0n);
+    setUserDepo("7", 0n);
+
+    await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "usdROMK.payInCapital().");
+
+    // User_4 pays royalty to User_1 (author of Templates);
+    transferCBP("4", "1", 36n);
+
+    await expect(tx).to.emit(usdROMKeeper, "PayInCapital");
+    console.log(" \u2714 Passed Event Test for usdRomKeeper.PayInCapital(). \n");
+    
+    let share = parseShare(await ros.getShare(4));
+
+    expect(share.body.paid).to.equal("20,000.0");
+    console.log(" \u2714 Passed Result Verify Test for USDKeeper.payInCapital(). \n");
+
 
     // ==== Transfer Ownership of Platform to Company ====
     

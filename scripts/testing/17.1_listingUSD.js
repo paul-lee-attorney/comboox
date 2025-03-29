@@ -89,7 +89,7 @@ const { generateAuth } = require("./sigTools");
 async function main() {
 
     console.log('\n********************************');
-    console.log('**    19.  Listing USD Deals    **');
+    console.log('**   17.1  Listing USD Deals  **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();
@@ -103,15 +103,6 @@ async function main() {
     const ros = await getROS();
     const usdLooKeeper = await getUsdLOOKeeper();
 
-    // // ==== Mint Mock USDC to users ====
-
-    // for (i=0; i<7; i++) {
-    //   await usdc.mint(signers[i].address, 10n ** 12n);
-    //   let balance = await usdc.balanceOf(signers[i].address);
-    //   balance = ethers.utils.formatUnits(balance, 6);
-    //   expect(balance).to.equal('1000000.0');
-    // }
-
     // ==== Parse Logs ====
 
     const parseUsdLogs = async (tx) => {
@@ -121,14 +112,10 @@ async function main() {
 
       const eventAbi = [
         "event ReceiveUsd(address indexed from, uint indexed amt)",
-        "event ForwardUsd(address indexed from, address indexed to, uint indexed amt)",
-        "event CustodyUsd(address indexed from, uint indexed amt)",
-        "event ReleaseUsd(address indexed from, address indexed to, uint indexed amt)",
-        "event TransferUsd(address indexed to, uint indexed amt)",
-        "event LockUsd(address indexed from, address indexed to, uint indexed amt,uint expireDate, bytes32 lock)",
-        "event LockConsideration(address indexed from, address indexed to, uint indexed amt, uint expireDate, bytes32 lock)",
-        "event UnlockUsd(address indexed from, address indexed to, uint indexed amt, bytes32 lock)",
-        "event WithdrawUsd(address indexed from, uint indexed amt, bytes32 lock)",
+        "event ForwardUsd(address indexed from, address indexed to, uint indexed amt, bytes32 remark)",
+        "event CustodyUsd(address indexed from, uint indexed amt, bytes32 indexed remark)",
+        "event ReleaseUsd(address indexed from, address indexed to, uint indexed amt, bytes32 remark)",
+        "event TransferUsd(address indexed to, uint indexed amt, bytes32 indexed remark)",
       ];
       
       const iface = new ethers.utils.Interface(eventAbi);
@@ -154,7 +141,7 @@ async function main() {
                 from: parsedLog.args[0].toString(), 
                 to: parsedLog.args[1].toString(), 
                 amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "ForwardUsd",
+                remark: ethers.utils.parseBytes32String(parsedLog.args[3]),
               });
 
             } else if (parsedLog.name == "CustodyUsd") {
@@ -162,7 +149,7 @@ async function main() {
               journal.push({
                 from: parsedLog.args[0].toString(),
                 amt: ethers.utils.formatUnits(parsedLog.args[1].toString(), 6),
-                remark: "CustodyUsd",
+                remark: ethers.utils.parseBytes32String(parsedLog.args[2]),
               });
 
             } else if (parsedLog.name == "ReleaseUsd") {
@@ -171,7 +158,7 @@ async function main() {
                 from: parsedLog.args[0].toString(), 
                 to: parsedLog.args[1].toString(), 
                 amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "ReleaseUsd",
+                remark: ethers.utils.parseBytes32String(parsedLog.args[3]),
               });
 
             } else if (parsedLog.name == "TransferUsd") {
@@ -180,145 +167,11 @@ async function main() {
                 from: cashier.address, 
                 to: parsedLog.args[0].toString(), 
                 amt: ethers.utils.formatUnits(parsedLog.args[1].toString(), 6),
-                remark: "TransferUsd",
-              });
-
-            } else if (parsedLog.name == "LockUsd") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(), 
-                to: parsedLog.args[1].toString(), 
-                amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "LockUsd",
-              });
-              
-            } else if (parsedLog.name == "LockConsideration") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(), 
-                to: parsedLog.args[1].toString(), 
-                amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "LockConsideration",
-              });
-              
-            } else if (parsedLog.name == "UnlockUsd") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(), 
-                to: parsedLog.args[1].toString(), 
-                amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "UnlockUsd",
-              });
-
-            } else if (parsedLog.name == "WithdrawUsd") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(), 
-                to: parsedLog.args[0].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[1].toString(), 6),
-                remark: "WithdrawUsd",
+                remark: ethers.utils.parseBytes32String(parsedLog.args[2]),
               });
 
             }
 
-          } catch (err) {
-
-            console.log('parse EthLogs error:', err);
-
-          }
-        }
-
-      });
-
-      return journal;
-    }
-
-    const parseTxLogs = async (tx) => {
-      const receipt = await tx.wait();
-      
-      let journal = [];
-
-      const eventAbi = [
-        "event ChargeRoyalty(uint indexed typeOfDoc, uint version, uint indexed rate,uint indexed user, uint author)",
-        "event CloseBidAgainstInitOffer(address indexed from, uint indexed amt)",
-        "event CloseBidAgainstOffer(address indexed from, address indexed to, uint indexed amt)", 
-        "event CloseOfferAgainstBid(address indexed from, address indexed to, uint indexed amt)",    
-        "event RefundValueOfBidOrder(address indexed from, address indexed to, uint indexed amt)",    
-        "event CloseInitOfferAgainstBid(address indexed from, address indexed to, uint indexed amt)",
-        "event CustodyValueOfBidOrder(address indexed from, uint indexed amt)",    
-        "event RefundBalanceOfBidOrder(address indexed from, uint indexed amt)",
-      ];
-      
-      const iface = new ethers.utils.Interface(eventAbi);
-
-      receipt.logs.forEach((log) => {
-
-        if (log.address == usdLooKeeper.address) {
-          try {
-            const parsedLog = iface.parseLog(log);
-
-            if (parsedLog.name == "CloseBidAgainstInitOffer") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[1].toString(), 6),
-                remark: "CloseBidAgainstInitOffer",
-              });
-
-            } else if (parsedLog.name == "CloseBidAgainstOffer") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(),
-                to: parsedLog.args[1].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "CloseBidAgainstOffer",
-              });
-
-            } else if (parsedLog.name == "CloseOfferAgainstBid") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(),
-                to: parsedLog.args[1].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "CloseOfferAgainstBid",
-              });
-
-            } else if (parsedLog.name == "RefundValueOfBidOrder") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(),
-                to: parsedLog.args[1].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "RefundValueOfBidOrder",
-              });
-
-            } else if (parsedLog.name == "CloseInitOfferAgainstBid") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(),
-                to: parsedLog.args[1].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[2].toString(), 6),
-                remark: "CloseInitOfferAgainstBid",
-              });
-
-            } else if (parsedLog.name == "CustodyValueOfBidOrder") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[1].toString(), 6),
-                remark: "CustodyValueOfBidOrder",
-              });
-
-            } else if (parsedLog.name == "RefundBalanceOfBidOrder") {
-
-              journal.push({
-                from: parsedLog.args[0].toString(),
-                to: parsedLog.args[0].toString(),
-                amt: ethers.utils.formatUnits(parsedLog.args[1].toString(), 6),
-                remark: "RefundBalanceOfBidOrder",
-              });
-
-            } 
 
           } catch (err) {
 
@@ -532,34 +385,19 @@ async function main() {
 
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('296.0');
-    expect(journal[0].remark).to.equal("CustodyUsd");
+    expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
     expect(journal[1].from).to.equal(signers[1].address);
     expect(journal[1].to).to.equal(cashier.address);
     expect(journal[1].amt).to.equal('288.0');
-    expect(journal[1].remark).to.equal("ReleaseUsd");
+    expect(journal[1].remark).to.equal("CloseBidAgainstInitOffer");
 
     expect(journal[2].from).to.equal(signers[1].address);
     expect(journal[2].to).to.equal(signers[1].address);
     expect(journal[2].amt).to.equal('8.0');
-    expect(journal[2].remark).to.equal("ReleaseUsd");
+    expect(journal[2].remark).to.equal("RefundBalanceOfBidOrder");
 
     console.log(" \u2714 Passed Cashier Event Test for usdLooKeeper.DealClosed(). \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].amt).to.equal('288.0');
-    expect(journal[0].remark).to.equal("CloseBidAgainstInitOffer");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CloseBidAgainstInitOffer(). \n");
-
-    expect(journal[1].from).to.equal(signers[1].address);
-    expect(journal[1].to).to.equal(signers[1].address);
-    expect(journal[1].amt).to.equal('8.0');
-    expect(journal[1].remark).to.equal("RefundBalanceOfBidOrder");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.RefundBalanceOfBidOrder(). \n");
 
     share = await getLatestShare(ros);
 
@@ -570,10 +408,6 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for usdKeeper.placedBuyOrder(). share issued \n");
 
     // ---- Buy Order 2 ----
-
-    // await usdc.connect(signers[1]).approve(cashier.address, 8n * 39n * 10n ** 6n);
-
-    // tx = await usdKeeper.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 3.9 * 10 ** 4, 1);
 
     auth = await generateAuth(signers[1], cashier.address, 8 * 39);
     tx = await usdKeeper.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 3.9 * 10 ** 4, 1);  
@@ -604,22 +438,14 @@ async function main() {
 
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('312.0');
-    expect(journal[0].remark).to.equal("CustodyUsd");
+    expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
     expect(journal[1].from).to.equal(signers[1].address);
     expect(journal[1].to).to.equal(cashier.address);
     expect(journal[1].amt).to.equal('228.0');
-    expect(journal[1].remark).to.equal("ReleaseUsd");
+    expect(journal[1].remark).to.equal("CloseBidAgainstInitOffer");
 
     console.log(" \u2714 Passed Cashier Event Test for ReleaseUsd \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].amt).to.equal('228.0');
-    expect(journal[0].remark).to.equal("CloseBidAgainstInitOffer");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CloseBidAgainstInitOffer(). \n");
 
     expect(dealClosed[1].from.from).to.equal(trimAddr(signers[1].address));
     expect(dealClosed[1].from.buyer).to.equal(2);
@@ -639,16 +465,16 @@ async function main() {
 
     console.log(" \u2714 Passed Event Test for usdLOO.DealClosed(). \n");
 
-    expect(journal[1].from).to.equal(signers[1].address);
-    expect(journal[1].amt).to.equal('72.0');
-    expect(journal[1].remark).to.equal("CloseBidAgainstInitOffer");
+    expect(journal[2].from).to.equal(signers[1].address);
+    expect(journal[2].amt).to.equal('72.0');
+    expect(journal[2].remark).to.equal("CloseBidAgainstInitOffer");
 
     console.log(" \u2714 Passed Cashier Event Test for CloseBidAgainstInitOffer to Cashier \n");
 
-    expect(journal[2].from).to.equal(signers[1].address);
-    expect(journal[2].to).to.equal(signers[1].address);
-    expect(journal[2].amt).to.equal('12.0');
-    expect(journal[2].remark).to.equal("RefundBalanceOfBidOrder");
+    expect(journal[3].from).to.equal(signers[1].address);
+    expect(journal[3].to).to.equal(signers[1].address);
+    expect(journal[3].amt).to.equal('12.0');
+    expect(journal[3].remark).to.equal("RefundBalanceOfBidOrder");
 
     console.log(" \u2714 Passed Cashier Event Test for RefundBalanceOfBidOrder \n");
 
@@ -661,9 +487,6 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
 
     // ---- Buy Order 3 ----
-
-    // await usdc.connect(signers[1]).approve(cashier.address, 8n * 40n * 10n ** 6n);
-    // tx = await usdKeeper.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4 * 10 ** 4, 1);
 
     auth = await generateAuth(signers[1], cashier.address, 8 * 40);
     tx = await usdKeeper.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 4 * 10 ** 4, 1);
@@ -716,28 +539,14 @@ async function main() {
 
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('320.0');
-    expect(journal[0].remark).to.equal("CustodyUsd");
+    expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
     expect(journal[1].from).to.equal(signers[1].address);
     expect(journal[1].to).to.equal(cashier.address);
     expect(journal[1].amt).to.equal('152.0');
-    expect(journal[1].remark).to.equal("ReleaseUsd");
+    expect(journal[1].remark).to.equal("CloseBidAgainstInitOffer");
 
     console.log(" \u2714 Passed Cashier Event Test for usdLooKeeper.DealClosed(). \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].amt).to.equal('152.0');
-    expect(journal[0].remark).to.equal("CloseBidAgainstInitOffer");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CloseBidAgainstInitOffer(). \n");
-
-    expect(journal[1].from).to.equal(signers[1].address);
-    expect(journal[1].amt).to.equal('168.0');
-    expect(journal[1].remark).to.equal("CustodyValueOfBidOrder");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CustodyValueOfBidOrder(). \n");
 
     share = await getLatestShare(ros);
 
@@ -748,9 +557,6 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
 
     // ---- Buy Order 4 ----
-
-    // await usdc.connect(signers[1]).approve(cashier.address, 8n * 42n * 10n ** 6n);
-    // tx = await usdKeeper.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4.2 * 10 ** 4, 1);
 
     auth = await generateAuth(signers[1], cashier.address, 8 * 42);
     tx = await usdKeeper.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 4.2 * 10 ** 4, 1);
@@ -785,17 +591,9 @@ async function main() {
 
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('336.0');
-    expect(journal[0].remark).to.equal("CustodyUsd");
+    expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
     console.log(" \u2714 Passed Cashier Event Test for CustodyUsd(). \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].amt).to.equal('336.0');
-    expect(journal[0].remark).to.equal("CustodyValueOfBidOrder");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CustodyValueOfBidOrder(). \n");
 
     // ---- Withdraw BuyOrder_4 ----
 
@@ -825,18 +623,9 @@ async function main() {
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].to).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('336.0');
-    expect(journal[0].remark).to.equal("ReleaseUsd");
-
-    console.log(" \u2714 Passed Cashier Event Test for ReleaseUsd(). \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].to).to.equal(signers[1].address);
-    expect(journal[0].amt).to.equal('336.0');
     expect(journal[0].remark).to.equal("RefundValueOfBidOrder");
 
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.RefundValueOfBidOrder(). \n");
+    console.log(" \u2714 Passed Cashier Event Test for ReleaseUsd(). \n");
 
     // ==== Place Sell Order ====
 
@@ -905,28 +694,14 @@ async function main() {
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].to).to.equal(signers[3].address);
     expect(journal[0].amt).to.equal('160.0');
-    expect(journal[0].remark).to.equal("ReleaseUsd");
-
-    expect(journal[1].from).to.equal(signers[1].address);
-    expect(journal[1].to).to.equal(signers[1].address);
-    expect(journal[1].amt).to.equal('8.0');
-    expect(journal[1].remark).to.equal("ReleaseUsd");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].to).to.equal(signers[3].address);
-    expect(journal[0].amt).to.equal('160.0');
     expect(journal[0].remark).to.equal("CloseOfferAgainstBid");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CloseOfferAgainstBid(). \n");
 
     expect(journal[1].from).to.equal(signers[1].address);
     expect(journal[1].to).to.equal(signers[1].address);
     expect(journal[1].amt).to.equal('8.0');
     expect(journal[1].remark).to.equal("RefundValueOfBidOrder");
 
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.RefundValueOfBidOrder(). \n");
+    console.log(" \u2714 Passed Event Test for cashier. - Sell Order 2 \n");
 
     share = await getLatestShare(ros);
 
@@ -1087,47 +862,24 @@ async function main() {
 
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('640.0');
-    expect(journal[0].remark).to.equal("CustodyUsd");
+    expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
     expect(journal[1].from).to.equal(signers[1].address);
     expect(journal[1].to).to.equal(signers[3].address);
     expect(journal[1].amt).to.equal('240.0');
-    expect(journal[1].remark).to.equal("ReleaseUsd");
+    expect(journal[1].remark).to.equal("CloseBidAgainstOffer");
 
     expect(journal[2].from).to.equal(signers[1].address);
     expect(journal[2].to).to.equal(signers[3].address);
     expect(journal[2].amt).to.equal('380.0');
-    expect(journal[2].remark).to.equal("ReleaseUsd");
+    expect(journal[2].remark).to.equal("CloseBidAgainstOffer");
 
     expect(journal[3].from).to.equal(signers[1].address);
     expect(journal[3].to).to.equal(signers[1].address);
     expect(journal[3].amt).to.equal('20.0');
-    expect(journal[3].remark).to.equal("ReleaseUsd");
+    expect(journal[3].remark).to.equal("RefundBalanceOfBidOrder");
 
-    console.log(" \u2714 Passed Cashier Event Test for usdLooKeeper.DealClosed(). \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].to).to.equal(signers[3].address);
-    expect(journal[0].amt).to.equal('240.0');
-    expect(journal[0].remark).to.equal("CloseBidAgainstOffer");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CloseBidAgainstOffer(). \n");
-
-    expect(journal[1].from).to.equal(signers[1].address);
-    expect(journal[1].to).to.equal(signers[3].address);
-    expect(journal[1].amt).to.equal('380.0');
-    expect(journal[1].remark).to.equal("CloseBidAgainstOffer");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CloseBidAgainstOffer(). \n");
-
-    expect(journal[2].from).to.equal(signers[1].address);
-    expect(journal[2].to).to.equal(signers[1].address);
-    expect(journal[2].amt).to.equal('20.0');
-    expect(journal[2].remark).to.equal("RefundBalanceOfBidOrder");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.RefundBalanceOfBidOrder(). \n");
+    console.log(" \u2714 Passed Cashier Event Test for cashier. -- Market Buy Order \n");
 
     share = await getLatestShare(ros);
 
@@ -1138,9 +890,6 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
     
     // ==== Place Buy Order 5 ====
-
-    // await usdc.connect(signers[1]).approve(cashier.address, 80n * 4n * 10n ** 6n);
-    // tx = await usdKeeper.connect(signers[1]).placeBuyOrder(2, 80 * 10 ** 4, 4 * 10 ** 4, 1);
 
     auth = await generateAuth(signers[1], cashier.address, 80 * 4);
     tx = await usdKeeper.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 4 * 10 ** 4, 1);
@@ -1174,17 +923,9 @@ async function main() {
 
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('320.0');
-    expect(journal[0].remark).to.equal("CustodyUsd");
+    expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
     console.log(" \u2714 Passed Cashier Event Test for usdLooKeeper.PlaceBuyOrder(). \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].amt).to.equal('320.0');
-    expect(journal[0].remark).to.equal("CustodyValueOfBidOrder");
-
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CustodyValueOfBidOrder(). \n");
 
     // ---- Market Sell Order ----
     
@@ -1216,18 +957,9 @@ async function main() {
 
     expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('320.0');
-    expect(journal[0].remark).to.equal("ReleaseUsd");
-
-    console.log(" \u2714 Passed Cashier Event Test for usdLooKeeper.DealClosed(). \n");
-
-    journal = await parseTxLogs(tx);
-
-    expect(journal[0].from).to.equal(signers[1].address);
-    expect(journal[0].to).to.equal(signers[3].address);
-    expect(journal[0].amt).to.equal('320.0');
     expect(journal[0].remark).to.equal("CloseOfferAgainstBid");
 
-    console.log(" \u2714 Passed Event Test for usdLooKeeper.CloseOfferAgainstBid(). \n");
+    console.log(" \u2714 Passed Cashier Event Test for usdLooKeeper.DealClosed(). \n");
 
     share = await getLatestShare(ros);
 

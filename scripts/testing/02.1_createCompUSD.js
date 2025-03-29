@@ -97,7 +97,7 @@
 // 4.6 event ChangeAmtOfMember(uint indexed acct, uint indexed paid, 
 //     uint indexed par, bool increase);
 
-const { BigNumber } = require("ethers");
+const { BigNumber, ethers } = require("ethers");
 const { expect } = require("chai");
 const { saveBooxAddr, setUserCBP, transferCBP, setUserDepo } = require("./saveTool");
 const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
@@ -110,9 +110,9 @@ const { readContract } = require("../readTool");
 
 async function main() {
 
-    console.log('\n*********************************');
-    console.log('**   02.1 Create Company Boox  **');
-    console.log('**********************************\n');
+    console.log('\n*************************************');
+    console.log('**  02.1 Create Company Boox In USD  **');
+    console.log('***************************************\n');
 
     // ==== Get Instances ====
 
@@ -409,42 +409,51 @@ async function main() {
 
     // ==== Pay In Capital in USD ====
 
+    // const cashier = await getCashier();
+    // const usdKeeper = await getUsdKeeper();
+    // const usdROMKeeper = await getUsdROMKeeper();
+
+    // const cashier = await readContract("Cashier", Cashier);
     // const usdKeeper = await readContract("USDKeeper", UsdKeeper);
     // const usdROMKeeper = await readContract("UsdROMKeeper", UsdROMKeeper);
 
-    // const usdKeeper = await getUsdKeeper();
+    // let auth = await generateAuth(signers[4], cashier.address, 7500);
+    // console.log("auth:", auth);
 
-    const cashier = await readContract("Cashier", Cashier);
-    const usdKeeper = await readContract("USDKeeper", UsdKeeper);
+    // tx = await usdKeeper.connect(signers[4]).payInCapital(auth, 4, 5000 * 10 ** 4);
 
-    let auth = await generateAuth(signers[4], cashier.address, 7500);
-    tx = await usdKeeper.connect(signers[4]).payInCapital(auth, 4, 5000 * 10 ** 4);  
+    // setUserDepo("8", 0n);
+    // setUserDepo("4", 0n);
+    
+    // setUserDepo("1", 0n);
+    // setUserDepo("2", 0n);
+    // setUserDepo("3", 0n);
+    // setUserDepo("5", 0n);
+    // setUserDepo("6", 0n);
+    // setUserDepo("7", 0n);
 
-    setUserDepo("8", 0n);
-    setUserDepo("4", 0n);
+    // await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "usdROMK.payInCapital().");
+
+    // // User_4 pays royalty to User_1 (author of Templates);
+    // transferCBP("4", "1", 36n);
+
+    // await expect(tx).to.emit(usdROMKeeper, "PayInCapital");
+    // console.log(" \u2714 Passed Event Test for usdRomKeeper.PayInCapital(). \n");
+    
+    // let share = parseShare(await ros.getShare(4));
+
+    // expect(share.body.paid).to.equal("20,000.0");
+    // console.log(" \u2714 Passed Result Verify Test for USDKeeper.payInCapital(). \n");
     
     setUserDepo("1", 0n);
     setUserDepo("2", 0n);
     setUserDepo("3", 0n);
+    setUserDepo("4", 0n);
     setUserDepo("5", 0n);
     setUserDepo("6", 0n);
     setUserDepo("7", 0n);
+    setUserDepo("8", 0n);
 
-    await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "usdROMK.payInCapital().");
-
-    // User_4 pays royalty to User_1 (author of Templates);
-    transferCBP("4", "1", 36n);
-
-    const usdROMKeeper = await readContract("UsdROMKeeper", UsdROMKeeper);
-
-    await expect(tx).to.emit(usdROMKeeper, "PayInCapital");
-    console.log(" \u2714 Passed Event Test for usdRomKeeper.PayInCapital(). \n");
-    
-    let share = parseShare(await ros.getShare(4));
-
-    expect(share.body.paid).to.equal("20,000.0");
-    console.log(" \u2714 Passed Result Verify Test for USDKeeper.payInCapital(). \n");
-    
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
     await depositOfUsers(rc, gk);

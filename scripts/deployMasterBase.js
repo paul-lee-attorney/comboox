@@ -287,10 +287,14 @@ async function main() {
 	};
 	let lop = await deployTool(signers[0], "ListOfProjects", libraries, params);
 
+	libraries = {}
+	let cashier = await deployTool(signers[0], "Cashier", libraries, params);
+
 	libraries = {
 		"UsdLockersRepo": libUsdLockersRepo.address
 	}
-	let cashier = await deployTool(signers[0], "Cashier", libraries, params);
+	params = [usdc.address];
+	let cashLockers = await deployTool(signers[0], "CashLockers", libraries, params);
 
 	libraries = {};
 	params = [rc.address];

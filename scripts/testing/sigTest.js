@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 
-const { getDomainSeparator } = require("./sigTools");
+const { getDomainSeparator, generateAuth } = require("./sigTools");
+const { getUSDC, getCashier, getUsdKeeper } = require("./boox");
+const { increaseTime } = require("./utils");
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -14,31 +16,40 @@ async function main() {
     console.log('**     SigTest    **');
     console.log('********************\n');
 
+    const usdc = await getUSDC();
+    const cashier = await getCashier();
+    const usdKeeper = await getUsdKeeper();
+
     let res = await getDomainSeparator();
 
     console.log("DomainSeparator: ", res);    
 
-	  // const signers = await hre.ethers.getSigners();
+	  const signers = await hre.ethers.getSigners();
 
-    // const rc = await getRC();
-    // const gk = await getGK();
-    // const usdKeeper = await getUsdKeeper();
-    // const usdc = await getUSDC();
-    // const cashier = await getCashier();
-    // const usdLOO = await getUsdLOO();
-    // const ros = await getROS();
-    // const usdLooKeeper = await getUsdLOOKeeper();
+    // let auth = await generateAuth(signers[4], cashier.address, 50);
+    // console.log("auth:", auth);
 
-    // // ==== Mint Mock USDC to users ====
+    // await increaseTime(600);
 
-    // for (i=0; i<7; i++) {
-    //   await usdc.mint(signers[i].address, 10n ** 12n);
-    //   let balance = await usdc.balanceOf(signers[i].address);
-    //   balance = ethers.utils.formatUnits(balance, 6);
-    //   expect(balance).to.equal('1000000.0');
-    // }
+    // let blk = await  ethers.provider.getBlock();
+    // console.log("timestamp: ", blk.timestamp);
+  
+    // let tx = await usdc.transferWithAuthorization(auth.from, auth.to, auth.value, auth.validAfter, auth.validBefore, auth.nonce, auth.v, auth.r, auth.s);
+    // console.log("tx:", tx);
 
-    // let res = await generateSignature(signers[0], signers[1].address, )
+    // let rpt = await tx.wait();
+    // console.log("rpt:", rpt);
+
+    let auth = await generateAuth(signers[4], cashier.address, 750);
+    console.log("auth:", auth);
+
+    await increaseTime(600);
+
+    let tx = await usdKeeper.connect(signers[4]).payInCapital(auth, 4, 500 * 10 ** 4);
+    console.log("tx:", tx);
+
+    let rpt = await tx.wait();
+    console.log("rpt:", rpt);
 }
 
 main()

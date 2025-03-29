@@ -5,7 +5,15 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
+const {ethers} = require("hardhat");
+const path = require("path");
+const fs = require("fs");
+
+// const { getUSDC } = require("./boox.js");
+
+const fileNameOfBoox = path.join(__dirname, "boox.json");
+let Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
+
 
 // ==== Create Signature ====
 
@@ -25,9 +33,10 @@ const parseSignature = (sig) => {
 const domain = {
   name: "USD Coin",
   version: "2",
-  chainId: 42161,
-  verifyingContract: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-};
+  chainId: "31337",
+  verifyingContract: Boox.USDC,
+  // verifyingContract: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+}
 
 const DOMAIN_TYPEHASH = ethers.utils.keccak256(
   ethers.utils.toUtf8Bytes(
@@ -69,7 +78,7 @@ const getDomainSeparator = ()=>{
       [DOMAIN_TYPEHASH, nameHash, versionHash, chainIdBigInt, verifyingContractAddress]
     )
   )
-  // console.log("DomainSeparator: ", separator);
+  console.log("DomainSeparator: ", separator);
   return separator;
 };
 
@@ -139,17 +148,25 @@ const generateAuth = async (signer, to, amt) => {
   };
   
   const blk = await ethers.provider.getBlock();
+
+  // console.log('blk:', blk);
   
   const value = {
     from: signer.address,
     to: to,
     value: ethers.utils.parseUnits(amt.toString(), 6), // USDC精度为6位
-    validAfter: blk.timestamp,
+    validAfter: blk.timestamp - 1,
     validBefore: blk.timestamp + 3600, // 1小时有效期
     nonce: ethers.utils.hexlify(ethers.utils.randomBytes(32)), // 递增式nonce
   };
 
+  // console.log('domain:', domain);
+  // console.log('types:', types);
+  // console.log('value:', value);
+  
   const signature = await signer._signTypedData(domain, types, value);
+
+  // console.log('signature:', signature);
 
   const sig = parseSignature(signature);
 
@@ -157,7 +174,7 @@ const generateAuth = async (signer, to, amt) => {
   value.r = sig.r;
   value.s = sig.s;
 
-  console.log("sig: ", value);
+  // console.log("sig: ", value);
 
   return value;  
 }

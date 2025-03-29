@@ -316,9 +316,6 @@ async function main() {
 
     transferCBP("6", "8", 18n);
 
-    await expect(tx).to.emit(usdROAKeeper, "PayOffSTDeal").withArgs(BigNumber.from(3), BigNumber.from(21000n * 10n ** 6n));
-    console.log(" \u2714 Passed Event Test for usdROAKeeper.PayOffSTDeal(). \n");
-
     await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(1), BigNumber.from(21000n * 10n ** 6n));
     console.log(" \u2714 Passed Event Test for ia.PayOffApprovedDeal(). \n");
 

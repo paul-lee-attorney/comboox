@@ -536,6 +536,8 @@ async function main() {
     expect(toCoffer[0].value).to.equal(value + 100n);
     expect(toCoffer[0].reason).to.equal("CustodyValueOfBidOrder");
 
+    // ---- Withdraw Buy Order 4 ----
+
     tx = await gk.connect(signers[1]).withdrawBuyOrder(2, seqOfOrder);
 
     transferCBP("2", "8", 88n);

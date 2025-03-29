@@ -34,19 +34,19 @@ async function main() {
 
 	// ==== Create ROS ====
 
-	// let snOfDoc = ('0x00000012' + '00000002').padEnd(66, '0');
-	// console.log('snOfDoc:', snOfDoc, '\n');
+	let snOfDoc = ('0x00000012' + '00000002').padEnd(66, '0');
+	console.log('snOfDoc:', snOfDoc, '\n');
 
-	// let dk = await signers[1].getAddress();
-	// console.log('dk:', dk, '\n');
+	let dk = await signers[1].getAddress();
+	console.log('dk:', dk, '\n');
 
-	// let tx = await rc.createDoc(snOfDoc, dk);
-	// let receipt = await tx.wait();
-	// let addr = '0x' + receipt.logs[0].topics[2].substring(26);
-	// console.log('addr of ROS:', addr, '\n');
+	let tx = await rc.createDoc(snOfDoc, dk);
+	let receipt = await tx.wait();
+	let addr = '0x' + receipt.logs[0].topics[2].substring(26);
+	console.log('addr of ROS:', addr, '\n');
 
-	const ros_2 = await readContract("RegisterOfShares", addrs.ROS2);
-	// await ros_2.initKeepers(dk, addrs.GK);
+	const ros_2 = await readContract("RegisterOfShares", addr);
+	await ros_2.initKeepers(dk, addrs.GK);
 
 	// ---- Create ROM ----
 

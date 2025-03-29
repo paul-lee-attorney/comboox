@@ -49,7 +49,7 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/deployMasterBase.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/01_regUsers.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/02.1_createCompUSD.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/03_configComBoox.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/03.1_configComBooxUSD.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/04_signSHA.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/05_electOfficers.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/06_approveInvestors.js', '--network', 'localhost']);
@@ -62,12 +62,10 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/testing/13.1_firstRefusalUSD.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/14_pledge.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/15.1_optionsUSD.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/17_listing.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/18_deposits.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/19_listingUSD.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/17.1_listingUSD.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/testing/18.1_deposits.js', '--network', 'localhost']);
 
-    
     console.log('All tests are passed successfully !\n');
   } catch (err) {
     console.error('Error in script execution:', err);

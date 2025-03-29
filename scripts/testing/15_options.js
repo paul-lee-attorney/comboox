@@ -207,7 +207,7 @@ async function main() {
     const centPrice = await gk.getCentPrice();
     let value = 110n * 500n * BigInt(centPrice);
 
-    await expect(gk.connect(signers[1]).payOffSwap(2, 1, {value:value - 100n})).to.be.revertedWith("SWR.payOffSwap: insufficient amt");
+    await expect(gk.connect(signers[1]).payOffSwap(2, 1, {value:value - 100n})).to.be.revertedWith("ROOK.payOffSwap: not sufficient msgValue");
     console.log(" \u2714 Passed Value Check Test for gk.payOffSwap(). \n");  
 
     await expect(gk.payOffSwap(2, 1, {value:value + 100n})).to.be.revertedWith("ROOK.payOffSwap: wrong payer");    

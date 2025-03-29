@@ -406,7 +406,7 @@ async function main() {
 
     transferCBP("1", "8", 58n);
 
-    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(2), BigNumber.from(value + 100n));
+    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(2), BigNumber.from(value));
     console.log(" \u2714 Passed Event Test for ia.PayOffApprovedDeal(). \n");
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(ia.address, BigNumber.from(6));
