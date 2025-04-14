@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -39,8 +39,6 @@
 //     Share_4 with hash lock.
 // (9) After the expiration of the pay in deadline, User_2 withdraws the locked 
 //     amount back from the hash lock.
-// (10) User_4 pays in USDC directly to increase the paid-in capital of Share_4 by
-//      $5,000. 
 
 // Write APIs tested in this section:
 // 1. CreateNewComp
@@ -53,6 +51,10 @@
 // 3.1 function createCorpSeal() external;
 // 3.2 function regKeeper(uint256 title, address keeper) external;
 // 3.3 function regBook(uint256 title, address keeper) external;
+// 3.4 function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, 
+//     bytes32 hashLock) external;
+// 3.5 function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
+// 3.6 function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 
 // 4. AccessControl
 // 4.1 function setDirectKeeper(address keeper) external;
@@ -65,14 +67,6 @@
 //     uint par, uint distrWeight) external;
 // 6.2 function decreaseCapital(uint256 seqOfShare, uint paid, uint par) external;
 
-// 7. GeneralKeeper
-// 7.1 function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, 
-//     bytes32 hashLock) external;
-// 7.2 function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
-// 7.3 function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
-
-// 8. USDKeeper
-// 8.1 function payInCapital(ICashier.TransferAuth memory auth, uint seqOfShare, uint paid) external;
 
 // Events verified in this scetion:
 // 1. RegCenter
@@ -99,18 +93,16 @@
 
 const { BigNumber, ethers } = require("ethers");
 const { expect } = require("chai");
-const { saveBooxAddr, setUserCBP, transferCBP, setUserDepo } = require("./saveTool");
-const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
-const { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getCashier, getUSDC, getUsdKeeper, getUsdROMKeeper } = require("./boox");
+const { saveBooxAddr, setUserCBP, setUserDepo } = require("./saveTool");
+const { codifyHeadOfShare, printShares } = require('./ros');
+const { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC, } = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { parseCompInfo, depositOfUsers } = require("./gk");
-const { royaltyTest, cbpOfUsers } = require("./rc");
-const { generateAuth } = require("./sigTools");
-const { readContract } = require("../readTool");
+const { cbpOfUsers } = require("./rc");
 
 async function main() {
 
-    console.log('\n*************************************');
+    console.log('\n***************************************');
     console.log('**  02.1 Create Company Boox In USD  **');
     console.log('***************************************\n');
 
@@ -119,10 +111,6 @@ async function main() {
 	  const signers = await hre.ethers.getSigners();
     const cnc = await getCNC();
     const rc = await getRC();
-
-    // const cashier = await getCashier();
-    // const usdKeeper = await getUsdKeeper();
-    // const usdROMKeeper = await getUsdROMKeeper();
 
     // ==== Create Company ====
 
@@ -406,44 +394,6 @@ async function main() {
 
     await expect(tx).to.emit(ros, "WithdrawPayInAmt").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4));
     console.log(" \u2714 Passed Event Test for ros.WithdrawPayInAmt(). \n");
-
-    // ==== Pay In Capital in USD ====
-
-    // const cashier = await getCashier();
-    // const usdKeeper = await getUsdKeeper();
-    // const usdROMKeeper = await getUsdROMKeeper();
-
-    // const cashier = await readContract("Cashier", Cashier);
-    // const usdKeeper = await readContract("USDKeeper", UsdKeeper);
-    // const usdROMKeeper = await readContract("UsdROMKeeper", UsdROMKeeper);
-
-    // let auth = await generateAuth(signers[4], cashier.address, 7500);
-    // console.log("auth:", auth);
-
-    // tx = await usdKeeper.connect(signers[4]).payInCapital(auth, 4, 5000 * 10 ** 4);
-
-    // setUserDepo("8", 0n);
-    // setUserDepo("4", 0n);
-    
-    // setUserDepo("1", 0n);
-    // setUserDepo("2", 0n);
-    // setUserDepo("3", 0n);
-    // setUserDepo("5", 0n);
-    // setUserDepo("6", 0n);
-    // setUserDepo("7", 0n);
-
-    // await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "usdROMK.payInCapital().");
-
-    // // User_4 pays royalty to User_1 (author of Templates);
-    // transferCBP("4", "1", 36n);
-
-    // await expect(tx).to.emit(usdROMKeeper, "PayInCapital");
-    // console.log(" \u2714 Passed Event Test for usdRomKeeper.PayInCapital(). \n");
-    
-    // let share = parseShare(await ros.getShare(4));
-
-    // expect(share.body.paid).to.equal("20,000.0");
-    // console.log(" \u2714 Passed Result Verify Test for USDKeeper.payInCapital(). \n");
     
     setUserDepo("1", 0n);
     setUserDepo("2", 0n);

@@ -34,10 +34,12 @@
 
 // 2. General Keeper
 // 2.1 event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);
-// 2.2 event DistributeProfits(uint indexed amt, uint indexed expireDate, uint indexed seqOfMotion);
+// 2.2 event DistributeProfits(uint indexed amt, uint indexed expireDate, 
+//     uint indexed seqOfMotion);
 
 // 3. GMM Keeper
-// 3.1 event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, uint indexed caller);
+// 3.1 event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, 
+//     uint indexed caller);
 
 
 const { expect } = require("chai");

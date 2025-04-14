@@ -1,44 +1,46 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 // This section shows and tests how to distribute profits of the DAO, and how to 
-// check ETH balance and pickup the same from the deposit account in General
-// Keeper. 
+// check USDC balance and pickup the same from the deposit account in Cashier.
 
 // The scenario for testing in this section are as follows:
 // 1. User_1 proposes a Motion to the General Meeting of Members (the "GMM") to 
-//    distribute 5% of the total ETH of the DAO to Members as per the distribution
+//    distribute 5% of the total USDC of the DAO to Members as per the distribution
 //    powers thereof;
 // 2. Upon approval of the GMM, User_1 as the executor of the Motion, executes
-//    the Motion to distribute the predefined amount of ETH to Members;
+//    the Motion to distribute the predefined amount of USDC to Members;
 // 3. User_1 to User_6 as Members and Sellers of listed shares, query the balance
-//    ETH in their deposit account and pickup the same from the General Keeper.
+//    USDC in their deposit account and pickup the same from the Cashier.
 
 // The Write APIs tested in this section include:
 // 1. General Keper
-// 1.2 function proposeToDistributeProfits(uint amt, uint expireDate, uint seqOfVR,
-//     uint executor) external;
-// 1.3 function distributeProfits(uint amt, uint expireDate, uint seqOfMotion) external; 
-// 1.4 function pickupDeposit() external;
+// 1.2 function createActionOfGM(uint seqOfVR, address[] memory targets, uint256[] memory values, 
+//     bytes[] memory params, bytes32 desHash, uint executor) external;
+// 1.3 function proposeMotionToGeneralMeeting(uint256 seqOfMotion) external;
+// 1.4 function castVoteOfGM(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external;
+// 1.5 function voteCountingOfGM(uint256 seqOfMotion) external;
+// 1.6 function execActionOfGM(uint seqOfVR, address[] memory targets, uint256[] memory values, 
+//     bytes[] memory params, bytes32 desHash, uint256 seqOfMotion) external;
+
+// 2. Cashier
+// 2.1 function distributeUsd(uint amt) external;
+// 2.2 function depositOfMine(uint user) external view returns(uint);
+// 2.3 function pickupUsd() external; 
 
 // Events verified in this section:
 // 1. General Meeting Minutes
-// 1.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
-// 1.2 event ProposeMotionToGeneralMeeting(uint256 indexed seqOfMotion,
-//     uint256 indexed proposer);
-// 1.3 event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
+// 1.1 event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
 
 // 2. General Keeper
-// 2.1 event PickupDeposit(address indexed to, uint indexed caller, uint indexed amt);
-// 2.2 event DistributeProfits(uint indexed amt, uint indexed expireDate, uint indexed seqOfMotion);
+// 2.1  event ExecAction(uint256 indexed contents);
 
-// 3. GMM Keeper
-// 3.1 event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, uint indexed caller);
-
+// 3. GMMKeeper
+// 3.1  event ExecAction(uint256 indexed contents);
 
 const { expect } = require("chai");
 const { BigNumber, ethers } = require("ethers");

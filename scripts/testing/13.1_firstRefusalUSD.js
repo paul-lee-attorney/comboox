@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -30,7 +30,7 @@
 //    deals will be automatically terminated and new deals with the claiming Member
 //    as buyer will be added with the same price and other terms. 
 // 4. After obtaining the voting approval from the General Meeting of Members, User_1
-//    and User_2 close the deals by calling gk.payOffApprovedDeal(). 
+//    and User_2 close the deals in USDC by calling usdKeeper.payOffApprovedDeal(). 
 // 5. Some important points are deserved attention that:
 //    (1) First Refusal right does not need acceptance of the original seller;
 //    (2) In case more than one rightholder claim to purchase the same deal, the 
@@ -42,6 +42,9 @@
 // 1.1 function execFirstRefusal(uint256 seqOfRule, uint256 seqOfRightholder, address ia,
 //     uint256 seqOfDeal, bytes32 sigHash) external;
 // 1.2 function computeFirstRefusal(address ia, uint256 seqOfDeal) external;
+// 2. USD Keeper
+// 2.1 function payOffApprovedDeal(ICashier.TransferAuth memory auth, address ia, 
+//     uint seqOfDeal, address t0) external;
 
 // Events verified in this section:
 // 1. Register of Agreement
@@ -67,8 +70,8 @@ const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**     13.1 First Refusal       **');
+    console.log('\n**********************************');
+    console.log('**  13.1 First Refusal in USDC  **');
     console.log('**********************************\n');
 
 	  const signers = await hre.ethers.getSigners();

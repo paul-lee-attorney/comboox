@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -42,6 +42,9 @@
 // 1.2 function transferIPR(uint typeOfDoc, uint version, 
 //     uint transferee) external;
 
+// 8. USDKeeper
+// 8.1 function payInCapital(ICashier.TransferAuth memory auth, uint seqOfShare, uint paid) external;
+
 // 2. Ownable
 // 2.1 function setNewOwner(address acct) onlyOwner public;
 
@@ -51,22 +54,20 @@
 // 1.2 event TransferIPR(uint indexed typeOfDoc, uint indexed version,
 //     uint indexed transferee);
 
-
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
 const { getRC, getFT, getGK, getROS, getCashier, getUsdKeeper, getUsdROMKeeper } = require("./boox");
-const { printShare, printShares, parseShare } = require("./ros");
+const { printShares, parseShare } = require("./ros");
 const { depositOfUsers } = require("./gk");
 const { cbpOfUsers, royaltyTest } = require("./rc");
 const { generateAuth } = require("./sigTools");
-const { increaseTime } = require("./utils");
 const { setUserDepo, transferCBP } = require("./saveTool");
 
 async function main() {
 
     console.log('\n');
     console.log('********************************');
-    console.log('**   03.1 Config ComBoox     **');
+    console.log('**  03.1 Config ComBoox USDC  **');
     console.log('********************************\n');
 
 	  const signers = await hre.ethers.getSigners();

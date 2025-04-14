@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -22,12 +22,15 @@
 //    respectively as set up cost;
 // (3)Register User_3 to User_7 as potential Members and Investors;
 // (4)User_3 to User_7 obtain New User Awards as per the Platform Rule.
+// (5)User_1 to User_7 register Hadhat Mock EOA acct_10 to acct_16 as their
+//    backup key respectively.
 
 // Write APIs tested in this section:
 // 1. RegCenter
 // 1.1 function setPlatformRule(bytes32 snOfRule) external;
 // 1.2 function mint(address to, uint amt) external;
 // 1.3 function regUser() external;
+// 1.4 function setBackupKey(address bKey) external;
 
 // Events verified in this scetion:
 // 1. RegCenter

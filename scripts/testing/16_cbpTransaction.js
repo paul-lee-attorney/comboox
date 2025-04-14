@@ -103,7 +103,7 @@ const { transferCBP, addCBPToUser, minusCBPFromUser, addEthToUser } = require(".
 
 async function main() {
 
-    console.log('********************************');
+    console.log('\n********************************');
     console.log('**     16. CBP Transactions   **');
     console.log('********************************\n');
 

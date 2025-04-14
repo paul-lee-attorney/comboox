@@ -25,7 +25,8 @@
 
 // Events verified in this section:
 // 1. List of Orders
-// 1.1 event RegInvestor(uint indexed investor, uint indexed groupRep, bytes32 indexed idHash);
+// 1.1 event RegInvestor(uint indexed investor, uint indexed groupRep, 
+//     bytes32 indexed idHash);
 // 1.2 event ApproveInvestor(uint indexed investor, uint indexed verifier);
 // 1.3 event RevokeInvestor(uint indexed investor, uint indexed verifier);
 

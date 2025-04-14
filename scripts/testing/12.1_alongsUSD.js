@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -59,6 +59,10 @@
 //      ) external;
 // 1.4 function payOffApprovedDeal(address ia, uint seqOfDeal) external payable;
 
+// 2. USD Keeper
+// 2.1 function payOffApprovedDeal(ICashier.TransferAuth memory auth, address ia, 
+//     uint seqOfDeal, address to) external;
+
 // Events verified in this section:
 // 1. Register of Agreement
 // 1.1 event ExecAlongRight(address indexed ia, bytes32 indexed snOfDTClaim, bytes32 sigHash);
@@ -85,9 +89,9 @@ const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**    12.1 Drag/Tag Alongs      **');
-    console.log('**********************************\n');
+    console.log('\n************************************');
+    console.log('**  12.1 Drag/Tag Alongs in USDC  **');
+    console.log('************************************\n');
 
 	  const signers = await hre.ethers.getSigners();
 

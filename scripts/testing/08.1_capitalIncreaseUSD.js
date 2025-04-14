@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -87,7 +87,6 @@
 // 2.1 event SetRoleAdmin(bytes32 indexed role, address indexed acct);
 // 2.2 event PayOffApprovedDeal(uint seqOfDeal, uint msgValue);
 
-
 // 3. General Meeting Minutes
 // 3.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
 // 3.2 event ClearDealCP(uint256 indexed seq, bytes32 indexed hashLock,
@@ -121,9 +120,9 @@ const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n*******************************');
-    console.log('**    08.1 Capital Increase    **');
-    console.log('*********************************\n');
+    console.log('\n*************************************');
+    console.log('**  08.1 Capital Increase in USDC  **');
+    console.log('*************************************\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -406,14 +405,6 @@ async function main() {
 
     // ---- Deal No.2 ----
     
-    // const centPrice = BigInt(await gk.getCentPrice());
-    // let value = getDealValue(180n, 10000n, centPrice);
-
-    // tx = await gk.payOffApprovedDeal(ia.address, 2, {value: value + 100n});
-
-    // addEthToUser(value, "8");
-    // addEthToUser(100n, "1");
-
     let auth = await generateAuth(signers[0], cashier.address, 18000);
     tx = await usdKeeper.payOffApprovedDeal(auth, ia.address, 2, cashier.address);
 

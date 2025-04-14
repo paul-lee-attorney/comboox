@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -88,9 +88,11 @@
 
 // 4. Register of Members
 // 4.1 event AddMember(uint256 indexed acct, uint indexed qtyOfMembers);
-// 4.2 event CapIncrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
+// 4.2 event CapIncrease(uint indexed votingWeight, uint indexed paid, 
+//     uint indexed par, uint distrWeight);
 // 4.3 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
-// 4.4 event CapDecrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
+// 4.4 event CapDecrease(uint indexed votingWeight, uint indexed paid, 
+//     uint indexed par, uint distrWeight);
 // 4.5 event RemoveShareFromMember(uint indexed seqOfShare, uint indexed acct);
 // 4.6 event ChangeAmtOfMember(uint indexed acct, uint indexed paid, 
 //     uint indexed par, bool increase);

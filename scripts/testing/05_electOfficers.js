@@ -85,11 +85,13 @@
 // 1. General Meeting Minutes
 // 1.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
 // 1.2 event ProposeMotionToGeneralMeeting(uint256 indexed seqOfMotion, uint256 indexed proposer);
-// 1.3 event CastVoteInGeneralMeeting(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);
+// 1.3 event CastVoteInGeneralMeeting(uint256 indexed seqOfMotion, 
+//     uint256 indexed caller, uint indexed attitude, bytes32 sigHash);
 // 1.4 event VoteCounting(uint256 indexed seqOfMotion, uint8 indexed result);
 // 1.5 event ExecResolution(uint256 indexed seqOfMotion, uint256 indexed caller);
 // 1.6 event ProposeMotionToBoard(uint256 indexed seqOfMotion, uint256 indexed proposer);
-// 1.7 event CastVoteInBoardMeeting(uint256 indexed seqOfMotion, uint256 indexed caller, uint indexed attitude, bytes32 sigHash);
+// 1.7 event CastVoteInBoardMeeting(uint256 indexed seqOfMotion, uint256 indexed caller, 
+//     uint indexed attitude, bytes32 sigHash);
 
 // 2. Register of Directors
 // 2.1 event TakePosition(uint256 indexed seqOfPos, uint256 indexed caller);

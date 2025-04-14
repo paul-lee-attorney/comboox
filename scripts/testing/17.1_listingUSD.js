@@ -6,49 +6,46 @@
  * */
 
 // This section shows and tests how to trade equity shares by listing on the List
-// of Orders (the “LOO”).
+// of USD Orders (the “LOO”).
 
 // Companies may set out their listing rules in SHA. Thereafter, the authorized
-// officer may place initial offers on the List of Orders, and, Members of the class
+// officer may place initial offers on the List of USD Orders, and, Members of the class
 // of shares concerned may place limited sell orders with intended sell price or
 // market sell order. Accredited Investors approved by the authorized officers may
 // place limited buy orders with specific bid price or market buy order. 
 
-// Listed trades are settled via ETH as consideration. Buyers pay ETH together with
-// placing buy orders. In case of closing, the consideration ETH will be
+// Listed trades are settled via USDC as consideration. Buyers pay USDC together with
+// placing buy orders. In case of closing, the consideration USDC will be
 // automatically saved to the seller's deposit account, and the remaining amount of
-// ETH will be refunded to the buyer's deposit account. As for the listed buy order,
-// the paid ETH will be stored in the buyer's deposit account, and will be released
+// USDC will be refunded to the buyer's deposit account. As for the listed buy order,
+// the paid USDC will be stored in the buyer's deposit account, and will be released
 // to the seller in case of closing, or refunded back to the buyer in case of
 // expiration.
-
-// Exchange rate between ETH and the booking currencies is retrieved from the
-// reliable oracle provider of crypto market prices like ChainLink. 
 
 // The scenario for testing in this section are as follows:
 // (1) User_1 as Chairman of the DAO places and withdraws initial offers as per the
 //     listing rule;
 // (2) User_2 as an accredited Investor places and withdraws limited buy orders
 //     with the LOO, thus, matching and closing certain initial offers. Upon
-//     closing, ETH paid by User_2 will be saved in General Keeper as capital
+//     closing, USDC paid by User_2 will be saved in Cashier as capital
 //     contribution income of the DAO, and certain new Shares will be issued to
 //     User_2;
 // (3) Balance of the limited buy orders placed by User_2 will be listed on the
-//     List of Orders, and, the ETH paid will be stored in the custody account
+//     List of Orders, and, the USDC paid will be stored in the custody account
 //     of User_2;
 // (4) User_3 as Member of the DAO, places and withdraws limited sell orders with
 //     the List of Orders. Thereafter, some of the sell orders will be matched with
 //     the listed buy orders placed by User_2.  Upon closing, the shares of the
-//     sell order will be transferred to User_2, and the ETH under custody will be
+//     sell order will be transferred to User_2, and the USDC under custody will be
 //     released to User_3 as consideration, or be released to User_2 as refunded
 //     balance amount.
 // (5) User_2 places market buy order so as to purchase off listed offers from the LOO;
 // (6) User_3 places market sell order so as to match off listed bids from the LOO; 
 
 // The Write APIs tested in this section include:
-// 1. General Keper
-// 1.1 function placeInitialOffer(uint classOfShare, uint execHours, uint paid, uint price,
-//     uint seqOfLR) external;
+// 1. USDKeper
+// 1.1 function placeInitialOffer(uint classOfShare,uint execHours, uint paid, 
+//     uint price,uint seqOfLR) external;
 // 1.2 function withdrawInitialOffer(uint classOfShare, uint seqOfOrder, 
 //     uint seqOfLR) external;
 // 1.3 function placeSellOrder(uint seqOfClass, uint execHours, uint paid,
@@ -62,19 +59,16 @@
 // 1. Register of Shares
 // 1.1 event IncreaseEquityOfClass(bool indexed isIncrease, uint indexed class, uint indexed amt);
 
-// 2. List of Orders
+// 2. List of USD Orders
 // 2.1 event OrderPlaced(bytes32 indexed order, bool indexed isOffer);
 // 2.2 event OrderWithdrawn(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
-// 2.3 event DealClosed(bytes32 indexed deal, uint indexed consideration);
+// 2.3 event DealClosed(bytes32 indexed fromSn, bytes32 indexed toSn, bytes32 qtySn, 
+//     uint indexed consideration);
 // 2.4 event OrderExpired(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
-// 3. General Keeper
-// 3.1 event SaveToCoffer(uint indexed acct, uint256 indexed value, bytes32 indexed reason);
-// 3.2 event ReleaseCustody(uint indexed from, uint indexed to, uint indexed amt, bytes32 reason);
-
-// 4. LOO Keeper
-// 4.1 event CloseBidAgainstInitOffer(uint indexed buyer, uint indexed amt)
-
+// 3. Cashier
+// 3.1 event CustodyUsd(address indexed from, uint indexed amt, bytes32 indexed remark);
+// 3.2 event ReleaseUsd(address indexed from, address indexed to, uint indexed amt, bytes32 remark);
 
 const { expect } = require("chai");
 const { getGK, getROS, getRC, getUSDC, getCashier, getUsdKeeper, getUsdLOOKeeper, getUsdLOO} = require("./boox");
@@ -268,8 +262,6 @@ async function main() {
     let dealClosed = [];  
 
     let share = {};
-
-    let fromCustody = [];
 
     let journal = [];
 

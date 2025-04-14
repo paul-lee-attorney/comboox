@@ -54,8 +54,8 @@
 //     of investment;
 // (6) User_2 creates a Call Option Swap to purchase Share_3 amount to $500, and
 //     set his Share_2 as Pledge to guarantee the Swap.
-// (7) User_2 pay off the Put Option Swap, so that get the $500 target shares by
-//     paying at the Call Option price of $1.20 per share.
+// (7) User_2 pay off the Put Option Swap in USDC, so that get the $500 target 
+//     shares by paying at the Call Option price of $1.20 per share.
 
 // The Write APIs tested in this section include:
 // 1. General Keper
@@ -65,6 +65,10 @@
 //     uint seqOfPledge) external;
 // 1.4 function payOffSwap(uint256 seqOfOpt, uint256 seqOfSwap) external payable;
 // 1.5 function terminateSwap(uint256 seqOfOpt, uint256 seqOfSwap) external;
+
+// 2. USD Keeper
+// 2.1 function payOffSwap(ICashier.TransferAuth memory auth, uint256 seqOfOpt, 
+//     uint256 seqOfSwap, address to) external;
 
 // Events verified in this section:
 // 1. Register of Options
@@ -96,9 +100,9 @@ const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n**********************************');
-    console.log('**  15.1 Call/Put Options      **');
-    console.log('**********************************\n');
+    console.log('\n*************************************');
+    console.log('**  15.1 Call/Put Options in USDC  **');
+    console.log('*************************************\n');
 
 	  const signers = await hre.ethers.getSigners();
 

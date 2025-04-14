@@ -88,13 +88,15 @@
 //     uint indexed closingDeadline);
 
 // 4. Register of Shares
-// 4.1 event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par);
+// 4.1 event IssueShare(bytes32 indexed shareNumber, uint indexed paid, 
+//     uint indexed par);
 
 // 5. ROAKeeper
 // 5.1 event PayOffCIDeal(uint indexed caller, uint indexed valueOfDeal);
 
 // 6. Register of Members
-// 6.1 event CapIncrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
+// 6.1 event CapIncrease(uint indexed votingWeight, uint indexed paid, 
+//     uint indexed par, uint distrWeight);
 // 6.2 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
 
 
