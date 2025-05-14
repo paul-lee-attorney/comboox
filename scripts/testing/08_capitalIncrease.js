@@ -40,7 +40,7 @@
 //      fulfilled and input a Hash Lock encrypted by Keccat-256;
 // (11) User_5 pays the subscription consideration off-chain and obtains the "Hash
 //      Key" to the Hash Lock installed by User_1;
-// (12) User_5 inputs the correct ”Hash Key" to close the Deal and obtains the
+// (12) User_5 inputs the correct "Hash Key" to close the Deal and obtains the
 //      newly issued Share。
 
 
