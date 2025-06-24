@@ -45,13 +45,13 @@
 const { expect } = require("chai");
 const { BigNumber, ethers } = require("ethers");
 
-const { getGK, getROM, getFT, getRC, getGMM, getROS, getGMMKeeper, getCashier, getUSDC, } = require("./boox");
+const { getGK, getROM, getRC, getGMM, getROS, getGMMKeeper, getCashier, getUSDC, } = require("./boox");
 const { increaseTime } = require("./utils");
 const { getLatestSeqOfMotion, parseMotion, allSupportMotion } = require("./gmm");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
-const { transferCBP, minusEthFromUser, addEthToUser } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
 const { artifacts } = require("hardhat");
 
 async function main() {

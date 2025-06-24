@@ -36,7 +36,7 @@ const getCNCUSD = async () => {
 }
 
 const getFT = async () => {
-  return await readContract("FuelTank", Temps.FuelTank);
+  return await readContract("UsdFuelTank", Temps.UsdFuelTank);
 }
 
 // ==== Boox ====

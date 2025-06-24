@@ -34,13 +34,8 @@
 // (4) User_1 as the executor of the Motion, triggers the API to
 //     transfer the 88 CBP to Fuel Tank;
 // (5) User_3 refuels 80 CBP from the Fuel Tank by paying equivalent
-//     amount of ETH;
-// (6) User_1 creates and proposes a Motion to the GMM to pickup
-//     80 ETH income back from the Fuel Tank;
-// (7) After obtaining the voting approval from the GMM, User_1
-//     executes the Motion to pickup the 80 ETH back from Fuel Tank
-//     to General Keeper;
-// (8) User_1 creates, proposes and executes Motion to withdraw
+//     amount of USDC;
+// (6) User_1 creates, proposes and executes Motion to withdraw
 //     8 CBP back from Fuel Tank.
 
 // The Write APIs tested in this section include:
@@ -63,9 +58,8 @@
 // 2.2 function transfer(address to, uint256 amount) public;
 
 // 3. Fuel Tank
-// 3.1 function refuel() external payable;
-// 3.2 function withdrawIncome(uint amt) external;
-// 3.3 function withdrawFuel(uint amt) external;
+// 3.1 function refuel(ICashier.TransferAuth memory auth, uint amt) external;
+// 3.2 function withdrawFuel(uint amt) external;
 
 // Events verified in this section:
 // 1. General Meeting Minutes
@@ -93,13 +87,14 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getRC, getGMM, getROM, getFT, getGMMKeeper, getROS, } = require("./boox");
+const { getGK, getRC, getGMM, getROM, getFT, getGMMKeeper, getROS, getCashier, } = require("./boox");
 const { increaseTime, parseUnits, Bytes32Zero, now, } = require("./utils");
 const { getLatestSeqOfMotion, allSupportMotion, parseMotion } = require("./gmm");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
 const { depositOfUsers } = require("./gk");
 const { transferCBP, addCBPToUser, minusCBPFromUser, addEthToUser } = require("./saveTool");
+const { generateAuth } = require("./sigTools");
 
 async function main() {
 
@@ -111,6 +106,7 @@ async function main() {
 
     const rc = await getRC();
     const ft = await getFT();
+    const cashier = await getCashier();
     const gk = await getGK();
     const rom = await getROM();
     const gmm = await getGMM();
@@ -266,66 +262,76 @@ async function main() {
     
     balaBefore = BigInt(await rc.balanceOf(signers[3].address));
 
-    tx = await ft.connect(signers[3]).refuel({value: ethers.utils.parseUnits("80", 18)});
+    let usdBalaOfCompBefore = BigInt(await cashier.balanceOfComp());
+
+    let auth = await generateAuth(signers[3], cashier.address, 2600 * 81);
+    console.log("auth:", auth);
+
+    // tx = await ft.connect(signers[3]).refuel({value: ethers.utils.parseUnits("80", 18)});
+    tx = await ft.connect(signers[3]).refuel(auth, ethers.utils.parseUnits("80", 18));
 
     addCBPToUser(80n * 10n ** 18n, "3");
 
-    await expect(tx).to.emit(ft, "Refuel").withArgs(signers[3].address, ethers.utils.parseUnits("80", 18), ethers.utils.parseUnits("80", 18));
+    // await expect(tx).to.emit(ft, "Refuel").withArgs(signers[3].address, ethers.utils.parseUnits("80", 18), ethers.utils.parseUnits("80", 18));
+    await expect(tx).to.emit(ft, "Refuel").withArgs(signers[3].address, ethers.utils.parseUnits("208", 9), ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Event Test for ft.Refuel(). \n");
 
     await expect(tx).to.emit(rc, "Transfer").withArgs(ft.address, signers[3].address, ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Event Test for rc.Transfer(). \n");
 
     balaAfter = BigInt(await rc.balanceOf(signers[3].address));
-
     expect(balaAfter - balaBefore).to.equal(ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Result Verify Test for ft.refuel(). \n");
+
+    let usdBalaOfCompAfter = BigInt(await cashier.balanceOfComp());
+    expect(usdBalaOfCompAfter - usdBalaOfCompBefore).to.equal(ethers.utils.parseUnits("208", 9));
+    console.log(" \u2714 Passed Result Verify Test for cashier.balanceOfComp(). \n");
 
     // ==== Pickup Income 80 ETH from Fuel Tank ====
 
     // ---- Motion for Pickup Income ----
 
     // selector of function withdrawIncome(uint256): 9273bbb6
-    selector = ethers.utils.id("withdrawIncome(uint256)").substring(0, 10);
-    firstInput = parseUnits("80", 18).padStart(64, '0');  // 80 ETH
-    payload = selector + firstInput;
+    // selector = ethers.utils.id("withdrawIncome(uint256)").substring(0, 10);
+    // firstInput = parseUnits("80", 18).padStart(64, '0');  // 80 ETH
+    // payload = selector + firstInput;
 
-    await gk.createActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), 1);
+    // await gk.createActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), 1);
 
-    transferCBP("1", "8", 99n);
+    // transferCBP("1", "8", 99n);
 
-    seqOfMotion = await getLatestSeqOfMotion(gmm);
+    // seqOfMotion = await getLatestSeqOfMotion(gmm);
 
-    await gk.proposeMotionToGeneralMeeting(seqOfMotion);
+    // await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
-    transferCBP("1", "8", 72n);
+    // transferCBP("1", "8", 72n);
 
-    await increaseTime(86400);
+    // await increaseTime(86400);
 
-    await allSupportMotion(gk, rom, seqOfMotion);
-    await gk.voteCountingOfGM(seqOfMotion);
+    // await allSupportMotion(gk, rom, seqOfMotion);
+    // await gk.voteCountingOfGM(seqOfMotion);
 
-    transferCBP("1", "8", 88n);
+    // transferCBP("1", "8", 88n);
 
-    expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
+    // expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
-    // ---- Pickup Income ----
+    // // ---- Pickup Income ----
 
-    balaBefore = BigInt(await ethers.provider.getBalance(ft.address));
+    // balaBefore = BigInt(await ethers.provider.getBalance(ft.address));
 
-    tx = await gk.execActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), seqOfMotion)
+    // tx = await gk.execActionOfGM(9, [ft.address], [0], [payload], ethers.utils.id('9'+ft.address+payload), seqOfMotion)
 
-    transferCBP("1", "8", 36n);
+    // transferCBP("1", "8", 36n);
 
-    balaAfter = BigInt(await ethers.provider.getBalance(ft.address));
+    // balaAfter = BigInt(await ethers.provider.getBalance(ft.address));
 
-    await expect(tx).to.emit(gk, "ReceivedCash").withArgs(ft.address, ethers.utils.parseUnits("80", 18));
-    console.log(" \u2714 Passed Event Verify Test for gk.ReceivedCash(). \n")
+    // await expect(tx).to.emit(gk, "ReceivedCash").withArgs(ft.address, ethers.utils.parseUnits("80", 18));
+    // console.log(" \u2714 Passed Event Verify Test for gk.ReceivedCash(). \n")
 
-    addEthToUser(80n*10n**18n, "8");
+    // addEthToUser(80n*10n**18n, "8");
 
-    expect(balaBefore - balaAfter).to.equal(ethers.utils.parseUnits("80", 18));
-    console.log(" \u2714 Passed Result Verify Test for ft.withdrawIncome(). \n");
+    // expect(balaBefore - balaAfter).to.equal(ethers.utils.parseUnits("80", 18));
+    // console.log(" \u2714 Passed Result Verify Test for ft.withdrawIncome(). \n");
     
     // ==== Withdraw Fuel 8 CBP from Fuel Tank ====
 

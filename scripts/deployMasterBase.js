@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -40,6 +40,7 @@ async function main() {
 		"GoldChain": libGoldChain.address,
 	};
 	const libOrdersRepo = await deployTool(signers[0], "OrdersRepo", libraries, params);
+	const libUsdOrdersRepo = await deployTool(signers[0], "UsdOrdersRepo", libraries, params);
 
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address,
@@ -276,7 +277,7 @@ async function main() {
 	let loo = await deployTool(signers[0], "ListOfOrders", libraries, params);
 
 	libraries = {
-		"OrdersRepo": libOrdersRepo.address,
+		"UsdOrdersRepo": libUsdOrdersRepo.address,
 		"GoldChain": libGoldChain.address,
 		"EnumerableSet": libEnumerableSet.address
 	}
@@ -303,8 +304,11 @@ async function main() {
 	params = [];
 	let mockFeedRegistry = 	await deployTool(signers[0], "MockFeedRegistry", libraries, params);
 
-	params = [rc.address, 10000];
-	let ft = await deployTool(signers[0], "FuelTank", libraries, params);
+	// params = [rc.address, 10000];
+	// let ft = await deployTool(signers[0], "FuelTank", libraries, params);
+
+	params = [rc.address, 2600 * 10 ** 6];
+	let ft = await deployTool(signers[0], "UsdFuelTank", libraries, params);
 
 	// ==== SetTemplate ====
 

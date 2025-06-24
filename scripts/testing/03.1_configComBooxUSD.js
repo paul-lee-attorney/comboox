@@ -127,10 +127,21 @@ async function main() {
 
     // ==== Transfer Ownership of Fuel Tank to Company ====
 
+    await ft.setCashier(cashier.address);
+
+    let newCashier = (await ft.cashier()).toLowerCase();
+    expect(newCashier).to.equal(cashier.address.toLowerCase());
+    console.log(' \u2714 Passed Result Verify Test for ft.setCashier(). \n');
+
     await ft.setNewOwner(gk.address);
     newOwner = (await ft.getOwner()).toLowerCase();
     expect(newOwner).to.equal(gk.address.toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for ft.setNewOwner(). \n');
+
+    await gk.connect(signers[1]).regKeeper(16, ft.address);
+    let keeper_16 = (await gk.getKeeper(16)).toLowerCase();
+    expect(keeper_16).to.equal(ft.address.toLowerCase());
+    console.log(' \u2714 Passed Result Verify Test for usdFT as 16th keeper of the Company. \n');
 
     // ==== Transfer IPR of Templates to Company ====
 

@@ -101,7 +101,7 @@ const { BigNumber } = require("ethers");
 const { expect } = require("chai");
 const { saveBooxAddr, addCBPToUser, minusCBPFromUser, setUserCBP, transferCBP, addEthToUser, setUserDepo } = require("./saveTool");
 const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
-const { getCNC, getGK, getROM, getROS, getRC, refreshBoox } = require("./boox");
+const { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC} = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { parseCompInfo, depositOfUsers } = require("./gk");
 const { readContract } = require("../readTool");
@@ -223,6 +223,17 @@ async function main() {
     saveBooxAddr("UsdKeeper", UsdKeeper);
 
     refreshBoox();
+
+    // ==== Mint Mock USDC to users ====
+
+    let usdc = await getUSDC();
+
+    for (i=0; i<7; i++) {
+      await usdc.mint(signers[i].address, 10n ** 12n);
+      let balance = await usdc.balanceOf(signers[i].address);
+      balance = ethers.utils.formatUnits(balance, 6);
+      expect(balance).to.equal('1000000.0');
+    }
 
     // ==== Config Comp ====
 
