@@ -171,14 +171,14 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         uint execHours,
         uint centPrice        
     ) private {
-        (OrdersRepo.Deal[] memory deals, GoldChain.Order[] memory expired, OrdersRepo.Deal memory offer) = 
+        (OrdersRepo.Deal[] memory deals, uint lenOfDeals, GoldChain.Order[] memory expired, uint lenOfExpired, OrdersRepo.Deal memory offer) = 
             _gk.getLOO().placeSellOrder(
                 input,
                 execHours,
                 centPrice
             );
-        if (deals.length > 0) _closeDeals(deals, true);
-        if (expired.length > 0) _restoreExpiredOrders(expired);
+        if (lenOfDeals > 0) _closeDeals(deals, true, lenOfDeals);
+        if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
         if (offer.price == 0 && offer.paid > 0) {
             GoldChain.Order memory balance;
             balance.data.classOfShare = offer.classOfShare;
@@ -188,12 +188,12 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         }
     }
 
-    function _closeDeals(OrdersRepo.Deal[] memory deals, bool isOffer) private {
+    function _closeDeals(OrdersRepo.Deal[] memory deals, bool isOffer, uint len) private {
 
         IRegisterOfShares _ros = _gk.getROS(); 
         IRegisterOfMembers _rom = _gk.getROM();
 
-        uint len = deals.length;
+        // uint len = deals.length;
         while (len > 0) {
 
             OrdersRepo.Deal memory deal = deals[len - 1];
@@ -289,8 +289,8 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         }
     }
 
-    function _restoreExpiredOrders(GoldChain.Order[] memory orders) private {
-        uint len = orders.length;
+    function _restoreExpiredOrders(GoldChain.Order[] memory orders, uint len) private {
+        // uint len = orders.length;
         while (len > 0) {
             _restoreOrder(orders[len-1]);
             len--;
@@ -491,15 +491,15 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         uint execHours,
         uint centPrice
     ) private {
-        (OrdersRepo.Deal[] memory deals, GoldChain.Order[] memory expired, OrdersRepo.Deal memory bid) = 
+        (OrdersRepo.Deal[] memory deals, uint lenOfDeals, GoldChain.Order[] memory expired, uint lenOfExpired, OrdersRepo.Deal memory bid) = 
             _gk.getLOO().placeBuyOrder(
                 input,
                 execHours,
                 centPrice
             );
 
-        if (deals.length > 0) _closeDeals(deals, false);
-        if (expired.length > 0) _restoreExpiredOrders(expired);
+        if (lenOfDeals > 0) _closeDeals(deals, false, lenOfDeals);
+        if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
         if (bid.paid > 0 && bid.price > 0) {
             uint acct = bid.buyer;
             acct = (acct << 40) + acct;

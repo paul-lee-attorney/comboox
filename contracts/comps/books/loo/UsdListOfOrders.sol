@@ -23,14 +23,14 @@ import "./IUsdListOfOrders.sol";
 import "../../common/access/AccessControl.sol";
 
 contract UsdListOfOrders is IUsdListOfOrders, AccessControl {
-    using OrdersRepo for OrdersRepo.Repo;
-    using OrdersRepo for OrdersRepo.Deal;
+    using UsdOrdersRepo for UsdOrdersRepo.Repo;
+    using UsdOrdersRepo for UsdOrdersRepo.Deal;
     using GoldChain for GoldChain.Chain;
     using GoldChain for GoldChain.Node;
     using GoldChain for GoldChain.Data;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    mapping (uint => OrdersRepo.Repo) private _ordersOfClass;
+    mapping (uint => UsdOrdersRepo.Repo) private _ordersOfClass;
     EnumerableSet.UintSet private _classesList;
 
     //#################
@@ -40,22 +40,24 @@ contract UsdListOfOrders is IUsdListOfOrders, AccessControl {
     // ==== Order ====
 
     function placeSellOrder(
-        OrdersRepo.Deal memory input, uint execHours
+        UsdOrdersRepo.Deal memory input, uint execHours
     ) external onlyDK returns(
-        OrdersRepo.Deal[] memory deals, 
+        UsdOrdersRepo.Deal[] memory deals, 
+        uint lenOfDeals,
         GoldChain.Order[] memory expired,
-        OrdersRepo.Deal memory offer
+        uint lenOfExpired,
+        UsdOrdersRepo.Deal memory offer
     ) {
         _classesList.add(input.classOfShare);
 
-        (deals, expired, offer) = _ordersOfClass[input.classOfShare].placeSellOrder(
-            input,
-            execHours,
-            0
-        );
+        (deals, lenOfDeals, expired, lenOfExpired, offer) = 
+            _ordersOfClass[input.classOfShare].placeSellOrder(
+                input,
+                execHours
+            );
 
-        if (deals.length > 0) _logDeals(deals);
-        if (expired.length > 0) _logExpired(expired, false);
+        if (lenOfDeals > 0) _logDeals(deals, lenOfDeals);
+        if (lenOfExpired > 0) _logExpired(expired, false, lenOfExpired);
         if (offer.price > 0) _logOrder(offer, true);
     }
 
@@ -63,13 +65,13 @@ contract UsdListOfOrders is IUsdListOfOrders, AccessControl {
         return amt * 10 ** 10;
     }
 
-    function _logOrder(OrdersRepo.Deal memory order, bool isOffer) private {
+    function _logOrder(UsdOrdersRepo.Deal memory order, bool isOffer) private {
         (bytes32 fromSn, bytes32 toSn, bytes32 qtySn) = order.codifyDeal();
         emit OrderPlaced(fromSn, toSn, qtySn, isOffer);
     }
 
-    function _logDeals(OrdersRepo.Deal[] memory deals) private {
-        uint len = deals.length;
+    function _logDeals(UsdOrdersRepo.Deal[] memory deals, uint len) private {
+        // uint len = deals.length;
         while (len > 0) {
             (bytes32 fromSn, bytes32 toSn, bytes32 qtySn) = 
                 deals[len - 1].codifyDeal();
@@ -78,8 +80,8 @@ contract UsdListOfOrders is IUsdListOfOrders, AccessControl {
         }
     }
 
-    function _logExpired(GoldChain.Order[] memory expired, bool isOffer) private {
-        uint len = expired.length;
+    function _logExpired(GoldChain.Order[] memory expired, bool isOffer, uint len) private {
+        // uint len = expired.length;
         while (len > 0) {
             emit OrderExpired(expired[len - 1].node.codifyNode(),
                 expired[len - 1].data.codifyData(), isOffer);
@@ -88,24 +90,26 @@ contract UsdListOfOrders is IUsdListOfOrders, AccessControl {
     }
 
     function placeBuyOrder(
-        OrdersRepo.Deal memory input,
+        UsdOrdersRepo.Deal memory input,
         uint execHours
     ) external onlyDK returns (
-        OrdersRepo.Deal[] memory deals, 
+        UsdOrdersRepo.Deal[] memory deals,
+        uint lenOfDeals, 
         GoldChain.Order[] memory expired,
-        OrdersRepo.Deal memory bid
+        uint lenOfExpired,
+        UsdOrdersRepo.Deal memory bid
     ) {
 
         _classesList.add(input.classOfShare);
 
-        (deals, expired, bid) = _ordersOfClass[input.classOfShare].placeBuyOrder(
-            input,
-            execHours,
-            0
-        );
+        (deals, lenOfDeals, expired, lenOfExpired, bid) = 
+            _ordersOfClass[input.classOfShare].placeBuyOrder(
+                input,
+                execHours
+            );
 
-        if (deals.length > 0) _logDeals(deals);
-        if (expired.length > 0) _logExpired(expired, true);
+        if (lenOfDeals > 0) _logDeals(deals, lenOfDeals);
+        if (lenOfExpired > 0) _logExpired(expired, true, lenOfExpired);
         if (bid.price > 0) _logOrder(bid, false);
     }
 

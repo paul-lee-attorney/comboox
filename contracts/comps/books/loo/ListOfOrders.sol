@@ -67,6 +67,12 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         emit RevokeInvestor(userNo, verifier);
     }
 
+    function restoreInvestorsRepo(
+        InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
+    ) external onlyDK {
+        _investors.restoreRepo(list, qtyOfInvestors);
+    }
+
     // ==== Order ====
 
     function placeSellOrder(
@@ -74,20 +80,22 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint execHours,
         uint centPriceInWei
     ) external onlyDK returns(
-        OrdersRepo.Deal[] memory deals, 
+        OrdersRepo.Deal[] memory deals,
+        uint lenOfDeals,
         GoldChain.Order[] memory expired,
+        uint lenOfExpired,
         OrdersRepo.Deal memory offer
     ) {
         _classesList.add(input.classOfShare);
 
-        (deals, expired, offer) = _ordersOfClass[input.classOfShare].placeSellOrder(
+        (deals, lenOfDeals, expired, lenOfExpired, offer) = _ordersOfClass[input.classOfShare].placeSellOrder(
             input,
             execHours,
             centPriceInWei
         );
 
-        if (deals.length > 0) _logDeals(deals);
-        if (expired.length > 0) _logExpired(expired, false);
+        if (lenOfDeals > 0) _logDeals(deals, lenOfDeals);
+        if (lenOfExpired > 0) _logExpired(expired, false, lenOfExpired);
         if (offer.price > 0) _logOrder(offer, true);
     }
 
@@ -95,16 +103,14 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         emit OrderPlaced(order.codifyBrief(), isOffer);
     }
 
-    function _logDeals(OrdersRepo.Deal[] memory deals) private {
-        uint len = deals.length;
+    function _logDeals(OrdersRepo.Deal[] memory deals, uint len) private {
         while (len > 0) {
             emit DealClosed(deals[len - 1].codifyBrief(), deals[len - 1].consideration);
             len--;
         }
     }
 
-    function _logExpired(GoldChain.Order[] memory expired, bool isOffer) private {
-        uint len = expired.length;
+    function _logExpired(GoldChain.Order[] memory expired, bool isOffer, uint len) private {
         while (len > 0) {
             emit OrderExpired(expired[len - 1].node.codifyNode(),
                 expired[len - 1].data.codifyData(), isOffer);
@@ -118,20 +124,22 @@ contract ListOfOrders is IListOfOrders, AccessControl {
         uint centPriceInWei
     ) external onlyDK returns (
         OrdersRepo.Deal[] memory deals, 
+        uint lenOfDeals, 
         GoldChain.Order[] memory expired,
+        uint lenOfExpired,
         OrdersRepo.Deal memory bid
     ) {
 
         _classesList.add(input.classOfShare);
 
-        (deals, expired, bid) = _ordersOfClass[input.classOfShare].placeBuyOrder(
+        (deals, lenOfDeals, expired, lenOfExpired, bid) = _ordersOfClass[input.classOfShare].placeBuyOrder(
             input,
             execHours,
             centPriceInWei
         );
 
-        if (deals.length > 0) _logDeals(deals);
-        if (expired.length > 0) _logExpired(expired, true);
+        if (lenOfDeals > 0) _logDeals(deals, lenOfDeals);
+        if (lenOfExpired > 0) _logExpired(expired, true, lenOfExpired);
         if (bid.price > 0) _logOrder(bid, false);
     }
 

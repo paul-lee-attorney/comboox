@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../lib/OrdersRepo.sol";
+import "../../../lib/UsdOrdersRepo.sol";
 import "../../../lib/GoldChain.sol";
 import "../../../lib/InvestorsRepo.sol";
 import "../../../lib/EnumerableSet.sol";
@@ -43,21 +43,25 @@ interface IUsdListOfOrders {
     //#################
 
     function placeSellOrder(
-        OrdersRepo.Deal memory input,
+        UsdOrdersRepo.Deal memory input,
         uint execHours
     ) external returns(
-        OrdersRepo.Deal[] memory deals, 
+        UsdOrdersRepo.Deal[] memory deals, 
+        uint lenOfDeals,
         GoldChain.Order[] memory expired,
-        OrdersRepo.Deal memory offer
+        uint lenOfExpired,
+        UsdOrdersRepo.Deal memory offer
     );
 
     function placeBuyOrder(
-        OrdersRepo.Deal memory input,
+        UsdOrdersRepo.Deal memory input,
         uint execHours
     ) external returns (
-        OrdersRepo.Deal[] memory deals, 
+        UsdOrdersRepo.Deal[] memory deals, 
+        uint lenOfDeals,
         GoldChain.Order[] memory expired,
-        OrdersRepo.Deal memory bid
+        uint lenOfExpired,
+        UsdOrdersRepo.Deal memory bid
     );
 
     function withdrawOrder(

@@ -64,13 +64,19 @@ interface IListOfOrders {
         uint verifier
     ) external;
 
+    function restoreInvestorsRepo(
+        InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
+    ) external;
+
     function placeSellOrder(
         OrdersRepo.Deal memory input,
         uint execHours,
         uint centPriceInWei
     ) external returns(
-        OrdersRepo.Deal[] memory deals, 
+        OrdersRepo.Deal[] memory deals,
+        uint lenOfDeals,
         GoldChain.Order[] memory expired,
+        uint lenOfExpired,
         OrdersRepo.Deal memory offer
     );
 
@@ -80,7 +86,9 @@ interface IListOfOrders {
         uint centPriceInWei
     ) external returns (
         OrdersRepo.Deal[] memory deals, 
+        uint lenOfDeals, 
         GoldChain.Order[] memory expired,
+        uint lenOfExpired,
         OrdersRepo.Deal memory bid
     );
 

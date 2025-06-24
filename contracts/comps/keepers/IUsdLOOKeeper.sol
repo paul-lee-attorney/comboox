@@ -23,7 +23,7 @@ import "../books/cashier/ICashier.sol";
 import "../books/loo/IUsdListOfOrders.sol";
 
 import "../../lib/SharesRepo.sol";
-import "../../lib/OrdersRepo.sol";
+import "../../lib/UsdOrdersRepo.sol";
 import "../../lib/InvestorsRepo.sol";
 
 interface IUsdLOOKeeper {

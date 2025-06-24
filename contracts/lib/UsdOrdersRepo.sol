@@ -21,7 +21,7 @@ pragma solidity ^0.8.8;
 
 import "./GoldChain.sol";
 
-library OrdersRepo {
+library UsdOrdersRepo {
     using GoldChain for GoldChain.Chain;
 
     struct Brief {
@@ -193,8 +193,7 @@ library OrdersRepo {
     function placeSellOrder(
         Repo storage repo,
         Deal memory input,
-        uint execHours,
-        uint centPriceInWei
+        uint execHours
     ) public returns (
         Deal[] memory deals,
         uint lenOfDeals,
@@ -212,9 +211,9 @@ library OrdersRepo {
         expired = new GoldChain.Order[](len);
 
         if (offer.price > 0) {
-            (lenOfDeals, lenOfExpired) = _matchOfferToBid(bids, offer, centPriceInWei, deals, expired);
+            (lenOfDeals, lenOfExpired) = _matchOfferToBid(bids, offer, deals, expired);
         } else {
-            (lenOfDeals, lenOfExpired) = _matchMarketToBid(bids, offer, centPriceInWei, deals, expired);
+            (lenOfDeals, lenOfExpired) = _matchMarketToBid(bids, offer, deals, expired);
         }
 
         if (offer.paid > 0 && offer.price > 0) {
@@ -232,17 +231,10 @@ library OrdersRepo {
         }
     }
 
-    function getDealValue(
-        uint paid, uint price, uint centPrice
-    ) public pure returns (uint128) {
-        return uint128(paid * price * centPrice / 10 ** 6);
-    }
-
     function placeBuyOrder(
         Repo storage repo,
         Deal memory input,
-        uint execHours,
-        uint centPriceInWei
+        uint execHours
     ) public returns (
         Deal[] memory deals,
         uint lenOfDeals,
@@ -253,9 +245,6 @@ library OrdersRepo {
 
         bid = input;
 
-        require(getDealValue(bid.paid, bid.price, centPriceInWei) <=
-            bid.consideration, "OR.placeBuyOrder: insufficient msgValue");
-
         GoldChain.Chain storage offers = repo.offers;
         uint len = offers.length();
     
@@ -263,9 +252,9 @@ library OrdersRepo {
         expired = new GoldChain.Order[](len);
 
         if (bid.price > 0) {
-            (lenOfDeals, lenOfExpired) = _matchBidToOffer(offers, bid, centPriceInWei, deals, expired);
+            (lenOfDeals, lenOfExpired) = _matchBidToOffer(offers, bid, deals, expired);
         } else {
-            (lenOfDeals, lenOfExpired) = _matchMarketToOffer(offers, bid, centPriceInWei, deals, expired);
+            (lenOfDeals, lenOfExpired) = _matchMarketToOffer(offers, bid, deals, expired);
         }
 
         if (bid.paid > 0 && bid.price > 0) {
@@ -276,11 +265,12 @@ library OrdersRepo {
                 bid.buyer,
                 bid.paid,
                 bid.price,
-                execHours, 
+                execHours,
                 false,
                 data
             );
         }
+
     }
 
     function withdrawOrder(
@@ -295,8 +285,7 @@ library OrdersRepo {
     }
 
     function _matchOfferToBid(
-        GoldChain.Chain storage bids, Deal memory offer, uint centPriceInWei,
-        Deal[] memory deals, GoldChain.Order[] memory expired
+        GoldChain.Chain storage bids, Deal memory offer, Deal[] memory deals, GoldChain.Order[] memory expired
     ) private returns(uint lenOfDeals, uint lenOfExpired){
 
         uint32 seqOfNode = bids.head();
@@ -310,22 +299,10 @@ library OrdersRepo {
             
             if (n.node.price >= offer.price) {
 
-                Deal memory deal = 
-                    _createDeal(offer, offer.price, n.node.paid, centPriceInWei);
+                Deal memory deal = _createDeal(offer, offer.price, n.node.paid);
 
-                if (deal.consideration >= n.data.margin) {
-                    deal.consideration = n.data.margin;
-                    deal.paid = 
-                        uint64(uint(deal.consideration) * 10 ** 6 / centPriceInWei / deal.price);
-                    
-                    n.data.margin = 0;
-                    n.node.paid = 0;
-                    deal.state = 1;
-                } else {
-                    n.data.margin -= deal.consideration;
-                    n.node.paid -= deal.paid;
-                }
-
+                n.data.margin -= deal.consideration;
+                n.node.paid -= deal.paid;
                 offer.paid -= deal.paid;
 
                 _fillInOfferDeal(deal, offer, n);
@@ -345,34 +322,22 @@ library OrdersRepo {
     }
 
     function _matchBidToOffer(
-        GoldChain.Chain storage offers, Deal memory bid, uint centPriceInWei,
-        Deal[] memory deals, GoldChain.Order[] memory expired
+        GoldChain.Chain storage offers, Deal memory bid, Deal[] memory deals, GoldChain.Order[] memory expired
     ) private returns(uint lenOfDeals, uint lenOfExpired){
 
         uint32 seqOfNode = offers.head();
 
         while(seqOfNode > 0 && bid.paid > 0) {
-
+            
             (seqOfNode, lenOfExpired) = _checkExpired(offers, seqOfNode, expired, lenOfExpired);
-            if (seqOfNode == 0) break;            
+            if (seqOfNode == 0) break;
 
             GoldChain.Order storage n = offers.orders[seqOfNode];
             
             if (n.node.price <= bid.price) {
 
-                Deal memory deal = _createDeal(bid, n.node.price, n.node.paid, centPriceInWei);
-                
-                if (deal.consideration >= bid.consideration) {
-                    deal.consideration = bid.consideration;
-                    deal.paid = 
-                        uint64(uint(deal.consideration) * 10 ** 6 / centPriceInWei / deal.price);
-
-                    bid.paid = deal.paid;
-
-                    if (deal.state == 1) {
-                        deal.state = 0;
-                    }
-                }
+                Deal memory deal = 
+                    _createDeal(bid, n.node.price, n.node.paid);
 
                 n.node.paid -= deal.paid;
                 bid.consideration -= deal.consideration;
@@ -393,8 +358,7 @@ library OrdersRepo {
     }
 
     function _matchMarketToBid(
-        GoldChain.Chain storage bids, Deal memory offer, uint centPriceInWei,
-        Deal[] memory deals, GoldChain.Order[] memory expired
+        GoldChain.Chain storage bids, Deal memory offer, Deal[] memory deals, GoldChain.Order[] memory expired
     ) private returns(uint lenOfDeals, uint lenOfExpired){
 
         uint32 seqOfNode = bids.head();
@@ -405,30 +369,18 @@ library OrdersRepo {
             if (seqOfNode == 0) break;
 
             GoldChain.Order storage n = bids.orders[seqOfNode];
-            
-            Deal memory deal = _createDeal(offer, n.node.price, n.node.paid, centPriceInWei);
 
-            if (deal.consideration >= n.data.margin) {
-                deal.consideration = n.data.margin;
-                deal.paid = uint64(uint(deal.consideration) * 10 ** 6 / centPriceInWei / deal.price);
-                
-                n.data.margin = 0;
-                n.node.paid = 0;
-                n.data.date = 1;
-            } else {
-                n.data.margin -= deal.consideration;
-                n.node.paid -= deal.paid;
-            }
+            Deal memory deal = _createDeal(offer, n.node.price, n.node.paid);
 
+            n.data.margin -= deal.consideration;
+            n.node.paid -= deal.paid;
             offer.paid -= deal.paid;
 
-            _fillInOfferDeal(deal, offer, n);            
+            _fillInOfferDeal(deal, offer, n);
 
             if (deal.state == 1) {
                 GoldChain.Order memory delistedOrder = bids.offChain(seqOfNode);
                 seqOfNode = delistedOrder.node.next;
-                expired[lenOfExpired] = delistedOrder;
-                lenOfExpired++;
             }
 
             deals[lenOfDeals] = deal;
@@ -437,8 +389,7 @@ library OrdersRepo {
     }
 
     function _matchMarketToOffer(
-        GoldChain.Chain storage offers, Deal memory bid, uint centPriceInWei,
-        Deal[] memory deals, GoldChain.Order[] memory expired
+        GoldChain.Chain storage offers, Deal memory bid, Deal[] memory deals, GoldChain.Order[] memory expired
     ) private returns(uint lenOfDeals, uint lenOfExpired){
 
         uint32 seqOfNode = offers.head();
@@ -446,16 +397,15 @@ library OrdersRepo {
         while(seqOfNode > 0 && bid.paid > 0) {
 
             (seqOfNode, lenOfExpired) = _checkExpired(offers, seqOfNode, expired, lenOfExpired);
-            if (seqOfNode == 0) break;            
+            if (seqOfNode == 0) break;
 
             GoldChain.Order storage n = offers.orders[seqOfNode];
+            
+            Deal memory deal = _createDeal(bid, n.node.price, n.node.paid);
 
-            Deal memory deal = _createDeal(bid, n.node.price, n.node.paid, centPriceInWei);
-                    
             if (deal.consideration >= bid.consideration) {
                 deal.consideration = bid.consideration;
-                deal.paid = 
-                    uint64(uint(deal.consideration) * 10 ** 6 / centPriceInWei / deal.price);
+                deal.paid = uint64(uint(deal.consideration) / deal.price);
 
                 bid.paid = deal.paid;
 
@@ -477,7 +427,6 @@ library OrdersRepo {
 
             deals[lenOfDeals] = deal;
             lenOfDeals++;
-
         }
     }
 
@@ -497,43 +446,24 @@ library OrdersRepo {
         return (seqOfNode, lenOfExpired);
     }
 
-
     function _createDeal(
-        Deal memory order, uint32 offerPrice, uint64 nodePaid, uint centPriceInWei
+        Deal memory order, uint offerPrice, uint nodePaid
     ) private pure returns (Deal memory deal) {
-        deal.price = offerPrice;
+        deal.price = uint32(offerPrice);
 
         if (order.paid >= nodePaid) {
-            deal.paid = nodePaid;
+            deal.paid = uint64(nodePaid);
             deal.state = 1;
         } else {
             deal.paid = order.paid;
         }
-        deal.inEth = true;                
 
-        deal.consideration = 
-            getDealValue(deal.paid, deal.price, centPriceInWei);
-    }
-
-    function _fillInOfferDeal(
-        Deal memory deal, Deal memory offer, GoldChain.Order memory n        
-    )private pure{
-        deal.from = n.data.pubKey;
-        deal.to = offer.to;
-        deal.seller = offer.seller;
-
-        deal.classOfShare = offer.classOfShare;
-        deal.seqOfShare = offer.seqOfShare;
-        deal.buyer = n.node.issuer;
-        deal.groupRep = n.data.groupRep;
-        deal.votingWeight = offer.votingWeight;
-        deal.distrWeight = offer.distrWeight;
+        deal.consideration = deal.paid * deal.price;
     }
 
     function _fillInBidDeal(
-        Deal memory deal, Deal memory bid, GoldChain.Order memory n        
-    )private pure{
-
+        Deal memory deal, Deal memory bid, GoldChain.Order memory n
+    ) private pure {
         deal.from = bid.from;
         deal.to = n.data.pubKey;
         deal.seller = n.node.issuer;
@@ -544,7 +474,21 @@ library OrdersRepo {
         deal.groupRep = bid.groupRep;
         deal.votingWeight = n.data.votingWeight;
         deal.distrWeight = n.data.distrWeight;
+    }
 
+    function _fillInOfferDeal(
+        Deal memory deal, Deal memory offer, GoldChain.Order memory n
+    ) private pure {
+        deal.from = n.data.pubKey;
+        deal.to = offer.to;
+        deal.seller = offer.seller;
+
+        deal.classOfShare = offer.classOfShare;
+        deal.seqOfShare = offer.seqOfShare;
+        deal.buyer = n.node.issuer;
+        deal.groupRep = n.data.groupRep;
+        deal.votingWeight = offer.votingWeight;
+        deal.distrWeight = offer.distrWeight;
     }
 
     //################

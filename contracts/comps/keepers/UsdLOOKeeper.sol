@@ -69,7 +69,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
         _ros.increaseEquityOfClass(true, classOfShare, 0, 0, paid);
 
-        OrdersRepo.Deal memory input;
+        UsdOrdersRepo.Deal memory input;
         
         input.classOfShare = uint16(classOfShare);
         input.votingWeight = lr.votingWeight;
@@ -83,16 +83,18 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     }
 
     function _placeSellOrder(
-        OrdersRepo.Deal memory input, uint execHours
+        UsdOrdersRepo.Deal memory input, uint execHours
     ) private {
 
-        (OrdersRepo.Deal[] memory deals, 
+        (UsdOrdersRepo.Deal[] memory deals,
+         uint lenOfDeals, 
          GoldChain.Order[] memory expired, 
-         OrdersRepo.Deal memory offer) = 
+         uint lenOfExpired,
+         UsdOrdersRepo.Deal memory offer) = 
             _looInUSD().placeSellOrder(input, execHours);
 
-        if (deals.length > 0) _closeDeals(deals, true);
-        if (expired.length > 0) _restoreExpiredOrders(expired);
+        if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, true);
+        if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
         if (offer.price == 0 && offer.paid > 0) {
             GoldChain.Order memory balance;
             balance.data.classOfShare = offer.classOfShare;
@@ -107,15 +109,14 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         return amt / 100;
     }
 
-    function _closeDeals(OrdersRepo.Deal[] memory deals, bool isOffer) private {
+    function _closeDeals(UsdOrdersRepo.Deal[] memory deals, uint len, bool isOffer) private {
 
         IRegisterOfShares _ros = _gk.getROS(); 
         IRegisterOfMembers _rom = _gk.getROM();
 
-        uint len = deals.length;
         while (len > 0) {
 
-            OrdersRepo.Deal memory deal = deals[len - 1];
+            UsdOrdersRepo.Deal memory deal = deals[len - 1];
             len--;
 
             if (deal.seqOfShare > 0) {
@@ -153,8 +154,6 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
                 );
 
             } else {
-
-
 
                 if (isOffer) {
                     // remark: CloseInitOfferAgainstBid
@@ -229,8 +228,8 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         }
     }
 
-    function _restoreExpiredOrders(GoldChain.Order[] memory orders) private {
-        uint len = orders.length;
+    function _restoreExpiredOrders(GoldChain.Order[] memory orders, uint len) private {
+        // uint len = orders.length;
         while (len > 0) {
             _restoreOrder(orders[len-1]);
             len--;
@@ -303,7 +302,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
             {
                 if (share.body.cleanPaid > 0) {
                     
-                    OrdersRepo.Deal memory input;
+                    UsdOrdersRepo.Deal memory input;
 
                     input.to = msgSender;
                     input.seller = share.head.shareholder;
@@ -373,7 +372,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         
         require(price > 0, "ULOOK.placeBuyOrder: zero price");
 
-        OrdersRepo.Deal memory input;
+        UsdOrdersRepo.Deal memory input;
 
         input.from = msgSender;
         input.buyer = uint40(caller);
@@ -403,7 +402,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
         require(auth.value > 0, "ULOOK.placeMarketBuyOrder: zero margin");
 
-        OrdersRepo.Deal memory input;
+        UsdOrdersRepo.Deal memory input;
 
         input.from = msgSender;
         input.buyer = uint40(caller);
@@ -417,7 +416,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     }
 
     function _placeBuyOrder(
-        ICashier.TransferAuth memory auth, OrdersRepo.Deal memory input, uint execHours
+        ICashier.TransferAuth memory auth, UsdOrdersRepo.Deal memory input, uint execHours
     ) private {
 
         // remark: CustodyValueOfBid
@@ -426,13 +425,15 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
             bytes32(0x437573746f647956616c75654f66426964000000000000000000000000000000)
         );
 
-        (   OrdersRepo.Deal[] memory deals, 
-            GoldChain.Order[] memory expired, 
-            OrdersRepo.Deal memory bid
-        ) = _looInUSD().placeBuyOrder(input, execHours);
+        (UsdOrdersRepo.Deal[] memory deals,
+         uint lenOfDeals,
+         GoldChain.Order[] memory expired,
+         uint lenOfExpired,
+         UsdOrdersRepo.Deal memory bid) = 
+            _looInUSD().placeBuyOrder(input, execHours);
 
-        if (deals.length > 0) _closeDeals(deals, false);
-        if (expired.length > 0) _restoreExpiredOrders(expired);
+        if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, false);
+        if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
         if (bid.paid == 0 && bid.consideration > 0) {
             // remark: RefundBalanceOfBidOrder
             _cashier().releaseUsd(

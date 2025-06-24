@@ -140,6 +140,20 @@ library InvestorsRepo {
         repo.investors[0].verifier--;
     }
 
+    function restoreRepo(
+        Repo storage repo, Investor[] memory list, uint qtyOfInvestors
+    ) public {            
+        uint len = list.length;
+        uint i = 0;
+        while (i < len) {
+            Investor memory investor = list[i];
+            repo.investors[investor.userNo] = investor;
+            repo.investorsList.push(investor.userNo);
+            i++;
+        }
+        repo.investors[0].verifier = uint40(qtyOfInvestors);
+    }
+
     //################
     //##  Read I/O  ##
     //################
