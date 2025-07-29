@@ -147,10 +147,5 @@ interface IRegisterOfOptions {
 
     function getAllOraclesOfOption(uint256 seqOfOpt)
         external view returns (Checkpoints.Checkpoint[] memory);
-
-    // ==== Value ====
-
-    function checkValueOfSwap(uint seqOfOpt, uint seqOfSwap)
-        external view returns (uint);
     
 }

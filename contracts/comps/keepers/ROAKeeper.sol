@@ -2,7 +2,7 @@
 
 /* *
  * v.0.2.5
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -22,7 +22,7 @@ pragma solidity ^0.8.8;
 
 import "./IROAKeeper.sol";
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../comps/common/access/RoyaltyCharge.sol";
 
 contract ROAKeeper is IROAKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
@@ -257,9 +257,13 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
     }
 
     function _buyerIsVerified(uint buyer) private view {
-        require (_gk.getLOO().getInvestor(buyer).state == 
+        require (_gk.getROI().getInvestor(buyer).state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved), 
             "ROAK.buyerIsVerified: not");
+        
+        require(_gk.getSHA().isSigner(buyer),
+            "ROAK: buyer not signer of SHA");
+    
     }
 
     function _shareTransfer(IInvestmentAgreement _ia, uint256 seqOfDeal) private {
@@ -414,54 +418,36 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         } else revert("ROAK.TD: wrong state");
     }
 
-
     function payOffApprovedDeal(
-        address ia,
-        uint seqOfDeal,
-        uint msgValue,
-        address msgSender
+        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal,
+        address to, address msgSender
     ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
 
+        ICashier _cashier = _gk.getCashier();
+
+        uint caller = _msgSender(msgSender, 58000);
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
-        uint centPrice = _gk.getCentPrice();
-        uint valueOfDeal = centPrice * (deal.body.paid * deal.head.priceOfPaid + 
-            (deal.body.par - deal.body.paid) * deal.head.priceOfPar) / 10 ** 6;
-
-        require( valueOfDeal <= msgValue, "ROAK.payApprDeal: insufficient msgValue");
+        auth.value = (deal.body.paid * deal.head.priceOfPaid + 
+            (deal.body.par - deal.body.paid) * deal.head.priceOfPar) / 100;
+        auth.from = msgSender;
 
         if (deal.head.seqOfShare > 0) {
-            _gk.saveToCoffer(
-                deal.head.seller, valueOfDeal, 
-                bytes32(0x4465706f736974436f6e73696465726174696f6e4f6653544465616c00000000)
-            ); // DepositConsiderationOfSTDeal 
+            require(deal.head.seller == _msgSender(to, 18000),
+               "UsdROAK.payOffApprDealInUSD: wrong payee");
+
+            // remark: PayOffShareTransferDeal
+            _cashier.forwardUsd(auth, to, bytes32(0x5061794f666653686172655472616e736665724465616c000000000000000000));
         } else {
-            emit PayOffCIDeal(caller, valueOfDeal);
+            require(address(_cashier) == to,
+               "UsdROAK.payOffApprDealInUSD: wrong payee");
+
+            // remark: PayOffCapIncreaseDeal
+            ICashier(_cashier).forwardUsd(auth, to, bytes32(0x5061794f6666436170496e6372656173654465616c0000000000000000000000));            
         }
 
-        msgValue -= valueOfDeal;
-        if (msgValue > 0) {
-            _gk.saveToCoffer(
-                caller, msgValue,
-                bytes32(0x4465706f73697442616c616e63654f664f54434465616c000000000000000000)
-            ); // DepositBalanceOfOTCDeal 
-        }    
-
-        _payOffApprovedDeal(ia, seqOfDeal, valueOfDeal, caller);
-    }
-
-    function payOffApprovedDealInUSD(
-        address ia,
-        uint seqOfDeal,
-        uint valueOfDeal,
-        uint caller
-    ) external {
-        require(msg.sender == _gk.getKeeper(12),
-            "ROAK.payOffApprovedDealInUSD: not UsdROAK ");
-
-        _payOffApprovedDeal(ia, seqOfDeal, valueOfDeal, caller);
+        _payOffApprovedDeal(ia, seqOfDeal, auth.value, caller);
     }
 
     function _payOffApprovedDeal(

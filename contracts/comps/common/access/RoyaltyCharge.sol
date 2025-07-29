@@ -19,10 +19,10 @@
 
 pragma solidity ^0.8.8;
 
-import "./AnyKeeper.sol";
+import "./AccessControl.sol";
 import "../../../lib/DocsRepo.sol";
 
-contract RoyaltyCharge is AnyKeeper {
+contract RoyaltyCharge is AccessControl {
 
     event ChargeRoyalty(
         uint indexed typeOfDoc, uint version, uint indexed rate, 

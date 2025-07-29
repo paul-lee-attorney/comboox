@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,19 +19,9 @@
 
 pragma solidity ^0.8.8;
 
-import "./IROAKeeper.sol";
+import "./common/access/IAccessControl.sol";
+import "./IGeneralKeeper.sol";
 
-import "../books/cashier/ICashier.sol";
-import "../books/roa/IInvestmentAgreement.sol";
-import "../books/roc/terms/ILockUp.sol";
-
-import "../../lib/InvestorsRepo.sol";
-
-interface IUsdROAKeeper{
-
-    function payOffApprovedDeal(
-       ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, 
-       address to, address msgSender
-    ) external;
-    
+interface ICreateNewComp {
+    function createComp(address dk) external;
 }

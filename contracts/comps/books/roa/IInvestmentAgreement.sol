@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -139,11 +139,5 @@ interface IInvestmentAgreement is ISigPage {
 
     function allSwapsClosed(uint seqOfDeal)
         external view returns (bool);
-
-    function checkValueOfSwap(uint seqOfDeal, uint seqOfSwap)
-        external view returns(uint);
-
-    function checkValueOfDeal(uint seqOfDeal)
-        external view returns (uint);
 
 }

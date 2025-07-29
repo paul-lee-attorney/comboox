@@ -20,9 +20,9 @@
 pragma solidity ^0.8.8;
 
 import "./IRegisterOfShares.sol";
-import "../../common/access/AnyKeeper.sol";
+import "../../common/access/AccessControl.sol";
 
-contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
+contract RegisterOfShares is IRegisterOfShares, AccessControl {
     using LockersRepo for LockersRepo.Repo;
     using LockersRepo for bytes32;
     using SharesRepo for SharesRepo.Repo;
@@ -45,7 +45,7 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
         uint paid,
         uint par,
         uint distrWeight
-    ) external anyKeeper {
+    ) external onlyKeeper {
 
         SharesRepo.Share memory share =
             SharesRepo.createShare(shareNumber, payInDeadline, paid, par, distrWeight);
@@ -55,18 +55,11 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
 
     function addShare(
         SharesRepo.Share memory share
-    ) public anyKeeper {
+    ) public onlyKeeper {
 
         IRegisterOfMembers _rom = _gk.getROM();
 
         share = _repo.addShare(share);
-        _repo.increaseEquityOfClass(
-            true,
-            share.head.class,
-            share.body.paid,
-            share.body.par,
-            0
-        );
 
         _rom.addMember(share.head.shareholder);
         _rom.capIncrease(
@@ -141,7 +134,7 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
     function payInCapital(
         uint seqOfShare, 
         uint amt
-    ) external anyKeeper {
+    ) external onlyKeeper {
 
         SharesRepo.Share storage share = 
             _repo.shares[seqOfShare];
@@ -158,7 +151,7 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
         uint to,
         uint priceOfPaid,
         uint priceOfPar
-    ) external anyKeeper {
+    ) external onlyKeeper {
 
         IRegisterOfMembers _rom = _gk.getROM();
 
@@ -211,7 +204,7 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
         uint256 seqOfShare,
         uint paid,
         uint par
-    ) external onlyDK {
+    ) external onlyKeeper {
         
         SharesRepo.Share storage share = 
             _repo.shares[seqOfShare];
@@ -243,7 +236,7 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
     ) external {
 
         require(msg.sender == address(_gk.getROP()) ||
-            _isKeeper(msg.sender), 
+            _gk.isKeeper(msg.sender), 
             "ROS.decrClean: access denied");
 
         _repo.increaseCleanPaid(
@@ -261,7 +254,8 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
     ) external {
 
         require(msg.sender == address(_gk.getROP()) ||
-            _isKeeper(msg.sender), "ROS.DCA: neither keeper nor ROP");
+            _gk.isKeeper(msg.sender), 
+            "ROS.DCA: neither keeper nor ROP");
 
         _repo.increaseCleanPaid(
             true,
@@ -277,7 +271,7 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
     function updatePriceOfPaid(
         uint seqOfShare,
         uint newPrice
-    ) external anyKeeper {
+    ) external onlyKeeper {
         _repo.updatePriceOfPaid(seqOfShare, newPrice);
         emit UpdatePriceOfPaid(seqOfShare, newPrice);
     }
@@ -299,7 +293,7 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
         uint deltaPaid,
         uint deltaPar,
         uint deltaCleanPaid
-    ) external anyKeeper {
+    ) external onlyKeeper {
         _repo.increaseEquityOfClass(
             isIncrease,
             classOfShare,
@@ -323,13 +317,6 @@ contract RegisterOfShares is IRegisterOfShares, AnyKeeper {
         IRegisterOfMembers _rom = _gk.getROM();
 
         _repo.payInCapital(share.head.seqOfShare, amount);
-        _repo.increaseEquityOfClass(
-            true,
-            share.head.class,
-            amount,
-            0,
-            0
-        );
 
         _rom.capIncrease(
             share.head.votingWeight,

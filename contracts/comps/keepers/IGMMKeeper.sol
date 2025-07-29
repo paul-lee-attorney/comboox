@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,12 +21,13 @@ pragma solidity ^0.8.8;
 
 import "../../lib/MotionsRepo.sol";
 import "../../lib/OfficersRepo.sol";
+import "../../lib/WaterfallsRepo.sol";
 
 import "../common/components/ISigPage.sol";
 
 interface IGMMKeeper {
-    event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, uint indexed caller);
-    event TransferFund(address indexed to, bool indexed isCBP, uint indexed amt, uint seqOfMotion, uint caller);
+    // event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, uint indexed caller);
+    // event TransferFund(address indexed to, bool indexed isCBP, uint indexed amt, uint seqOfMotion, uint caller);
     event ExecAction(address indexed targets, uint indexed values, bytes indexed params, uint seqOfMotion, uint caller);
 
     // ################
@@ -46,10 +47,12 @@ interface IGMMKeeper {
 
     function proposeDocOfGM(uint doc, uint seqOfVR, uint executor,  address msgSender) external;
 
-    function proposeToDistributeProfits(
+    function proposeToDistributeUsd(
         uint amt,
         uint expireDate,
         uint seqOfVR,
+        uint seqOfDR,
+        uint para,
         uint executor,
         address msgSender
     ) external;
@@ -63,7 +66,6 @@ interface IGMMKeeper {
         uint executor,
         address msgSender
     ) external;
-
 
     function createActionOfGM(
         uint seqOfVR,
@@ -89,23 +91,6 @@ interface IGMMKeeper {
     ) external;
 
     function voteCountingOfGM(uint256 seqOfMotion, address msgSender) external;
-
-    function distributeProfits(
-        uint amt,
-        uint expireDate,
-        uint seqOfMotion,
-        address msgSender
-    ) external;
-
-
-    function transferFund(
-        address to,
-        bool isCBP,
-        uint amt,
-        uint expireDate,
-        uint seqOfMotion,
-        address msgSender
-    ) external;
 
     function execActionOfGM(
         uint typeOfAction,

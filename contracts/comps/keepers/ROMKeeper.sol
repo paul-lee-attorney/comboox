@@ -48,45 +48,39 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
     }
 
     function payInCapital(
+        ICashier.TransferAuth memory auth,
         uint seqOfShare, 
-        uint amt,
-        uint msgValue,
+        uint paid, 
         address msgSender
     ) external onlyDK {
         
         uint caller = _msgSender(msgSender, 36000);
-
         IRegisterOfShares _ros = _gk.getROS();
-
-        SharesRepo.Share memory share =
-            _ros.getShare(seqOfShare);
-
-        uint centPrice = _gk.getCentPrice();
-        uint valueOfDeal = share.head.priceOfPaid * amt * centPrice / 10 ** 6;
+        SharesRepo.Share memory share = _ros.getShare(seqOfShare);
         
         require(share.head.shareholder == caller,
-            "ROMK.payInCap: not shareholder");
-        require(valueOfDeal <= msgValue,
-            "ROMK.payInCap: insufficient amt");
-        
-        msgValue -= valueOfDeal;
-        if (msgValue > 0) {
-            _gk.saveToCoffer(
-                caller, msgValue, 
-                bytes32(0x4465706f73697442616c616e63654f66506179496e4361700000000000000000)
-            ); // reason: DepositBalanceOfPayInCap 
-        }
+            "UsdROMK.payInCap: not shareholder");
 
-        _ros.payInCapital(seqOfShare, amt);
-        emit PayInCapital(seqOfShare, amt, valueOfDeal);
+        auth.from = msgSender;
+        auth.value = share.head.priceOfPaid * paid / 100;
+
+        _gk.getCashier().collectUsd(auth, bytes32("PayInCapital"));
+
+        _ros.payInCapital(seqOfShare, paid);
+
+        emit PayInCapital(seqOfShare, paid, auth.value);
     }
 
     function decreaseCapital(
         uint256 seqOfShare, 
-        uint paid, 
-        uint par
+        uint paid,
+        uint par,
+        uint amt
     ) external onlyDK {
-        _gk.getROS().decreaseCapital(seqOfShare, paid, par);
+        IRegisterOfShares _ros=_gk.getROS();
+        _ros.decreaseCapital(seqOfShare, paid, par);
+        uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
+        _gk.getCashier().depositUsd(shareholder, amt, bytes32("DecreaseCapital"));
     }
 
     function updatePaidInDeadline(

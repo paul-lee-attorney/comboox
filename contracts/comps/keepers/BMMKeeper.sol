@@ -96,8 +96,9 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         
         IMeetingMinutes _bmm = _gk.getBMM();
 
-        require (amt < uint(_gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold) * 10 ** 18,
-            "BMMK.transferFund: amt overflow");
+        require (amt <= 
+            uint(_gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold) * 
+            (isCBP ? 10 ** 18 : 10 ** 6), "BMMK.transferFund: amt overflow");
 
         uint64 seqOfMotion = 
             _bmm.createMotionToTransferFund(to, isCBP, amt, expireDate, seqOfVR, executor, caller);
@@ -229,7 +230,8 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         if (restDirectors.length == 0) return true;
         
         if (motion.head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) {
+            uint8(MotionsRepo.TypeOfMotion.ApproveDoc) &&
+            motion.head.seqOfVR < 9) {
 
             uint256[] memory parties = 
                 ISigPage(address(uint160(motion.contents))).getParties();
@@ -357,7 +359,7 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         uint expireDate,
         uint seqOfMotion,
         address msgSender
-    ) external onlyDK {
+    ) external onlyKeeper {
         uint caller = _msgSender(msgSender, 38000);        
 
         _gk.getBMM().transferFund(
@@ -370,6 +372,9 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         );
 
         emit TransferFund(to, isCBP, amt, seqOfMotion, caller);
+
+        if (!isCBP)
+            _gk.getCashier().transferUsd(to, amt, bytes32((1<<255) + seqOfMotion));
     }
 
     function execAction(

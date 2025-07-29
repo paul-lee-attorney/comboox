@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../../lib/OrdersRepo.sol";
+import "../../../lib/UsdOrdersRepo.sol";
 import "../../../lib/GoldChain.sol";
 import "../../../lib/InvestorsRepo.sol";
 import "../../../lib/EnumerableSet.sol";
@@ -30,17 +30,17 @@ interface IListOfOrders {
     //##   Events   ##
     //################
 
-    event RegInvestor(uint indexed investor, uint indexed groupRep, bytes32 indexed idHash);
+    // event RegInvestor(uint indexed investor, uint indexed groupRep, bytes32 indexed idHash);
 
-    event ApproveInvestor(uint indexed investor, uint indexed verifier);
+    // event ApproveInvestor(uint indexed investor, uint indexed verifier);
 
-    event RevokeInvestor(uint indexed investor, uint indexed verifier);
+    // event RevokeInvestor(uint indexed investor, uint indexed verifier);
 
-    event OrderPlaced(bytes32 indexed sn, bool indexed isOffer);
+    event OrderPlaced(bytes32 indexed fromSn, bytes32 indexed toSn, bytes32 indexed qtySn, bool isOffer);
 
     event OrderWithdrawn(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
-    event DealClosed(bytes32 indexed deal, uint indexed consideration);
+    event DealClosed(bytes32 indexed fromSn, bytes32 indexed toSn, bytes32 qtySn, uint indexed consideration);
 
     event OrderExpired(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
@@ -48,48 +48,46 @@ interface IListOfOrders {
     //##  Write I/O  ##
     //#################
 
-    function regInvestor(
-        uint acct,
-        uint groupRep,
-        bytes32 idHash
-    ) external;
+    // function regInvestor(
+    //     uint acct,
+    //     uint groupRep,
+    //     bytes32 idHash
+    // ) external;
 
-    function approveInvestor(
-        uint userNo,
-        uint verifier
-    ) external;
+    // function approveInvestor(
+    //     uint userNo,
+    //     uint verifier
+    // ) external;
 
-    function revokeInvestor(
-        uint userNo,
-        uint verifier
-    ) external;
+    // function revokeInvestor(
+    //     uint userNo,
+    //     uint verifier
+    // ) external;
 
-    function restoreInvestorsRepo(
-        InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
-    ) external;
+    // function restoreInvestorsRepo(
+    //     InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
+    // ) external;
 
     function placeSellOrder(
-        OrdersRepo.Deal memory input,
-        uint execHours,
-        uint centPriceInWei
+        UsdOrdersRepo.Deal memory input,
+        uint execHours
     ) external returns(
-        OrdersRepo.Deal[] memory deals,
+        UsdOrdersRepo.Deal[] memory deals, 
         uint lenOfDeals,
         GoldChain.Order[] memory expired,
         uint lenOfExpired,
-        OrdersRepo.Deal memory offer
+        UsdOrdersRepo.Deal memory offer
     );
 
     function placeBuyOrder(
-        OrdersRepo.Deal memory input,
-        uint execHours,
-        uint centPriceInWei
+        UsdOrdersRepo.Deal memory input,
+        uint execHours
     ) external returns (
-        OrdersRepo.Deal[] memory deals, 
-        uint lenOfDeals, 
+        UsdOrdersRepo.Deal[] memory deals, 
+        uint lenOfDeals,
         GoldChain.Order[] memory expired,
         uint lenOfExpired,
-        OrdersRepo.Deal memory bid
+        UsdOrdersRepo.Deal memory bid
     );
 
     function withdrawOrder(
@@ -102,24 +100,24 @@ interface IListOfOrders {
     //##  Read I/O ##
     //################
 
-    // ==== Investor ====
+    // // ==== Investor ====
 
-    function isInvestor(
-        uint userNo
-    ) external view returns(bool);
+    // function isInvestor(
+    //     uint userNo
+    // ) external view returns(bool);
 
-    function getInvestor(
-        uint userNo
-    ) external view returns(InvestorsRepo.Investor memory);
+    // function getInvestor(
+    //     uint userNo
+    // ) external view returns(InvestorsRepo.Investor memory);
 
-    function getQtyOfInvestors() 
-        external view returns(uint);
+    // function getQtyOfInvestors() 
+    //     external view returns(uint);
 
-    function investorList() 
-        external view returns(uint[] memory);
+    // function investorList() 
+    //     external view returns(uint[] memory);
 
-    function investorInfoList() 
-        external view returns(InvestorsRepo.Investor[] memory);
+    // function investorInfoList() 
+    //     external view returns(InvestorsRepo.Investor[] memory);
 
     // ==== Deals ====
 

@@ -21,17 +21,39 @@
 
 pragma solidity ^0.8.8;
 
-import "./IGMMKeeper.sol";
+import "../../comps/keepers/IGMMKeeper.sol";
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../comps/common/access/RoyaltyCharge.sol";
 
-contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
+contract FundGMMKeeper is IGMMKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
 
     // ################
     // ##   Motion   ##
     // ################
+
+
+    // function _onlyVRClass(uint seqOfVR, uint caller) private view{
+    //     RulesParser.VotingRule memory vr = 
+    //         _gk.getSHA().getRule(seqOfVR).votingRuleParser();
+        
+    //     if (vr.class > 0) {
+    //         require(_gk.getROM().isClassMember(caller, vr.class),
+    //             "FundGMMK: not class member");
+    //     }
+    // }
+
+    function _gpOrManager(uint caller) private view{
+        require(_gk.getROM().isClassMember(caller, 1) || 
+            _gk.getROD().isDirector(caller), 
+            "GMMK: no right");
+    }
+
+    function _onlyGP(uint caller) private view{
+        require(_gk.getROM().isClassMember(caller, 1), 
+            "GMMK: not GP");
+    }
 
     // ==== CreateMotion ====
 
@@ -43,14 +65,11 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 72000);
 
-        IRegisterOfDirectors _rod = _gk.getROD();
-
-        require(_rod.hasNominationRight(seqOfPos, caller),
-            "GMMK: has no right");
+        _onlyGP(caller);
 
         _gk.getGMM().nominateOfficer(
             seqOfPos, 
-            _rod.getPosition(seqOfPos).seqOfVR, 
+            _gk.getROD().getPosition(seqOfPos).seqOfVR, 
             candidate, 
             caller
         );
@@ -62,14 +81,16 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 116000);
 
-        IRegisterOfDirectors _rod = _gk.getROD();
-
-        require(_rod.hasNominationRight(seqOfPos, caller),
+        require(_gk.getROM().isMember(caller), 
             "GMMK: has no right");
+
+        uint seqOfVR = _gk.getROD().getPosition(seqOfPos).seqOfVR;
+
+        // _onlyVRClass(seqOfVR, caller);
 
         _gk.getGMM().createMotionToRemoveOfficer(
             seqOfPos, 
-            _rod.getPosition(seqOfPos).seqOfVR, 
+            seqOfVR, 
             caller
         );
     }
@@ -82,14 +103,17 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     ) external onlyDK {
         
         uint caller = _msgSender(msgSender, 116000);
+
         require(_gk.getROM().isMember(caller), "GMMK: NOT Member");
+
+        // _onlyVRClass(seqOfVR, caller);
 
         IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
             _gmm.createMotionToApproveDoc(doc, seqOfVR, executor, caller);
             
-        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);            
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);
 
         if (seqOfVR < 9) {
 
@@ -104,8 +128,6 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
             if (seqOfVR == 8) {
                 _gk.getROC().proposeFile(addr, seqOfMotion);
             } else {
-                require(_gk.getROA().allClaimsAccepted(addr),
-                    "GMMK: Claims outstanding");
                 _gk.getROA().proposeFile(addr, seqOfMotion);
             }
         }
@@ -119,11 +141,11 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint para,
         uint executor,
         address msgSender
-    ) external onlyKeeper {
+    ) external onlyDK {
 
         uint caller = _msgSender(msgSender, 68000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
+
+        _gpOrManager(caller);
 
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -141,18 +163,18 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint seqOfVR,
         uint executor,
         address msgSender
-    ) external onlyKeeper {
+    ) external onlyDK {
 
         uint caller = _msgSender(msgSender, 99000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
-        
+
+        _gpOrManager(caller);        
+
         IMeetingMinutes _gmm = _gk.getGMM();
 
         uint64 seqOfMotion = 
             _gmm.createMotionToTransferFund(to, isCBP, amt, expireDate, seqOfVR, executor, caller);
 
-        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);            
+        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
 
     function createActionOfGM(
@@ -166,8 +188,8 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     ) external onlyDK {
 
         uint caller = _msgSender(msgSender, 99000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
+
+        _gpOrManager(caller);
 
         _gk.getGMM().createAction(
             seqOfVR,
@@ -186,8 +208,8 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     ) external onlyDK {
 
         uint caller = _msgSender(msgSender, 88000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
+
+        _onlyGP(caller);
 
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -207,6 +229,7 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 36000);
 
         _avoidanceCheck(seqOfMotion, caller);
+
         _gk.getGMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
@@ -228,6 +251,7 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 72000);
 
         _avoidanceCheck(seqOfMotion, caller);
+
         _gk.getGMM().castVoteInGeneralMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
@@ -345,7 +369,8 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         }
 
         if (motion.head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) {
+                uint8(MotionsRepo.TypeOfMotion.ApproveDoc) &&
+            motion.head.seqOfVR < 9) {
 
             uint256[] memory parties = 
                 ISigPage(address(uint160(motion.contents))).getParties();
@@ -356,40 +381,42 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
                     _rom.votesAtDate(parties[len - 1], motion.body.shareRegDate);
 
                 if (votesAtDate > 0) {
-                    if (motion.votingRule.partyAsConsent) {
 
-                        if (motion.votingRule.onlyAttendance) {
-                            base.totalHead++;
-                            base.totalWeight += votesAtDate;
-                        }
+                    // if (motion.votingRule.partyAsConsent) {
 
-                        if (!motion.votingRule.impliedConsent) {
-                            base.supportHead ++;
-                            base.supportWeight += votesAtDate;
+                    //     if (motion.votingRule.onlyAttendance) {
+                    //         base.totalHead++;
+                    //         base.totalWeight += votesAtDate;
+                    //     }
 
-                            base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
-                        }
+                    //     if (!motion.votingRule.impliedConsent) {
+                    //         base.supportHead ++;
+                    //         base.supportWeight += votesAtDate;
+
+                    //         base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
+                    //     }
                         
-                    } else {
+                    // } else {
 
-                        if (!motion.votingRule.onlyAttendance) {
-                            base.totalHead --;
+                    if (!motion.votingRule.onlyAttendance) {
+                        base.totalHead --;
 
-                            base.totalWeight = base.totalWeight > votesAtDate
-                                    ? base.totalWeight - votesAtDate
-                                    : 0;
-                        }
-
-                        if (motion.votingRule.impliedConsent) {
-                            base.supportHead --;
-
-                            base.supportWeight = base.supportWeight > votesAtDate
-                                    ? base.supportWeight - votesAtDate
-                                    : 0;
-                        } else {
-                            base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
-                        }
+                        base.totalWeight = base.totalWeight > votesAtDate
+                                ? base.totalWeight - votesAtDate
+                                : 0;
                     }
+
+                    if (motion.votingRule.impliedConsent) {
+                        base.supportHead --;
+
+                        base.supportWeight = base.supportWeight > votesAtDate
+                                ? base.supportWeight - votesAtDate
+                                : 0;
+                    } else {
+                        base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
+                    }
+
+                    // }
                 }
 
                 len--;
@@ -398,7 +425,6 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
 
         return base;
     }
-
 
     function voteCountingOfGM(uint256 seqOfMotion, address msgSender) external onlyDK {
         _msgSender(msgSender, 88000);
@@ -437,7 +463,7 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     }
 
     // ==== execute ====
-    
+
     function execActionOfGM(
         uint typeOfAction,
         address[] memory targets,
@@ -448,6 +474,8 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK returns (uint){
         uint caller = _msgSender(msgSender, 36000);
+
+        _gpOrManager(caller);
 
         uint len = targets.length;
         while (len > 0) {
@@ -472,6 +500,8 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
+
+        _onlyGP(caller);
 
         _gk.getGMM().deprecateGK(
             receiver,

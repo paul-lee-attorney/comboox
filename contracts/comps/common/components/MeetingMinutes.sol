@@ -104,14 +104,16 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         );
     }
 
-    function createMotionToDistributeProfits(
+    function createMotionToDistributeUsd(
         uint amt,
         uint expireDate,
         uint seqOfVR,
+        uint seqOfDR,
+        uint para,
         uint executor,
         uint proposer
     ) external onlyDK returns (uint64) {
-        uint contents = _hashPayment(address(0), false, amt, expireDate);
+        uint contents = _hashPayment(address(uint160(seqOfDR << 40 + para)), false, amt, expireDate);
         return _addMotion(
             uint8(MotionsRepo.TypeOfMotion.DistributeProfits),
             seqOfVR,
@@ -288,12 +290,14 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         emit ExecResolution(seqOfMotion, caller);
     }
 
-    function distributeProfits(
+    function distributeUsd(
         uint amt,
         uint expireDate,
+        uint seqOfDR,
+        uint para,
         uint seqOfMotion,
         uint caller
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         require(block.timestamp < expireDate, 
             "MM.distrProf: missed deadline");
@@ -302,7 +306,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             uint8(MotionsRepo.TypeOfMotion.DistributeProfits), 
             "MM.distrProf: wrong typeOfMotion");
         
-        uint contents = _hashPayment(address(0), false, amt, expireDate);
+        uint contents = _hashPayment(address(uint160(seqOfDR << 40 + para)), false, amt, expireDate);
 
         execResolution(seqOfMotion, contents, caller);
     }
@@ -315,7 +319,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint expireDate,
         uint seqOfMotion,
         uint caller
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         require(block.timestamp < expireDate, 
             "MM.TF: missed deadline");

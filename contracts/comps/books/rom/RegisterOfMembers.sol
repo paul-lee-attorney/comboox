@@ -20,10 +20,9 @@
 pragma solidity ^0.8.8;
 
 import "./IRegisterOfMembers.sol";
+import "../../common/access/AccessControl.sol";
 
-import "../../common/access/AnyKeeper.sol";
-
-contract RegisterOfMembers is IRegisterOfMembers, AnyKeeper {
+contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
     using Checkpoints for Checkpoints.History;
@@ -46,7 +45,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AnyKeeper {
 
     // ---- Options Setting ----
 
-    function setMaxQtyOfMembers(uint max) external anyKeeper {
+    function setMaxQtyOfMembers(uint max) external onlyKeeper {
         _repo.chain.setMaxQtyOfMembers(max);
         emit SetMaxQtyOfMembers(max);
     }
@@ -152,12 +151,12 @@ contract RegisterOfMembers is IRegisterOfMembers, AnyKeeper {
         );
     }
 
-    function addMemberToGroup(uint acct, uint root) external anyKeeper {
+    function addMemberToGroup(uint acct, uint root) external onlyKeeper {
         _repo.chain.top2Sub(acct, root);
         emit AddMemberToGroup(acct, root);
     }
 
-    function removeMemberFromGroup(uint256 acct) external anyKeeper {
+    function removeMemberFromGroup(uint256 acct) external onlyKeeper {
         uint root = _repo.chain.rootOf(acct);
         uint256 next = _repo.chain.nextNode(acct);
 

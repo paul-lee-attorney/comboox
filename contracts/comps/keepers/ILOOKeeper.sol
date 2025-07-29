@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,39 +21,19 @@ pragma solidity ^0.8.8;
 
 import "../IGeneralKeeper.sol";
 import "../books/loo/IListOfOrders.sol";
-import "../books/ros/IRegisterOfShares.sol";
+import "../../comps/books/ros/IRegisterOfShares.sol";
+
+import "../../comps/books/cashier/ICashier.sol";
 
 import "../../lib/SharesRepo.sol";
-import "../../lib/OrdersRepo.sol";
+import "../../lib/UsdOrdersRepo.sol";
 import "../../lib/InvestorsRepo.sol";
 
 interface ILOOKeeper {
 
-    event CloseBidAgainstInitOffer(uint indexed buyer, uint indexed amt);
-
     //###############
     //##   Write   ##
     //###############
-
-    function regInvestor(
-        address msgSender, uint groupRep, bytes32 idHash
-    ) external;
-
-    function regInvestor(
-        address msgSender, address bKey,uint groupRep, bytes32 idHash
-    ) external;
-
-    function approveInvestor(
-        uint userNo,
-        address msgSender,
-        uint seqOfLR
-    ) external;
-
-    function revokeInvestor(
-        uint userNo,
-        address msgSender,
-        uint seqOfLR
-    ) external;
 
     function placeInitialOffer(
         address msgSender,
@@ -87,12 +67,13 @@ interface ILOOKeeper {
     ) external;
 
     function placeBuyOrder(
-        address msgSender,
-        uint classOfShare,
-        uint paid,
-        uint price,
-        uint execHours,
-        uint msgValue
+        ICashier.TransferAuth memory auth, address msgSender, 
+        uint classOfShare, uint paid, uint price, uint execHours
+    ) external;
+
+    function placeMarketBuyOrder(
+        ICashier.TransferAuth memory auth, address msgSender, 
+        uint classOfShare, uint paid, uint execHours
     ) external;
 
     function withdrawBuyOrder(

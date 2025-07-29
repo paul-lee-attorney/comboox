@@ -24,22 +24,23 @@ import "./ICashier.sol";
 
 import "../../common/access/RoyaltyCharge.sol";
 
+
 contract Cashier is ICashier, RoyaltyCharge {
-    
+    using RulesParser for bytes32;
+    using WaterfallsRepo for WaterfallsRepo.Repo;
+
     mapping(address => uint) private _coffers;
     // userNo => balance
     mapping(uint => uint) private _lockers;
+
+    WaterfallsRepo.Repo private _rivers;
 
     //###############
     //##   Write   ##
     //###############
 
-    function _usd() private view returns(IUSDC) {
-        return IUSDC(_gk.getBook(12));
-    }
-
     function _transferWithAuthorization(TransferAuth memory auth) private {
-        _usd().transferWithAuthorization(
+        _gk.getBank().transferWithAuthorization(
             auth.from, 
             address(this), 
             auth.value,
@@ -52,25 +53,31 @@ contract Cashier is ICashier, RoyaltyCharge {
         );
     }
 
-    function collectUsd(TransferAuth memory auth) external anyKeeper {
-        _transferWithAuthorization(auth);
-        emit ReceiveUsd(auth.from, auth.value);
+    function initClass(uint class, uint principal) external onlyKeeper {
+        WaterfallsRepo.Drop memory info =
+            _rivers.initClass(class, principal * 100);
+        emit InitClass(class, principal, info.distrDate);
     }
 
-    function collectUsd(TransferAuth memory auth, bytes32 remark) external anyKeeper {
+    function redeemClass(uint class, uint principal) external onlyKeeper {
+        _rivers.redeemClass(class, principal * 100);
+        emit RedeemClass(class, principal);
+    }
+
+    function collectUsd(TransferAuth memory auth, bytes32 remark) external onlyKeeper {
         _transferWithAuthorization(auth);
         emit ReceiveUsd(auth.from, auth.value, remark);
     }
 
-    function forwardUsd(TransferAuth memory auth, address to, bytes32 remark) external anyKeeper{
+    function forwardUsd(TransferAuth memory auth, address to, bytes32 remark) external onlyKeeper{
         _transferWithAuthorization(auth);
         emit ForwardUsd(auth.from, to, auth.value, remark);
 
-        require(_usd().transfer(to, auth.value),
+        require(_gk.getBank().transfer(to, auth.value),
             "Cashier.forwardUsd: transfer failed");
     }
 
-    function custodyUsd(TransferAuth memory auth, bytes32 remark) external anyKeeper {
+    function custodyUsd(TransferAuth memory auth, bytes32 remark) external onlyKeeper {
         _transferWithAuthorization(auth);
         _coffers[auth.from] += auth.value;
         _coffers[address(0)] += auth.value;
@@ -78,7 +85,7 @@ contract Cashier is ICashier, RoyaltyCharge {
         emit CustodyUsd(auth.from, auth.value, remark);
     }
 
-    function releaseUsd(address from, address to, uint amt, bytes32 remark) external anyKeeper {
+    function releaseUsd(address from, address to, uint amt, bytes32 remark) external onlyKeeper {
         require(_coffers[from] >= amt,
             "Cashier.ReleaseUsd: insufficient amt");
 
@@ -87,55 +94,101 @@ contract Cashier is ICashier, RoyaltyCharge {
 
         emit ReleaseUsd(from, to, amt, remark);
 
-        require(_usd().transfer(to, amt),
+        require(_gk.getBank().transfer(to, amt),
             "Cashier.releaseUsd: transfer failed");
     }
 
-    function transferUsd(address to, uint amt, bytes32 remark) external anyKeeper {
+    function transferUsd(address to, uint amt, bytes32 remark) external onlyKeeper {
 
         require(balanceOfComp() >= amt,
             "Cashier.transferUsd: insufficient amt");
         
         emit TransferUsd(to, amt, remark);
 
-        require(_usd().transfer(to, amt),
+        require(_gk.getBank().transfer(to, amt),
             "Cashier.transferUsd: transfer failed");        
     }
 
-    function distributeUsd(uint amt) external {
+    // ==== Distribution ====
 
-        require(msg.sender == address(_gk), 
-            "Cashier.DistrUsd: not GK");
+    function distrProfits(uint amt, uint seqOfDR) external onlyKeeper returns(
+        WaterfallsRepo.Drop[] memory mlist
+    ){
+    
+        require(balanceOfComp() >= amt,
+            "Cashier.DistrUsd: insufficient amt");
+
+        RulesParser.DistrRule memory rule = 
+            _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
+
+        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfShares _ros = _gk.getROS();
+        WaterfallsRepo.Drop memory drop;
+
+        if ( rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.ProRata)) {
+            (drop, mlist, ) = _rivers.proRataDistr(amt, _rom, _ros, false);
+        } else if (rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.IntFront)) {
+            (drop, mlist, ) = _rivers.intFrontDistr(amt, _ros, rule);
+        } else revert("Cashier: wrong type of distribution");
+
+        emit DistrProfits(amt, seqOfDR, drop.seqOfDistr);
+        _distrUsd(mlist, bytes32("DistrProfits"));
+    }
+
+    function _distrUsd(WaterfallsRepo.Drop[] memory mlist, bytes32 remark) private {
+        uint len = mlist.length;
+        while (len > 0) {
+            WaterfallsRepo.Drop memory drop = mlist[len-1];
+            _depositUsd(drop.member, drop.income + drop.principal, remark);
+            len--;
+        }
+    }
+
+    function distrIncome(uint amt, uint seqOfDR, uint fundManager) external onlyKeeper 
+        returns(WaterfallsRepo.Drop[] memory mlist, WaterfallsRepo.Drop[] memory slist){
 
         require(balanceOfComp() >= amt,
             "Cashier.DistrUsd: insufficient amt");
 
+        RulesParser.DistrRule memory rule = 
+            _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
+
         IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfShares _ros = _gk.getROS();
+        WaterfallsRepo.Drop memory drop;
 
-        uint[] memory members = _rom.membersList();
-        uint len = members.length;
+        if ( rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.ProRata)) {
+            (drop, mlist, slist) = _rivers.proRataDistr(amt, _rom, _ros, true);
+        } else if (rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.IntFront)) {
+            (drop, mlist, slist) = _rivers.intFrontDistr(amt, _ros, rule);
+        } else if (rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.PrinFront)) {
+            (drop, mlist, slist) = _rivers.prinFrontDistr(amt, _ros, rule);
+        } else if (rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.HuddleCarry)) {
+            (drop, mlist, slist) = _rivers.hurdleCarryDistr(amt, _ros, rule, fundManager);
+        } else revert("Cashier: wrong type of distribution");
 
-        uint totalPoints = _rom.ownersPoints().points;
-        uint sum = 0;
+        emit DistrIncome(amt, seqOfDR, fundManager, drop.seqOfDistr);
 
-        while (len > 1) {
-            uint member = members[len - 1];
-            uint pointsOfMember = _rom.pointsOfMember(member).points;
-            uint value = pointsOfMember * amt / totalPoints;
-
-            _lockers[member] += value;
-            _lockers[0] += value;
-
-            sum += value;
-
-            len--;
-        }
-
-        _lockers[members[0]] += (amt - sum);
-        _lockers[0] += (amt - sum);
-
-        emit DistributeUsd(amt);
+        _distrUsd(mlist, bytes32("DistrIncome"));
     }
+
+    function depositUsd(uint amt, uint user, bytes32 remark) external onlyKeeper{
+        require(balanceOfComp() >= amt,
+            "Cashier.depositUsd: insufficient amt");
+
+        _depositUsd(user, amt, remark);
+    }
+
+    function _depositUsd(uint payee, uint amt, bytes32 remark) private {
+        require(payee > 0, "Cashier.depositUsd: zero user");
+        
+        emit DepositUsd(amt, payee, remark);
+
+        _lockers[payee] += amt;
+        _lockers[0] += amt;
+    }
+
+    // ==== Pickup Deposit ====
 
     function pickupUsd() external {
         
@@ -149,7 +202,7 @@ contract Cashier is ICashier, RoyaltyCharge {
 
             emit PickupUsd(msg.sender, caller, value);
 
-            require(_usd().transfer(msg.sender, value),
+            require(_gk.getBank().transfer(msg.sender, value),
                 "Cashier.PickupUsd: transfer failed");
 
         } else revert("Cashier.pickupDeposit: no balance");
@@ -176,7 +229,128 @@ contract Cashier is ICashier, RoyaltyCharge {
     }
 
     function balanceOfComp() public view returns(uint) {
-        uint amt = _usd().balanceOf(address(this));        
+        uint amt = _gk.getBank().balanceOf(address(this));        
         return amt - _coffers[address(0)] - _lockers[0];
     }
+
+    // ==== Waterfalls Distribution ====
+
+    // ---- Drop ----
+
+    function getDrop(
+        uint seqOfDistr, uint member, uint class, uint seqOfShare
+    ) external view returns(WaterfallsRepo.Drop memory drop) {
+        drop = _rivers.getDrop(seqOfDistr, member, class, seqOfShare);
+    }
+
+    // ---- Flow ----
+
+    function getFlowInfo(
+        uint seqOfDistr, uint member, uint class
+    ) external view returns(WaterfallsRepo.Drop memory info) {
+        info = _rivers.getFlowInfo(seqOfDistr, member, class);
+    }
+
+    function getDropsOfFlow(
+        uint seqOfDistr, uint member, uint class
+    ) external view returns(WaterfallsRepo.Drop[] memory list) {
+        list = _rivers.getDropsOfFlow(seqOfDistr, member, class);
+    }
+
+    // ---- Creek ----
+
+    function getCreekInfo(
+        uint seqOfDistr, uint member
+    ) external view returns(WaterfallsRepo.Drop memory info) {
+        info = _rivers.getCreekInfo(seqOfDistr, member);
+    }
+
+    function getDropsOfCreek(
+        uint seqOfDistr, uint member
+    ) external view returns(WaterfallsRepo.Drop[] memory list) {
+        list = _rivers.getDropsOfCreek(seqOfDistr, member);
+    }
+
+    // ---- Stream ----
+
+    function getStreamInfo(
+        uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop memory info) {
+        info = _rivers.getStreamInfo(seqOfDistr);
+    }
+
+    function getCreeksOfStream(
+        uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop[] memory list) {
+        list = _rivers.getCreeksOfStream(seqOfDistr);
+    }
+
+    function getDropsOfStream(
+        uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop[] memory list) {
+        list = _rivers.getDropsOfStream(seqOfDistr);
+    }
+
+    // ---- Member ----
+
+    function getPoolInfo(
+        uint member, uint class
+    ) external view returns(WaterfallsRepo.Drop memory drop) {
+        drop = 
+            _rivers.getPoolInfo(member, class);
+    }
+
+    function getLakeInfo(
+        uint member
+    ) external view returns(WaterfallsRepo.Drop memory drop) {
+        drop = 
+            _rivers.getLakeInfo(member);
+    }
+
+    // ==== Waterfalls Class ====
+
+    function getInitSeaInfo(
+        uint class
+    ) external view returns(WaterfallsRepo.Drop memory info) {
+        info = _rivers.getInitSeaInfo(class);
+    }
+
+    function getSeaInfo(
+        uint class
+    ) external view returns(WaterfallsRepo.Drop memory info) {
+        info = _rivers.getSeaInfo(class);
+    }
+
+    function getGulfInfo(
+        uint class
+    ) external view returns(WaterfallsRepo.Drop memory info) {
+        info = _rivers.getGulfInfo(class);
+    }
+
+    function getIslandInfo(
+        uint class, uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop memory info) {
+        info = _rivers.getIslandInfo(class, seqOfDistr);
+    }
+
+    function getListOfClasses() external view returns(
+        uint[] memory list
+    ) {
+        list = _rivers.getListOfClasses();
+    }
+
+    function getAllSeasInfo() external view returns(
+        WaterfallsRepo.Drop[] memory list
+    ) {
+        list = _rivers.getAllSeasInfo();
+    }
+
+    // ==== Waterfalls Sum ====
+
+    function getOceanInfo() external view returns(
+        WaterfallsRepo.Drop memory info
+    ) {
+        info = _rivers.getOceanInfo();
+    }
+
 }

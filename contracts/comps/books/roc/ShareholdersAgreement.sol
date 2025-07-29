@@ -77,16 +77,17 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     // ==== Rules ====
     
-    function addRule(bytes32 rule) external onlyAttorney {
-        _addRule(rule);
+    function addRule(uint seqOfRule, bytes32 rule) external onlyAttorney {
+        _addRule(seqOfRule, rule);
     }
 
-    function _addRule(bytes32 rule) private {
-        uint seqOfRule = uint16(uint(rule) >> 240);
+    function _addRule(uint seqOfRule, bytes32 rule) private {
+        // uint seqOfRule = uint16(uint(rule) >> 240);
 
         _rules.rules[seqOfRule] = rule;
         _rules.seqList.add(seqOfRule);
     }
+
 
 
     function removeRule(uint256 seq) external onlyAttorney {
@@ -97,7 +98,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     function initDefaultRules() external onlyDK {
 
-        bytes32[] memory rules = new bytes32[](15);        
+        bytes32[] memory rules = new bytes32[](15);
+        uint16[15] memory seqs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 512, 513];
 
         // DefualtGovernanceRule
         rules[0]  = bytes32(uint(0x000000000003e800000d0503e8003213880500241388000000000000140101f4));
@@ -122,7 +124,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
         uint len = 15;
         while (len > 0) {
-            _addRule(rules[len - 1]);
+            _addRule(seqs[len - 1], rules[len - 1]);
             len--;
         }
 

@@ -177,6 +177,9 @@ library SharesRepo {
             info.head = newShare.head;
             info.body.distrWeight = newShare.body.distrWeight;
         }
+
+        increaseEquityOfClass(repo, true, share.head.class, 
+            share.body.paid, share.body.par, 0);
     }
 
     function regShare(Repo storage repo, Share memory share)
@@ -260,6 +263,7 @@ library SharesRepo {
 
         _addPremium(repo, share.head.priceOfPaid, share.body.paid);
 
+        increaseEquityOfClass(repo, true, share.head.class, deltaPaid, 0, 0);
     }
 
     function subAmtFromShare(
@@ -275,7 +279,7 @@ library SharesRepo {
         uint64 deltaPaid = uint64(paid);
         uint64 deltaPar = uint64(par);
 
-        require(deltaPar > 0, "SR.subAmt: zero par");
+        // require(deltaPar > 0, "SR.subAmt: zero par");
         require(share.body.cleanPaid >= deltaPaid, "SR.subAmt: insufficient cleanPaid");
 
         if (deltaPar == share.body.par) {            

@@ -111,7 +111,7 @@ interface IShareholdersAgreement is ISigPage {
      * RuleParser library, and such `seqNumber` shall be used as the search key to 
      * retrieve the rule from the Rules Mapping.
      */
-    function addRule(bytes32 rule) external;
+    function addRule(uint seqOfRule, bytes32 rule) external;
 
     /**
      * @dev Remove tracking of a rule from the Rules Mapping as per its sequence 

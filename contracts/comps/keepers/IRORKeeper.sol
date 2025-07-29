@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
+ * v.0.2.5
  * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -21,16 +20,21 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/cashier/ICashier.sol";
+import "../../lib/RedemptionsRepo.sol";
+import "../books/ror/IRegisterOfRedemptions.sol";
 
-interface IUsdROMKeeper {
+interface IRORKeeper {
 
-    event PayInCapital(
-        uint indexed seqOfShare, uint indexed paid, uint indexed valueOfDeal
-    );
+    function addRedeemableClass(uint class, address msgSender) external;
 
-    function payInCapital(
-        ICashier.TransferAuth memory auth, uint seqOfShare, uint paid, address msgSender
+    function removeRedeemableClass(uint class, address msgSender) external;
+
+    function updateNavPrice(uint class, uint price, address msgSender) external;
+
+    function requestForRedemption(
+        uint class, uint paid, address msgSender
     ) external;
+
+    function redeem(uint class, uint seqOfPack, address msgSender) external;
 
 }

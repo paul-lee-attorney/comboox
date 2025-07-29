@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
+ * v.0.2.5
  * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -19,34 +20,39 @@
 
 pragma solidity ^0.8.8;
 
-import "./AccessControl.sol";
-import "../../IUSDKeeper.sol";
+import "../books/roi/IRegisterOfInvestors.sol";
 
-contract AnyKeeper is AccessControl {
+import "../../lib/WaterfallsRepo.sol";
 
-    function _isKeeper(address msgSender) internal view returns(bool) {
-        // uint i = 1;
-        // address keeper = _gk.getKeeper(i);
+interface IAccountant {
 
-        if (msgSender == _dk.addr) {
-            return true;
-        }
- 
-        // while(keeper != address(0)) {
-        //     if (keeper == msgSender) {
-        //         return true;
-        //     }
-        //     i++;
-        //     keeper = _gk.getKeeper(i);
-        // }
+    function initClass(uint class) external;
 
-        return IUSDKeeper(_gk.getKeeper(15)).isKeeper(msgSender);
-    }
+    function distrProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfDR,
+        uint seqOfMotion,
+        address msgSender
+    ) external;
 
-    modifier anyKeeper() {
-        require(_isKeeper(msg.sender),
-            "AnyKeeper: not");
-        _;
-    }
+    function distrIncome(
+        uint amt,
+        uint expireDate,
+        uint seqOfDR,
+        uint fundManager,
+        uint seqOfMotion,
+        address msgSender
+    ) external;
+
+    function transferFund(
+        bool fromBMM,
+        address to,
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion,
+        address msgSender
+    ) external;
 
 }

@@ -218,20 +218,4 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         return _repo.allSwapsClosed(seqOfDeal);
     } 
 
-    // ==== Value ====
-
-    function checkValueOfSwap(uint seqOfDeal, uint seqOfSwap)
-        external view returns(uint)
-    {
-        SwapsRepo.Swap memory swap = _repo.getSwap(seqOfDeal, seqOfSwap);        
-        uint centPrice = _gk.getCentPrice();
-        return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
-        // return _repo.checkValueOfSwap(seqOfDeal, seqOfSwap, _gk.getCentPrice());
-    }
-
-    function checkValueOfDeal(uint seqOfDeal)
-        external view returns (uint)
-    {
-        return _repo.checkValueOfDeal(seqOfDeal, _gk.getCentPrice());
-    }
 }

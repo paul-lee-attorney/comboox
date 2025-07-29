@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.8;
 
+import "../../comps/books/cashier/ICashier.sol";
+
 import "../../lib/SwapsRepo.sol";
 
 interface IROOKeeper {
@@ -27,6 +29,16 @@ interface IROOKeeper {
     // #################
     // ##  ROOKeeper  ##
     // #################
+
+    event PayOffSwap(
+        uint seqOfOpt, uint seqOfSwap, address indexed from, 
+        address indexed to, uint indexed valueOfDeal
+    );
+
+    event PayOffRejectedDeal(
+        address ia, uint seqOfDeal, uint seqOfSwap, address indexed from, 
+        address indexed to, uint indexed valueOfDeal
+    );
 
     function updateOracle(
         uint256 seqOfOpt,
@@ -46,16 +58,7 @@ interface IROOKeeper {
     ) external;
 
     function payOffSwap(
-        uint256 seqOfOpt, 
-        uint256 seqOfSwap,
-        uint msgValue,
-        address msgSender
-    ) external;
-
-    function payOffSwapInUSD(
-        uint256 seqOfOpt, 
-        uint256 seqOfSwap, 
-        uint caller
+        ICashier.TransferAuth memory auth, uint256 seqOfOpt, uint256 seqOfSwap, address to, address msgSender
     ) external;
 
     function terminateSwap(
@@ -75,18 +78,8 @@ interface IROOKeeper {
     ) external;
 
     function payOffRejectedDeal(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap,
-        uint msgValue,
-        address msgSender
-    ) external;
-
-    function payOffRejectedDealInUSD(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap,
-        uint caller
+        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, 
+        uint seqOfSwap, address to, address msgSender
     ) external;
 
     function pickupPledgedShare(

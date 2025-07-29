@@ -33,9 +33,11 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
     function _pledgerIsVerified(
         uint pledgor
     ) private view {
-        require (_gk.getLOO().getInvestor(pledgor).state == 
+        require (_gk.getROI().getInvestor(pledgor).state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved), 
-            "ROPK.pledgorIsVerified: not");
+            "ROPK: buyer not verified");
+        require(_gk.getSHA().isSigner(pledgor),
+            "ROPK:buyer not signer of SHA");
     }
 
     function createPledge(

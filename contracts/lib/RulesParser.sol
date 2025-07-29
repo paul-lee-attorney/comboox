@@ -90,7 +90,7 @@ library RulesParser {
         uint8 votingDays;
         uint8 execDaysForPutOpt;
         uint40[2] vetoers;
-        uint16 para;
+        uint16 class;
     }
 
     function votingRuleParser(bytes32 sn) public pure returns (VotingRule memory rule) {
@@ -115,7 +115,7 @@ library RulesParser {
             votingDays: uint8(_sn >> 104),
             execDaysForPutOpt: uint8(_sn >> 96),
             vetoers: [uint40(_sn >> 56), uint40(_sn >> 16)],
-            para: uint16(_sn)            
+            class: uint16(_sn)            
         });
     }
 
@@ -297,6 +297,48 @@ library RulesParser {
             argu: uint16(_sn >> 80),
             ref: uint16(_sn >> 64),
             data: uint64(_sn)
+        });
+    }
+
+    // ======== DistributionRule ========
+
+    enum TypeOfDistr {
+        ProRata,
+        IntFront,
+        PrinFront,
+        HuddleCarry
+    }
+
+    // rule: 1280
+    struct DistrRule {
+        uint8 typeOfDistr;
+        uint8 numOfTiers;
+        bool isCumulative;
+        bool refundPrincipal;
+        uint16[7] tiers;
+        uint16[7] rates;
+    }
+
+    function DistrRuleParser(bytes32 sn) public pure returns (DistrRule memory rule) {
+        uint _sn = uint(sn);
+
+        rule = DistrRule({
+            typeOfDistr: uint8(_sn >> 248),
+            numOfTiers: uint8(_sn >> 240),
+            isCumulative: uint8(_sn >> 232) == 1,
+            refundPrincipal: uint8(_sn>>224) == 1,
+            tiers: [
+                uint16(_sn >> 208), uint16(_sn >> 192),
+                uint16(_sn >> 176), uint16(_sn >> 160),
+                uint16(_sn >> 144), uint16(_sn >> 128),
+                uint16(_sn >> 112)
+            ],
+            rates: [              
+                uint16(_sn >> 96),  
+                uint16(_sn >> 80), uint16(_sn >> 64),
+                uint16(_sn >> 48), uint16(_sn >> 32),
+                uint16(_sn >> 16), uint16(_sn)
+            ]
         });
     }
 

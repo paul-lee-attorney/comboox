@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "./access/Ownable.sol";
+import "../center/access/Ownable.sol";
 
 import "./ICreateNewComp.sol";
 
@@ -39,7 +39,7 @@ contract CreateNewComp is ICreateNewComp, Ownable {
         IAccessControl(gk).initKeepers(address(this), gk);
         IGeneralKeeper(gk).createCorpSeal();
 
-        address[16] memory keepers = 
+        address[13] memory keepers = 
             _deployKeepers(primeKeyOfOwner, dk, gk);
 
         _deployBooks(keepers, primeKeyOfOwner, gk);
@@ -49,7 +49,7 @@ contract CreateNewComp is ICreateNewComp, Ownable {
 
     function _deployKeepers(
         address primeKeyOfOwner, address dk, address gk
-    ) private returns (address[16] memory keepers) {
+    ) private returns (address[13] memory keepers) {
         keepers[0] = dk;
         uint i = 1;
         while (i < 11) {
@@ -59,23 +59,25 @@ contract CreateNewComp is ICreateNewComp, Ownable {
             i++;
         }
     
-        keepers[15] = _createDocAtLatestVersion(30, primeKeyOfOwner);
-        IAccessControl(keepers[15]).initKeepers(dk, gk);
-        IGeneralKeeper(gk).regKeeper(15, keepers[15]);
+        // keepers[15] = _createDocAtLatestVersion(30, primeKeyOfOwner);
+        // IAccessControl(keepers[15]).initKeepers(dk, gk);
+        // IGeneralKeeper(gk).regKeeper(15, keepers[15]);
     
-        while (i < 15) {
-            keepers[i] = _createDocAtLatestVersion(i+20, primeKeyOfOwner);
-            IAccessControl(keepers[i]).initKeepers(keepers[15], gk);
-            IGeneralKeeper(gk).regKeeper(i, keepers[i]);
-            i++;
-        }
+        // roiKeeper
+        keepers[11] = _createDocAtLatestVersion(35, primeKeyOfOwner);
+        IAccessControl(keepers[11]).initKeepers(gk, gk);
+        IGeneralKeeper(gk).regKeeper(11, keepers[11]);
 
+        // accountant
+        keepers[12] = _createDocAtLatestVersion(37, primeKeyOfOwner);
+        IAccessControl(keepers[12]).initKeepers(gk, gk);
+        IGeneralKeeper(gk).regKeeper(12, keepers[12]);
     }
 
     function _deployBooks(
-        address[16] memory keepers,address primeKeyOfOwner,address gk
+        address[13] memory keepers,address primeKeyOfOwner,address gk
     ) private {
-        address[12] memory books;
+        address[13] memory books;
         uint8[10] memory types = [11, 12, 13, 14, 13, 15, 16, 17, 18, 19];
         uint8[10] memory seqOfDK = [1, 2, 3, 0, 5, 6, 7, 8, 0, 10];
 
@@ -87,16 +89,23 @@ contract CreateNewComp is ICreateNewComp, Ownable {
             i++;
         }
 
-        books[10] = _createDocAtLatestVersion(28, primeKeyOfOwner);
-        IAccessControl(books[10]).initKeepers(keepers[15], gk);
+        // roi
+        books[10] = _createDocAtLatestVersion(36, primeKeyOfOwner);
+        IAccessControl(books[10]).initKeepers(keepers[11], gk);
         IGeneralKeeper(gk).regBook(11, books[10]);
 
+        // usdc
         IGeneralKeeper(gk).regBook(12, usdc);
 
-        books[11] = _createDocAtLatestVersion(29, primeKeyOfOwner);
-        IAccessControl(books[11]).initKeepers(keepers[13], gk);
-        IGeneralKeeper(gk).regBook(13, books[11]);
+        // cashier
+        books[11] = _createDocAtLatestVersion(28, primeKeyOfOwner);
+        IAccessControl(books[11]).initKeepers(gk, gk);
+        IGeneralKeeper(gk).regBook(15, books[11]);
 
+        // ror
+        books[12] = _createDocAtLatestVersion(39, primeKeyOfOwner);
+        IAccessControl(books[12]).initKeepers(gk, gk);
+        IGeneralKeeper(gk).regBook(16, books[11]);
     }
 
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal

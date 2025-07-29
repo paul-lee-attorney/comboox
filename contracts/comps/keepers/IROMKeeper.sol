@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -18,6 +18,8 @@
  * */
 
 pragma solidity ^0.8.8;
+
+import "../../comps/books/cashier/ICashier.sol";
 
 interface IROMKeeper {
 
@@ -38,16 +40,17 @@ interface IROMKeeper {
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 
     function payInCapital(
+        ICashier.TransferAuth memory auth,
         uint seqOfShare, 
-        uint amt, 
-        uint msgValue, 
+        uint paid,
         address msgSender
     ) external;
 
     function decreaseCapital(
         uint256 seqOfShare,
         uint paid,
-        uint par
+        uint par,
+        uint amt
     ) external;
 
     function updatePaidInDeadline(uint256 seqOfShare, uint line) external;

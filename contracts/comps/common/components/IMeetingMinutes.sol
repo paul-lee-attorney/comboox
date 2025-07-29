@@ -3,7 +3,7 @@
 /* *
  * v0.2.4
  *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -72,10 +72,12 @@ interface IMeetingMinutes {
         uint proposer    
     ) external returns(uint64);
 
-    function createMotionToDistributeProfits(
+    function createMotionToDistributeUsd(
         uint amt,
         uint expireDate,
         uint seqOfVR,
+        uint seqOfDR,
+        uint para,
         uint executor,
         uint proposer
     ) external returns (uint64);
@@ -144,9 +146,11 @@ interface IMeetingMinutes {
     function execResolution(uint256 seqOfMotion, uint256 contents, uint caller)
         external;
 
-    function distributeProfits(
+    function distributeUsd(
         uint amt,
         uint expireDate,
+        uint seqOfDR,
+        uint para,
         uint seqOfMotion,
         uint caller
     ) external;

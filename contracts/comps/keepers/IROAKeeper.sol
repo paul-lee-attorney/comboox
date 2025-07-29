@@ -19,16 +19,16 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/IDraftControl.sol";
-import "../common/components/IFilesFolder.sol";
-import "../common/components/ISigPage.sol";
+import "../../comps/common/access/IDraftControl.sol";
+import "../../comps/common/components/IFilesFolder.sol";
+import "../../comps/common/components/ISigPage.sol";
 
-import "../books/roa/IInvestmentAgreement.sol";
-import "../books/roa/IRegisterOfAgreements.sol";
-import "../books/roc/IShareholdersAgreement.sol";
-import "../books/roc/terms/ILockUp.sol";
+import "../../comps/books/roa/IInvestmentAgreement.sol";
+import "../../comps/books/roa/IRegisterOfAgreements.sol";
+import "../../comps/books/roc/IShareholdersAgreement.sol";
+import "../../comps/books/roc/terms/ILockUp.sol";
 
-
+import "../../comps/books/cashier/ICashier.sol";
 
 import "../../lib/DocsRepo.sol";
 import "../../lib/RulesParser.sol";
@@ -36,8 +36,6 @@ import "../../lib/SharesRepo.sol";
 import "../../lib/InvestorsRepo.sol";
 
 interface IROAKeeper {
-
-    event PayOffCIDeal(uint indexed caller, uint indexed valueOfDeal);
 
     // #################
     // ##   Write IO  ##
@@ -89,17 +87,8 @@ interface IROAKeeper {
     ) external;
 
     function payOffApprovedDeal(
-        address ia,
-        uint seqOfDeal,
-        uint msgValue,
-        address msgSender
-    ) external;    
-
-    function payOffApprovedDealInUSD(
-        address ia,
-        uint seqOfDeal,
-        uint valueOfDeal,
-        uint caller
-    ) external;    
+        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal,
+        address to, address msgSender
+    ) external;
 
 }

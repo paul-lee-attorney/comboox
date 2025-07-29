@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * v.0.2.5
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,9 +20,20 @@
 
 pragma solidity ^0.8.8;
 
-import "../comps/common/access/IAccessControl.sol";
-import "../comps/IGeneralKeeper.sol";
+import "../books/roi/IRegisterOfInvestors.sol";
 
-interface ICreateNewComp {
-    function createComp(address dk) external;
+interface IROIKeeper {
+
+    //###############
+    //##   Write   ##
+    //###############
+
+    // ==== Investor ====
+
+    function regInvestor(address msgSender, address bKey, uint groupRep, bytes32 idHash) external;
+
+    function approveInvestor(uint userNo, address msgSender,uint seqOfLR) external;
+
+    function revokeInvestor(uint userNo,address msgSender,uint seqOfLR) external;
+
 }

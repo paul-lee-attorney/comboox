@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.4
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,39 +20,40 @@
 
 pragma solidity ^0.8.8;
 
-import "./common/components/IMeetingMinutes.sol";
+import "../comps/common/components/IMeetingMinutes.sol";
 
 import "../lib/UsersRepo.sol";
 import "../lib/Address.sol";
 
-import "./keepers/IAccountant.sol";
-import "./keepers/IROCKeeper.sol";
-import "./keepers/IRODKeeper.sol";
-import "./keepers/IBMMKeeper.sol";
-import "./keepers/IROMKeeper.sol";
-import "./keepers/IGMMKeeper.sol";
-import "./keepers/IROAKeeper.sol";
-import "./keepers/IROOKeeper.sol";
-import "./keepers/IROPKeeper.sol";
-import "./keepers/ISHAKeeper.sol";
-import "./keepers/ILOOKeeper.sol";
-import "./keepers/IROIKeeper.sol";
+import "../comps/keepers/IAccountant.sol";
+import "../comps/keepers/IROCKeeper.sol";
+import "../comps/keepers/IRODKeeper.sol";
+import "../comps/keepers/IBMMKeeper.sol";
+import "../comps/keepers/IROMKeeper.sol";
+import "../comps/keepers/IGMMKeeper.sol";
+import "../comps/keepers/IROAKeeper.sol";
+import "../comps/keepers/IROOKeeper.sol";
+import "../comps/keepers/IROPKeeper.sol";
+import "../comps/keepers/ISHAKeeper.sol";
+import "../comps/keepers/ILOOKeeper.sol";
+import "../comps/keepers/IROIKeeper.sol";
+import "../comps/keepers/IRORKeeper.sol";
 
-import "./books/cashier/ICashier.sol";
+import "../comps/books/cashier/ICashier.sol";
 
-import "./books/roa/IRegisterOfAgreements.sol";
-import "./books/roc/IRegisterOfConstitution.sol";
-import "./books/rod/IRegisterOfDirectors.sol";
-import "./books/rom/IRegisterOfMembers.sol";
-import "./books/roo/IRegisterOfOptions.sol";
-import "./books/rop/IRegisterOfPledges.sol";
-import "./books/ros/IRegisterOfShares.sol";
-import "./books/ror/IRegisterOfRedemptions.sol";
+import "../comps/books/roa/IRegisterOfAgreements.sol";
+import "../comps/books/roc/IRegisterOfConstitution.sol";
+import "../comps/books/rod/IRegisterOfDirectors.sol";
+import "../comps/books/rom/IRegisterOfMembers.sol";
+import "../comps/books/roo/IRegisterOfOptions.sol";
+import "../comps/books/rop/IRegisterOfPledges.sol";
+import "../comps/books/ros/IRegisterOfShares.sol";
 
-import "./books/loo/IListOfOrders.sol";
-import "./books/roi/IRegisterOfInvestors.sol";
+import "../comps/books/loo/IListOfOrders.sol";
+import "../comps/books/roi/IRegisterOfInvestors.sol";
+import "../comps/books/ror/IRegisterOfRedemptions.sol";
 
-interface IGeneralKeeper {
+interface IFundKeeper {
 
     struct CompInfo {
         uint40 regNum;
@@ -250,47 +250,6 @@ interface IGeneralKeeper {
         ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, address to
     ) external;
 
-    // #################
-    // ##  ROOKeeper  ##
-    // #################
-
-    function updateOracle(
-        uint256 seqOfOpt,
-        uint d1,
-        uint d2,
-        uint d3
-    ) external;
-
-    function execOption(uint256 seqOfOpt) external;
-
-    function createSwap(
-        uint256 seqOfOpt,
-        uint seqOfTarget,
-        uint paidOfTarget,
-        uint seqOfPledge
-    ) external;
-
-    function payOffSwap(
-        ICashier.TransferAuth memory auth, uint256 seqOfOpt, uint256 seqOfSwap, address to
-    ) external;
-
-    function terminateSwap(
-        uint256 seqOfOpt, 
-        uint256 seqOfSwap
-    ) external;
-
-    function requestToBuy(address ia, uint seqOfDeal, uint paidOfTarget, uint seqOfPledge) external;
-
-    function payOffRejectedDeal(
-        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, uint seqOfSwap, address to
-    ) external;
-
-    function pickupPledgedShare(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external;
-
     // ###################
     // ##   ROPKeeper   ##
     // ###################
@@ -312,65 +271,6 @@ interface IGeneralKeeper {
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external;
 
-
-    // ###################
-    // ##   SHAKeeper   ##
-    // ###################
-
-    // ======= TagAlong ========
-
-    function execTagAlong(
-        address ia,
-        uint256 seqOfDeal,
-        uint256 seqOfShare,
-        uint paid,
-        uint par,
-        bytes32 sigHash
-    ) external;
-
-    // ======= DragAlong ========
-
-    function execDragAlong(
-        address ia,
-        uint256 seqOfDeal,
-        uint256 seqOfShare,
-        uint paid,
-        uint par,
-        bytes32 sigHash
-    ) external;
-
-    function acceptAlongDeal(
-        address ia,
-        uint256 seqOfDeal,
-        bytes32 sigHash
-    ) external;
-
-    // ======== AntiDilution ========
-
-    function execAntiDilution(
-        address ia,
-        uint256 seqOfDeal,
-        uint256 seqOfShare,
-        bytes32 sigHash
-    ) external;
-
-    function takeGiftShares(address ia, uint256 seqOfDeal) external;
-
-    // ======== First Refusal ========
-
-    function execFirstRefusal(
-        uint256 seqOfRule,
-        uint256 seqOfRightholder,
-        address ia,
-        uint256 seqOfDeal,
-        bytes32 sigHash
-    ) external;
-
-    function computeFirstRefusal(
-        address ia,
-        uint256 seqOfDeal
-    ) external;
-
     // ############
     // ##  Fund  ##
     // ############
@@ -382,7 +282,7 @@ interface IGeneralKeeper {
         uint expireDate,
         uint seqOfVR,
         uint seqOfDR,
-        uint fundManager,
+        uint para,
         uint executor
     ) external;
 
@@ -470,6 +370,20 @@ interface IGeneralKeeper {
         uint seqOfOrder
     ) external;
 
+    // #################
+    // ##  RORKeeper  ##
+    // #################
+
+    function addRedeemableClass(uint class) external;
+
+    function removeRedeemableClass(uint class) external;
+
+    function updateNavPrice(uint class, uint price) external;
+
+    function requestForRedemption(uint class, uint paid) external;
+
+    function redeem(uint class, uint seqOfPack) external;
+
     // ###############
     // ##  Routing  ##
     // ###############
@@ -487,8 +401,6 @@ interface IGeneralKeeper {
     function getGMM() external view returns (IMeetingMinutes);
 
     function getROA() external view returns (IRegisterOfAgreements);
-
-    function getROO() external view returns (IRegisterOfOptions);
 
     function getROP() external view returns (IRegisterOfPledges);
 

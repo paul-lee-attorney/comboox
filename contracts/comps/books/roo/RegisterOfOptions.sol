@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -243,14 +243,5 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         return _repo.getAllOraclesOfOption(seqOfOpt);
     }
 
-    // ==== Value ====
-
-    function checkValueOfSwap(uint seqOfOpt, uint seqOfSwap)
-        external view returns (uint)
-    {
-        SwapsRepo.Swap memory swap = _repo.getSwap(seqOfOpt, seqOfSwap);
-        uint centPrice = _gk.getCentPrice();
-        return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
-    }
 
 }

@@ -22,7 +22,7 @@ pragma solidity ^0.8.8;
 
 import "./IROOKeeper.sol";
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../comps/common/access/RoyaltyCharge.sol";
 
 contract ROOKeeper is IROOKeeper, RoyaltyCharge {
 
@@ -76,46 +76,33 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
     }
 
     function payOffSwap(
-        uint256 seqOfOpt, uint256 seqOfSwap, uint msgValue, address msgSender
+        ICashier.TransferAuth memory auth, uint256 seqOfOpt, uint256 seqOfSwap, 
+        address to, address msgSender
     ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
-        
+
+        uint caller = _msgSender(msgSender, 40000);
+
         IRegisterOfShares _ros = _gk.getROS();
-
-        uint centPrice = _gk.getCentPrice();
-
-        SwapsRepo.Swap memory swap =
+        SwapsRepo.Swap memory swap = 
             _gk.getROO().getSwap(seqOfOpt, seqOfSwap);
 
-        uint valueOfDeal = centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
+        uint seller = _msgSender(to, 18000);
 
-        require(msgValue >= valueOfDeal,
-            "ROOK.payOffSwap: not sufficient msgValue");
+        require(seller == _ros.getShare(swap.seqOfTarget).head.shareholder,
+            "UsdROOK.payOffSwap: wrong payee");
 
-        msgValue -= valueOfDeal;
+        uint valueOfDeal = swap.paidOfTarget * swap.priceOfDeal / 100;
 
-        uint seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
+        auth.from = msgSender;
+        auth.value = valueOfDeal;
 
-        _gk.saveToCoffer(
-            seller,valueOfDeal, 
-            bytes32(0x4465706f736974436f6e73696465726174696f6e4f6653776170000000000000)
-        ); // reason: DepositConsiderationOfSwap
- 
-        if (msgValue > 0) {
-            _gk.saveToCoffer(
-                caller, msgValue, 
-                bytes32(0x4465706f73697442616c616e63654f6653776170000000000000000000000000)
-            ); // reason: DepositBalanceOfSwap
-        }
-
-        _payOffSwap(seqOfOpt, seqOfSwap, caller);
-    }
-
-    function payOffSwapInUSD(
-        uint256 seqOfOpt, uint256 seqOfSwap, uint caller
-    ) external {
-        require(msg.sender == _gk.getKeeper(14),
-            "ROOK.payOffSwapInUSD: not UsdROOKeeper");
+        // remark: PayOffSwap
+        _gk.getCashier().forwardUsd(
+            auth, 
+            to, 
+            bytes32(0x5061794f66665377617000000000000000000000000000000000000000000000)
+        );
+        emit PayOffSwap(seqOfOpt, seqOfSwap, msgSender, to, auth.value);
 
         _payOffSwap(seqOfOpt, seqOfSwap, caller);
     }
@@ -199,53 +186,32 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
     }
 
     function payOffRejectedDeal(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap,
-        uint msgValue,
-        address msgSender
+        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, uint seqOfSwap, 
+        address to, address msgSender
     ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
-        
+
+        uint caller = _msgSender(msgSender, 40000);
         IRegisterOfShares _ros = _gk.getROS();
-
-        uint centPrice = _gk.getCentPrice();
-
         SwapsRepo.Swap memory swap = 
             IInvestmentAgreement(ia).getSwap(seqOfDeal, seqOfSwap);
 
-        uint valueOfDeal = 
-            centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
+        uint seller = _msgSender(to, 18000);
+        require(seller == _ros.getShare(swap.seqOfTarget).head.shareholder,
+            "UsdROOK.payOffSwap: wrong payee");
 
-        require(valueOfDeal <= msgValue, 
-            "ROOK.payOffRejectedDeal: insufficient msgValue");
+        uint valueOfDeal = (swap.paidOfTarget * swap.priceOfDeal) / 100;
 
-        uint seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
+        auth.value = valueOfDeal;
+        auth.from = msgSender;
 
-        _gk.saveToCoffer(
-            seller, valueOfDeal,
-            bytes32(0x4465706f736974436f6e73696465724f6652656a65637465644465616c000000)
-        ); // reason: DepositConsiderOfRejectedDeal
+        // remark: PayOffRejectedDeal
+        _gk.getCashier().forwardUsd(
+            auth, 
+            to, 
+            bytes32(0x5061794f666652656a65637465644465616c0000000000000000000000000000)
+        );
+        emit PayOffRejectedDeal(ia, seqOfDeal, seqOfSwap, msgSender, to, auth.value);
 
-        msgValue -= valueOfDeal;
-        if (msgValue > 0) {
-            _gk.saveToCoffer(
-                caller, msgValue, 
-                bytes32(0x4465706f73697442616c616e63654f6652656a65637465644465616c00000000)
-            ); // reason: DepositBalanceOfRejectedDeal
-        }
-
-        _payOffRejectedDeal(ia, seqOfDeal, seqOfSwap, caller);
-    }
-
-    function payOffRejectedDealInUSD(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap,
-        uint caller
-    ) external {
-        require(msg.sender == _gk.getKeeper(14),
-            "ROOK.payOffRejectedDealInUSD: not UsdROOKeeper");
         _payOffRejectedDeal(ia, seqOfDeal, seqOfSwap, caller);
     }
 

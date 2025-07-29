@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
+ * v.0.2.5
  * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -19,24 +20,19 @@
 
 pragma solidity ^0.8.8;
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../comps/common/access/RoyaltyCharge.sol";
 
-import "./IUsdLOOKeeper.sol";
+import "../../comps/keepers/ILOOKeeper.sol";
 
-contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
+contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
-    
+    // using UsdOrdersRepo for UsdOrdersRepo.Deal;
+
+    // event Deprecated(address applicant, uint groupRep, bytes32 idHash);
+
     //###############
     //##   Write   ##
     //###############
-
-    function _cashier() private view returns(ICashier) {
-        return ICashier(_gk.getBook(11));
-    }
-
-    function _looInUSD() private view returns(IUsdListOfOrders) {
-        return IUsdListOfOrders(_gk.getBook(13));
-    }
 
     // ==== Offers ====
 
@@ -51,21 +47,24 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
-        require(_gk.getROD().hasTitle(caller, lr.titleOfIssuer),
-            "LOOKUSD.placeIO: not entitled");
+        require(_gk.getROM().isClassMember(caller, 1),
+            "LOOK.placeIO: not GP");
+
+        require(_gk.getCashier().getGulfInfo(classOfShare).principal == 0,
+            "LOOK: class established");
 
         require(lr.classOfShare == classOfShare,
-            "LOOKUSD.placeIO: wrong class");
+            "LOOK.placeIO: wrong class");
         
         require(uint32(price) >= lr.floorPrice,
-            "LOOKUSD.placeIO: lower than floor");
+            "LOOK.placeIO: lower than floor");
 
         require(lr.ceilingPrice == 0 ||
             uint32(price) <= lr.ceilingPrice,
-            "LOOKUSD.placeIO: higher than ceiling");
+            "LOOK.placeIO: higher than ceiling");
 
         require (_ros.getInfoOfClass(classOfShare).body.cleanPaid +
-            paid <= uint64(lr.maxTotalPar) * 10000, "LOOKUSD.placeIO: paid overflow");
+            paid <= uint64(lr.maxTotalPar) * 10000, "LOOK.placeIO: paid overflow");
 
         _ros.increaseEquityOfClass(true, classOfShare, 0, 0, paid);
 
@@ -91,7 +90,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
          GoldChain.Order[] memory expired, 
          uint lenOfExpired,
          UsdOrdersRepo.Deal memory offer) = 
-            _looInUSD().placeSellOrder(input, execHours);
+            _gk.getLOO().placeSellOrder(input, execHours);
 
         if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, true);
         if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
@@ -111,7 +110,9 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
     function _closeDeals(UsdOrdersRepo.Deal[] memory deals, uint len, bool isOffer) private {
 
-        IRegisterOfShares _ros = _gk.getROS(); 
+        ICashier _cashier = _gk.getCashier();
+
+        IRegisterOfShares _ros = _gk.getROS();
         IRegisterOfMembers _rom = _gk.getROM();
 
         while (len > 0) {
@@ -127,7 +128,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
                 if (isOffer) {
                     // CloseOfferAgainstBid
-                    _cashier().releaseUsd(
+                    _cashier.releaseUsd(
                         deal.from, deal.to, 
                         _eightToSix(deal.consideration), 
                         bytes32(0x436c6f73654f66666572416761696e7374426964000000000000000000000000)
@@ -135,7 +136,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
                 } else {                    
                     // CloseBidAgainstOffer
-                    _cashier().releaseUsd(
+                    _cashier.releaseUsd(
                         deal.from, deal.to, 
                         _eightToSix(deal.consideration), 
                         bytes32(0x436c6f7365426964416761696e73744f66666572000000000000000000000000)
@@ -157,18 +158,18 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
                 if (isOffer) {
                     // remark: CloseInitOfferAgainstBid
-                    _cashier().releaseUsd(
+                    _cashier.releaseUsd(
                         deal.from, 
-                        _gk.getBook(11),
+                        address(_cashier),
                         _eightToSix(deal.consideration),
                         bytes32(0x436c6f7365496e69744f66666572416761696e73744269640000000000000000)
                     );
 
                 } else {
                     // remark: CloseBidAgainstInitOffer
-                    _cashier().releaseUsd(
+                    _cashier.releaseUsd(
                         deal.from, 
-                        _gk.getBook(11),
+                        address(_cashier),
                         _eightToSix(deal.consideration),
                         bytes32(0x436c6f7365426964416761696e7374496e69744f666665720000000000000000)
                     );
@@ -219,7 +220,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
             }
         } else {
             // remark: RefundValueOfBidOrder
-            _cashier().releaseUsd(
+            _gk.getCashier().releaseUsd(
                 order.data.pubKey,
                 order.data.pubKey, 
                 _eightToSix(order.data.margin),
@@ -237,23 +238,29 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     }    
 
     function withdrawInitialOffer(
-        address msgSender, uint classOfShare, uint seqOfOrder, uint seqOfLR
+        address msgSender,
+        uint classOfShare,
+        uint seqOfOrder,
+        uint seqOfLR
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
 
-        IUsdListOfOrders _loo = _looInUSD();
+        IListOfOrders _loo = _gk.getLOO();
 
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, true);
 
         require(order.data.seqOfShare == 0,
-            "LOOKUSD.withdrawInitOrder: not initOrder");
+            "LOOK.withdrawInitOrder: not initOrder");
+
+        require(_gk.getROM().isClassMember(caller, 1),
+            "LOOK.placeIO: not GP");
 
         RulesParser.ListingRule memory lr =
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
         
         require(_gk.getROD().hasTitle(caller, lr.titleOfIssuer),
-            "LOOKUSD.withdrawInitOrder: has no title");
+            "LOOK.withdrawInitOrder: has no title");
 
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, true);
 
@@ -266,9 +273,12 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
 
-        require (_gk.getLOO().getInvestor(caller).state == 
+        require (_gk.getROI().getInvestor(caller).state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved),
-                "LOOKUSD.placeSellOrder: wrong stateOfInvestor");
+                "LOOK.placeSellOrder: wrong stateOfInvestor");
+
+        // require(_gk.getCashier().getInitSeaInfo(seqOfClass).principal > 0,
+        //     "LOOK: class not established");
 
         IRegisterOfShares _ros = _gk.getROS();
 
@@ -276,10 +286,10 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
         require(seqOfClass == lr.classOfShare,
-            "LOOKUSD.placePut: wrong class");
+            "LOOK.placePut: wrong class");
 
         require(uint32(price) >= lr.offPrice,
-            "LOOKUSD.placePut: lower than offPrice");
+            "LOOK.placePut: lower than offPrice");
 
         uint[] memory sharesInhand = 
             _gk.getROM().sharesInClass(caller, lr.classOfShare);
@@ -331,24 +341,26 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     }
 
     function withdrawSellOrder(
-        address msgSender, uint classOfShare,uint seqOfOrder
+        address msgSender,
+        uint classOfShare,
+        uint seqOfOrder
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
-        IUsdListOfOrders _loo = _looInUSD();
+        IListOfOrders _loo = _gk.getLOO();
         IRegisterOfShares _ros = _gk.getROS();
 
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, true);
 
         require(order.data.seqOfShare > 0,
-            "LOOKUSD.withdrawSellOrder: zero seqOfShare");
+            "LOOK.withdrawSellOrder: zero seqOfShare");
 
         SharesRepo.Share memory share =
             _ros.getShare(order.data.seqOfShare);
         
         require(share.head.shareholder == caller,
-            "LOOKUSD.withdrawSellOrder: not shareholder");
+            "LOOK.withdrawSellOrder: not shareholder");
         
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, true);
 
@@ -364,11 +376,11 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 
-            _gk.getLOO().getInvestor(caller);
+            _gk.getROI().getInvestor(caller);
 
         require (investor.state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved),
-                "LOOKUSD.placeBuyOrder: wrong stateOfInvestor");
+                "LOOK.placeBuyOrder: wrong stateOfInvestor");
         
         require(price > 0, "ULOOK.placeBuyOrder: zero price");
 
@@ -394,11 +406,11 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 
-            _gk.getLOO().getInvestor(caller);
+            _gk.getROI().getInvestor(caller);
 
         require (investor.state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved),
-                "LOOKUSD.placeMarketBuyOrder: wrong stateOfInvestor");
+                "LOOK.placeMarketBuyOrder: wrong stateOfInvestor");
 
         require(auth.value > 0, "ULOOK.placeMarketBuyOrder: zero margin");
 
@@ -419,8 +431,10 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
         ICashier.TransferAuth memory auth, UsdOrdersRepo.Deal memory input, uint execHours
     ) private {
 
+        ICashier _cashier = _gk.getCashier();
+
         // remark: CustodyValueOfBid
-        _cashier().custodyUsd(
+        _cashier.custodyUsd(
             auth, 
             bytes32(0x437573746f647956616c75654f66426964000000000000000000000000000000)
         );
@@ -430,13 +444,13 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
          GoldChain.Order[] memory expired,
          uint lenOfExpired,
          UsdOrdersRepo.Deal memory bid) = 
-            _looInUSD().placeBuyOrder(input, execHours);
+            _gk.getLOO().placeBuyOrder(input, execHours);
 
         if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, false);
         if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
         if (bid.paid == 0 && bid.consideration > 0) {
             // remark: RefundBalanceOfBidOrder
-            _cashier().releaseUsd(
+            _cashier.releaseUsd(
                 bid.from, 
                 bid.from, 
                 _eightToSix(bid.consideration), 
@@ -446,17 +460,19 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
     }
 
     function withdrawBuyOrder(
-        address msgSender, uint classOfShare, uint seqOfOrder
+        address msgSender,
+        uint classOfShare,
+        uint seqOfOrder
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
-        IUsdListOfOrders _loo = _looInUSD();
+        IListOfOrders _loo = _gk.getLOO();
 
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, false);
         
         require(order.node.issuer == caller,
-            "LOOKUSD.withdrawBuyOrder: not buyer");
+            "LOOK.withdrawBuyOrder: not buyer");
         
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, false);
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -23,89 +23,58 @@ import "./IListOfOrders.sol";
 import "../../common/access/AccessControl.sol";
 
 contract ListOfOrders is IListOfOrders, AccessControl {
-    using OrdersRepo for OrdersRepo.Repo;
-    using OrdersRepo for OrdersRepo.Deal;
+    using UsdOrdersRepo for UsdOrdersRepo.Repo;
+    using UsdOrdersRepo for UsdOrdersRepo.Deal;
     using GoldChain for GoldChain.Chain;
     using GoldChain for GoldChain.Node;
     using GoldChain for GoldChain.Data;
     using EnumerableSet for EnumerableSet.UintSet;
-    using InvestorsRepo for InvestorsRepo.Repo;
 
-    InvestorsRepo.Repo private _investors;
-
-    mapping (uint => OrdersRepo.Repo) private _ordersOfClass;
+    mapping (uint => UsdOrdersRepo.Repo) private _ordersOfClass;
     EnumerableSet.UintSet private _classesList;
 
     //#################
     //##  Write I/O  ##
     //#################
 
-    // ==== Investor ====
-
-    function regInvestor(
-        uint userNo,
-        uint groupRep,
-        bytes32 idHash
-    ) external onlyDK {
-        _investors.regInvestor(userNo, groupRep, idHash);
-        emit RegInvestor(userNo, groupRep, idHash);
-    }
-
-    function approveInvestor(
-        uint userNo,
-        uint verifier
-    ) external onlyDK {
-        _investors.approveInvestor(userNo, verifier);
-        emit ApproveInvestor(userNo, verifier);
-    }        
-
-    function revokeInvestor(
-        uint userNo,
-        uint verifier
-    ) external onlyDK {
-        _investors.revokeInvestor(userNo, verifier);
-        emit RevokeInvestor(userNo, verifier);
-    }
-
-    function restoreInvestorsRepo(
-        InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
-    ) external onlyDK {
-        _investors.restoreRepo(list, qtyOfInvestors);
-    }
-
     // ==== Order ====
 
     function placeSellOrder(
-        OrdersRepo.Deal memory input,
-        uint execHours,
-        uint centPriceInWei
+        UsdOrdersRepo.Deal memory input, uint execHours
     ) external onlyDK returns(
-        OrdersRepo.Deal[] memory deals,
+        UsdOrdersRepo.Deal[] memory deals, 
         uint lenOfDeals,
         GoldChain.Order[] memory expired,
         uint lenOfExpired,
-        OrdersRepo.Deal memory offer
+        UsdOrdersRepo.Deal memory offer
     ) {
         _classesList.add(input.classOfShare);
 
-        (deals, lenOfDeals, expired, lenOfExpired, offer) = _ordersOfClass[input.classOfShare].placeSellOrder(
-            input,
-            execHours,
-            centPriceInWei
-        );
+        (deals, lenOfDeals, expired, lenOfExpired, offer) = 
+            _ordersOfClass[input.classOfShare].placeSellOrder(
+                input,
+                execHours
+            );
 
         if (lenOfDeals > 0) _logDeals(deals, lenOfDeals);
         if (lenOfExpired > 0) _logExpired(expired, false, lenOfExpired);
         if (offer.price > 0) _logOrder(offer, true);
     }
 
-    function _logOrder(OrdersRepo.Deal memory order, bool isOffer) private {
-        emit OrderPlaced(order.codifyBrief(), isOffer);
+    function _bpToDt(uint amt) private pure returns(uint) {
+        return amt * 10 ** 10;
     }
 
-    function _logDeals(OrdersRepo.Deal[] memory deals, uint len) private {
+    function _logOrder(UsdOrdersRepo.Deal memory order, bool isOffer) private {
+        (bytes32 fromSn, bytes32 toSn, bytes32 qtySn) = order.codifyDeal();
+        emit OrderPlaced(fromSn, toSn, qtySn, isOffer);
+    }
+
+    function _logDeals(UsdOrdersRepo.Deal[] memory deals, uint len) private {
         while (len > 0) {
-            emit DealClosed(deals[len - 1].codifyBrief(), deals[len - 1].consideration);
+            (bytes32 fromSn, bytes32 toSn, bytes32 qtySn) = 
+                deals[len - 1].codifyDeal();
+            emit DealClosed(fromSn, toSn, qtySn, _bpToDt(deals[len - 1].consideration));
             len--;
         }
     }
@@ -119,24 +88,23 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     }
 
     function placeBuyOrder(
-        OrdersRepo.Deal memory input,
-        uint execHours,
-        uint centPriceInWei
+        UsdOrdersRepo.Deal memory input,
+        uint execHours
     ) external onlyDK returns (
-        OrdersRepo.Deal[] memory deals, 
+        UsdOrdersRepo.Deal[] memory deals,
         uint lenOfDeals, 
         GoldChain.Order[] memory expired,
         uint lenOfExpired,
-        OrdersRepo.Deal memory bid
+        UsdOrdersRepo.Deal memory bid
     ) {
 
         _classesList.add(input.classOfShare);
 
-        (deals, lenOfDeals, expired, lenOfExpired, bid) = _ordersOfClass[input.classOfShare].placeBuyOrder(
-            input,
-            execHours,
-            centPriceInWei
-        );
+        (deals, lenOfDeals, expired, lenOfExpired, bid) = 
+            _ordersOfClass[input.classOfShare].placeBuyOrder(
+                input,
+                execHours
+            );
 
         if (lenOfDeals > 0) _logDeals(deals, lenOfDeals);
         if (lenOfExpired > 0) _logExpired(expired, true, lenOfExpired);
@@ -144,9 +112,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     }
 
     function withdrawOrder(
-        uint classOfShare,
-        uint seqOfOrder,
-        bool isOffer
+        uint classOfShare, uint seqOfOrder, bool isOffer
     ) external onlyDK returns(GoldChain.Order memory order) {
 
         if (!_classesList.contains(classOfShare)) return order;
@@ -163,38 +129,6 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     //################
     //##  Read I/O  ##
     //################
-
-    // ==== Investor ====
-
-    function isInvestor(
-        uint userNo
-    ) external view returns(bool) {
-        return _investors.isInvestor(userNo);
-    }
-
-    function getInvestor(
-        uint userNo
-    ) external view returns(InvestorsRepo.Investor memory) {
-        return _investors.getInvestor(userNo);
-    }
-
-    function getQtyOfInvestors() 
-        external view returns(uint) 
-    {
-        return _investors.getQtyOfInvestors();
-    }
-
-    function investorList() 
-        external view returns(uint[] memory) 
-    {
-        return _investors.investorList();
-    }
-
-    function investorInfoList() 
-        external view returns(InvestorsRepo.Investor[] memory) 
-    {
-        return _investors.investorInfoList();
-    }
 
     // ==== Chain ====
 

@@ -24,6 +24,8 @@ pragma solidity ^0.8.8;
 import "../../../center/ERC20/IUSDC.sol";
 
 import "../../../lib/UsdLockersRepo.sol";
+import "../../../lib/RulesParser.sol";
+import "../../../lib/WaterfallsRepo.sol";
 
 interface ICashier {
 
@@ -39,8 +41,6 @@ interface ICashier {
         bytes32 s;
     }
 
-    event ReceiveUsd(address indexed from, uint indexed amt);
-
     event ReceiveUsd(address indexed from, uint indexed amt, bytes32 indexed remark);
 
     event ForwardUsd(address indexed from, address indexed to, uint indexed amt, bytes32 remark);
@@ -51,15 +51,21 @@ interface ICashier {
 
     event TransferUsd(address indexed to, uint indexed amt, bytes32 indexed remark);
 
-    event DistributeUsd(uint indexed amt);
+    event InitClass(uint indexed class, uint indexed principal, uint indexed initDate);
+
+    event RedeemClass(uint indexed class, uint indexed principal);
+
+    event DistrProfits(uint indexed amt, uint indexed seqOfDR, uint indexed seqOfDistr);
+
+    event DistrIncome(uint indexed amt, uint indexed seqOfDR, uint fundManager, uint indexed seqOfDistr);
+
+    event DepositUsd(uint indexed amt, uint indexed user, bytes32 indexed remark);
 
     event PickupUsd(address indexed msgSender, uint indexed caller, uint indexed value);
 
     //###############
     //##   Write   ##
     //###############
-
-    function collectUsd(TransferAuth memory auth) external;
 
     function collectUsd(TransferAuth memory auth, bytes32 remark) external;
 
@@ -71,7 +77,19 @@ interface ICashier {
 
     function transferUsd(address to, uint amt, bytes32 remark) external;
 
-    function distributeUsd(uint amt) external;
+    function initClass(uint class, uint principal) external;
+
+    function redeemClass(uint class, uint principal) external;
+
+    function distrProfits(uint amt, uint seqOfDR) external returns(
+        WaterfallsRepo.Drop[] memory mlist
+    );
+
+    function distrIncome(uint amt, uint seqOfDR, uint para) external returns(
+        WaterfallsRepo.Drop[] memory mlist, WaterfallsRepo.Drop[] memory slist
+    );
+
+    function depositUsd(uint amt, uint user, bytes32 remark) external;
 
     function pickupUsd() external; 
 
@@ -88,4 +106,87 @@ interface ICashier {
     function depositOfMine(uint user) external view returns(uint);    
 
     function balanceOfComp() external view returns(uint);
+
+    // ==== Waterfalls Distribution ====
+
+    // ---- Drop ----
+
+    function getDrop(
+        uint seqOfDistr, uint member, uint class, uint seqOfShare
+    ) external view returns(WaterfallsRepo.Drop memory drop);
+
+    // ---- Flow ----
+
+    function getFlowInfo(
+        uint seqOfDistr, uint member, uint class
+    ) external view returns(WaterfallsRepo.Drop memory info);
+
+    function getDropsOfFlow(
+        uint seqOfDistr, uint member, uint class
+    ) external view returns(WaterfallsRepo.Drop[] memory list);
+
+    // ---- Creek ----
+
+    function getCreekInfo(
+        uint seqOfDistr, uint member
+    ) external view returns(WaterfallsRepo.Drop memory info);
+
+    function getDropsOfCreek(
+        uint seqOfDistr, uint member
+    ) external view returns(WaterfallsRepo.Drop[] memory list);
+
+    // ---- Stream ----
+
+    function getStreamInfo(
+        uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop memory info);
+
+    function getCreeksOfStream(
+        uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop[] memory list);
+
+    function getDropsOfStream(
+        uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop[] memory list);
+
+    // ==== Waterfalls Member ====
+
+    function getPoolInfo(
+        uint member, uint class
+    ) external view returns(WaterfallsRepo.Drop memory drop);
+
+    function getLakeInfo(
+        uint member
+    ) external view returns(WaterfallsRepo.Drop memory drop);
+
+    // ==== Waterfalls Class ====
+
+    function getInitSeaInfo(
+        uint class
+    ) external view returns(WaterfallsRepo.Drop memory info);
+
+    function getSeaInfo(
+        uint class
+    ) external view returns(WaterfallsRepo.Drop memory info);
+
+    function getGulfInfo(
+        uint class
+    ) external view returns(WaterfallsRepo.Drop memory info);
+
+    function getIslandInfo(
+        uint class, uint seqOfDistr
+    ) external view returns(WaterfallsRepo.Drop memory info);
+
+    function getListOfClasses() external view returns(uint[] memory list);
+
+    function getAllSeasInfo() external view returns(
+        WaterfallsRepo.Drop[] memory list
+    );
+
+    // ==== Waterfalls Sum ====
+
+    function getOceanInfo() external view returns(
+        WaterfallsRepo.Drop memory info
+    );
+
 }
