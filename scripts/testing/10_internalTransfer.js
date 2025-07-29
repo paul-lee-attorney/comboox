@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -34,7 +34,7 @@
 // (6) User_6 proposes the IA to the GMM for voting;
 // (7) All other Members vote "for" the proposed IA;
 // (8) After counting the vote results, User_3 triggers the 
-//     "payOffApprovedDeal()" API to directly close the deal by paying ETH;
+//     "payOffApprovedDeal()" API to directly close the deal by paying USDC;
 // (9) User_6 is removed from the Register of Members, and Share_7 is
 //     deregistered from ROS;
 // (10) A new share No.9 is issued to Buyer (User_3).
@@ -61,6 +61,10 @@
 // 4.1 function setTiming(bool initPage, uint signingDays, uint closingDays) external;
 // 4.2 function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)external;
 
+// 5. USD Keeper
+// 5.1 function payOffApprovedDeal(ICashier.TransferAuth memory auth, 
+//     address ia, uint seqOfDeal, address to) external;
+
 // Events verified in this section:
 // 1. Register of Agreement
 // 1.1 event UpdateStateOfFile(address indexed body, uint indexed state);
@@ -85,21 +89,24 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
+const { getGK, getROA, getGMM, getROS, getROM, getRC, getCashier, getUsdROAKeeper, getUsdKeeper, getUSDC, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now, } = require("./utils");
 const { codifyHeadOfDeal, parseDeal, getDealValue } = require("./roa");
 const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
-const { depositOfUsers } = require("./gk");
-const { transferCBP, addEthToUser } = require("./saveTool");
+const { depositOfUsers, usdOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
+const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**  10. Internal Transfer     **');
-    console.log('********************************\n');
+    console.log('\n');
+    console.log('**************************************');
+    console.log('**    10 Internal Transfer In USDC  **');
+    console.log('**************************************');
+    console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -109,6 +116,8 @@ async function main() {
     const gmm = await getGMM();
     const ros = await getROS();
     const rom = await getROM();
+    const usdc = await getUSDC();
+    const cashier = await getCashier();
     
     // ==== Create Investment Agreement ====
 
@@ -283,34 +292,26 @@ async function main() {
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.voteCounting(). \n");
 
-    const centPrice = BigInt(await gk.getCentPrice());
-
-    let value = getDealValue(210n, 8000n, centPrice);
-
     // ==== PayOffApprovedDeal() ====
 
-    await expect(gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value + 100n})).to.be.revertedWith("ROAK.payApprDeal: insufficient msgValue");
-    console.log(" \u2714 Passed Amount Check Test for gk.payOffApprovedDeal(). \n");
+    // let usdKeeper = await getUsdKeeper();
 
-    value = getDealValue(210n, 10000n, centPrice);
-
-    tx = await gk.connect(signers[3]).payOffApprovedDeal(ia.address, 1, {value: value + 100n});
-
-    addEthToUser(value, "6");
-    addEthToUser(100n, "3");
+    let auth = await generateAuth(signers[3], cashier.address, 21000);
+    tx = await gk.connect(signers[3]).payOffApprovedDeal(auth, ia.address, 1, signers[6].address);
 
     await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.payOffApprovedDeal().");
 
     transferCBP("3", "8", 58n);
 
-    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(1), BigNumber.from(value));
+    await royaltyTest(rc.address, signers[6].address, gk.address, tx, 18n, "gk.payOffApprovedDeal().");
+
+    transferCBP("6", "8", 18n);
+
+    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(1), BigNumber.from(21000n * 10n ** 6n));
     console.log(" \u2714 Passed Event Test for ia.PayOffApprovedDeal(). \n");
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(ia.address, BigNumber.from(6));
     console.log(" \u2714 Passed Event Test for roa.execFile(). \n");
-
-    await expect(tx).to.emit(gk, "SaveToCoffer");
-    console.log(" \u2714 Passed Event Test for gk.SaveToCoffer(). \n");
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(8), BigNumber.from(10000 * 10 ** 4));
     console.log(" \u2714 Passed Event Test for ros.increaseCleanPaid(). \n");
@@ -335,7 +336,8 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
+    await usdOfUsers(usdc, cashier.address);
 }
 
 main()

@@ -13,26 +13,25 @@
 
 // The scenarios for testing include in this section are:
 // (1) Signer_7 to Signer_9 register Users with Registration Center;
-// (2) Signer_0 to Signer_9 register Investor with General Keeper;
-// (3) Signer_0 (User_1) as Chairman approves the Investor applications;
-// (4) User_1 as Chairman revokes the Investor role for User_8 to User_10.
+// (2) Signer_0 to Signer_9 register Investor with Fund Keeper;
+// (3) Signer_0 (User_1) as Asset Manager approves the Investor applications;
+// (4) User_1 as Asset Manager revokes the Investor role for User_8 to User_10.
 
 // The write APIs tested in this section:
-// 1. GeneralKeeper;
+// 1. FundKeeper;
 // 1.1 function regInvestor(uint groupRep, bytes32 idHash) external;
 // 1.2 function approveInvestor(uint userNo, uint seqOfLR) external;
 // 1.3 function revokeInvestor(uint userNo, uint seqOfLR) external;
 
 // Events verified in this section:
-// 1. List of Orders
+// 1. Register of Investors
 // 1.1 event RegInvestor(uint indexed investor, uint indexed groupRep, 
 //     bytes32 indexed idHash);
 // 1.2 event ApproveInvestor(uint indexed investor, uint indexed verifier);
 // 1.3 event RevokeInvestor(uint indexed investor, uint indexed verifier);
 
-
 const { expect } = require("chai");
-const { getGK, getRC, getROS, getROI } = require("./boox");
+const { getRC, getROS, getROI, getFK } = require("./boox");
 const { parseInvestor } = require("./roi");
 const { royaltyTest, cbpOfUsers, userParser } = require("./rc");
 const { printShares } = require("./ros");
@@ -42,14 +41,14 @@ async function main() {
 
     console.log('\n');
     console.log('********************************');
-    console.log('**   06. Approve Investors    **');
+    console.log('**   06.1 Approve Investors   **');
     console.log('********************************');
     console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getGK();
+    const gk = await getFK();
     const roi = await getROI();
     const ros = await getROS();
 

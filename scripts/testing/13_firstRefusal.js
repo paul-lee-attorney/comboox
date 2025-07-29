@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -30,7 +30,7 @@
 //    deals will be automatically terminated and new deals with the claiming Member
 //    as buyer will be added with the same price and other terms. 
 // 4. After obtaining the voting approval from the General Meeting of Members, User_1
-//    and User_2 close the deals by calling gk.payOffApprovedDeal(). 
+//    and User_2 close the deals in USDC by calling gk.payOffApprovedDeal(). 
 // 5. Some important points are deserved attention that:
 //    (1) First Refusal right does not need acceptance of the original seller;
 //    (2) In case more than one rightholder claim to purchase the same deal, the 
@@ -42,6 +42,9 @@
 // 1.1 function execFirstRefusal(uint256 seqOfRule, uint256 seqOfRightholder, address ia,
 //     uint256 seqOfDeal, bytes32 sigHash) external;
 // 1.2 function computeFirstRefusal(address ia, uint256 seqOfDeal) external;
+// 2. USD Keeper
+// 2.1 function payOffApprovedDeal(ICashier.TransferAuth memory auth, address ia, 
+//     uint seqOfDeal, address t0) external;
 
 // Events verified in this section:
 // 1. Register of Agreement
@@ -54,21 +57,24 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
+const { getGK, getROA, getGMM, getROS, getRC, getUSDC, getCashier, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now, longDataParser, } = require("./utils");
 const { codifyHeadOfDeal, parseDeal } = require("./roa");
 const { getLatestShare, printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
-const { depositOfUsers } = require("./gk");
-const { transferCBP, addEthToUser } = require("./saveTool");
+const { depositOfUsers, usdOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
+const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**     13. First Refusal      **');
-    console.log('********************************\n');
+    console.log('\n');
+    console.log('**********************************');
+    console.log('**    13 First Refusal in USDC  **');
+    console.log('**********************************');
+    console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -77,8 +83,13 @@ async function main() {
     const roa = await getROA();
     const gmm = await getGMM();
     const ros = await getROS();
-    const rom = await getROM();
+    // const rom = await getROM();
     
+    const usdc = await getUSDC();
+    const cashier = await getCashier();
+    // const usdROAKeeper = await getUsdROAKeeper();
+    // const usdKeeper = await getUsdKeeper();
+
     // ==== Create Investment Agreement ====
 
     let tx = await gk.connect(signers[5]).createIA(1);
@@ -295,7 +306,7 @@ async function main() {
 
     // ---- Exec IA ----
 
-    const centPrice = await gk.getCentPrice();
+    // const centPrice = await gk.getCentPrice();
 
     const payOffDeal = async (seqOfDeal) => {
 
@@ -303,17 +314,22 @@ async function main() {
       console.log("deal: ", parseDeal(deal), "\n");
       
       const paid = deal[1][2];
-      const value = 300n * BigInt(paid) / 10000n * BigInt(centPrice);
+      const value = Number(300n * BigInt(paid)) / (10 ** 6);
 
       const seller = Number(deal[0][5]);
       const buyer = Number(deal[1][0]);
-  
-      await gk.connect(signers[buyer - 1]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value + 100n});
 
-      addEthToUser(value, seller.toString());
-      addEthToUser(100n, buyer.toString());
+      console.log("seller: ", seller, "\n");
+      console.log("buyer: ", buyer, "\n");
+      
+      let auth = await generateAuth(signers[buyer - 1], cashier.address, value);
+      await gk.connect(signers[buyer - 1]).payOffApprovedDeal(auth, ia.address, seqOfDeal, signers[seller].address);
+
+      // addEthToUser(value, seller.toString());
+      // addEthToUser(100n, buyer.toString());
 
       transferCBP((buyer).toString(), "8", 58n);
+      transferCBP((seller).toString(), "8", 18n);
 
       const share = await getLatestShare(ros);
       
@@ -330,7 +346,8 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
+    await usdOfUsers(usdc, cashier.address);
   }
 
 main()

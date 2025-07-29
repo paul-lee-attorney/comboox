@@ -112,9 +112,11 @@ const { transferCBP } = require("./saveTool");
 
 async function main() {
 
-    console.log('\n********************************');
+    console.log('\n');
+    console.log('********************************');
     console.log('**    05. Elect Officers      **');
-    console.log('********************************\n');
+    console.log('********************************');
+    console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -210,7 +212,7 @@ async function main() {
 
     transferCBP("4", "8", 72n);
 
-    // ---- Vote Counting for Chairman ----    
+    // ---- Vote Counting for Asset Manager ----    
 
     tx = await gk.voteCountingOfGM(seqOfMotion);
 
@@ -224,7 +226,7 @@ async function main() {
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.voteCountingOfGM(). \n");
 
-    // ---- Chairman Take Position ----
+    // ---- Asset Manager Take Position ----
 
     await expect(gk.connect(signers[1]).takeSeat(seqOfMotion, 1)).to.be.revertedWith("MR.ER: not executor");
     console.log(" \u2714 Passed Access Control Test for gk.takeSeat(). \n");
@@ -523,7 +525,7 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 }
 
 main()

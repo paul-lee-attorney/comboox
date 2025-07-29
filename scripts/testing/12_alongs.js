@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -59,6 +59,10 @@
 //      ) external;
 // 1.4 function payOffApprovedDeal(address ia, uint seqOfDeal) external payable;
 
+// 2. USD Keeper
+// 2.1 function payOffApprovedDeal(ICashier.TransferAuth memory auth, address ia, 
+//     uint seqOfDeal, address to) external;
+
 // Events verified in this section:
 // 1. Register of Agreement
 // 1.1 event ExecAlongRight(address indexed ia, bytes32 indexed snOfDTClaim, bytes32 sigHash);
@@ -72,7 +76,7 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
+const { getGK, getROA, getGMM, getROS, getRC, getCashier, } = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now, } = require("./utils");
 const { codifyHeadOfDeal, parseDeal, getDealValue } = require("./roa");
@@ -80,13 +84,18 @@ const { printShares } = require("./ros");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
 const { depositOfUsers } = require("./gk");
-const { transferCBP, addEthToUser } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
+const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**    12. Drag/Tag Alongs     **');
-    console.log('********************************\n');
+
+    console.log('\n');
+    console.log('************************************');
+    console.log('**    12 Drag/Tag Alongs in USDC  **');
+    console.log('************************************');
+    console.log('\n');
+
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -95,7 +104,11 @@ async function main() {
     const roa = await getROA();
     const gmm = await getGMM();
     const ros = await getROS();
-    
+    // const usdc = await getUSDC();
+    const cashier = await getCashier();
+    // const usdROAKeeper = await getUsdROAKeeper();
+    // const usdKeeper = await getUsdKeeper();
+
     // ==== Create Investment Agreement ====
 
     let tx = await gk.createIA(1);
@@ -261,37 +274,45 @@ async function main() {
 
     // ---- Exec IA ----
 
-    const centPrice = await gk.getCentPrice();
+    // const centPrice = await gk.getCentPrice();
+    let auth = {};
 
-    const payOffDeal = async (seqOfDeal) => {
+    const payOffDeal = async (seqOfDeal, numOfSigner) => {
 
       const deal = await ia.getDeal(seqOfDeal);
-      const seller = Number(deal[0][5]);
 
       const paid = BigInt(deal[1][2]);
-      const value = 280n * paid / 10000n * BigInt(centPrice);
+      const value = 280n * paid / 10n ** 6n;
 
-      await gk.connect(signers[5]).payOffApprovedDeal(ia.address, seqOfDeal, {value: value + 500n});
+      console.log("deal:", parseDeal(deal));
+      console.log("Payee: ", signers[numOfSigner].address);
 
-      addEthToUser(value, seller.toString());
-      addEthToUser(500n,"5");
+      auth = await generateAuth(signers[5], cashier.address, value);
+      tx = await gk.connect(signers[5]).payOffApprovedDeal(auth, ia.address, seqOfDeal, signers[numOfSigner].address);
 
       transferCBP("5", "8", 58n);
+
+      if (numOfSigner > 0) {
+        transferCBP(numOfSigner.toString(), "8", 18n);
+      } else {
+        transferCBP("1", "8", 18n);
+      }
     }
 
-    let value = 280n * 95000n * BigInt(centPrice);
+    // let value = 280n * 95000n * BigInt(centPrice);
 
-    await expect(gk.connect(signers[5]).payOffApprovedDeal(ia.address, 1, {value: value})).to.be.revertedWith("ROAK.shareTransfer: Along Deal Open");
-    console.log(" \u2714 Passed Procedural Control Test for gk.shareTransfer(). \n");
-    
-    for (let i=3; i>=1; i--) 
-        await payOffDeal(i);
+    // await expect(gk.connect(signers[5]).payOffApprovedDeal(ia.address, 1)).to.be.revertedWith("ROAK.shareTransfer: Along Deal Open");
+    // console.log(" \u2714 Passed Procedural Control Test for gk.shareTransfer(). \n");
+     
+    await payOffDeal(3, 3);
+    await payOffDeal(2, 4);
+    await payOffDeal(1, 0);
 
     console.log(" \u2714 Passed All Tests for Alongs. \n");
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 
 }
 

@@ -48,7 +48,8 @@ async function main() {
     console.log('\n');
     console.log('********************************');
     console.log('**      01. Reg Users         **');
-    console.log('********************************\n');
+    console.log('********************************');
+    console.log('\n');
 
     // ==== Obtain Instances ====
 

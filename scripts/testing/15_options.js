@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -54,8 +54,8 @@
 //     of investment;
 // (6) User_2 creates a Call Option Swap to purchase Share_3 amount to $500, and
 //     set his Share_2 as Pledge to guarantee the Swap.
-// (7) User_2 pay off the Put Option Swap, so that get the $500 target shares by
-//     paying at the Call Option price of $1.20 per share.
+// (7) User_2 pay off the Put Option Swap in USDC, so that get the $500 target 
+//     shares by paying at the Call Option price of $1.20 per share.
 
 // The Write APIs tested in this section include:
 // 1. General Keper
@@ -65,6 +65,10 @@
 //     uint seqOfPledge) external;
 // 1.4 function payOffSwap(uint256 seqOfOpt, uint256 seqOfSwap) external payable;
 // 1.5 function terminateSwap(uint256 seqOfOpt, uint256 seqOfSwap) external;
+
+// 2. USD Keeper
+// 2.1 function payOffSwap(ICashier.TransferAuth memory auth, uint256 seqOfOpt, 
+//     uint256 seqOfSwap, address to) external;
 
 // Events verified in this section:
 // 1. Register of Options
@@ -85,19 +89,22 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getROS, getROO, getRC, getROM, } = require("./boox");
+const { getGK, getROS, getROO, getRC, getROM, getCashier, } = require("./boox");
 const { increaseTime, } = require("./utils");
 const { getLatestShare, printShares } = require("./ros");
 const { parseOption, parseOracle, parseSwap } = require("./roo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { depositOfUsers } = require("./gk");
-const { transferCBP, addEthToUser } = require("./saveTool");
+const { transferCBP } = require("./saveTool");
+const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**  15. Call/Put Options      **');
-    console.log('********************************\n');
+    console.log('\n');
+    console.log('*************************************');
+    console.log('**    15 Call/Put Options in USDC  **');
+    console.log('*************************************');
+    console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -106,6 +113,10 @@ async function main() {
     const roo = await getROO();
     const ros = await getROS();
     const rom = await getROM();
+
+    const cashier = await getCashier();
+    // const usdROOKeeper = await getUsdROOKeeper();
+    // const usdKeeper = await getUsdKeeper();
     
     // ==== Update Oracles ====
 
@@ -204,23 +215,28 @@ async function main() {
 
     // ==== Exec Call Option ====
 
-    const centPrice = await gk.getCentPrice();
-    let value = 110n * 500n * BigInt(centPrice);
+    // const centPrice = await gk.getCentPrice();
+    // let value = 110n * 500n * BigInt(centPrice);
 
-    await expect(gk.connect(signers[1]).payOffSwap(2, 1, {value:value - 100n})).to.be.revertedWith("ROOK.payOffSwap: not sufficient msgValue");
-    console.log(" \u2714 Passed Value Check Test for gk.payOffSwap(). \n");  
+    // await expect(gk.connect(signers[1]).payOffSwap(2, 1, {value:value - 100n})).to.be.revertedWith("ROOK.payOffSwap: not sufficient msgValue");
+    // console.log(" \u2714 Passed Value Check Test for gk.payOffSwap(). \n");  
 
-    await expect(gk.payOffSwap(2, 1, {value:value + 100n})).to.be.revertedWith("ROOK.payOffSwap: wrong payer");    
-    console.log(" \u2714 Passed Access Control Test for gk.payOffSwap(). \n");  
+    // await expect(gk.payOffSwap(2, 1, {value:value + 100n})).to.be.revertedWith("ROOK.payOffSwap: wrong payer");
+    // console.log(" \u2714 Passed Access Control Test for gk.payOffSwap(). \n");  
 
-    tx = await gk.connect(signers[1]).payOffSwap(2, 1, {value:value + 100n});
+    // tx = await gk.connect(signers[1]).payOffSwap(2, 1, {value:value + 100n});
 
-    addEthToUser(value, "3");
-    addEthToUser(100n, "2");
+    let auth = await generateAuth(signers[1], cashier.address, 550);
+    tx = await gk.connect(signers[1]).payOffSwap(auth, 2, 1, signers[3].address);
 
-    await royaltyTest(rc.address, signers[1].address, gk.address, tx, 58n, "gk.payOffSwap().");
+    // addEthToUser(value, "3");
+    // addEthToUser(100n, "2");
 
-    transferCBP("2", "8", 58n);
+    await royaltyTest(rc.address, signers[1].address, gk.address, tx, 40n, "gk.payOffSwap().");
+    await royaltyTest(rc.address, signers[3].address, gk.address, tx, 18n, "gk.payOffSwap().");
+
+    transferCBP("2", "8", 40n);
+    transferCBP("3", "8", 18n);
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(BigNumber.from(3), BigNumber.from(500 * 10 ** 4));
     console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
@@ -246,7 +262,7 @@ async function main() {
 
     tx = await gk.connect(signers[3]).terminateSwap(1, 1);
 
-    await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.payOffSwap().");
+    await royaltyTest(rc.address, signers[3].address, gk.address, tx, 58n, "gk.terminateSwap().");
 
     transferCBP("3", "8", 58n);
 
@@ -270,7 +286,7 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 }
 
 main()

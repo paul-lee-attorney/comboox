@@ -39,8 +39,6 @@
 //     Share_4 with hash lock.
 // (9) After the expiration of the pay in deadline, User_2 withdraws the locked 
 //     amount back from the hash lock.
-// (10) User_4 pays in ETH directly to increase the paid-in capital of Share_4 by
-//      $5,000. 
 
 // Write APIs tested in this section:
 // 1. CreateNewComp
@@ -53,6 +51,10 @@
 // 3.1 function createCorpSeal() external;
 // 3.2 function regKeeper(uint256 title, address keeper) external;
 // 3.3 function regBook(uint256 title, address keeper) external;
+// 3.4 function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, 
+//     bytes32 hashLock) external;
+// 3.5 function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
+// 3.6 function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
 
 // 4. AccessControl
 // 4.1 function setDirectKeeper(address keeper) external;
@@ -65,12 +67,6 @@
 //     uint par, uint distrWeight) external;
 // 6.2 function decreaseCapital(uint256 seqOfShare, uint paid, uint par) external;
 
-// 7. GeneralKeeper
-// 7.1 function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, 
-//     bytes32 hashLock) external;
-// 7.2 function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external;
-// 7.3 function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external;
-// 7.4 function payInCapital(uint seqOfShare, uint amt) external payable;
 
 // Events verified in this scetion:
 // 1. RegCenter
@@ -88,32 +84,30 @@
 
 // 4. Register of Members
 // 4.1 event AddMember(uint256 indexed acct, uint indexed qtyOfMembers);
-// 4.2 event CapIncrease(uint indexed votingWeight, uint indexed paid, 
-//     uint indexed par, uint distrWeight);
+// 4.2 event CapIncrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
 // 4.3 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
-// 4.4 event CapDecrease(uint indexed votingWeight, uint indexed paid, 
-//     uint indexed par, uint distrWeight);
+// 4.4 event CapDecrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
 // 4.5 event RemoveShareFromMember(uint indexed seqOfShare, uint indexed acct);
 // 4.6 event ChangeAmtOfMember(uint indexed acct, uint indexed paid, 
 //     uint indexed par, bool increase);
 
-const { BigNumber } = require("ethers");
+const { BigNumber, ethers } = require("ethers");
 const { expect } = require("chai");
-const { saveBooxAddr, addCBPToUser, minusCBPFromUser, setUserCBP, transferCBP, addEthToUser, setUserDepo } = require("./saveTool");
-const { codifyHeadOfShare, parseShare, printShares } = require('./ros');
-const { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC} = require("./boox");
+const { saveBooxAddr, setUserCBP, setUserDepo } = require("./saveTool");
+const { codifyHeadOfShare, printShares } = require('./ros');
+const { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC, } = require("./boox");
 const { now, increaseTime } = require("./utils");
 const { parseCompInfo, depositOfUsers } = require("./gk");
-const { readContract } = require("../readTool");
-const { royaltyTest, cbpOfUsers } = require("./rc");
-const { getDealValue } = require("./roa");
+const { cbpOfUsers } = require("./rc");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**   02. Create Company Boox  **');
-    console.log('********************************\n');
-
+  console.log('\n');
+    console.log('***************************************');
+    console.log('**    02 Create Company Boox In USD  **');
+    console.log('***************************************');
+    console.log('\n');
+    
     // ==== Get Instances ====
 
 	  const signers = await hre.ethers.getSigners();
@@ -168,14 +162,17 @@ async function main() {
     const LOO = await gk.getLOO();
     saveBooxAddr("LOO", LOO);
 
-    const Cashier = await gk.getBook(11);
+    const ROI = await gk.getROI();
+    saveBooxAddr("ROI", ROI);
+
+    const Cashier = await gk.getCashier();
     saveBooxAddr("Cashier", Cashier);
 
-    const USDC = await gk.getBook(12);
+    const USDC = await gk.getBank();
     saveBooxAddr("USDC", USDC);
 
-    const UsdLOO = await gk.getBook(13);
-    saveBooxAddr("UsdLOO", UsdLOO);
+    // const UsdLOO = await gk.getBook(13);
+    // saveBooxAddr("UsdLOO", UsdLOO);
 
     const ROCKeeper = await gk.getKeeper(1);
     saveBooxAddr("ROCKeeper", ROCKeeper);
@@ -207,20 +204,26 @@ async function main() {
     const LOOKeeper = await gk.getKeeper(10);
     saveBooxAddr("LOOKeeper", LOOKeeper);
 
-    const UsdROMKeeper = await gk.getKeeper(11);
-    saveBooxAddr("UsdROMKeeper", UsdROMKeeper);
+    const ROIKeeper = await gk.getKeeper(11);
+    saveBooxAddr("ROIKeeper", ROIKeeper);
 
-    const UsdROAKeeper = await gk.getKeeper(12);
-    saveBooxAddr("UsdROAKeeper", UsdROAKeeper);
+    const Accountant = await gk.getKeeper(12);
+    saveBooxAddr("Accountant", Accountant);
 
-    const UsdLOOKeeper = await gk.getKeeper(13);
-    saveBooxAddr("UsdLOOKeeper", UsdLOOKeeper);
+    // const UsdROMKeeper = await gk.getKeeper(11);
+    // saveBooxAddr("UsdROMKeeper", UsdROMKeeper);
 
-    const UsdROOKeeper = await gk.getKeeper(14);
-    saveBooxAddr("UsdROOKeeper", UsdROOKeeper);
+    // const UsdROAKeeper = await gk.getKeeper(12);
+    // saveBooxAddr("UsdROAKeeper", UsdROAKeeper);
 
-    const UsdKeeper = await gk.getKeeper(15);
-    saveBooxAddr("UsdKeeper", UsdKeeper);
+    // const UsdLOOKeeper = await gk.getKeeper(13);
+    // saveBooxAddr("UsdLOOKeeper", UsdLOOKeeper);
+
+    // const UsdROOKeeper = await gk.getKeeper(14);
+    // saveBooxAddr("UsdROOKeeper", UsdROOKeeper);
+
+    // const UsdKeeper = await gk.getKeeper(15);
+    // saveBooxAddr("UsdKeeper", UsdKeeper);
 
     refreshBoox();
 
@@ -328,7 +331,7 @@ async function main() {
       votingWeight: 100,
     };
 
-    await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), payInDeadline, 10000 * 10 ** 4, 20000 * 10 ** 4, 100);
+    await ros.connect(signers[1]).issueShare(codifyHeadOfShare(head), payInDeadline, 10000 * 10 ** 4, 30000 * 10 ** 4, 100);
 
     head = {
       class: 2,
@@ -402,45 +405,19 @@ async function main() {
 
     await expect(tx).to.emit(ros, "WithdrawPayInAmt").withArgs(BigNumber.from(4), BigNumber.from(5000 * 10 ** 4));
     console.log(" \u2714 Passed Event Test for ros.WithdrawPayInAmt(). \n");
-
-    // ==== Pay In Capital in ETH ====
-
-    const centPrice = BigInt(await gk.getCentPrice());
-    let value = getDealValue(150n, 5000n, centPrice);
-
-    tx = await gk.connect(signers[4]).payInCapital(4, 5000 * 10 ** 4, {value: value + 100n});
-
-    setUserDepo("8", value);
-    setUserDepo("4", 100n);
     
     setUserDepo("1", 0n);
     setUserDepo("2", 0n);
     setUserDepo("3", 0n);
+    setUserDepo("4", 0n);
     setUserDepo("5", 0n);
     setUserDepo("6", 0n);
     setUserDepo("7", 0n);
+    setUserDepo("8", 0n);
 
-    await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "gk.payInCapital().");
-
-    // User_4 pays royalty to User_1 (author of Templates);
-    transferCBP("4", "1", 36n);
-
-    await expect(tx).to.emit(gk, "SaveToCoffer");
-    console.log(" \u2714 Passed Event Test for gk.SaveToCoffer(). \n");
-
-    const romKeeper = await readContract("ROMKeeper", ROMKeeper);
-
-    await expect(tx).to.emit(romKeeper, "PayInCapital");
-    console.log(" \u2714 Passed Event Test for romKeeper.PayInCapital(). \n");
-    
-    let share = parseShare(await ros.getShare(4));
-
-    expect(share.body.paid).to.equal("20,000.0");
-    console.log(" \u2714 Passed Result Verify Test for gk.payInCapital(). \n");
-    
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 }
 
 main()

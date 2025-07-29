@@ -5,7 +5,7 @@
  * All Rights Reserved.
  * */
 
-const { parseUnits, parseTimestamp } = require("./utils");
+const { parseUnits } = require("./utils");
 
 
 function grParser(hexRule) {
@@ -72,7 +72,7 @@ function vrParser(hexVr) {
     votingDays: parseInt(hexVr.substring(38, 40), 16).toString(),
     execDaysForPutOpt: parseInt(hexVr.substring(40, 42), 16).toString(),
     vetoers: [parseInt(hexVr.substring(42, 52), 16).toString(), parseInt(hexVr.substring(52, 62), 16).toString()],
-    para: '0',    
+    class: parseInt(hexVr.substring(62, 66), 16).toString()
   }
   return rule;
 }
@@ -98,7 +98,7 @@ function vrCodifier(objVr, seq) {
     (Number(objVr.execDaysForPutOpt).toString(16).padStart(2, '0')) +
     (Number(objVr.vetoers[0]).toString(16).padStart(10, '0')) +
     (Number(objVr.vetoers[1]).toString(16).padStart(10, '0')) +
-    '0000' 
+    (Number(objVr.class).toString(16).padStart(4, '0'))
   }`;
   return hexVr;
 }
@@ -177,6 +177,53 @@ function lrCodifier( objLr, seq) {
   return hexLr;
 }
 
+function drCodifier(rule) {
+  const hexRule = `0x${
+    (Number(rule.typeOfDistr).toString(16).padStart(2, '0')) +
+    (Number(rule.numOfTiers).toString(16).padStart(2, '0')) +
+    (rule.isCumulative ? '01' : '00') +
+    (rule.refundPrincipal ? '01' : '00') +
+    (Number(rule.tiers[0]).toString(16).padStart(4, '0')) +
+    (Number(rule.tiers[1]).toString(16).padStart(4, '0')) +
+    (Number(rule.tiers[2]).toString(16).padStart(4, '0')) +
+    (Number(rule.tiers[3]).toString(16).padStart(4, '0')) +
+    (Number(rule.tiers[4]).toString(16).padStart(4, '0')) +
+    (Number(rule.tiers[5]).toString(16).padStart(4, '0')) +
+    (Number(rule.tiers[6]).toString(16).padStart(4, '0')) +
+    (Number(rule.rates[0]).toString(16).padStart(4, '0')) +
+    (Number(rule.rates[1]).toString(16).padStart(4, '0')) +
+    (Number(rule.rates[2]).toString(16).padStart(4, '0')) +
+    (Number(rule.rates[3]).toString(16).padStart(4, '0')) +
+    (Number(rule.rates[4]).toString(16).padStart(4, '0')) +
+    (Number(rule.rates[5]).toString(16).padStart(4, '0')) +
+    (Number(rule.rates[6]).toString(16).padStart(4, '0'))
+  }`;
+  return hexRule;
+} 
+
+function drParser(hexRule) {
+  const rule = {
+    typeOfDistr: parseInt(hexRule.substring(2, 4), 16),
+    numOfTiers: parseInt(hexRule.substring(4, 6), 16),
+    isCumulative: parseInt(hexRule.substring(6, 8), 16) == 1,
+    refundPrincipal: parseInt(hexRule.substring(8, 10), 16) == 1,
+    tiers: [
+      parseInt(hexRule.substring(10, 14), 16).toString(), parseInt(hexRule.substring(14, 18), 16).toString(),
+      parseInt(hexRule.substring(18, 22), 16).toString(), parseInt(hexRule.substring(22, 26), 16).toString(),
+      parseInt(hexRule.substring(26, 30), 16).toString(), parseInt(hexRule.substring(30, 34), 16).toString(),
+      parseInt(hexRule.substring(34, 38), 16).toString(), 
+    ],
+    rates: [
+      parseInt(hexRule.substring(38, 42), 16).toString(),
+      parseInt(hexRule.substring(42, 46), 16).toString(), parseInt(hexRule.substring(46, 50), 16).toString(),
+      parseInt(hexRule.substring(50, 54), 16).toString(), parseInt(hexRule.substring(54, 58), 16).toString(),
+      parseInt(hexRule.substring(58, 62), 16).toString(), parseInt(hexRule.substring(62, 66), 16).toString(),
+    ],
+  };
+
+  return rule;
+}
+
 function alongRuleParser(arr) {
   const out = {
     triggerDate: arr[0],
@@ -236,6 +283,8 @@ module.exports = {
     prCodifier,
     lrParser,
     lrCodifier,
+    drParser,
+    drCodifier,
     alongRuleParser,
     alongRuleCodifier,
     titles,

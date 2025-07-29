@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -9,14 +9,14 @@
 // (1) start a solo test node of HardHat in a terminal with the following command:
 //     "npx hardhat node";
 // (2) run this JS code in another terminal with the following command:
-//     "node testReport.js".
+//     "node testReportUSD.js".
 
 // To run the testing codes one by one:
 // (1) start a solo test node of HardHat in a terminal with the following command:
 //     "npx hardhat node";
 // (2) run the test JS code in another terminal one by one:
 //     "npx hardhat run ./scripts/testing/01_regUsers.js";
-//     "npx hardhat run ./scripts/testing/02_createComp.js";
+//     "npx hardhat run ./scripts/testing/02.1_createCompUSD.js";
 //     ... ...
 
 // To ensure the accuracy and relevance of the testing process, it must be conducted
@@ -65,6 +65,7 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/17_listing.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/18_deposits.js', '--network', 'localhost']);
+
     console.log('All tests are passed successfully !\n');
   } catch (err) {
     console.error('Error in script execution:', err);

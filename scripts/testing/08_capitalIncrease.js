@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -40,9 +40,10 @@
 //      fulfilled and input a Hash Lock encrypted by Keccat-256;
 // (11) User_5 pays the subscription consideration off-chain and obtains the "Hash
 //      Key" to the Hash Lock installed by User_1;
-// (12) User_5 inputs the correct "Hash Key" to close the Deal and obtains the
-//      newly issued Share。
-
+// (12) User_5 inputs the correct ”Hash Key" to close the Deal and obtains the
+//      newly issued Share.
+// (13) User_1 pay off directly in USDC to close the Deal_2 and obtains the newly 
+//      newly issued Share.
 
 // The Write APIs tested in this sction:
 // 1. General Keper
@@ -73,6 +74,11 @@
 // 4.2 function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256
 //     acct)external;
 
+// 5. USD Keeper
+// 5.1 function payOffApprovedDeal(
+//       ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, address to
+//     ) external;
+
 // Events verified in this section:
 // 1. Register of Agreements
 // 1.1 event UpdateStateOfFile(address indexed body, uint indexed state);
@@ -81,22 +87,19 @@
 // 2.1 event SetRoleAdmin(bytes32 indexed role, address indexed acct);
 // 2.2 event PayOffApprovedDeal(uint seqOfDeal, uint msgValue);
 
-
 // 3. General Meeting Minutes
 // 3.1 event CreateMotion(bytes32 indexed snOfMotion, uint256 indexed contents);
 // 3.2 event ClearDealCP(uint256 indexed seq, bytes32 indexed hashLock,
 //     uint indexed closingDeadline);
 
 // 4. Register of Shares
-// 4.1 event IssueShare(bytes32 indexed shareNumber, uint indexed paid, 
-//     uint indexed par);
+// 4.1 event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par);
 
 // 5. ROAKeeper
 // 5.1 event PayOffCIDeal(uint indexed caller, uint indexed valueOfDeal);
 
 // 6. Register of Members
-// 6.1 event CapIncrease(uint indexed votingWeight, uint indexed paid, 
-//     uint indexed par, uint distrWeight);
+// 6.1 event CapIncrease(uint indexed votingWeight, uint indexed paid, uint indexed par, uint distrWeight);
 // 6.2 event AddShareToMember(uint indexed seqOfShare, uint indexed acct);
 
 
@@ -104,21 +107,24 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
-const { getGK, getROA, getGMM, getROS, getROM, getRC, } = require("./boox");
+const { getGK, getROA, getGMM, getROS, getROM, getRC, getCashier, getUSDC, getSHA} = require("./boox");
 const { readContract } = require("../readTool"); 
 const { increaseTime, Bytes32Zero, now } = require("./utils");
 const { obtainNewShare, printShares } = require("./ros");
 const { codifyHeadOfDeal, parseDeal, getDealValue } = require("./roa");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { getLatestSeqOfMotion } = require("./gmm");
-const { depositOfUsers } = require("./gk");
-const { transferCBP, addEthToUser } = require("./saveTool");
+const { usdOfUsers } = require("./gk");
+const { transferCBP } = require("./saveTool");
+const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
-    console.log('**    08. Capital Increase    **');
-    console.log('********************************\n');
+    console.log('\n');
+    console.log('*************************************');
+    console.log('**    08 Capital Increase in USDC  **');
+    console.log('*************************************');
+    console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -128,7 +134,11 @@ async function main() {
     const gmm = await getGMM();
     const ros = await getROS();
     const rom = await getROM();
+    const sha = await getSHA();
     const roaKeeper = await readContract("ROAKeeper", await gk.getKeeper(6));
+
+    const cashier = await getCashier();
+    const usdc = await getUSDC();
 
     // ==== Create Investment Agreement ====
 
@@ -291,6 +301,21 @@ async function main() {
     await expect(gk.proposeDocOfGM(doc, 1, 1)).to.be.revertedWith("GMMK: not established");
     console.log(" \u2714 Passed Procedure Control Test for gk.proposeDocOfGM(). \n ");
 
+    // ---- Accept LPA By User_5 ----
+
+    await expect(gk.connect(signers[5]).signIA(ia.address, Bytes32Zero)).to.be.revertedWith("ROAK: buyer not signer of SHA");
+    console.log(" \u2714 Passed LPA Acceptance Test for gk.signIA(). \n ");
+
+    tx = await gk.connect(signers[5]).acceptSHA(Bytes32Zero);
+    transferCBP("5", "8", 36n);
+
+    let res = await sha.isSigner(5);
+
+    expect(res).to.equal(true);
+    console.log(" \u2714 Passed Result Test for GK.acceptSHA(). User_5 \n");
+
+    // ---- Sign IA By User_5 ----
+
     tx = await gk.connect(signers[5]).signIA(ia.address, Bytes32Zero);
     await royaltyTest(rc.address, signers[5].address, gk.address, tx, 36n, "gk.signIA().");
 
@@ -396,31 +421,25 @@ async function main() {
 
     // ---- Deal No.2 ----
     
-    const centPrice = BigInt(await gk.getCentPrice());
-    let value = getDealValue(180n, 10000n, centPrice);
-
-    tx = await gk.payOffApprovedDeal(ia.address, 2, {value: value + 100n});
-
-    addEthToUser(value, "8");
-    addEthToUser(100n, "1");
+    let auth = await generateAuth(signers[0], cashier.address, 18000);
+    tx = await gk.payOffApprovedDeal(auth, ia.address, 2, cashier.address);
 
     await royaltyTest(rc.address, signers[0].address, gk.address, tx, 58n, "gk.payOffApprovedDeal().");
 
     transferCBP("1", "8", 58n);
 
-    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(2), BigNumber.from(value));
+    await expect(tx).to.emit(ia, "PayOffApprovedDeal").withArgs(BigNumber.from(2), BigNumber.from(18000n * 10n ** 6n));
     console.log(" \u2714 Passed Event Test for ia.PayOffApprovedDeal(). \n");
 
     await expect(tx).to.emit(roa, "UpdateStateOfFile").withArgs(ia.address, BigNumber.from(6));
     console.log(" \u2714 Passed Event Test for roa.execFile(). \n");
 
-    await expect(tx).to.emit(roaKeeper, "PayOffCIDeal").withArgs(BigNumber.from(1), BigNumber.from(value));
-    console.log(" \u2714 Passed Event Test for roaKeeper.PayOffCIDeal(). \n");
-
     await expect(tx).to.emit(rom, "AddShareToMember").withArgs(BigNumber.from(7), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
-    await expect(tx).to.emit(rom, "CapIncrease").withArgs(BigNumber.from(100), BigNumber.from(10000 * 10 ** 4), BigNumber.from(10000 * 10 ** 4), BigNumber.from(100));
+    await expect(tx).to.emit(rom, "CapIncrease").withArgs(
+      BigNumber.from(100), BigNumber.from(10000 * 10 ** 4), BigNumber.from(10000 * 10 ** 4), BigNumber.from(100)
+    );
     console.log(" \u2714 Passed Event Test for rom.CapIncrease(). \n");
 
     await expect(tx).to.emit(ros, "IssueShare");
@@ -436,8 +455,8 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
-
+    // await depositOfUsers(rc, gk);
+    await usdOfUsers(usdc, cashier.address);
 }
 
 main()

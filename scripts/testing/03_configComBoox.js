@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -42,6 +42,9 @@
 // 1.2 function transferIPR(uint typeOfDoc, uint version, 
 //     uint transferee) external;
 
+// 8. USDKeeper
+// 8.1 function payInCapital(ICashier.TransferAuth memory auth, uint seqOfShare, uint paid) external;
+
 // 2. Ownable
 // 2.1 function setNewOwner(address acct) onlyOwner public;
 
@@ -51,21 +54,22 @@
 // 1.2 event TransferIPR(uint indexed typeOfDoc, uint indexed version,
 //     uint indexed transferee);
 
-
 const { BigNumber } = require("ethers");
 const { expect } = require("chai");
-const { getRC, getFT, getGK, getROS, getCashier, } = require("./boox");
-const { printShares } = require("./ros");
-const { depositOfUsers } = require("./gk");
-const { cbpOfUsers } = require("./rc");
+const { getRC, getFT, getGK, getROS, getCashier, getROMKeeper } = require("./boox");
+const { printShares, parseShare } = require("./ros");
+const { cbpOfUsers, royaltyTest } = require("./rc");
+const { generateAuth } = require("./sigTools");
+const { setUserDepo, transferCBP } = require("./saveTool");
 
 async function main() {
 
     console.log('\n');
     console.log('********************************');
-    console.log('**   03. Config ComBoox       **');
-    console.log('********************************\n');
-
+    console.log('**    03 Config ComBoox DAO   **');
+    console.log('********************************');
+    console.log('\n');
+    
 	  const signers = await hre.ethers.getSigners();
 
     const rc = await getRC();
@@ -73,7 +77,40 @@ async function main() {
     const gk = await getGK();
     const ros = await getROS();
 
+
+    // ==== Pay In Capital in USD ====
+
     const cashier = await getCashier();
+    // const usdKeeper = await getUsdKeeper();
+    const romKeeper = await getROMKeeper();
+
+    let auth = await generateAuth(signers[4], cashier.address, 7500);
+    console.log("auth:", auth);
+
+    tx = await gk.connect(signers[4]).payInCapital(auth, 4, 5000 * 10 ** 4);
+
+    setUserDepo("8", 0n);
+    setUserDepo("4", 0n);
+    
+    setUserDepo("1", 0n);
+    setUserDepo("2", 0n);
+    setUserDepo("3", 0n);
+    setUserDepo("5", 0n);
+    setUserDepo("6", 0n);
+    setUserDepo("7", 0n);
+
+    await royaltyTest(rc.address, signers[4].address, signers[0].address, tx, 36n, "ROMK.payInCapital().");
+
+    // User_4 pays royalty to User_1 (author of Templates);
+    transferCBP("4", "1", 36n);
+
+    await expect(tx).to.emit(romKeeper, "PayInCapital");
+    console.log(" \u2714 Passed Event Test for usdRomKeeper.PayInCapital(). \n");
+    
+    let share = parseShare(await ros.getShare(4));
+
+    expect(share.body.paid).to.equal("20,000.0");
+    console.log(" \u2714 Passed Result Verify Test for USDKeeper.payInCapital(). \n");
 
 
     // ==== Transfer Ownership of Platform to Company ====
@@ -91,7 +128,7 @@ async function main() {
     // ==== Transfer Ownership of Fuel Tank to Company ====
 
     await ft.setCashier(cashier.address);
-    
+
     let newCashier = (await ft.cashier()).toLowerCase();
     expect(newCashier).to.equal(cashier.address.toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for ft.setCashier(). \n');
@@ -108,8 +145,7 @@ async function main() {
 
     // ==== Transfer IPR of Templates to Company ====
 
-    for (let i=1; i<35; i++) {
-
+    const transferIPR = async (i)=>{
       tx = await rc.transferIPR(i, 1, 8);
       await tx.wait();
       
@@ -117,9 +153,17 @@ async function main() {
       console.log(' \u2714 Passed Event Test for rc.transferIPR() with typeOfDoc', i, ' version 1. \n');
     }
 
+    for (let i=1; i<29; i++) {
+      await transferIPR(i);
+    }
+
+    for (let i=35; i<38; i++) {
+      await transferIPR(i);
+    }
+
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
     
 }
 

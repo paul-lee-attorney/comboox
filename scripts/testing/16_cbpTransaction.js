@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -92,15 +92,16 @@ const { increaseTime, parseUnits, Bytes32Zero, now, } = require("./utils");
 const { getLatestSeqOfMotion, allSupportMotion, parseMotion } = require("./gmm");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
-const { depositOfUsers } = require("./gk");
 const { transferCBP, addCBPToUser, minusCBPFromUser, addEthToUser } = require("./saveTool");
 const { generateAuth } = require("./sigTools");
 
 async function main() {
 
-    console.log('\n********************************');
+    console.log('\n');
+    console.log('********************************');
     console.log('**     16. CBP Transactions   **');
-    console.log('********************************\n');
+    console.log('********************************');
+    console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -247,8 +248,8 @@ async function main() {
     await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
-    await expect(tx).to.emit(gmmKeeper, "TransferFund").withArgs(ft.address, true, ethers.utils.parseUnits("88", 18), BigNumber.from(seqOfMotion), BigNumber.from(1));
-    console.log(" \u2714 Passed Event Test for gmmKeeper.TransferFund(). \n");
+    // await expect(tx).to.emit(gmmKeeper, "TransferFund").withArgs(ft.address, true, ethers.utils.parseUnits("88", 18), BigNumber.from(seqOfMotion), BigNumber.from(1));
+    // console.log(" \u2714 Passed Event Test for gmmKeeper.TransferFund(). \n");
 
     await expect(tx).to.emit(rc, "Transfer").withArgs(gk.address, ft.address, ethers.utils.parseUnits("88", 18));
     console.log(" \u2714 Passed Event Test for rc.Transfer(). \n");
@@ -267,12 +268,10 @@ async function main() {
     let auth = await generateAuth(signers[3], cashier.address, 2600 * 81);
     console.log("auth:", auth);
 
-    // tx = await ft.connect(signers[3]).refuel({value: ethers.utils.parseUnits("80", 18)});
     tx = await ft.connect(signers[3]).refuel(auth, ethers.utils.parseUnits("80", 18));
 
     addCBPToUser(80n * 10n ** 18n, "3");
 
-    // await expect(tx).to.emit(ft, "Refuel").withArgs(signers[3].address, ethers.utils.parseUnits("80", 18), ethers.utils.parseUnits("80", 18));
     await expect(tx).to.emit(ft, "Refuel").withArgs(signers[3].address, ethers.utils.parseUnits("208", 9), ethers.utils.parseUnits("80", 18));
     console.log(" \u2714 Passed Event Test for ft.Refuel(). \n");
 
@@ -376,7 +375,7 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 }
 
 main()

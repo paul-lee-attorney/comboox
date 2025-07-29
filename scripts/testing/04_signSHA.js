@@ -94,15 +94,16 @@ const { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, lrPars
 const { codifyHeadOfOption, codifyCond, parseOption } = require("./roo");
 const { royaltyTest, cbpOfUsers } = require("./rc");
 const { printShares } = require("./ros");
-const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
+const { transferCBP, saveBooxAddr } = require("./saveTool");
 
 async function main() {
 
-    console.log('\n********************************');
+    console.log('\n');
+    console.log('********************************');
     console.log('**    04. Create SHA          **');
-    console.log('********************************\n');
-
+    console.log('********************************');
+    console.log('\n');
+    
     // ==== Get Instances ====
 
 	  const signers = await hre.ethers.getSigners();
@@ -162,10 +163,10 @@ async function main() {
     gr.establishedDate = estDate;
     gr.businessTermInYears = 99;
 
-    await expect(sha.connect(signers[1]).addRule(grCodifier(gr))).to.be.revertedWith("AC.onlyAttorney: NOT");
+    await expect(sha.connect(signers[1]).addRule(0, grCodifier(gr))).to.be.revertedWith("AC.onlyAttorney: NOT");
     console.log(" \u2714 Passed Access Control Test for sha.addRule().OnlyAttorney(). \n");
 
-    await sha.addRule(grCodifier(gr));
+    await sha.addRule(0, grCodifier(gr));
 
     let newGR = grParser(await sha.getRule(0));
     expect(newGR).to.deep.equal(gr);
@@ -187,7 +188,7 @@ async function main() {
       vr.votePrepareDays = 0;
       vr.votingDays = 1;
 
-      await sha.addRule(vrCodifier(vr, i));
+      await sha.addRule(vr.seqOfRule, vrCodifier(vr, i));
 
       const newVR = vrParser(await sha.getRule(i));
       expect(newVR).to.deep.equal(vr);
@@ -219,7 +220,7 @@ async function main() {
     pr.seqOfVR = 9;
     pr.endDate = endDate;
     
-    await sha.addRule(prCodifier(pr, 256));
+    await sha.addRule(pr.seqOfRule, prCodifier(pr, 256));
     await verifyPR(256, pr);
 
     // ---- CEO ----
@@ -237,7 +238,7 @@ async function main() {
     pr.seqOfVR = 11;
     pr.endDate = endDate;
 
-    await sha.addRule(prCodifier(pr, 257));
+    await sha.addRule(pr.seqOfRule, prCodifier(pr, 257));
     await verifyPR(257, pr);
 
     // ---- Manager ----
@@ -255,7 +256,7 @@ async function main() {
     pr.seqOfVR = 11;
     pr.endDate = endDate;
 
-    await sha.addRule(prCodifier(pr, 258));
+    await sha.addRule(pr.seqOfRule, prCodifier(pr, 258));
     await verifyPR(258, pr);
 
     // ---- Listing Rule ----
@@ -277,7 +278,7 @@ async function main() {
     lr.votingWeight = 100;
     lr.distrWeight = 100;
 
-    await sha.addRule(lrCodifier(lr, 1024));
+    await sha.addRule(lr.seqOfRule, lrCodifier(lr, 1024));
     await verifyLR(1024, lr);
 
     // ---- AntiDilution ----
@@ -651,9 +652,13 @@ async function main() {
     expect(governingSHA).to.equal(sha.address);
     console.log(" \u2714 Passed Result Verify Test for gk.activateSHA().\n");
 
+    // ==== save to boox ====
+
+    saveBooxAddr("SHA", governingSHA);
+
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 }
 
 

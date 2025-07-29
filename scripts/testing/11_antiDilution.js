@@ -78,10 +78,12 @@ const { transferCBP } = require("./saveTool");
 
 async function main() {
 
-    console.log('\n********************************');
+    console.log('\n');
+    console.log('********************************');
     console.log('**     11. Anti-Dilution      **');
-    console.log('********************************\n');
-
+    console.log('********************************');
+    console.log('\n');
+    
 	  const signers = await hre.ethers.getSigners();
 
     const rc = await getRC();
@@ -332,7 +334,7 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 }
 
 main()

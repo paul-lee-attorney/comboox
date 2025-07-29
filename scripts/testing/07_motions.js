@@ -50,9 +50,11 @@ const { transferCBP } = require("./saveTool");
 
 async function main() {
 
-    console.log('\n********************************');
+    console.log('\n');
+    console.log('********************************');
     console.log('**   07. Testing Motions      **');
-    console.log('********************************\n');
+    console.log('********************************');
+    console.log('\n');
 
 	  const signers = await hre.ethers.getSigners();
 
@@ -166,7 +168,7 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
-    await depositOfUsers(rc, gk);
+    // await depositOfUsers(rc, gk);
 }
 
 main()

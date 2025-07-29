@@ -1,42 +1,39 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 const { parseTimestamp, longDataParser, parseHexToBigInt } = require("./utils");
 
-const parseFromSn = (sn) => {
-  sn = sn.substring(2);
+const stateOfInvestor = [
+  'Pending', 'Approved', 'Revoked'
+]
+
+const parseInvestor = (arr) => {
   return {
-    from: sn.substring(0, 40),
-    buyer: parseInt(sn.substring(40, 50), 16),
-    groupRep: parseInt(sn.substring(50, 60), 16),
-    classOfShare: parseInt(sn.substring(60, 64), 16), 
+    userNo: arr[0],
+    groupRep: arr[1],
+    regDate: parseTimestamp(arr[2]),
+    verifier: arr[3],
+    approveDate: parseTimestamp(arr[4]),
+    approved: stateOfInvestor[arr[6]],
+    idHash: arr[7],
   };
 }
 
-const parseToSn = (sn) => {
+const parseDeal = (sn) => {
   sn = sn.substring(2);
   return {
-    to: sn.substring(0, 40),
-    seller: parseInt(sn.substring(40, 50), 16),
-    seqOfShare: parseInt(sn.substring(50, 58), 16),
-    state: parseInt(sn.substring(58, 60), 16),
-    inEth: sn.substring(60, 62) == '01',
-    isOffer: sn.substring(62, 64) == '01',
-  };
-}
-
-const parseQtySn = (sn) => {
-  sn = sn.substring(2);
-  return {
-    paid: longDataParser(ethers.utils.formatUnits(parseHexToBigInt(sn.substring(0, 16)).toString(), 4)),
-    price: longDataParser(ethers.utils.formatUnits(parseInt(sn.substring(16, 24), 16), 4)),
-    votingWeight: parseInt(sn.substring(24, 28), 16),
-    distrWeight: parseInt(sn.substring(28, 32), 16),
-    consideration: longDataParser(ethers.utils.formatUnits(parseHexToBigInt(sn.substring(32, 64)).toString(), 8)),
+    classOfShare: parseInt(sn.substring(0, 4), 16),
+    seqOfShare: parseInt(sn.substring(4, 12), 16),
+    buyer: parseInt(sn.substring(12, 22), 16),
+    groupRep: parseInt(sn.substring(22, 32), 16),
+    paid: longDataParser(ethers.utils.formatUnits(parseHexToBigInt(sn.substring(32, 48)).toString(), 4)),
+    price: longDataParser(ethers.utils.formatUnits(parseInt(sn.substring(48, 56), 16), 4)),
+    votingWeight: parseInt(sn.substring(56, 60), 16),
+    distrWeight: parseInt(sn.substring(60, 64), 16),
   };
 }
 
@@ -61,7 +58,7 @@ const parseData = (sn) => {
     groupRep: parseInt(sn.substring(12, 22), 16),
     votingWeight: parseInt(sn.substring(22, 26), 16),
     distrWeight: parseInt(sn.substring(26, 30), 16),
-    margin: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(30, 62)).toString(), 8),
+    margin: ethers.utils.formatUnits(parseHexToBigInt(sn.substring(30, 62)).toString(), 18),
     inEth: (sn.substring(62, 64) == '01'),
   };
 }
@@ -83,21 +80,17 @@ const parseOrder = (arr) => {
       groupRep: arr[1][2],
       votingWeight: arr[1][3],
       distrWeight: arr[1][4],
-      margin: longDataParser(ethers.utils.formatUnits(arr[1][5].toString(), 8)),
-      inEth: arr[1][6],
-      pubKey: arr[1][7],
-      date: arr[1][8],
-      issueDate: parseTimestamp(arr[1][9]),
+      margin: longDataParser(ethers.utils.formatUnits(arr[1][5].toString(), 18)),
+      state: arr[1][6]
     },
   };
 }
 
 module.exports = {
-    parseFromSn,
-    parseToSn,
-    parseQtySn,
-    parseData,
+    parseInvestor,
+    parseDeal,
     parseNode,
+    parseData,
     parseOrder,
 };
 

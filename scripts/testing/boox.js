@@ -31,9 +31,13 @@ const getCNC = async () => {
   return await readContract("CreateNewComp", Temps.CreateNewComp);
 }
 
-const getCNCUSD = async () => {
-  return await readContract("CreateNewCompUSD", Temps.CreateNewCompUSD);
+const getCNF = async () => {
+  return await readContract("CreateNewFund", Temps.CreateNewFund);
 }
+
+// const getCNCUSD = async () => {
+//   return await readContract("CreateNewCompUSD", Temps.CreateNewCompUSD);
+// }
 
 const getFT = async () => {
   return await readContract("UsdFuelTank", Temps.UsdFuelTank);
@@ -44,6 +48,11 @@ const getFT = async () => {
 const getGK = async (addr) => {
   if (!addr) addr = Boox.GK;
   return await readContract("GeneralKeeper", addr);
+}
+
+const getFK = async (addr) => {
+  if (!addr) addr = Boox.FundKeeper;
+  return await readContract("FundKeeper", addr);
 }
 
 const getBMM = async () => {
@@ -66,8 +75,16 @@ const getROC = async () => {
   return await readContract("RegisterOfConstitution", Boox.ROC);
 }
 
+const getSHA = async () => {
+  return await readContract("ShareholdersAgreement", Boox.SHA);
+}
+
 const getROD = async () => {
   return await readContract("RegisterOfDirectors", Boox.ROD);
+}
+
+const getROI = async () => {
+  return await readContract("RegisterOfInvestors", Boox.ROI);
 }
 
 const getROM = async () => {
@@ -82,6 +99,10 @@ const getROP = async () => {
   return await readContract("RegisterOfPledges", Boox.ROP);
 }
 
+const getROR = async () => {
+  return await readContract("RegisterOfRedemptions", Boox.ROR);
+}
+
 const getROS = async () => {
   return await readContract("RegisterOfShares", Boox.ROS);
 }
@@ -94,8 +115,8 @@ const getCashier = async () => {
   return await readContract("Cashier", Boox.Cashier);
 }
 
-const getUsdLOO = async () => {
-  return await readContract("UsdListOfOrders", Boox.UsdLOO);
+const getFundAccountant = async () => {
+  return await readContract("FundAccountant", Boox.Accountant);
 }
 
 const getGMMKeeper = async () => {
@@ -106,53 +127,47 @@ const getLOOKeeper = async () => {
   return await readContract("LOOKeeper", Boox.LOOKeeper);
 }
 
-const getUsdKeeper = async () => {
-  return await readContract("USDKeeper", Boox.UsdKeeper);
+const getROAKeeper = async () => {
+  return await readContract("ROAKeeper", Boox.ROAKeeper);
 }
 
-const getUsdLOOKeeper = async () => {
-  return await readContract("UsdLOOKeeper", Boox.UsdLOOKeeper);
+const getROMKeeper = async () => {
+  return await readContract("ROMKeeper", Boox.ROMKeeper);
 }
 
-const getUsdROAKeeper = async () => {
-  return await readContract("UsdROAKeeper", Boox.UsdROAKeeper);
-}
-
-const getUsdROMKeeper = async () => {
-  return await readContract("UsdROMKeeper", Boox.UsdROMKeeper);
-}
-
-const getUsdROOKeeper = async () => {
-  return await readContract("UsdROOKeeper", Boox.UsdROOKeeper);
+const getROOKeeper = async () => {
+  return await readContract("ROOKeeper", Boox.ROOKeeper);
 }
 
 module.exports = {
   refreshBoox,
   getRC,
   getCNC,
-  getCNCUSD,
+  getCNF,
   getFT,
   getGK,
+  getFK,
   getBMM,
   getGMM,
   getLOO,
   getROA,
   getROC,
   getROD,
+  getROI,
   getROM,
   getROO,
   getROP,
+  getROR,
   getROS,
+  getSHA,
   getUSDC,
   getCashier,
-  getUsdLOO,
+  getFundAccountant,
   getGMMKeeper,
   getLOOKeeper,
-  getUsdLOOKeeper,
-  getUsdROAKeeper,
-  getUsdROMKeeper,
-  getUsdROOKeeper,
-  getUsdKeeper,
+  getROAKeeper,
+  getROMKeeper,
+  getROOKeeper,
 };
 
   
