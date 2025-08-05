@@ -42,10 +42,11 @@ const parseCompInfo = (arr) => {
   const info = {
     regNum: arr[0],
     regDate: parseTimestamp(arr[1]),
-    currency: currencies[arr[2]],
-    state: arr[3],
-    symbol: ethers.utils.toUtf8String(arr[4]).replace(/\x00/g, ""),
-    name: arr[5],
+    typeOfEntity: arr[2],
+    currency: currencies[arr[3]],
+    state: arr[4],
+    symbol: ethers.utils.toUtf8String(arr[5]).replace(/\x00/g, ""),
+    name: arr[6],
   }
 
   return info;
