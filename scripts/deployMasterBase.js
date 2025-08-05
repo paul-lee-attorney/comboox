@@ -36,7 +36,6 @@ async function main() {
 	const libAddress = await deployTool(signers[0], "Address", libraries, params);
 	const libInvestorsRepo = await deployTool(signers[0], "InvestorsRepo", libraries, params);
 	const libWaterfallsRepo = await deployTool(signers[0], "WaterfallsRepo", libraries, params);
-	const libBooksRepo = await deployTool(signers[0], "BooksRepo", libraries, params);
 
 	libraries = {
 		"GoldChain": libGoldChain.address,
@@ -57,6 +56,7 @@ async function main() {
 	const libSharesRepo = await deployTool(signers[0], "SharesRepo", libraries, params);
 	const libTeamsRepo = await deployTool(signers[0], "TeamsRepo", libraries, params);
 	const libRedemptionsRepo = await deployTool(signers[0], "RedemptionsRepo", libraries, params);
+	// const libUsdLockersRepo = await deployTool(signers[0], "UsdLockersRepo", libraries, params);
 
 	libraries = {
 		"Checkpoints": libCheckpoints.address,
@@ -123,8 +123,8 @@ async function main() {
 	let cnc = await deployTool(signers[0], "CreateNewComp", libraries, params);
 	await cnc.init(signers[0].address, rc.address);
 
-	// let cnf = await deployTool(signers[0], "CreateNewFund", libraries, params);
-	// await cnf.init(signers[0].address, rc.address);
+	let cnf = await deployTool(signers[0], "CreateNewFund", libraries, params);
+	await cnf.init(signers[0].address, rc.address);
 
 	// ==== Deploy Templates ====
 
@@ -134,8 +134,7 @@ async function main() {
 		"EnumerableSet": libEnumerableSet.address,
 		"RolesRepo": libRolesRepo.address,
 		"SigsRepo": libSigsRepo.address,
-		"SwapsRepo": libSwapsRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"SwapsRepo": libSwapsRepo.address
 	};
 	params=[];
 	let ia = await deployTool(signers[0], "InvestmentAgreement", libraries, params);
@@ -150,23 +149,20 @@ async function main() {
 
 	libraries = {
 		"EnumerableSet": libEnumerableSet.address,
-		"RolesRepo": libRolesRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"RolesRepo": libRolesRepo.address
 	};
 	let ad = await deployTool(signers[0], "AntiDilution", libraries, params);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
 		"EnumerableSet": libEnumerableSet.address,
-		"RolesRepo": libRolesRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"RolesRepo": libRolesRepo.address
 	};
 	let lu = await deployTool(signers[0], "LockUp", libraries, params);
 
 	libraries = {
 		"RolesRepo": libRolesRepo.address,
-		"LinksRepo": libLinksRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"LinksRepo": libLinksRepo.address
 	};
 	let al = await deployTool(signers[0], "Alongs", libraries, params);
 	
@@ -184,35 +180,25 @@ async function main() {
 		"Address": libAddress.address
 	}
 
-	let gk = await deployTool(signers[0], "CompKeeper", libraries, params);
-	let privCompKeeper = await deployTool(signers[0], "PrivateCompKeeper", libraries, params);
-	let growingCompKeeper = await deployTool(signers[0], "GrowingCompKeeper", libraries, params);
-	let listedCompKeeper = await deployTool(signers[0], "ListedCompKeeper", libraries, params);
-
+	let gk = await deployTool(signers[0], "GeneralKeeper", libraries, params);
 	let fk = await deployTool(signers[0], "FundKeeper", libraries, params);
-	let lpFundKeeper = await deployTool(signers[0], "LPFundKeeper", libraries, params);
-	let listedLPFundKeeper = await deployTool(signers[0], "ListedLPFundKeeper", libraries, params);
-	let openFundKeeper = await deployTool(signers[0], "OpenFundKeeper", libraries, params);
-	let listedOpenFundKeeper = await deployTool(signers[0], "ListedOpenFundKeeper", libraries, params);
-	
-	libraries = {
-		"BooksRepo": libBooksRepo.address
-	}
+
+	libraries = {}
 
 	let rooKeeper = await deployTool(signers[0], "ROOKeeper", libraries, params);
 	let romKeeper = await deployTool(signers[0], "ROMKeeper", libraries, params);
 	let rodKeeper = await deployTool(signers[0], "RODKeeper", libraries, params);
-	let fundRORKeeper = await deployTool(signers[0], "FundRORKeeper", libraries, params);
+	let rorKeeper = await deployTool(signers[0], "FundRORKeeper", libraries, params);
 	let accountant = await deployTool(signers[0], "Accountant", libraries, params);
 	
+
 	// let usdKeeper = await deployTool(signers[0], "USDKeeper", libraries, params);
 	// let usdRomKeeper = await deployTool(signers[0], "UsdROMKeeper", libraries, params);
 	// let usdRooKeeper = await deployTool(signers[0], "UsdROOKeeper", libraries, params);
 	// let usdRoaKeeper = await deployTool(signers[0], "UsdROAKeeper", libraries, params);
 
 	libraries = {
-		"RulesParser": libRulesParser.address,
-		"BooksRepo": libBooksRepo.address
+		"RulesParser": libRulesParser.address		
 	}
 	let shaKeeper = await deployTool(signers[0], "SHAKeeper", libraries, params);
 	let looKeeper = await deployTool(signers[0], "LOOKeeper", libraries, params);
@@ -225,8 +211,7 @@ async function main() {
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
-		"RulesParser": libRulesParser.address,
-		"BooksRepo": libBooksRepo.address
+		"RulesParser": libRulesParser.address		
 	}
 	let gmmKeeper = await deployTool(signers[0], "GMMKeeper", libraries, params);
 	let bmmKeeper = await deployTool(signers[0], "BMMKeeper", libraries, params);
@@ -234,23 +219,20 @@ async function main() {
 
 	libraries = {
 		"DocsRepo": libDocsRepo.address,
-		"RulesParser": libRulesParser.address,
-		"BooksRepo": libBooksRepo.address
+		"RulesParser": libRulesParser.address		
 	}
 	let roaKeeper = await deployTool(signers[0], "ROAKeeper", libraries, params);
 
 	libraries = {
 		"ArrayUtils": libArrayUtils.address,
 		"DocsRepo": libDocsRepo.address,
-		"RulesParser": libRulesParser.address,
-		"BooksRepo": libBooksRepo.address
+		"RulesParser": libRulesParser.address		
 	}
 	let rocKeeper = await deployTool(signers[0], "ROCKeeper", libraries, params);
 	let fundROCKeeper = await deployTool(signers[0], "FundROCKeeper", libraries, params);
 
 	libraries = {
 		"PledgesRepo": libPledgesRepo.address,
-		"BooksRepo": libBooksRepo.address
 	}
 	let ropKeeper = await deployTool(signers[0], "ROPKeeper", libraries, params);
 
@@ -260,20 +242,17 @@ async function main() {
 		"DTClaims": libDTClaims.address,
 		"FilesRepo": libFilesRepo.address,
 		"FRClaims": libFRClaims.address,
-		"TopChain": libTopChain.address,
-		"BooksRepo": libBooksRepo.address
+		"TopChain": libTopChain.address
 	}
 	let roa = await deployTool(signers[0], "RegisterOfAgreements", libraries, params);
 
 	libraries = {
-		"OfficersRepo": libOfficersRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"OfficersRepo": libOfficersRepo.address
 	}
 	let rod = await deployTool(signers[0], "RegisterOfDirectors", libraries, params);
 
 	libraries = {
-		"MotionsRepo": libMotionsRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"MotionsRepo": libMotionsRepo.address
 	}
 	let mm = await deployTool(signers[0], "MeetingMinutes", libraries, params);
 
@@ -284,8 +263,7 @@ async function main() {
 
 	libraries = {
 		"OptionsRepo": libOptionsRepo.address,
-		"SwapsRepo": libSwapsRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"SwapsRepo": libSwapsRepo.address
 	}
 	let roo = await deployTool(signers[0], "RegisterOfOptions", libraries, params);
 
@@ -296,16 +274,14 @@ async function main() {
 
 	libraries = {
 		"LockersRepo": libLockersRepo.address,
-		"SharesRepo": libSharesRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"SharesRepo": libSharesRepo.address
 	}
 	let ros = await deployTool(signers[0], "RegisterOfShares", libraries, params);
 
 	libraries = {
 		"Checkpoints": libCheckpoints.address,
 		"MembersRepo": libMembersRepo.address,
-		"TopChain": libTopChain.address,
-		"BooksRepo": libBooksRepo.address
+		"TopChain": libTopChain.address
 	}
 	let rom = await deployTool(signers[0], "RegisterOfMembers", libraries, params);
 
@@ -336,8 +312,7 @@ async function main() {
 
 	libraries = {
 		"RulesParser": libRulesParser.address,
-		"WaterfallsRepo": libWaterfallsRepo.address,
-		"BooksRepo": libBooksRepo.address
+		"WaterfallsRepo": libWaterfallsRepo.address
 	}
 	let cashier = await deployTool(signers[0], "Cashier", libraries, params);
 
@@ -496,8 +471,8 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 37, accountant.address, 1);
 	console.log("set template for Accountant at address: ", accountant.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 38, fundRORKeeper.address, 1);
-	console.log("set template for fundRORKeeper at address: ", fundRORKeeper.address, "\n");
+	await rc.connect(signers[1]).setTemplate( 38, rorKeeper.address, 1);
+	console.log("set template for RORKeeper at address: ", rorKeeper.address, "\n");
 
 	await rc.connect(signers[1]).setTemplate( 39, ror.address, 1);
 	console.log("set template for RegisterOfRedemptions at address: ", ror.address, "\n");
@@ -520,35 +495,11 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 45, fundROIKeeper.address, 1);
 	console.log("set template for FundROIKeeper at address: ", fundROIKeeper.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 46, cnc.address, 1);
-	console.log("set template for CreateNewComp at address: ", cnc.address, "\n");
+	await rc.connect(signers[1]).setOracle(pc.address);
+	console.log("set Oracle at address: ", pc.address, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 47, privCompKeeper.address, 1);
-	console.log("set template for PrivateCompKeeper at address: ", privCompKeeper.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 48, growingCompKeeper.address, 1);
-	console.log("set template for GrowingCompKeeper at address: ", growingCompKeeper.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 49, listedCompKeeper.address, 1);
-	console.log("set template for ListedCompKeeper at address: ", listedCompKeeper.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 50, lpFundKeeper.address, 1);
-	console.log("set template for lpFundKeeper at address: ", lpFundKeeper.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 51, listedLPFundKeeper.address, 1);
-	console.log("set template for listedLPFundKeeper at address: ", listedLPFundKeeper.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 52, openFundKeeper.address, 1);
-	console.log("set template for openFundKeeper at address: ", openFundKeeper.address, "\n");
-
-	await rc.connect(signers[1]).setTemplate( 53, listedOpenFundKeeper.address, 1);
-	console.log("set template for listedOpenFundKeeper at address: ", listedOpenFundKeeper.address, "\n");
-
-	// await rc.connect(signers[1]).setOracle(pc.address);
-	// console.log("set Oracle at address: ", pc.address, "\n");
-
-	// await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
-	// console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");
+	await rc.connect(signers[1]).setPriceFeed(0, mockFeedRegistry.address);
+	console.log("set MOCK price feed at address: ", mockFeedRegistry.address, "\n");
 
 };
 

@@ -648,7 +648,7 @@ async function main() {
     expect(tx).to.emit(rod, "AddPosition");
     console.log(" \u2714 Passed Event Test for rod.AddPosition().\n");
 
-    const governingSHA = await roc.pointer();
+    const governingSHA = await gk.getSHA();
     expect(governingSHA).to.equal(sha.address);
     console.log(" \u2714 Passed Result Verify Test for gk.activateSHA().\n");
 

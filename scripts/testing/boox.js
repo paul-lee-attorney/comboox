@@ -31,9 +31,9 @@ const getCNC = async () => {
   return await readContract("CreateNewComp", Temps.CreateNewComp);
 }
 
-// const getCNF = async () => {
-//   return await readContract("CreateNewFund", Temps.CreateNewFund);
-// }
+const getCNF = async () => {
+  return await readContract("CreateNewFund", Temps.CreateNewFund);
+}
 
 // const getCNCUSD = async () => {
 //   return await readContract("CreateNewCompUSD", Temps.CreateNewCompUSD);
@@ -43,15 +43,11 @@ const getFT = async () => {
   return await readContract("UsdFuelTank", Temps.UsdFuelTank);
 }
 
-const getBR = async () => {
-  return await readContract("BooksRepo", Temps.BooksRepo);
-}
-
 // ==== Boox ====
 
 const getGK = async (addr) => {
   if (!addr) addr = Boox.GK;
-  return await readContract("CompKeeper", addr);
+  return await readContract("GeneralKeeper", addr);
 }
 
 const getFK = async (addr) => {
@@ -145,10 +141,9 @@ const getROOKeeper = async () => {
 
 module.exports = {
   refreshBoox,
-  getBR,
   getRC,
   getCNC,
-  // getCNF,
+  getCNF,
   getFT,
   getGK,
   getFK,

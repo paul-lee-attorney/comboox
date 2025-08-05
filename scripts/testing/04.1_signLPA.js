@@ -114,7 +114,7 @@ async function main() {
 
     // ==== Create SHA ====
 
-    await expect(gk.connect(signers[5]).createSHA(1) ).to.be.revertedWith("MR.memberExist: not");
+    await expect(gk.connect(signers[5]).createSHA(1) ).to.be.revertedWith("not MEMBER");
     console.log(" \u2714 Passed Access Control Test of rocKeeper.createSHA() for OnlyMember. \n");
 
     let latest = await rc.counterOfVersions(22);
@@ -397,7 +397,7 @@ async function main() {
     
     console.log(" \u2714 Passed Resutl Verify Test for sha.finalizeSHA(). \n");    
 
-    await expect(gk.connect(signers[5]).circulateSHA(sha.address, Bytes32Zero, Bytes32Zero)).to.be.revertedWith("MR.memberExist: not");
+    await expect(gk.connect(signers[5]).circulateSHA(sha.address, Bytes32Zero, Bytes32Zero)).to.be.revertedWith("NOT Party of Doc");
     console.log(" \u2714 Passed Access Control Test for gk.circulateSHA().OnlyParty(). \n ");
 
     await expect(gk.signSHA(sha.address, Bytes32Zero)).to.be.revertedWith("SHA not in Circulated State");
@@ -458,8 +458,7 @@ async function main() {
     expect(tx).to.emit(rod, "AddPosition");
     console.log(" \u2714 Passed Event Test for rod.AddPosition().\n");
 
-    const governingSHA = await roc.pointer();
-
+    const governingSHA = await gk.getSHA();
     expect(governingSHA).to.equal(sha.address);
     console.log(" \u2714 Passed Result Verify Test for gk.activateSHA().\n");
 

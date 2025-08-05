@@ -67,7 +67,7 @@ const { BigNumber, ethers } = require("ethers");
 const { expect } = require("chai");
 const { saveBooxAddr, setUserCBP, setUserDepo } = require("./saveTool");
 const { codifyHeadOfShare, printShares } = require('./ros');
-const { getROM, getROS, getRC, refreshBoox, getUSDC, getCNC, getFK, } = require("./boox");
+const { getROM, getROS, getRC, refreshBoox, getUSDC, getCNF, getFK, } = require("./boox");
 const { now  } = require("./utils");
 const { parseCompInfo } = require("./gk");
 const { cbpOfUsers } = require("./rc");
@@ -83,12 +83,12 @@ async function main() {
     // ==== Get Instances ====
 
 	  const signers = await hre.ethers.getSigners();
-    const cnc = await getCNC();
+    const cnf = await getCNF();
     const rc = await getRC();
 
     // ==== Create Company ====
 
-    let tx = await cnc.createComp(9, signers[1].address);
+    let tx = await cnf.createComp(signers[1].address);
     let receipt = await tx.wait();
 
     await expect(tx).to.emit(rc, "CreateDoc");
@@ -104,43 +104,43 @@ async function main() {
 
     setUserCBP("8", 0n); // No rewards will be granted for CA User;
 
-    const ROC = await gk.getBook(1);
+    const ROC = await gk.getROC();
     saveBooxAddr("ROC", ROC);
 
-    const ROD = await gk.getBook(2);
+    const ROD = await gk.getROD();
     saveBooxAddr("ROD", ROD);
 
-    const BMM = await gk.getBook(3);
+    const BMM = await gk.getBMM();
     saveBooxAddr("BMM", BMM);
 
-    const ROM = await gk.getBook(4);
+    const ROM = await gk.getROM();
     saveBooxAddr("ROM", ROM);
 
-    const GMM = await gk.getBook(5);
+    const GMM = await gk.getGMM();
     saveBooxAddr("GMM", GMM);
 
-    const ROA = await gk.getBook(6);
+    const ROA = await gk.getROA();
     saveBooxAddr("ROA", ROA);
 
-    const ROP = await gk.getBook(8);
+    const ROP = await gk.getROP();
     saveBooxAddr("ROP", ROP);
 
-    const ROS = await gk.getBook(9);
+    const ROS = await gk.getROS();
     saveBooxAddr("ROS", ROS);
 
-    const LOO = await gk.getBook(10);
+    const LOO = await gk.getLOO();
     saveBooxAddr("LOO", LOO);
 
-    const ROI = await gk.getBook(11);
+    const ROI = await gk.getROI();
     saveBooxAddr("ROI", ROI);
 
-    const USDC = await gk.getBook(12);
-    saveBooxAddr("USDC", USDC);
-
-    const Cashier = await gk.getBook(15);
+    const Cashier = await gk.getCashier();
     saveBooxAddr("Cashier", Cashier);
 
-    const ROR = await gk.getBook(16);
+    const USDC = await gk.getBank();
+    saveBooxAddr("USDC", USDC);
+
+    const ROR = await gk.getROR();
     saveBooxAddr("ROR", ROR);
 
     const ROCKeeper = await gk.getKeeper(1);
@@ -191,7 +191,7 @@ async function main() {
 
     // ==== Config Comp ====
 
-    const symbol = ethers.utils.hexlify(ethers.utils.toUtf8Bytes("COMBOOX")).padEnd(38, '0');
+    const symbol = ethers.utils.hexlify(ethers.utils.toUtf8Bytes("COMBOOX")).padEnd(40, '0');
     
     await expect(gk.setCompInfo(0, symbol, "ComBoox Fund")).to.be.revertedWith("AC.onlyDK: not");
     console.log(" \u2714 Passed Access Control Test for ac.OnlyDK(). \n");
