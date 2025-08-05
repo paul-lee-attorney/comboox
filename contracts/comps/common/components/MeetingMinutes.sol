@@ -28,6 +28,7 @@ import "./IMeetingMinutes.sol";
 contract MeetingMinutes is IMeetingMinutes, AccessControl {
     using MotionsRepo for MotionsRepo.Repo;
     using RulesParser for bytes32;
+    using BooksRepo for IBaseKeeper;
 
     MotionsRepo.Repo private _repo;
 

@@ -19,21 +19,25 @@
 
 pragma solidity ^0.8.8;
 
+import "../../lib/BooksRepo.sol";
+import "../../lib/DocsRepo.sol";
+import "../../lib/DealsRepo.sol";
+import "../../lib/InvestorsRepo.sol";
+import "../../lib/RulesParser.sol";
+import "../../lib/SharesRepo.sol";
+
 import "../../comps/common/access/IDraftControl.sol";
 import "../../comps/common/components/IFilesFolder.sol";
+import "../../comps/common/components/IMeetingMinutes.sol";
 import "../../comps/common/components/ISigPage.sol";
 
+import "../../comps/books/cashier/ICashier.sol";
 import "../../comps/books/roa/IInvestmentAgreement.sol";
 import "../../comps/books/roa/IRegisterOfAgreements.sol";
 import "../../comps/books/roc/IShareholdersAgreement.sol";
 import "../../comps/books/roc/terms/ILockUp.sol";
-
-import "../../comps/books/cashier/ICashier.sol";
-
-import "../../lib/DocsRepo.sol";
-import "../../lib/RulesParser.sol";
-import "../../lib/SharesRepo.sol";
-import "../../lib/InvestorsRepo.sol";
+import "../../comps/books/rom/IRegisterOfMembers.sol";
+import "../../comps/books/ros/IRegisterOfShares.sol";
 
 interface IROAKeeper {
 

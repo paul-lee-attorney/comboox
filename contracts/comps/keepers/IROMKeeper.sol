@@ -19,7 +19,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../comps/books/cashier/ICashier.sol";
+import "../books/ros/IRegisterOfShares.sol";
+import "../books/cashier/ICashier.sol";
+
+import "../../lib/BooksRepo.sol";
+import "../../lib/SharesRepo.sol";
 
 interface IROMKeeper {
 

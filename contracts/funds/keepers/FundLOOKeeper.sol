@@ -26,9 +26,7 @@ import "../../comps/keepers/ILOOKeeper.sol";
 
 contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
-    // using UsdOrdersRepo for UsdOrdersRepo.Deal;
-
-    // event Deprecated(address applicant, uint groupRep, bytes32 idHash);
+    using BooksRepo for IBaseKeeper;
 
     //###############
     //##   Write   ##

@@ -26,6 +26,7 @@ import "./IROIKeeper.sol";
 
 contract ROIKeeper is IROIKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
+    using BooksRepo for IBaseKeeper;
 
     //###############
     //##   Write   ##

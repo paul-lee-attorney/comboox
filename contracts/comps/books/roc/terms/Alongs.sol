@@ -24,6 +24,7 @@ import "./IAlongs.sol";
 
 contract Alongs is IAlongs, DraftControl {
     using LinksRepo for LinksRepo.Repo;
+    using BooksRepo for IBaseKeeper;
 
     LinksRepo.Repo private _repo;
 

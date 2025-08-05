@@ -25,6 +25,8 @@ import "../../../lib/BallotsBox.sol";
 import "../../../lib/MotionsRepo.sol";
 import "../../../lib/RulesParser.sol";
 import "../../../lib/DelegateMap.sol";
+import "../../../lib/BooksRepo.sol";
+import "../../books/roc/IShareholdersAgreement.sol";
 
 interface IMeetingMinutes {
 

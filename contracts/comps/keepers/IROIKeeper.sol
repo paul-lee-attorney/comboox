@@ -21,6 +21,8 @@
 pragma solidity ^0.8.8;
 
 import "../books/roi/IRegisterOfInvestors.sol";
+import "../../lib/RulesParser.sol";
+import "../../lib/BooksRepo.sol";
 
 interface IROIKeeper {
 

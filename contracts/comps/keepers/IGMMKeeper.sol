@@ -19,11 +19,20 @@
 
 pragma solidity ^0.8.8;
 
+import "../../lib/ArrayUtils.sol";
+import "../../lib/BallotsBox.sol";
+import "../../lib/BooksRepo.sol";
 import "../../lib/MotionsRepo.sol";
 import "../../lib/OfficersRepo.sol";
+import "../../lib/SharesRepo.sol";
 import "../../lib/WaterfallsRepo.sol";
+import "../../lib/RulesParser.sol";
 
+import "../common/components/IMeetingMinutes.sol";
 import "../common/components/ISigPage.sol";
+
+import "../books/rod/IRegisterOfDirectors.sol";
+import "../books/rom/IRegisterOfMembers.sol";
 
 interface IGMMKeeper {
     // event DistributeProfits(uint256 indexed sum, uint indexed seqOfMotion, uint indexed caller);

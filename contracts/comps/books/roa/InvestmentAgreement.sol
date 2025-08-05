@@ -27,6 +27,7 @@ import "./IInvestmentAgreement.sol";
 contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     using DealsRepo for DealsRepo.Repo;
     using SigsRepo for SigsRepo.Page;
+    using BooksRepo for IBaseKeeper;
 
     DealsRepo.Repo private _repo;
 

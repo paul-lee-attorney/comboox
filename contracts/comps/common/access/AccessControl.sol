@@ -27,7 +27,7 @@ import "../../../center/access/Ownable.sol";
 contract AccessControl is IAccessControl, Ownable {
 
     Admin internal _dk;
-    IGeneralKeeper internal _gk;
+    IBaseKeeper internal _gk;
 
     // ################
     // ##  Modifier  ##
@@ -54,12 +54,12 @@ contract AccessControl is IAccessControl, Ownable {
         require(_dk.state == 0, 
             "AC.initKeepers: already inited");
         _dk.addr = dk;
-        _gk = IGeneralKeeper(gk);
+        _gk = IBaseKeeper(gk);
         _dk.state = 1;
     }
 
     function setNewGK(address gk) external onlyDK {
-        _gk = IGeneralKeeper(gk);
+        _gk = IBaseKeeper(gk);
         emit SetNewGK(gk);
     }
 
@@ -79,4 +79,5 @@ contract AccessControl is IAccessControl, Ownable {
     function getDK() external view returns (address) {
         return _dk.addr;
     }
+
 }

@@ -21,9 +21,12 @@ pragma solidity ^0.8.8;
 
 import "../../lib/PledgesRepo.sol";
 import "../../lib/DealsRepo.sol";
-import "../../lib/DocsRepo.sol";
-import "../../lib/RulesParser.sol";
 import "../../lib/InvestorsRepo.sol";
+import "../../lib/BooksRepo.sol";
+
+import "../books/rop/IRegisterOfPledges.sol";
+import "../books/ros/IRegisterOfShares.sol";
+import "../books/rom/IRegisterOfMembers.sol";
 
 interface IROPKeeper {
 

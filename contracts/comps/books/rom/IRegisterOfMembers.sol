@@ -23,6 +23,7 @@ import "../../../lib/Checkpoints.sol";
 import "../../../lib/MembersRepo.sol";
 import "../../../lib/SharesRepo.sol";
 import "../../../lib/TopChain.sol";
+import "../../../lib/BooksRepo.sol";
 
 interface IRegisterOfMembers {
     //##################

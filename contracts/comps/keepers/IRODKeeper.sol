@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,7 +19,10 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/rod/IRegisterOfDirectors.sol";
+import "../common/components/IMeetingMinutes.sol";
+
+import "../../lib/BooksRepo.sol";
+import "../../lib/MotionsRepo.sol";
 
 interface IRODKeeper {
 

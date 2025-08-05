@@ -24,7 +24,9 @@ import "../common/access/RoyaltyCharge.sol";
 
 import "./IAccountant.sol";
 
+
 contract Accountant is IAccountant, RoyaltyCharge {
+    using BooksRepo for IBaseKeeper;
 
     function initClass(uint class) external onlyDK {
         uint sum = _gk.getROS().getInfoOfClass(class).body.paid;

@@ -26,6 +26,7 @@ import "../../comps/keepers/IROCKeeper.sol";
 contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
+    using BooksRepo for IBaseKeeper;
     
     // #############
     // ##   SHA   ##

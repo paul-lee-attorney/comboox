@@ -22,6 +22,8 @@ pragma solidity ^0.8.8;
 import "../../common/components/IMeetingMinutes.sol";
 
 import "../../../lib/OfficersRepo.sol";
+import "../../../lib/BooksRepo.sol";
+
 
 interface IRegisterOfDirectors {
 

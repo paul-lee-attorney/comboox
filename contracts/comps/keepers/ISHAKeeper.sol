@@ -19,19 +19,26 @@
 
 pragma solidity ^0.8.8;
 
+
+import "../books/roa/IRegisterOfAgreements.sol";
+import "../books/roa/IInvestmentAgreement.sol";
+
 import "../books/roc/terms/IAntiDilution.sol";
 import "../books/roc/terms/IAlongs.sol";
-
 import "../books/roc/IShareholdersAgreement.sol";
 
-import "../books/roa/IInvestmentAgreement.sol";
+import "../books/rom/IRegisterOfMembers.sol";
+import "../books/ros/IRegisterOfShares.sol";
 
 import "../common/components/IFilesFolder.sol";
 import "../common/components/ISigPage.sol";
 
 import "../../lib/RulesParser.sol";
 import "../../lib/SharesRepo.sol";
+import "../../lib/DTClaims.sol";
 import "../../lib/FRClaims.sol";
+import "../../lib/DealsRepo.sol";
+import "../../lib/BooksRepo.sol";
 
 interface ISHAKeeper {
 

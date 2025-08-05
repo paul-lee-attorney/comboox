@@ -26,6 +26,7 @@ import "./ILockUp.sol";
 contract LockUp is ILockUp, DraftControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
+    using BooksRepo for IBaseKeeper;
 
     // default expire date as “2105-09-19”
     uint48 constant _REMOTE_FUTURE = 4282732800;

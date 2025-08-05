@@ -26,6 +26,7 @@ import "../../comps/keepers/IAccountant.sol";
 
 contract FundAccountant is IAccountant, RoyaltyCharge {
     using RulesParser for bytes32;
+    using BooksRepo for IBaseKeeper;
 
     function initClass(uint class) external onlyDK {
         uint sum = _gk.getROS().getInfoOfClass(class).body.paid;

@@ -29,6 +29,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     using SharesRepo for SharesRepo.Share;
     using SharesRepo for SharesRepo.Head;
     using SharesRepo for uint256;
+    using BooksRepo for IBaseKeeper;
 
     SharesRepo.Repo private _repo;
     LockersRepo.Repo private _lockers;

@@ -25,6 +25,7 @@ import "./ISHAKeeper.sol";
 
 contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
+    using BooksRepo for IBaseKeeper;
 
     // ======== TagAlong & DragAlong ========
 

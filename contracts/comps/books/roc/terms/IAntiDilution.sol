@@ -19,7 +19,12 @@
 
 pragma solidity ^0.8.8;
 
+import "../../../../lib/SharesRepo.sol";
 import "../../../../lib/DealsRepo.sol";
+import "../../../../lib/BooksRepo.sol";
+import "../../../../lib/EnumerableSet.sol";
+import "../../roa/IInvestmentAgreement.sol";
+
 
 interface IAntiDilution {
 

@@ -26,6 +26,7 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
     using Checkpoints for Checkpoints.History;
+    using BooksRepo for IBaseKeeper;
 
     MembersRepo.Repo private _repo;
 

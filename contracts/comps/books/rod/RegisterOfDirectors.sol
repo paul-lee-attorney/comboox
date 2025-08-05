@@ -24,6 +24,7 @@ import "../../common/access/AccessControl.sol";
 
 contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
     using OfficersRepo for OfficersRepo.Repo;
+    using BooksRepo for IBaseKeeper;
 
     OfficersRepo.Repo private _repo;
 

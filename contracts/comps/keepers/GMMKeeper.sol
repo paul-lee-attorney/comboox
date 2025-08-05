@@ -28,6 +28,7 @@ import "../common/access/RoyaltyCharge.sol";
 contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
+    using BooksRepo for IBaseKeeper;
 
     // ################
     // ##   Motion   ##

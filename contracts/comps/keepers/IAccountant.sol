@@ -20,9 +20,15 @@
 
 pragma solidity ^0.8.8;
 
-import "../books/roi/IRegisterOfInvestors.sol";
-
+import "../../lib/BooksRepo.sol";
+import "../../lib/SharesRepo.sol";
+import "../../lib/RulesParser.sol";
 import "../../lib/WaterfallsRepo.sol";
+
+
+import "../books/cashier/ICashier.sol";
+import "../books/roi/IRegisterOfInvestors.sol";
+import "../books/ros/IRegisterOfShares.sol";
 
 interface IAccountant {
 

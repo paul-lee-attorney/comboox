@@ -28,21 +28,7 @@ import "../../comps/common/access/RoyaltyCharge.sol";
 contract FundGMMKeeper is IGMMKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
-
-    // ################
-    // ##   Motion   ##
-    // ################
-
-
-    // function _onlyVRClass(uint seqOfVR, uint caller) private view{
-    //     RulesParser.VotingRule memory vr = 
-    //         _gk.getSHA().getRule(seqOfVR).votingRuleParser();
-        
-    //     if (vr.class > 0) {
-    //         require(_gk.getROM().isClassMember(caller, vr.class),
-    //             "FundGMMK: not class member");
-    //     }
-    // }
+    using BooksRepo for IBaseKeeper;
 
     function _gpOrManager(uint caller) private view{
         require(_gk.getROM().isClassMember(caller, 1) || 

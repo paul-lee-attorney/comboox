@@ -3,7 +3,7 @@
 /* *
  * v0.2.4
  *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -28,6 +28,7 @@ import "./IBMMKeeper.sol";
 contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
+    using BooksRepo for IBaseKeeper;
 
     //###############
     //##   Write   ##
@@ -373,8 +374,9 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
 
         emit TransferFund(to, isCBP, amt, seqOfMotion, caller);
 
-        if (!isCBP)
+        if (!isCBP) {
             _gk.getCashier().transferUsd(to, amt, bytes32((1<<255) + seqOfMotion));
+        }
     }
 
     function execAction(

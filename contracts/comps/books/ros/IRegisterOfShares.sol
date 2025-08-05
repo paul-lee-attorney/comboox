@@ -21,8 +21,12 @@ pragma solidity ^0.8.8;
 
 import "../../../lib/SharesRepo.sol";
 import "../../../lib/LockersRepo.sol";
+import "../../../lib/DealsRepo.sol";
+import "../../../lib/BooksRepo.sol";
 
 import "../rom/IRegisterOfMembers.sol";
+import "../roc/IShareholdersAgreement.sol";
+import "../roc/terms/ILockUp.sol";
 
 interface IRegisterOfShares {
 

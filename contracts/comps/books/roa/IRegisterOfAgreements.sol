@@ -25,6 +25,7 @@ import "./IInvestmentAgreement.sol";
 import "../../../lib/DTClaims.sol";
 import "../../../lib/FRClaims.sol";
 import "../../../lib/TopChain.sol";
+import "../../../lib/BooksRepo.sol";
 
 interface IRegisterOfAgreements is IFilesFolder {
 

@@ -20,6 +20,12 @@
 pragma solidity ^0.8.8;
 
 import "../../../../lib/LinksRepo.sol";
+import "../../../../lib/BooksRepo.sol";
+
+import "../../roa/IRegisterOfAgreements.sol";
+
+
+// import "../../roa/IInvestmentAgreement.sol";
 
 interface IAlongs {
 

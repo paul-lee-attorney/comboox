@@ -20,8 +20,33 @@
 pragma solidity ^0.8.8;
 
 import "./common/access/IAccessControl.sol";
-import "./IGeneralKeeper.sol";
+import "./modules/IBaseKeeper.sol";
 
 interface ICreateNewComp {
-    function createComp(address dk) external;
+
+    event UpdateBank(address indexed bank, address indexed owner);
+
+    event UpdateDocs4GK(uint indexed typeOfEntity, uint indexed seqOfDoc);
+
+    event UpdateDocs4FundKeeper(uint indexed typeOfDoc, uint indexed seqOfDoc);
+
+    event UpdateDocs4Keeper(uint indexed typeOfDoc, uint indexed seqOfDoc);
+
+    event UpdateDocs4Book(uint indexed typeOfDoc, uint indexed seqOfDoc);
+
+    function updateBank(address _bank) external;
+
+    function updateDocs4GK(uint typeOfEntity, uint seqOfDoc) external;
+    function getSeqOfDoc4GK(uint typeOfEntity) external view returns(uint);
+
+    function updateDocs4FundKeeper(uint typeOfDoc, uint seqOfDoc) external;
+    function getSeqOfDoc4FundKeeper(uint typeOfDoc) external view returns(uint);
+
+    function updateDocs4Keeper(uint typeOfDoc, uint seqOfDoc) external;
+    function getSeqOfDoc4Keeper(uint typeOfDoc) external view returns(uint);
+
+    function updateDocs4Book(uint typeOfDoc, uint seqOfDoc) external;
+    function getSeqOfDoc4Book(uint typeOfDoc) external view returns(uint);
+
+    function createComp(uint typeOfEntity, address dk) external;
 }

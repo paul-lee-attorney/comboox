@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -24,6 +24,7 @@ import "../common/access/RoyaltyCharge.sol";
 import "./IROMKeeper.sol";
 
 contract ROMKeeper is IROMKeeper, RoyaltyCharge {
+    using BooksRepo for IBaseKeeper;
 
     // ###################
     // ##   ROMKeeper   ##

@@ -29,6 +29,7 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     using FRClaims for FRClaims.Claims;
     using FilesRepo for FilesRepo.Repo;
     using TopChain for TopChain.Chain;
+    using BooksRepo for IBaseKeeper;
 
     // ia => frClaims
     mapping(address => FRClaims.Claims) private _frClaims;

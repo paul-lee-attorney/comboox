@@ -23,6 +23,7 @@ import "../../../../lib/ArrayUtils.sol";
 import "../../../../lib/BallotsBox.sol";
 import "../../../../lib/DealsRepo.sol";
 import "../../../../lib/EnumerableSet.sol";
+import "../../../../lib/BooksRepo.sol";
 
 import "../../../common/components/ISigPage.sol";
 

@@ -24,10 +24,10 @@ import "./ICashier.sol";
 
 import "../../common/access/RoyaltyCharge.sol";
 
-
 contract Cashier is ICashier, RoyaltyCharge {
     using RulesParser for bytes32;
     using WaterfallsRepo for WaterfallsRepo.Repo;
+    using BooksRepo for IBaseKeeper;
 
     mapping(address => uint) private _coffers;
     // userNo => balance
@@ -118,10 +118,11 @@ contract Cashier is ICashier, RoyaltyCharge {
         require(balanceOfComp() >= amt,
             "Cashier.DistrUsd: insufficient amt");
 
-        RulesParser.DistrRule memory rule = 
+        RulesParser.DistrRule memory rule =
             _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
 
         IRegisterOfMembers _rom = _gk.getROM();
+
         IRegisterOfShares _ros = _gk.getROS();
         WaterfallsRepo.Drop memory drop;
 

@@ -26,6 +26,12 @@ import "../../../center/ERC20/IUSDC.sol";
 import "../../../lib/UsdLockersRepo.sol";
 import "../../../lib/RulesParser.sol";
 import "../../../lib/WaterfallsRepo.sol";
+import "../../../lib/BooksRepo.sol";
+
+// import "../roc/IRegisterOfConstitution.sol";
+// import "../../common/retrieve/ROC.sol";
+// import "../../common/retrieve/ROM.sol";
+// import "../../common/retrieve/ROS.sol";
 
 interface ICashier {
 

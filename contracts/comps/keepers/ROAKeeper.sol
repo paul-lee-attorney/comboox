@@ -26,6 +26,7 @@ import "../../comps/common/access/RoyaltyCharge.sol";
 
 contract ROAKeeper is IROAKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
+    using BooksRepo for IBaseKeeper;
 
     // #############################
     // ##   InvestmentAgreement   ##
@@ -191,17 +192,13 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         uint seqOfMotion = _roa.getHeadOfFile(address(_ia)).seqOfMotion;
 
         if (vr.amountRatio > 0 || vr.headRatio > 0) {
-            if (vr.authority == 1)
+            if (vr.authority == 1) {
                 require(_gmm.isPassed(seqOfMotion), 
                     "ROAK.vrCheck:  rejected by GM");
-            else if (vr.authority == 2)
+            } else if (vr.authority == 2) {
                 require(_bmm.isPassed(seqOfMotion), 
                     "ROAK.vrCheck:  rejected by Board");
-            else if (vr.authority == 3)
-                require(_gmm.isPassed(seqOfMotion) && 
-                    _bmm.isPassed(seqOfMotion), 
-                    "ROAK.vrCheck: rejected by GM or Board");
-            else revert("ROAK.vrCheck: authority overflow");
+            } else revert("ROAK.vrCheck: authority overflow");
         }
     }
 

@@ -25,6 +25,7 @@ import "../../comps/common/access/RoyaltyCharge.sol";
 import "../../comps/keepers/IRORKeeper.sol";
 
 contract FundRORKeeper is IRORKeeper, RoyaltyCharge {
+    using BooksRepo for IBaseKeeper;
 
     function _gpOrManager(uint caller) private view{
         require(_gk.getROM().isClassMember(caller, 1) ||

@@ -19,15 +19,18 @@
 
 pragma solidity ^0.8.8;
 
-import "../IGeneralKeeper.sol";
-import "../books/loo/IListOfOrders.sol";
-import "../../comps/books/ros/IRegisterOfShares.sol";
-
-import "../../comps/books/cashier/ICashier.sol";
-
+import "../../lib/BooksRepo.sol";
+import "../../lib/GoldChain.sol";
+import "../../lib/InvestorsRepo.sol";
+import "../../lib/RulesParser.sol";
 import "../../lib/SharesRepo.sol";
 import "../../lib/UsdOrdersRepo.sol";
-import "../../lib/InvestorsRepo.sol";
+
+import "../books/cashier/ICashier.sol";
+import "../books/loo/IListOfOrders.sol";
+import "../books/rom/IRegisterOfMembers.sol";
+import "../books/ros/IRegisterOfShares.sol";
+
 
 interface ILOOKeeper {
 

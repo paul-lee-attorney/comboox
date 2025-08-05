@@ -20,8 +20,13 @@
 
 pragma solidity ^0.8.8;
 
-import "../../comps/books/cashier/ICashier.sol";
+import "../books/cashier/ICashier.sol";
+import "../books/roa/IInvestmentAgreement.sol";
+import "../books/roo/IRegisterOfOptions.sol";
+import "../books/ros/IRegisterOfShares.sol";
 
+import "../../lib/BooksRepo.sol";
+import "../../lib/MotionsRepo.sol";
 import "../../lib/SwapsRepo.sol";
 
 interface IROOKeeper {

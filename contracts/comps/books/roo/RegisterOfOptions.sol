@@ -25,6 +25,7 @@ import "../../common/access/AccessControl.sol";
 
 contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Repo;
+    using BooksRepo for IBaseKeeper;
 
     OptionsRepo.Repo private _repo;
 

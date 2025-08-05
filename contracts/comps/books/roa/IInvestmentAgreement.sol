@@ -21,6 +21,7 @@ pragma solidity ^0.8.8;
 
 import "../../../lib/SwapsRepo.sol";
 import "../../../lib/DealsRepo.sol";
+import "../../../lib/BooksRepo.sol";
 
 import "../../common/components/ISigPage.sol";
 
