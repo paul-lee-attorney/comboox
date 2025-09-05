@@ -434,7 +434,7 @@ contract UsdLOOKeeper is IUsdLOOKeeper, RoyaltyCharge {
 
         if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, false);
         if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
-        if (bid.paid == 0 && bid.consideration > 0) {
+        if ((bid.paid == 0 || bid.price == 0) && bid.consideration > 0) {
             // remark: RefundBalanceOfBidOrder
             _cashier().releaseUsd(
                 bid.from, 
