@@ -30,17 +30,24 @@
 //     closing, USDC paid by User_2 will be saved in Cashier as capital
 //     contribution income of the DAO, and certain new Shares will be issued to
 //     User_2;
-// (3) Balance of the limited buy orders placed by User_2 will be listed on the
+// (3) User_1 as Enforcer of the LOO, pause and unpause the LOO, so as to 
+//     suspend and restore the trade on the LOO;
+// (4) Balance of the limited buy orders placed by User_2 will be listed on the
 //     List of Orders, and, the USDC paid will be stored in the custody account
 //     of User_2;
-// (4) User_3 as Member of the DAO, places and withdraws limited sell orders with
+// (5) User_3 as Member of the DAO, places and withdraws limited sell orders with
 //     the List of Orders. Thereafter, some of the sell orders will be matched with
 //     the listed buy orders placed by User_2.  Upon closing, the shares of the
 //     sell order will be transferred to User_2, and the USDC under custody will be
 //     released to User_3 as consideration, or be released to User_2 as refunded
 //     balance amount.
-// (5) User_2 places market buy order so as to purchase off listed offers from the LOO;
-// (6) User_3 places market sell order so as to match off listed bids from the LOO; 
+// (6) User_2 places market buy order so as to purchase off listed offers from the LOO;
+// (7) User_3 places market sell order so as to match off listed bids from the LOO; 
+// (8) User_2 places market buy order so as to purchase off listed offers from the LOO;
+// (9) User_3 places market sell order so as to match off listed bids from the LOO; 
+// (10) User_1, as Enforcer of LOO, freeze Share_2 amount to 1,500 USD;
+// (11) User_1, as Enforcer of LOO, unfreeze Share_2 amount to 500 USD;
+// (12) User_1, as Enforcer of LOO, force transfer Share_2 amount to 500 USD to User_3;
 
 // The Write APIs tested in this section include:
 // 1. USDKeper
@@ -70,16 +77,17 @@
 // 3.1 event CustodyUsd(address indexed from, uint indexed amt, bytes32 indexed remark);
 // 3.2 event ReleaseUsd(address indexed from, address indexed to, uint indexed amt, bytes32 remark);
 
-const { expect } = require("chai");
+import { expect } from "chai";
+import { BigNumber } from "ethers";
 
-const { getGK, getROS, getRC, getUSDC, getCashier, getLOO, getLOOKeeper } = require("./boox");
-const { getLatestShare, printShares } = require("./ros");
+import { getGK, getROS, getRC, getUSDC, getCashier, getLOO, getROI } from "./boox";
+import { getLatestShare, printShares, parseShare } from "./ros";
 
-const { royaltyTest, cbpOfUsers } = require("./rc");
-const { transferCBP } = require("./saveTool");
-const { parseFromSn, parseQtySn, parseToSn, parseNode, parseData } = require("./loo");
-const { AddrZero, trimAddr, longDataParser, } = require("./utils");
-const { generateAuth } = require("./sigTools");
+import { royaltyTest, cbpOfUsers } from "./rc";
+import { transferCBP } from "./saveTool";
+import { parseFromSn, parseQtySn, parseToSn, parseNode, parseData } from "./loo";
+import { AddrZero, trimAddr, longDataParser, Bytes32Zero } from "./utils";
+import { generateAuth } from "./sigTools";
 
 async function main() {
 
@@ -97,6 +105,7 @@ async function main() {
     const cashier = await getCashier();
     const loo = await getLOO();
     const ros = await getROS();
+    const roi = await getROI();
 
     // ==== Parse Logs ====
 
@@ -343,7 +352,6 @@ async function main() {
     console.log(" \u2714 Passed Event Test for loo.OrderWithdrawn(). \n");
 
     // ==== Place Buy Order ====
-
 
     let auth = await generateAuth(signers[1], cashier.address, 8 * 37);
     tx = await gk.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 3.7 * 10 ** 4, 1);  
@@ -769,6 +777,25 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for gk.placeSellOrder(). Sell Order 4 \n");    
 
+    // ---- Pause LOO ----
+    await expect(gk.connect(signers[1]).pause(1024)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
+    console.log(' \u2714 Passed Access Control Test for gk.pause(). \n');
+
+    tx = await gk.pause(1024);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.pause().");
+
+    transferCBP("1", "8", 18n);
+
+    await expect(tx).to.emit(roi, "Paused").withArgs(1);
+    console.log(" \u2714 Passed Event Test for roi.Paused(). \n");
+
+    await expect(gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024)).to.be.revertedWith("LOOK: LOO is paused");
+
+    await expect(gk.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 3.7 * 10 ** 4, 1)).to.be.revertedWith("LOOK: LOO is paused");
+
+    await expect(gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 4.2 * 10 ** 4, 1024)).to.be.revertedWith("LOOK: LOO is paused");
+
     // ---- Withdraw Order 2 ----
 
     tx = await gk.connect(signers[3]).withdrawSellOrder(2, seqOfOrder);
@@ -790,6 +817,30 @@ async function main() {
     expect(orderWithdrawn.body.inEth).to.equal(false);
 
     console.log(" \u2714 Passed Event Test for loo.OrderWithdrawn(). Sell Order 4 \n");
+
+    let res = await roi.isPaused();
+    expect(res).to.equal(true);
+
+    console.log(" \u2714 Passed Result Test for roi.pause(). \n");
+
+    // ---- UnPause LOO ----
+
+    await expect(gk.connect(signers[1]).unPause(1024)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
+    console.log(' \u2714 Passed Access Control Test for gk.unPause(). \n');
+
+    tx = await gk.unPause(1024);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.unPause().");
+
+    transferCBP("1", "8", 18n);
+
+    await expect(tx).to.emit(roi, "UnPaused").withArgs(1);
+    console.log(" \u2714 Passed Event Test for roi.UnPaused(). \n");
+
+    res = await roi.isPaused();
+    expect(res).to.equal(false);
+
+    console.log(" \u2714 Passed Result Test for roi.unPause(). \n");
 
     // ==== Place Market Buy Order ====
 
@@ -941,7 +992,134 @@ async function main() {
     expect(share.head.priceOfPaid).to.equal('4.0');
     expect(share.body.paid).to.equal('80.0');
 
-    console.log(" \u2714 Passed Result Verify Test for gk.placedBuyOrder(). share issued \n");
+    console.log(" \u2714 Passed Result Verify Test for gk.placedSellOrder(). share issued \n");
+
+    // ==== Freeze & ForceTransfer Shares ====
+
+    // ---- Freeze Share ----
+
+    await expect(gk.connect(signers[3]).freezeShare(1024, 2, 1500 * 10 ** 4, Bytes32Zero)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
+    console.log(' \u2714 Passed Access Control Test for gk.freezeShare(). \n');
+
+    tx = await gk.freezeShare(1024, 2, 1500 * 10 ** 4, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.freezeShare().");
+
+    transferCBP("1", "8", 36n);
+
+    await expect(tx).to.emit(roi, "FreezeShare").withArgs(2, BigNumber.from(1500 * 10 ** 4), 1, Bytes32Zero);
+    console.log(" \u2714 Passed Event Test for roi.FreezeShare(). \n");
+
+    res = await roi.isFrozen(2);
+    expect(res).to.equal(true);
+
+    res = await roi.isFrozenShare(2);
+    expect(res).to.equal(true);
+
+    res = await roi.frozenShares(2);
+    expect(res[0]).to.equal(2);
+
+    res = await roi.frozenPaid(2);
+    expect(res).to.equal(BigNumber.from(1500 * 10 ** 4));
+
+    res = parseShare(await ros.getShare(2));
+    expect(res.body.cleanPaid).to.equal('63,200.0');
+
+    console.log(" \u2714 Passed Result Test for roi.freezeShare(). \n");
+
+    // ---- UnFreeze Share ----
+
+    await expect(gk.connect(signers[3]).unfreezeShare(1024, 2, 500 * 10 ** 4, Bytes32Zero)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
+    console.log(' \u2714 Passed Access Control Test for gk.unfreezeShare(). \n');
+
+    tx = await gk.unfreezeShare(1024, 2, 500 * 10 ** 4, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.freezeShare().");
+
+    transferCBP("1", "8", 36n);
+
+    await expect(tx).to.emit(roi, "UnfreezeShare").withArgs(2, BigNumber.from(500 * 10 ** 4), 1, Bytes32Zero);
+    console.log(" \u2714 Passed Event Test for roi.UnfreezeShare(). \n");
+
+    res = await roi.isFrozen(2);
+    expect(res).to.equal(true);
+
+    res = await roi.isFrozenShare(2);
+    expect(res).to.equal(true);
+
+    res = await roi.frozenShares(2);
+    expect(res[0]).to.equal(2);
+
+    res = await roi.frozenPaid(2);
+    expect(res).to.equal(BigNumber.from(1000 * 10 ** 4));
+
+    res = parseShare(await ros.getShare(2));
+    expect(res.body.cleanPaid).to.equal('63,700.0');
+
+    console.log(" \u2714 Passed Result Test for roi.unfreezeShare(). \n");
+
+    // ---- Force Transfer ----
+
+    await expect(gk.connect(signers[3]).forceTransfer(1024, 2, 500 * 10 ** 4, signers[3].address, Bytes32Zero)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
+    console.log(' \u2714 Passed Access Control Test for gk.forceTransfer(). \n');
+
+    tx = await gk.forceTransfer(1024, 2, 500 * 10 ** 4, signers[3].address, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.freezeShare().");
+
+    transferCBP("1", "8", 18n);
+
+    await royaltyTest(rc.address, signers[3].address, gk.address, tx, 88n, "gk.freezeShare().");
+
+    transferCBP("3", "8", 88n);
+
+    await expect(tx).to.emit(roi, "ForceTransfer").withArgs(2, BigNumber.from(500 * 10 ** 4), 1, Bytes32Zero);
+    console.log(" \u2714 Passed Event Test for roi.ForceTransfer(). \n");
+
+    res = await roi.isFrozen(2);
+    expect(res).to.equal(true);
+
+    res = await roi.isFrozenShare(2);
+    expect(res).to.equal(true);
+
+    res = await roi.frozenShares(2);
+    expect(res[0]).to.equal(2);
+
+    res = await roi.frozenPaid(2);
+    expect(res).to.equal(BigNumber.from(500 * 10 ** 4));
+
+    res = parseShare(await ros.getShare(2));
+    expect(res.body.cleanPaid).to.equal('63,700.0');
+
+    console.log(" \u2714 Passed Result Test for roi.forceTransfer(). \n");
+
+    // ---- UnFreeze Share ----
+
+    await expect(gk.connect(signers[3]).unfreezeShare(1024, 2, 500 * 10 ** 4, Bytes32Zero)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
+    console.log(' \u2714 Passed Access Control Test for gk.unfreezeShare(). \n');
+
+    tx = await gk.unfreezeShare(1024, 2, 500 * 10 ** 4, Bytes32Zero);
+
+    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.freezeShare().");
+
+    transferCBP("1", "8", 36n);
+
+    await expect(tx).to.emit(roi, "UnfreezeShare").withArgs(2, BigNumber.from(500 * 10 ** 4), 1, Bytes32Zero);
+    console.log(" \u2714 Passed Event Test for roi.UnfreezeShare(). \n");
+
+    res = await roi.isFrozen(2);
+    expect(res).to.equal(false);
+
+    res = await roi.isFrozenShare(2);
+    expect(res).to.equal(false);
+
+    res = await roi.frozenPaid(2);
+    expect(res).to.equal(0);
+
+    res = parseShare(await ros.getShare(2));
+    expect(res.body.cleanPaid).to.equal('64,200.0');
+
+    console.log(" \u2714 Passed Result Test for roi.unfreezeShare(). \n");
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.address);
