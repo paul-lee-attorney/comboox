@@ -474,6 +474,39 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ##  ROIKeeper  ##
     // #################
 
+    function pause(uint seqOfLR) external {
+        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).pause(seqOfLR, msg.sender);
+    }
+
+    function unPause(uint seqOfLR) external {
+        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).unPause(seqOfLR, msg.sender);
+    }
+
+    function freezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
+    ) external {
+        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).freezeShare(
+            seqOfLR, seqOfShare, paid, msg.sender, hashOrder
+        );
+    }
+
+    function unfreezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
+    ) external {
+        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).unfreezeShare(
+            seqOfLR, seqOfShare, paid, msg.sender, hashOrder
+        );
+    }
+
+    function forceTransfer(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address addrTo, bytes32 hashOrder
+    ) external {
+        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).forceTransfer(
+            seqOfLR, seqOfShare, paid, addrTo, msg.sender, hashOrder
+        );
+    }
+
     function regInvestor(address bKey, uint groupRep, bytes32 idHash) external {
         IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).regInvestor(
             msg.sender, bKey, groupRep, idHash

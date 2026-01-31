@@ -2,7 +2,7 @@
 
 /* *
  * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -31,6 +31,84 @@ contract FundROIKeeper is IROIKeeper, RoyaltyCharge {
     //###############
     //##   Write   ##
     //###############
+
+    // ==== Pause LOO ====
+
+    function _checkVerifierLicense(uint seqOfLR, uint caller) private {
+        RulesParser.ListingRule memory lr = 
+            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+        require(_gk.getROD().hasTitle(caller, lr.titleOfVerifier),
+            "ROIK.checkVerifierLicense: no rights");
+    }
+
+    function _checkEnforcerLicense(uint seqOfLR, uint caller) private {
+        RulesParser.ListingRule memory lr = 
+            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+        require(_gk.getROD().hasTitle(caller, lr.para),
+            "ROIK.checkEnforcerLicense: no rights");
+    }
+
+    function pause(uint seqOfLR, address msgSender) external onlyDK {
+        uint caller = _msgSender(msgSender, 18000);
+        _checkEnforcerLicense(seqOfLR, caller);
+
+        _gk.getROI().pause(caller);
+    }
+
+    function unPause(uint seqOfLR, address msgSender) external onlyDK {
+        uint caller = _msgSender(msgSender, 18000);
+        _checkEnforcerLicense(seqOfLR, caller);
+
+        _gk.getROI().unPause(caller);
+    }
+
+    // ==== Freeze Share ====
+
+    function freezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address msgSender, bytes32 hashOrder
+    ) external onlyDK {
+        uint caller = _msgSender(msgSender, 36000);
+        _checkEnforcerLicense(seqOfLR, caller);
+
+        IRegisterOfShares _ros = _gk.getROS();
+        _ros.decreaseCleanPaid(seqOfShare, paid);
+        uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
+        _gk.getROI().freezeShare(shareholder, seqOfShare, paid, caller, hashOrder);
+    }
+
+    function unfreezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address msgSender, bytes32 hashOrder
+    ) external onlyDK {
+        uint caller = _msgSender(msgSender, 36000);
+        _checkEnforcerLicense(seqOfLR, caller);
+
+        IRegisterOfShares _ros = _gk.getROS();
+        _ros.increaseCleanPaid(seqOfShare, paid);
+        uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
+        _gk.getROI().unfreezeShare(shareholder, seqOfShare, paid, caller, hashOrder);
+    }
+
+    function forceTransfer(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address addrTo, address msgSender, bytes32 hashOrder
+    ) external onlyDK {
+        uint caller = _msgSender(msgSender, 18000);
+        _checkEnforcerLicense(seqOfLR, caller);
+        
+        IRegisterOfInvestors _roi = _gk.getROI();
+        uint to = _msgSender(addrTo, 88000);
+        require(_roi.isInvestor(to), 
+            "ROIKeeper.forceTransfer: to is NOT a Verified Investor");
+
+        IRegisterOfShares _ros = _gk.getROS();
+        SharesRepo.Share memory share = _ros.getShare(seqOfShare);
+        _ros.increaseCleanPaid(seqOfShare, paid);
+
+        _roi.forceTransfer(share.head.shareholder, seqOfShare, paid, caller, hashOrder);
+        _ros.transferShare(seqOfShare, paid, paid, to, share.head.priceOfPaid, share.head.priceOfPar);   
+    }
 
     // ==== Investor ====
 
@@ -73,14 +151,12 @@ contract FundROIKeeper is IROIKeeper, RoyaltyCharge {
         uint seqOfLR
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
+        _checkVerifierLicense(seqOfLR, caller);
 
         IRegisterOfInvestors _roi = _gk.getROI();
 
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
-
-        require(_gk.getROD().hasTitle(caller, lr.titleOfVerifier),
-            "ROIK.apprInv: no rights");
 
         require(_gk.getROM().isClassMember(caller, 1),
             "ROIK.apprInv: not GP");
@@ -98,12 +174,7 @@ contract FundROIKeeper is IROIKeeper, RoyaltyCharge {
         uint seqOfLR
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
-
-        RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
-
-        require(_gk.getROD().hasTitle(caller, lr.titleOfVerifier),
-            "LOOK.revokeInv: wrong titl");
+        _checkVerifierLicense(seqOfLR, caller);
 
         require(_gk.getROM().isClassMember(caller, 1),
             "LOOK.apprInv: not GP");

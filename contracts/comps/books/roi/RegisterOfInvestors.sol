@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -24,12 +24,72 @@ import "../../common/access/AccessControl.sol";
 
 contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     using InvestorsRepo for InvestorsRepo.Repo;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     InvestorsRepo.Repo private _investors;
+
+    /// @dev mapping from seqOfShare to paid amount under frozen;
+    mapping(uint => uint) private _frozenPaid;
+
+    /// @dev mapping from userNo to seqOfShare under frozen;
+    mapping(uint => EnumerableSet.UintSet) private _frozenShares;
+
+    bool private _paused;
 
     //#################
     //##  Write I/O  ##
     //#################
+
+    // ==== Pause LOO ====
+
+    function pause(uint caller) external onlyDK {
+        require(_paused == false, "already paused");
+        _paused = true;
+        emit Paused(caller);
+    }
+
+    function unPause(uint caller) external onlyDK {
+        require(_paused == true, "not paused");
+        _paused = false;
+        emit UnPaused(caller);
+    }
+
+    // ==== Freeze Share ====
+
+    function freezeShare(
+        uint userNo, uint seqOfShare, uint paid, uint caller,
+        bytes32 hashOrder
+    ) external onlyDK {
+        _frozenShares[userNo].add(seqOfShare);
+        _frozenPaid[seqOfShare] += paid;
+        emit FreezeShare(seqOfShare, paid, caller, hashOrder);
+    }
+
+    function unfreezeShare(
+        uint userNo, uint seqOfShare, uint paid, uint caller,
+        bytes32 hashOrder
+    ) external onlyDK {
+        _unfreezeShare(userNo, seqOfShare, paid);
+        emit UnfreezeShare(seqOfShare, paid, caller, hashOrder);
+    }
+
+    function _unfreezeShare(
+        uint userNo, uint seqOfShare, uint paid
+    ) private {
+        require(_frozenPaid[seqOfShare] >= paid,
+            "LOO.unfreezeShare: insufficient fronzen paid");
+        _frozenPaid[seqOfShare] -= paid;
+        if (_frozenPaid[seqOfShare] == 0 )
+            _frozenShares[userNo].remove(seqOfShare);
+    }
+
+    function forceTransfer(
+        uint userNo, uint seqOfShare, uint paid, uint caller,
+        bytes32 hashOrder
+    ) external onlyDK {
+        _unfreezeShare(userNo, seqOfShare, paid);
+        emit ForceTransfer(seqOfShare, paid, caller, hashOrder);
+    }
 
     // ==== Investor ====
 
@@ -67,6 +127,35 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     //################
     //##  Read I/O  ##
     //################
+
+
+    // ==== Paused ====
+
+    function isPaused() external view returns (bool) {
+        return _paused;
+    }
+
+    // ==== Frozen ====
+
+    function isFrozen(uint userNo) external view returns(bool) 
+    {
+        return _frozenShares[userNo].length() > 0;
+    }
+
+    function isFrozenShare(uint seqOfShare) external view returns(bool) 
+    {
+        return _frozenPaid[seqOfShare] > 0;
+    }
+
+    function frozenShares(uint userNo) external view returns(uint[] memory) 
+    {
+        return _frozenShares[userNo].values();
+    }
+
+    function frozenPaid(uint seqOfShare) external view returns(uint) 
+    {
+        return _frozenPaid[seqOfShare];
+    }
 
     // ==== Investor ====
 

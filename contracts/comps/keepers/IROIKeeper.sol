@@ -2,7 +2,7 @@
 
 /* *
  * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,6 +21,8 @@
 pragma solidity ^0.8.8;
 
 import "../books/roi/IRegisterOfInvestors.sol";
+import "../books/ros/IRegisterOfShares.sol";
+
 import "../../lib/RulesParser.sol";
 import "../../lib/BooksRepo.sol";
 
@@ -29,6 +31,29 @@ interface IROIKeeper {
     //###############
     //##   Write   ##
     //###############
+
+    // ==== Pause LOO ====
+
+    function pause(uint seqOfLR, address msgSender) external;
+
+    function unPause(uint seqOfLR, address msgSender) external;
+
+    // ==== Freeze Share ====
+
+    function freezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address msgSender, bytes32 hashOrder
+    ) external;
+
+    function unfreezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address msgSender, bytes32 hashOrder
+    ) external;
+
+    function forceTransfer(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address addrTo, address msgSender, bytes32 hashOrder
+    ) external;
 
     // ==== Investor ====
 

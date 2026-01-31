@@ -28,6 +28,12 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using BooksRepo for IBaseKeeper;
 
+    modifier whenNotPaused() {
+        require(!_gk.getROI().isPaused(),
+            "LOOK: LOO is paused");
+        _;
+    }
+
     //###############
     //##   Write   ##
     //###############
@@ -37,7 +43,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     function placeInitialOffer(
         address msgSender, uint classOfShare, uint execHours, 
         uint paid, uint price, uint seqOfLR
-    ) external onlyDK {
+    ) external onlyDK whenNotPaused {
         uint caller = _msgSender(msgSender, 18000);
 
         IRegisterOfShares _ros = _gk.getROS();
@@ -252,7 +258,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     function placeSellOrder(
         address msgSender, uint seqOfClass, uint execHours,
         uint paid, uint price, uint seqOfLR
-    ) external onlyDK {
+    ) external onlyDK whenNotPaused {
         uint caller = _msgSender(msgSender, 58000);
 
         require (_gk.getROI().getInvestor(caller).state == 
@@ -351,7 +357,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     function placeBuyOrder(
         ICashier.TransferAuth memory auth, address msgSender, 
         uint classOfShare, uint paid, uint price, uint execHours
-    ) external onlyDK {
+    ) external onlyDK whenNotPaused {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 
@@ -384,7 +390,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     function placeMarketBuyOrder(
         ICashier.TransferAuth memory auth, address msgSender, 
         uint classOfShare, uint paid, uint execHours
-    ) external onlyDK {
+    ) external onlyDK whenNotPaused {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 

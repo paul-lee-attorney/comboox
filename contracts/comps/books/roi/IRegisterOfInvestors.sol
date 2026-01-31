@@ -20,8 +20,19 @@
 pragma solidity ^0.8.8;
 
 import "../../../lib/InvestorsRepo.sol";
+import "../../../lib/EnumerableSet.sol";
 
 interface IRegisterOfInvestors {
+
+    event Paused(uint indexed agent);
+
+    event UnPaused(uint indexed agent);
+
+    event FreezeShare(uint indexed seqOfShare, uint indexed paid, uint indexed caller, bytes32 hashOrder);
+    
+    event UnfreezeShare(uint indexed seqOfShare, uint indexed paid, uint indexed caller, bytes32 hashOrder);
+    
+    event ForceTransfer(uint indexed seqOfShare, uint indexed paid, uint indexed caller, bytes32 hashOrder);
 
     event RegInvestor(uint indexed investor, uint indexed groupRep, bytes32 indexed idHash);
 
@@ -32,6 +43,29 @@ interface IRegisterOfInvestors {
     //#################
     //##  Write I/O  ##
     //#################
+
+    // ==== Pause LOO ====
+
+    function pause(uint caller) external;
+
+    function unPause(uint caller) external;
+
+    // ==== Freeze Share ====
+
+    function freezeShare(
+        uint userNo, uint seqOfShare, uint paid, uint caller,
+        bytes32 hashOrder
+    ) external;
+
+    function unfreezeShare(
+        uint userNo, uint seqOfShare, uint paid, uint caller,
+        bytes32 hashOrder
+    ) external;
+
+    function forceTransfer(
+        uint userNo, uint seqOfShare, uint paid, uint caller,
+        bytes32 hashOrder
+    ) external;
 
     // ==== Investor ====
 
@@ -46,6 +80,20 @@ interface IRegisterOfInvestors {
     //################
     //##  Read I/O  ##
     //################
+
+    // ==== Paused ====
+
+    function isPaused() external view returns (bool);
+
+    // ==== Freeze ====
+
+    function isFrozen(uint userNo) external view returns(bool); 
+
+    function isFrozenShare(uint seqOfShare) external view returns(bool);
+
+    function frozenShares(uint userNo) external view returns(uint[] memory); 
+    
+    function frozenPaid(uint seqOfShare) external view returns(uint);
 
     // ==== Investor ====
 

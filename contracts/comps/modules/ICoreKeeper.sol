@@ -271,6 +271,23 @@ interface ICoreKeeper {
     // ##  ROIKeeper  ##
     // #################
 
+    function pause(uint seqOfLR) external;
+
+    function unPause(uint seqOfLR) external;
+
+    function freezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
+    ) external;
+
+    function unfreezeShare(
+        uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
+    ) external;
+
+    function forceTransfer(
+        uint seqOfLR, uint seqOfShare, uint paid, 
+        address addrTo, bytes32 hashOrder
+    ) external;
+
     function regInvestor(address bKey, uint groupRep, bytes32 idHash) external;
 
     function approveInvestor(uint userNo, uint seqOfLR) external;
