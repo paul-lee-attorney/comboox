@@ -5,17 +5,19 @@
  * All Rights Reserved.
  * */
 
-const path = require("path");
-const fs = require("fs");
+import { join } from "path";
+import { readFileSync, writeFileSync } from "fs";
 
-function saveBooxAddr(targetName, addr) {
+const __dirname = import.meta.dirname;
 
-    const booxList = path.join(__dirname, "boox.json");
+export function saveBooxAddr(targetName, addr) {
+
+    const booxList = join(__dirname, "boox.json");
   
-    const objContractAddrList = JSON.parse(fs.readFileSync(booxList,"utf-8"));
+    const objContractAddrList = JSON.parse(readFileSync(booxList,"utf-8"));
     objContractAddrList[targetName] = addr;
   
-    fs.writeFileSync(
+    writeFileSync(
       booxList,
       JSON.stringify(objContractAddrList, undefined, 2)
     );
@@ -25,30 +27,30 @@ function saveBooxAddr(targetName, addr) {
 
 // ==== CBP ====
 
-function setUserCBP(userNo, bala) {
+export function setUserCBP(userNo, bala) {
 
-  const balaList = path.join(__dirname, "cbp.json");
+  const balaList = join(__dirname, "cbp.json");
 
-  const objBalaList = JSON.parse(fs.readFileSync(balaList,"utf-8"));
+  const objBalaList = JSON.parse(readFileSync(balaList,"utf-8"));
   objBalaList[userNo] = bala.toString();
 
-  fs.writeFileSync(
+  writeFileSync(
     balaList,
     JSON.stringify(objBalaList, undefined, 2)
   );
 };
 
-function getUserCBP(userNo) {
+export function getUserCBP(userNo) {
 
-  const balaList = path.join(__dirname, "cbp.json");
+  const balaList = join(__dirname, "cbp.json");
 
-  const objBalaList = JSON.parse(fs.readFileSync(balaList,"utf-8"));
+  const objBalaList = JSON.parse(readFileSync(balaList,"utf-8"));
   const bala = BigInt(objBalaList[userNo]);
 
   return bala;
 };
 
-function addCBPToUser(amt, userNo) {
+export function addCBPToUser(amt, userNo) {
 
   let bala = getUserCBP(userNo);
   bala += amt;
@@ -56,7 +58,7 @@ function addCBPToUser(amt, userNo) {
   setUserCBP(userNo, bala);
 };
 
-function minusCBPFromUser(amt, userNo) {
+export function minusCBPFromUser(amt, userNo) {
 
   let bala = getUserCBP(userNo);
   bala -= amt;
@@ -64,7 +66,7 @@ function minusCBPFromUser(amt, userNo) {
   setUserCBP(userNo, bala);
 };
 
-function transferCBP(from, to, amt) {
+export function transferCBP(from, to, amt) {
 
   let amtInLee = BigInt(amt) * 10n ** 13n;
 
@@ -74,30 +76,30 @@ function transferCBP(from, to, amt) {
 
 // ==== ETH ====
 
-function setUserDepo(userNo, bala) {
+export function setUserDepo(userNo, bala) {
 
-  const balaList = path.join(__dirname, "eth.json");
+  const balaList = join(__dirname, "eth.json");
 
-  const objBalaList = JSON.parse(fs.readFileSync(balaList,"utf-8"));
+  const objBalaList = JSON.parse(readFileSync(balaList,"utf-8"));
   objBalaList[userNo] = bala.toString();
 
-  fs.writeFileSync(
+  writeFileSync(
     balaList,
     JSON.stringify(objBalaList, undefined, 2)
   );
 };
 
-function getUserDepo(userNo) {
+export function getUserDepo(userNo) {
 
-  const balaList = path.join(__dirname, "eth.json");
+  const balaList = join(__dirname, "eth.json");
 
-  const objBalaList = JSON.parse(fs.readFileSync(balaList,"utf-8"));
+  const objBalaList = JSON.parse(readFileSync(balaList,"utf-8"));
   const bala = BigInt(objBalaList[userNo]);
 
   return bala;
 };
 
-function addEthToUser(amt, userNo) {
+export function addEthToUser(amt, userNo) {
 
   let bala = getUserDepo(userNo);
   bala += amt;
@@ -113,16 +115,16 @@ function minusEthFromUser(amt, userNo) {
   setUserDepo(userNo, bala);
 };
 
-module.exports = {
-    minusEthFromUser,
-    addEthToUser,
-    getUserDepo,
-    setUserDepo,
-    transferCBP,
-    setUserCBP,
-    getUserCBP,
-    addCBPToUser,
-    minusCBPFromUser,
-    saveBooxAddr,
-};
+// export default {
+//     minusEthFromUser,
+//     addEthToUser,
+//     getUserDepo,
+//     setUserDepo,
+//     transferCBP,
+//     setUserCBP,
+//     getUserCBP,
+//     addCBPToUser,
+//     minusCBPFromUser,
+//     saveBooxAddr,
+// };
   

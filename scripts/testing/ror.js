@@ -5,23 +5,21 @@
  * All Rights Reserved.
  * */
 
-const { parseTimestamp, longDataParser, parseHexToBigInt } = require("./utils");
+import { formatUnits } from "ethers";
 
 const parseRequest = (arr) => {
   return {
     class: arr[0],
     seqOfShare: arr[1],
-    navPrice: Number(ethers.utils.formatUnits(arr[2], 4)),
+    navPrice: Number(formatUnits(arr[2], 4)),
     shareholder: arr[3],
-    paid: Number(ethers.utils.formatUnits(arr[4], 4)),
-    value: Number(ethers.utils.formatUnits(arr[5], 4)),
+    paid: Number(formatUnits(arr[4], 4)),
+    value: Number(formatUnits(arr[5], 4)),
     seqOfPacks: arr[6],
   };
 }
 
-
-
-module.exports = {
+export {
     parseRequest,
 };
 

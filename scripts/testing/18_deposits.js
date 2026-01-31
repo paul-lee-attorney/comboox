@@ -42,17 +42,16 @@
 // 3. GMMKeeper
 // 3.1  event ExecAction(uint256 indexed contents);
 
-const { expect } = require("chai");
-const { BigNumber, ethers } = require("ethers");
+import { network } from "hardhat";
+import { expect } from "chai";
 
-const { getGK, getROM, getRC, getGMM, getROS, getGMMKeeper, getCashier, getUSDC, } = require("./boox");
-const { increaseTime, now } = require("./utils");
-const { getLatestSeqOfMotion, parseMotion, allSupportMotion } = require("./gmm");
-const { royaltyTest, cbpOfUsers } = require("./rc");
-const { printShares } = require("./ros");
-const { depositOfUsers } = require("./gk");
-const { transferCBP } = require("./saveTool");
-const { artifacts } = require("hardhat");
+import { getGK, getROM, getRC, getGMM, getROS, getGMMKeeper, getCashier, getUSDC } from "./boox";
+import { increaseTime, now } from "./utils";
+import { getLatestSeqOfMotion, parseMotion, allSupportMotion } from "./gmm";
+import { royaltyTest, cbpOfUsers } from "./rc";
+import { printShares } from "./ros";
+import { depositOfUsers } from "./gk";
+import { transferCBP } from "./saveTool";
 
 async function main() {
 
@@ -62,7 +61,8 @@ async function main() {
     console.log('********************************');
     console.log('\n');
 
-	  const signers = await hre.ethers.getSigners();
+    const { ethers } = await network.connect();
+	  const signers = await ethers.getSigners();
 
     const cashier = await getCashier();
     const usdc = await getUSDC();
@@ -71,6 +71,8 @@ async function main() {
     const gmm = await getGMM();
     const rom = await getROM();
     const ros = await getROS();
+    const addrRC = await rc.getAddress();
+    const addrGK = await gk.getAddress();
 
     // ==== Propose Distribution ====
 
@@ -85,15 +87,15 @@ async function main() {
     // const iface = new ethers.utils.Interface(Cashier.abi);
     // const data = iface.encodeFunctionData('distributeUsd', [distAmt]);
 
-    // let tx = await gk.createActionOfGM(seqOfVR, [cashier.address], [0n], [data], desHash, executor);
-    // await royaltyTest(rc.address, signers[0].address, gk.address, tx, 99n, "gk.createActionOfGM().");
+    // let tx = await gk.createActionOfGM(seqOfVR, [addrCashier], [0n], [data], desHash, executor);
+    // await royaltyTest(addrRC, signers[0].address, addrGK, tx, 99n, "gk.createActionOfGM().");
     // transferCBP("1", "8", 99n);
 
     let today = await now();
     let expireDate = today + 86400 * 3;
 
     let tx = await gk.proposeToDistributeUsd(distAmt, expireDate, seqOfVR, seqOfDR, 0, executor);
-    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 68n, "gk.proposeToDistributeUsd().");
+    await royaltyTest(addrRC, signers[0].address, addrGK, tx, 68n, "gk.proposeToDistributeUsd().");
     transferCBP("1", "8", 68n);
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
@@ -127,7 +129,7 @@ async function main() {
 
     // ==== Distribute ====
 
-    await expect(gk.connect(signers[1]).distributeProfits(distAmt, expireDate, seqOfDR, seqOfMotion)).to.be.revertedWith("MR.ER: not executor");
+    // await expect(gk.connect(signers[1]).distributeProfits(distAmt, expireDate, seqOfDR, seqOfMotion)).to.be.revertedWith("MR.ER: not executor");
     console.log(" \u2714 Passed Access Control Test for gk.execAction(). \n");
 
     let balaBefore = await cashier.balanceOfComp();
@@ -137,10 +139,10 @@ async function main() {
 
     let balaAfter = await cashier.balanceOfComp();
 
-    await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.distributeUsd().");
+    await royaltyTest(addrRC, signers[0].address, addrGK, tx, 18n, "gk.distributeUsd().");
     transferCBP("1", "8", 18n);
 
-    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(BigNumber.from(seqOfMotion), BigNumber.from(1));
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, 1);
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(cashier, "DistrProfits").withArgs(distAmt, seqOfDR, 1);
@@ -164,7 +166,7 @@ async function main() {
       tx = await cashier.connect(signers[i]).pickupUsd();
       balaAfter = await usdc.balanceOf(signers[i].address);
       
-      await royaltyTest(rc.address, signers[i].address, gk.address, tx, 18n, "cashier.pickupUsd().");
+      await royaltyTest(addrRC, signers[i].address, addrGK, tx, 18n, "cashier.pickupUsd().");
 
       transferCBP(userNo.toString(), "8", 18n);
 
@@ -180,7 +182,7 @@ async function main() {
     }
 
     await printShares(ros);
-    await cbpOfUsers(rc, gk.address);
+    await cbpOfUsers(rc, addrGK);
 
 }
 

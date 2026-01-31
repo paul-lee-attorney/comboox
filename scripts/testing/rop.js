@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 
-const { parseTimestamp, longDataParser } = require("./utils");
-
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
+
+import { parseTimestamp, longDataParser } from "./utils";
+import {formatUnits} from "ethers";
 
 const states = [
   'Plending', 'Issued', 'Locked', 'Released', 'Executed', 'Revoked'
@@ -25,9 +26,9 @@ function parsePledge(arr) {
       state: states[arr[0][8]],
     },
     body: {
-      paid: longDataParser(ethers.utils.formatUnits((arr[1][0]).toString(), 4)),
-      par: longDataParser(ethers.utils.formatUnits((arr[1][1]).toString(), 4)),
-      guaranteedAmt: longDataParser(ethers.utils.formatUnits((arr[1][2]).toString(), 4)),
+      paid: longDataParser(formatUnits((arr[1][0]).toString(), 4)),
+      par: longDataParser(formatUnits((arr[1][1]).toString(), 4)),
+      guaranteedAmt: longDataParser(formatUnits((arr[1][2]).toString(), 4)),
       preSeq: arr[1][3],
       execDays: arr[1][4],
       para: arr[1][5],
@@ -53,7 +54,7 @@ function codifyHeadOfPledge(head) {
   return sn;
 }
 
-module.exports = {
+export {
     codifyHeadOfPledge,
     parsePledge,
 };

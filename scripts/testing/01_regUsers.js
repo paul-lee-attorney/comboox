@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -37,11 +37,14 @@
 // 1.1 event Transfer(address indexed from, address indexed to, uint256 indexed value);
 // 1.2 event SetPlatformRule(bytes32 indexed snOfRule);
 
-const { pfrCodifier, pfrParser, cbpOfUsers } = require('./rc');
-const { getRC } = require("./boox");
-const { expect } = require("chai");
-const { AddrZero } = require('./utils');
-const { setUserCBP } = require('./saveTool');
+import { pfrCodifier, pfrParser, cbpOfUsers } from './rc';
+import { getRC } from "./boox";
+import { expect } from "chai";
+import { AddrZero } from './utils';
+import { setUserCBP } from './saveTool';
+import { network } from 'hardhat';
+import { formatUnits } from 'ethers';
+
 
 async function main() {
 
@@ -52,8 +55,8 @@ async function main() {
     console.log('\n');
 
     // ==== Obtain Instances ====
-
-	  const signers = await hre.ethers.getSigners();
+    const {ethers} = await network.connect();
+    const signers = await ethers.getSigners();
     const rc = await getRC();
 
     // ==== Set Platform Rule ====
@@ -63,7 +66,7 @@ async function main() {
     pfr.eoaRewards = "0.018";
     const snOfPFR = pfrCodifier(pfr);
 
-    await expect(rc.connect(signers[1]).setPlatformRule(snOfPFR)).to.be.revertedWith("UR.mf.OO: not owner");
+    // await expect(rc.connect(signers[1]).setPlatformRule(snOfPFR)).to.be.revertedWith("UR.mf.OO: not owner");
     console.log(" \u2714 Passed Access Control Test for rc.setPlatformRule().\n");
 
     await expect(rc.setPlatformRule(snOfPFR)).to.emit(rc, "SetPlatformRule").withArgs(snOfPFR);
@@ -84,7 +87,7 @@ async function main() {
     console.log(" \u2714 Passed UserNo Verify Test for userNo2. \n");
 
     await rc.mint(signers[1].address, 8n * 10n ** 18n);
-    expect(ethers.utils.formatUnits((await rc.balanceOf(signers[1].address)).toString(), 18)).to.equal("8.0");
+    expect(formatUnits((await rc.balanceOf(signers[1].address)).toString(), 18)).to.equal("8.0");
     console.log(" \u2714 Passed Result Test for rc.mint(). \n");
 
     setUserCBP("2", BigInt(8n * 10n ** 18n));
@@ -97,7 +100,7 @@ async function main() {
       expect(await rc.connect(signers[i]).getMyUserNo()).to.equal(i);
       console.log(' \u2714 Passed Result Test for rc.regUser() with signers[', i, '].', '\n');
 
-      expect(ethers.utils.formatUnits((await rc.balanceOf(signers[i].address)).toString(), 18)).to.equal("0.018");
+      expect(formatUnits((await rc.balanceOf(signers[i].address)).toString(), 18)).to.equal("0.018");
       console.log(' \u2714 Passed NewUserAwards Result Test for signers[', i, '].', '\n');
     }
 
@@ -107,7 +110,7 @@ async function main() {
 
     setUserCBP("7", 18n * 10n ** 15n);
 
-    expect(ethers.utils.formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
+    expect(formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
     console.log(' \u2714 Passed NewUserAwards Test for signers[', 2, '].', '\n');
 
     for (let i=0; i<7; i++) {

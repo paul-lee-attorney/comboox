@@ -5,14 +5,16 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
-const path = require("path");
-const fs = require("fs");
+import {network} from"hardhat";
+import path from "path";
+import fs from "fs";
+
+const __dirname = import.meta.dirname;
 
 const tempsDir = path.join(__dirname, "..", "server", "src", "contracts");
 const docsDir = path.join(__dirname, "..", "client", "src", "contracts");
 
-async function deployTool(signer, targetName, libraries, params) {
+export async function deployTool(signer, targetName, libraries, params) {
 
   let options = {signer: signer};
   
@@ -20,23 +22,26 @@ async function deployTool(signer, targetName, libraries, params) {
     options.libraries = libraries;
   }
 
-  const Target = await hre.ethers.getContractFactory(targetName, options);
+  const {ethers} = await network.connect();
+
+  const Target = await ethers.getContractFactory(targetName, options);
   const target = await Target.deploy(...params);
-  await target.deployed();
+  await target.waitForDeployment();
+  const address = await target.getAddress();
+  
+  console.log("Deployed ", targetName, "at address:", address, "\n");
 
-  console.log("Deployed ", targetName, "at address:", target.address, "\n");
+  saveTempAddr(targetName, address);
 
-  saveTempAddr(targetName, target);
-
-  return target;
+  return address;
 };
 
-function saveTempAddr(targetName, target) {
+export function saveTempAddr(targetName, targetAddress) {
 
   const fileNameOfContractAddrList = path.join(tempsDir, "contracts-address.json");
 
   const objContractAddrList = JSON.parse(fs.readFileSync(fileNameOfContractAddrList,"utf-8"));
-  objContractAddrList[targetName] = target.address;
+  objContractAddrList[targetName] = targetAddress;
 
   fs.writeFileSync(
     fileNameOfContractAddrList,
@@ -45,7 +50,7 @@ function saveTempAddr(targetName, target) {
 
 };
 
-function saveGKAddr(seqOfDoc, targetAddr) {
+export function saveGKAddr(seqOfDoc, targetAddr) {
 
   const fileNameOfContractAddrList = path.join(docsDir, "gk-address.json");
 
@@ -56,10 +61,4 @@ function saveGKAddr(seqOfDoc, targetAddr) {
     fileNameOfContractAddrList,
     JSON.stringify(objContractAddrList, undefined, 2)
   );
-};
-
-module.exports = {
-  deployTool,
-  saveGKAddr,
-  saveTempAddr,
 };

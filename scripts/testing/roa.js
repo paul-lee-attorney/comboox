@@ -5,8 +5,8 @@
  * All Rights Reserved.
  * */
 
-const { ethers } = require("hardhat");
-const { parseUnits, longDataParser } = require("./utils");
+import { formatUnits, parseUnits } from "ethers";
+import { longDataParser } from "./utils";
 
 function getDealValue(priceInCent, paidInDollar, centPrice) {
   return priceInCent * paidInDollar * centPrice;
@@ -20,7 +20,7 @@ function parseHeadOfDeal(arr) {
     classOfShare: arr[3],
     seqOfShare: arr[4],
     seller: arr[5],
-    priceOfPaid: Number(ethers.utils.formatUnits(arr[6], 4)),
+    priceOfPaid: Number(formatUnits((arr[6]).toString(), 4)),
     priceOfPar: arr[7],
     closingDeadline: arr[8],
     votingWeight: arr[9],
@@ -33,8 +33,8 @@ function parseDeal (arr) {
     body: {
       buyer: arr[1][0],
       groupOfBuyer: arr[1][1],
-      paid: longDataParser(ethers.utils.formatUnits(arr[1][2].toString(), 4)),
-      par: longDataParser(ethers.utils.formatUnits(arr[1][3].toString(), 4)),
+      paid: longDataParser(formatUnits(arr[1][2].toString(), 4)),
+      par: longDataParser(formatUnits(arr[1][3].toString(), 4)),
       state: arr[1][4],
       para: arr[1][5],
       distrWeight: arr[1][6],
@@ -52,15 +52,15 @@ function codifyHeadOfDeal(head) {
     (Number(head.classOfShare).toString(16).padStart(4, '0')) +
     (Number(head.seqOfShare).toString(16).padStart(8, '0')) +
     (Number(head.seller).toString(16).padStart(10, '0')) +
-    parseUnits(head.priceOfPaid, 4).padStart(8, '0') +
-    parseUnits(head.priceOfPar, 4).padStart(8, '0') +
+    parseUnits(head.priceOfPaid.toString(), 4).toString(16).padStart(8, '0') +
+    parseUnits(head.priceOfPar.toString(), 4).toString(16).padStart(8, '0') +
     (Number(head.closingDeadline).toString(16).padStart(12, '0')) + 
     (Number(head.votingWeight).toString(16).padStart(4, '0'))
   }`;
   return hexSn;
 }
 
-module.exports = {
+export {
     getDealValue,
     parseHeadOfDeal,
     codifyHeadOfDeal,

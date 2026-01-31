@@ -5,14 +5,19 @@
  * All Rights Reserved.
  * */
 
-const {ethers} = require("hardhat");
-const path = require("path");
-const fs = require("fs");
+import { join } from "path";
+import { readFileSync } from "fs";
+import { keccak256, toUtf8Bytes, AbiCoder, solidityPacked, recoverAddress, 
+  isAddress, parseUnits, hexlify, randomBytes} from "ethers";
+
+import { network } from "hardhat";
 
 // const { getUSDC } = require("./boox.js");
 
-const fileNameOfBoox = path.join(__dirname, "boox.json");
-let Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
+const __dirname = import.meta.dirname;
+
+const fileNameOfBoox = join(__dirname, "boox.json");
+let Boox = JSON.parse(readFileSync(fileNameOfBoox));
 
 
 // ==== Create Signature ====
@@ -38,21 +43,21 @@ const domain = {
   // verifyingContract: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
 }
 
-const DOMAIN_TYPEHASH = ethers.utils.keccak256(
-  ethers.utils.toUtf8Bytes(
+const DOMAIN_TYPEHASH = keccak256(
+  toUtf8Bytes(
     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
   )
 );
 
-const TRANSFER_WITH_AUTHORIZATION_TYPEHASH = ethers.utils.keccak256(
-  ethers.utils.toUtf8Bytes(
+const TRANSFER_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+  toUtf8Bytes(
     "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
   )
 );
 
 const getDataHash = (auth) => {
-  return ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
+  return keccak256(
+    AbiCoder.encode(
       ["bytes32", "address", "address", "uint256", "uint256", "uint256", "bytes32"],
       [TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
       auth.from,
@@ -67,13 +72,13 @@ const getDataHash = (auth) => {
 
 const getDomainSeparator = ()=>{
 
-  const nameHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(domain.name));
-  const versionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(domain.version));
-  const chainIdBigInt = ethers.BigNumber.from(domain.chainId);
+  const nameHash = keccak256(toUtf8Bytes(domain.name));
+  const versionHash = keccak256(toUtf8Bytes(domain.version));
+  const chainIdBigInt = BigInt(domain.chainId);
   const verifyingContractAddress = domain.verifyingContract.toLowerCase();
 
-  let separator = ethers.utils.keccak256(    
-    ethers.utils.defaultAbiCoder.encode(
+  let separator = keccak256(    
+    AbiCoder.encode(
       ["bytes32", "bytes32", "bytes32", "uint256", "address"],
       [DOMAIN_TYPEHASH, nameHash, versionHash, chainIdBigInt, verifyingContractAddress]
     )
@@ -85,12 +90,12 @@ const getDomainSeparator = ()=>{
 const toTypedDataHash = (auth) => {
   const domainSeparator = getDomainSeparator();
   const dataHash = getDataHash(auth);
-  const encodedData = ethers.utils.solidityPack(
+  const encodedData = solidityPacked(
     ["bytes2", "bytes32", "bytes32"],
     ["0x1901", domainSeparator, dataHash],
   );
 
-  const out = ethers.utils.keccak256(encodedData);
+  const out = keccak256(encodedData);
 
   // console.log("Domain Separator:", domainSeparator);
   // console.log("Data Hash:", dataHash);
@@ -103,8 +108,8 @@ const recoverSigner = (auth) => {
   const digest = toTypedDataHash(auth);
 
   // Convert inputs to BigNumbers for validation
-  const sBigNum = ethers.BigNumber.from(auth.s);
-  const MAX_VALID_S = ethers.BigNumber.from("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0");
+  const sBigNum = BigInt(auth.s);
+  const MAX_VALID_S = BigInt("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0");
 
   // Validate 's' value to prevent malleability
   if (sBigNum.gt(MAX_VALID_S)) {
@@ -121,10 +126,10 @@ const recoverSigner = (auth) => {
   const s = auth.s;
 
   // Recover the signer’s address
-  const signer = ethers.utils.recoverAddress(digest, { v, r, s });
+  const signer = recoverAddress(digest, { v, r, s });
 
   // Ensure a valid address is returned
-  if (!ethers.utils.isAddress(signer)) {
+  if (!isAddress(signer)) {
       throw new Error("ECRecover: invalid signature");
   }
 
@@ -135,6 +140,8 @@ const recoverSigner = (auth) => {
 }
 
 const generateAuth = async (signer, to, amt) => {
+
+  const {ethers} = await network.connect();
 
   const types = {
     TransferWithAuthorization: [
@@ -154,17 +161,17 @@ const generateAuth = async (signer, to, amt) => {
   const value = {
     from: signer.address,
     to: to,
-    value: ethers.utils.parseUnits(amt.toString(), 6), // USDC精度为6位
+    value: parseUnits(amt.toString(), 6), // USDC精度为6位
     validAfter: blk.timestamp - 1,
     validBefore: blk.timestamp + 3600, // 1小时有效期
-    nonce: ethers.utils.hexlify(ethers.utils.randomBytes(32)), // 递增式nonce
+    nonce: hexlify(randomBytes(32)), // 递增式nonce
   };
 
   // console.log('domain:', domain);
   // console.log('types:', types);
   // console.log('value:', value);
   
-  const signature = await signer._signTypedData(domain, types, value);
+  const signature = await signer.signTypedData(domain, types, value);
 
   // console.log('signature:', signature);
 
@@ -179,7 +186,7 @@ const generateAuth = async (signer, to, amt) => {
   return value;  
 }
 
-module.exports = {
+export {
     TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
     recoverSigner,
     getDomainSeparator,

@@ -28,7 +28,7 @@
 // refer to the instructions at the top of each test JS script.
 
 
-const { spawn } = require('child_process');
+import {spawn} from "child_process";
 
 const runScript = (command, args) => {
   return new Promise((resolve, reject) => {

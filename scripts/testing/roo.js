@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
-const { parseTimestamp, parseUnits, longDataParser } = require("./utils");
+import { parseTimestamp, longDataParser } from "./utils";
+import { parseUnits, formatUnits } from "ethers";
 
 /* *
  * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
@@ -34,10 +35,10 @@ function parseSwap(arr) {
     return {
         seqOfSwap: arr[0],
         seqOfPledge: arr[1],
-        paidOfPledge: longDataParser(ethers.utils.formatUnits(arr[2].toString(), 4)),
+        paidOfPledge: longDataParser(formatUnits(arr[2].toString(), 4)),
         seqOfTarget: arr[3],
-        paidOfTarget: longDataParser(ethers.utils.formatUnits(arr[4].toString(), 4)),
-        priceOfDeal: ethers.utils.formatUnits(arr[5].toString(), 4),
+        paidOfTarget: longDataParser(formatUnits(arr[4].toString(), 4)),
+        priceOfDeal: formatUnits(arr[5].toString(), 4),
         isPutOpt: arr[6],
         state: stateOfSwap[arr[7]],
     };
@@ -47,9 +48,9 @@ function parseOracle(arr) {
     return {
         timestamp: parseTimestamp(arr[0]),
         rate: arr[1],
-        data1: longDataParser(ethers.utils.formatUnits(arr[2].toString(), 4)),
-        data2: longDataParser(ethers.utils.formatUnits(arr[3].toString(), 4)),
-        data3: longDataParser(ethers.utils.formatUnits(arr[4].toString(), 4)),       
+        data1: longDataParser(formatUnits(arr[2].toString(), 4)),
+        data2: longDataParser(formatUnits(arr[3].toString(), 4)),
+        data3: longDataParser(formatUnits(arr[4].toString(), 4)),       
     };
 }
 
@@ -93,7 +94,7 @@ function codifyHeadOfOption(head) {
       Number(head.seqOfOpt).toString(16).padStart(8, '0') +
       Number(head.typeOfOpt).toString(16).padStart(2, '0') +
       Number(head.classOfShare).toString(16).padStart(4, '0') +
-      parseUnits(head.rate, 4).padStart(8, '0') +
+      parseUnits(head.rate.toString(), 4).toString(16).padStart(8, '0') +
       head.issueDate.toString(16).padStart(12, '0') +
       head.triggerDate.toString(16).padStart(12, '0') +
       Number(head.execDays).toString(16).padStart(4, '0') +
@@ -108,16 +109,16 @@ function codifyCond(cond) {
       Number(cond.seqOfCond).toString(16).padStart(8, '0') +
       Number(cond.logicOpr).toString(16).padStart(2, '0') +
       Number(cond.compOpr1).toString(16).padStart(2, '0') +
-      parseUnits(cond.para1, 4).padStart(16, '0') +
+      parseUnits(cond.para1.toString(), 4).toString(16).padStart(16, '0') +
       Number(cond.compOpr2).toString(16).padStart(2, '0') +
-      parseUnits(cond.para2, 4).padStart(16, '0') +
+      parseUnits(cond.para2.toString(), 4).toString(16).padStart(16, '0') +
       Number(cond.compOpr3).toString(16).padStart(2, '0') +
-      parseUnits(cond.para3, 4).padStart(16, '0')
+      parseUnits(cond.para3.toString(), 4).toString(16).padStart(16, '0')
     }`;
     return out;
   }
     
-module.exports = {
+export {
     parseSwap,
     parseOracle,
     codifyHeadOfOption,

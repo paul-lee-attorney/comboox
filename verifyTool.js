@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 // 配置参数
 const CONFIG = {
   network: 'arbitrum',
-  addressFile: path.join(__dirname,'./server/src/contracts/contracts-address.json')
+  addressFile: join(__dirname,'./server/src/contracts/contracts-address.json')
 };
 
 // 主执行函数
 function main() {
   try {
     // 读取地址文件
-    const rawData = fs.readFileSync(CONFIG.addressFile);
+    const rawData = readFileSync(CONFIG.addressFile);
     const contracts = JSON.parse(rawData);
 
     // 遍历所有合约

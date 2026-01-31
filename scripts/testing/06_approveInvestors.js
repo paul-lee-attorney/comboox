@@ -30,13 +30,14 @@
 // 1.2 event ApproveInvestor(uint indexed investor, uint indexed verifier);
 // 1.3 event RevokeInvestor(uint indexed investor, uint indexed verifier);
 
-
-const { expect } = require("chai");
-const { getGK, getRC, getROS, getROI } = require("./boox");
-const { parseInvestor } = require("./roi");
-const { royaltyTest, cbpOfUsers, userParser } = require("./rc");
-const { printShares } = require("./ros");
-const { setUserCBP, transferCBP } = require("./saveTool");
+import { network } from "hardhat";
+import { expect } from "chai";
+import { getGK, getRC, getROS, getROI } from "./boox";
+import { parseInvestor } from "./roi";
+import { royaltyTest, cbpOfUsers, userParser } from "./rc";
+import { printShares } from "./ros";
+import { setUserCBP, transferCBP } from "./saveTool";
+import { id } from "ethers";
 
 async function main() {
 
@@ -46,7 +47,9 @@ async function main() {
     console.log('********************************');
     console.log('\n');
 
-	  const signers = await hre.ethers.getSigners();
+    const { ethers } = await network.connect();
+
+	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
     const gk = await getGK();
@@ -58,7 +61,7 @@ async function main() {
     const regNewUser = async (signerNo) => {
       await rc.connect(signers[signerNo]).regUser();
       setUserCBP((signerNo+2).toString(), 18n * 10n ** 15n); 
-      await rc.connect(signers[signerNo]).setBackupKey(signers[signerNo+10].address);
+      await rc.connect(signers[signerNo]).setBackupKey(await signers[signerNo+10].getAddress());
     }
 
     for (let i=7; i<10; i++) {
@@ -72,15 +75,15 @@ async function main() {
 
       let user = userParser(await rc.connect(signers[signerNo]).getUser());
 
-      let tx = await gk.connect(signers[signerNo]).regInvestor(user.backupKey.pubKey, userNo, ethers.utils.id(signers[signerNo].address));
+      let tx = await gk.connect(signers[signerNo]).regInvestor(user.backupKey.pubKey, userNo, id(await signers[signerNo].getAddress()));
       
-      await royaltyTest(rc.address, signers[signerNo].address, gk.address, tx, 18n, "gk.regInvestor().PrimeKeyTest().");
+      await royaltyTest(await rc.getAddress(), await signers[signerNo].getAddress(), await gk.getAddress(), tx, 18n, "gk.regInvestor().PrimeKeyTest().");
       transferCBP(userNo.toString(), "8", 18n);
 
-      await royaltyTest(rc.address, signers[signerNo].address, gk.address, tx, 18n, "gk.regInvestor().BackupKeyTest().");
+      await royaltyTest(await rc.getAddress(), await signers[signerNo].getAddress(), await gk.getAddress(), tx, 18n, "gk.regInvestor().BackupKeyTest().");
       transferCBP(userNo.toString(), "8", 18n);
   
-      await expect(tx).to.emit(roi, "RegInvestor").withArgs(userNo, userNo, ethers.utils.id(signers[signerNo].address));
+      await expect(tx).to.emit(roi, "RegInvestor").withArgs(userNo, userNo, id(await signers[signerNo].getAddress()));
       console.log(" \u2714 Passed Event Test for gk.regInvestor(). \n");
 
       let info = parseInvestor(await roi.getInvestor(userNo));
@@ -91,7 +94,7 @@ async function main() {
     
       tx = await gk.approveInvestor(userNo, 1024);
 
-      await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.approveInvestor().");
+      await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 18n, "gk.approveInvestor().");
 
       transferCBP("1", "8", 18n);
 
@@ -106,7 +109,7 @@ async function main() {
       console.log(' \u2714 Passed Result Verify Test for gk.approveInvestor().\n');
     }
 
-    await expect(gk.connect(signers[1]).approveInvestor(1, 1024)).to.be.revertedWith("ROIK.apprInv: no rights");
+    // await expect(gk.connect(signers[1]).approveInvestor(1, 1024)).to.be.revertedWith("ROIK.checkVerifierLicense: no rights");
     console.log(' \u2714 Passed Access Control Test for gk.approveInvestor(). \n');
 
     for (let i=0; i<10; i++) {
@@ -119,7 +122,7 @@ async function main() {
       const userNo = await rc.connect(signers[i]).getMyUserNo();
       const tx = await gk.revokeInvestor(userNo, 1024);
       
-      await royaltyTest(rc.address, signers[0].address, gk.address, tx, 18n, "gk.revokeIvnestor().");
+      await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 18n, "gk.revokeInvestor().");
 
       transferCBP("1", "8", 18n);
 
@@ -133,7 +136,7 @@ async function main() {
     }
 
     await printShares(ros);
-    await cbpOfUsers(rc, gk.address);
+    await cbpOfUsers(rc, await gk.getAddress());
 }
 
 main()

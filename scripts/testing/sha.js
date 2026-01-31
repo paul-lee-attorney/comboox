@@ -5,8 +5,7 @@
  * All Rights Reserved.
  * */
 
-const { parseUnits } = require("./utils");
-
+import { parseUnits, formatUnits } from "ethers";
 
 function grParser(hexRule) {
   const rule = {
@@ -148,12 +147,13 @@ function lrParser(hexLr) {
     maxTotalPar: parseInt(hexLr.substring(14, 22), 16),
     titleOfVerifier: parseInt(hexLr.substring(22, 26), 16),
     maxQtyOfInvestors: parseInt(hexLr.substring(26, 30), 16),
-    ceilingPrice: ethers.utils.formatUnits(BigInt('0x' + hexLr.substring(30, 38)), 4),
-    floorPrice: ethers.utils.formatUnits(BigInt('0x' + hexLr.substring(38, 46)), 4),
+    ceilingPrice: formatUnits(BigInt('0x' + hexLr.substring(30, 38)), 4),
+    floorPrice: formatUnits(BigInt('0x' + hexLr.substring(38, 46)), 4),
     lockupDays: parseInt(hexLr.substring(46, 50), 16),
-    offPrice: ethers.utils.formatUnits(BigInt('0x' + hexLr.substring(50, 54)), 4),
+    offPrice: formatUnits(BigInt('0x' + hexLr.substring(50, 54)), 4),
     votingWeight: parseInt(hexLr.substring(54, 58), 16),
     distrWeight: parseInt(hexLr.substring(58, 62), 16),
+    para: parseInt(hexLr.substring(62, 66), 16)
   }
   return rule;
 }
@@ -166,13 +166,13 @@ function lrCodifier( objLr, seq) {
     (Number(objLr.maxTotalPar).toString(16).padStart(8, '0')) +
     (Number(objLr.titleOfVerifier).toString(16).padStart(4, '0')) +
     (Number(objLr.maxQtyOfInvestors).toString(16).padStart(4, '0')) +
-    (parseUnits(objLr.ceilingPrice, 4).padStart(8, '0')) +
-    (parseUnits(objLr.floorPrice, 4).padStart(8, '0')) +
+    (parseUnits(objLr.ceilingPrice, 4).toString(16).padStart(8, '0')) +
+    (parseUnits(objLr.floorPrice, 4).toString(16).padStart(8, '0')) +
     (Number(objLr.lockupDays).toString(16).padStart(4, '0')) +
-    (parseUnits(objLr.offPrice, 4).padStart(4, '0')) +
+    (parseUnits(objLr.offPrice, 4).toString(16).padStart(4, '0')) +
     Number(objLr.votingWeight).toString(16).padStart(4, '0') +
     Number(objLr.distrWeight).toString(16).padStart(4, '0') +
-    '0000'
+    Number(objLr.para).toString(16).padStart(4, '0')
   }`;
   return hexLr;
 }
@@ -229,8 +229,8 @@ function alongRuleParser(arr) {
     triggerDate: arr[0],
     effectiveDays: arr[1],
     triggerType: arr[2],
-    shareRatioThreshold: arr[3] / 100,
-    rate: arr[4] / 10000,
+    shareRatioThreshold: Number(arr[3]) / 100,
+    rate: Number(arr[4]) / 10000,
     proRata: arr[5],
     seq: arr[6],
     para: arr[7],
@@ -246,8 +246,8 @@ function alongRuleCodifier(rule) {
     rule.triggerDate.toString(16).padStart(12, '0') +
     Number(rule.effectiveDays).toString(16).padStart(4, '0') +
     Number(rule.triggerType).toString(16).padStart(2, '0') +
-    parseUnits(rule.shareRatioThreshold, 2).padStart(4, '0') +
-    parseUnits(rule.rate, 4).padStart(8, '0') +
+    parseUnits(rule.shareRatioThreshold.toString(), 2).toString(16).padStart(4, '0') +
+    parseUnits(rule.rate.toString(), 4).toString(16).padStart(8, '0') +
     (rule.proRata ? '01' : '00') +
     '0'.padEnd(32, '0')
   }`;
@@ -274,7 +274,7 @@ const positionParser = (arr) => {
   }
 };
 
-module.exports = {
+export {
     grParser,
     grCodifier,
     vrParser,

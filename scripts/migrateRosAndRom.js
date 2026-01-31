@@ -5,8 +5,8 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
-const { readContract } = require("./readTool");
+import { ethers } from "hardhat";
+import { readContract } from "./readTool";
 // const { RegCenter } = require("../server/src/contracts/contracts-address.json");
 // const { GK, ROS, ROM } = require("./testing/boox.json");
 
@@ -20,7 +20,7 @@ const addrs = {
 };
 
 async function main() {
-	const signers = await hre.ethers.getSigners();
+	const signers = await ethers.getSigners();
 	console.log(
 		"Deploying the contracts with the account:",
 		await signers[0].getAddress()
@@ -104,9 +104,9 @@ async function main() {
 		},
 		body: {
 			payInDeadline: 0,
-			paid: hre.ethers.BigNumber.from(0),
-			par: hre.ethers.BigNumber.from(0),
-			cleanPaid: hre.ethers.BigNumber.from(0),
+			paid: ethers.BigNumber.from(0),
+			par: ethers.BigNumber.from(0),
+			cleanPaid: ethers.BigNumber.from(0),
 			distrWeight:0,
 		},
 	};

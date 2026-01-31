@@ -15,7 +15,7 @@ const printMembers = async (rom) => {
   console.log('Members of the Comp:', members, '\n');
 }
 
-module.exports = {
+export {
     getAllMembers,
     printMembers,
 };

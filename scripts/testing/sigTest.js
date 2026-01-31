@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 
-const { getDomainSeparator, generateAuth } = require("./sigTools");
-const { getUSDC, getCashier, getUsdKeeper } = require("./boox");
-const { increaseTime } = require("./utils");
+import { getDomainSeparator, generateAuth } from "./sigTools";
+import { getUSDC, getCashier, getUsdKeeper } from "./boox";
+import { increaseTime } from "./utils";
 
 /* *
  * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.

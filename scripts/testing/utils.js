@@ -5,21 +5,24 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
+import {network} from "hardhat";
+// import { parseUnits as } from "ethers";
 
 const now = async () => {
-  return (await hre.ethers.provider.getBlock()).timestamp;
+  const { ethers } = await network.connect();
+  return (await ethers.provider.getBlock()).timestamp;
 }
 
 const increaseTime = async (seconds) => {
-  await hre.ethers.provider.send("evm_increaseTime", [seconds]);
-  await hre.ethers.provider.send("evm_mine");
+  const { ethers } = await network.connect();
+  await ethers.provider.send("evm_increaseTime", [seconds]);
+  await ethers.provider.send("evm_mine");
   console.log('Forward On-Chain time for', seconds, 'seconds \n');
   console.log('Current On-Chain Date:', parseTimestamp(await now()), '\n');
 }
 
 function parseTimestamp (stamp) {
-  return (new Date(stamp * 1000)).toISOString();
+  return (new Date(Number(stamp) * 1000)).toISOString();
 }
 
 function longDataParser(data) {
@@ -29,19 +32,17 @@ function longDataParser(data) {
     return data.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
 }
 
-function parseUnits(input, dec) {
-  const output = ethers.utils.parseUnits(input.toString(), dec).toHexString();
-  return output.substring(2);
-}
+// function parseUnits(input, dec) {
+//   const output = parseUnits(input, dec).toString(16);
+//   return output.substring(2);
+// }
 
 function parseHexToBigInt(input) {
   if (!input.startsWith('0x')) {
     input = '0x' + input;
   }
 
-  const bigNumber = ethers.BigNumber.from(input);
-
-  return BigInt(bigNumber.toString());
+  return BigInt(input);
 }
 
 const Bytes32Zero = `0x${'0'.padEnd(64,'0')}`;
@@ -52,16 +53,16 @@ const trimAddr = (addr) => {
 }
 
 
-module.exports = {
-    now,
-    increaseTime,
-    parseTimestamp,
-    longDataParser,
-    parseUnits,
-    parseHexToBigInt,
-    trimAddr,
-    Bytes32Zero,
-    AddrZero,
+export {
+  now,
+  increaseTime,
+  parseTimestamp,
+  longDataParser,
+  // parseUnits,
+  parseHexToBigInt,
+  trimAddr,
+  Bytes32Zero,
+  AddrZero,
 };
 
   

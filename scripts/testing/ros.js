@@ -5,8 +5,9 @@
  * All Rights Reserved.
  * */
 
-const { getROS } = require('./boox');
-const { parseUnits, parseTimestamp, longDataParser } = require('./utils');
+import { getROS } from './boox';
+import { parseTimestamp, longDataParser } from './utils';
+import { parseUnits, formatUnits, Interface } from 'ethers';
 
 const printShare = async (ros, seqOfShare) => {
   const share = parseShare(await ros.getShare(seqOfShare));
@@ -45,12 +46,12 @@ function codifyHeadOfShare(head) {
       head.preSeq.toString(16).padStart(8, '0') +
       head.issueDate.toString(16).padStart(12, '0') +
       head.shareholder.toString(16).padStart(10, '0') +
-      parseUnits(head.priceOfPaid, 4).padStart(8, '0') +
-      parseUnits(head.priceOfPar, 4).padStart(8, '0') +
+      parseUnits(head.priceOfPaid.toString(), 4).toString(16).padStart(8, '0') +
+      parseUnits(head.priceOfPar.toString(), 4).toString(16).padStart(8, '0') +
       head.votingWeight.toString(16).padStart(4, '0') +
       '00'
     }`;
-
+    
     return sn;
 }
 
@@ -61,8 +62,8 @@ function parseHeadOfShare(sn) {
       preSeq: parseInt(sn.substring(14, 22), 16),
       issueDate: parseTimestamp(parseInt(sn.substring(22, 34), 16)),
       shareholder: parseInt(sn.substring(34, 44), 16),
-      priceOfPaid: ethers.utils.formatUnits(parseInt(sn.substring(44, 52), 16), 4),
-      priceOfPar: ethers.utils.formatUnits(parseInt(sn.substring(52, 60), 16), 4),
+      priceOfPaid: formatUnits(parseInt(sn.substring(44, 52), 16), 4),
+      priceOfPar: formatUnits(parseInt(sn.substring(52, 60), 16), 4),
       votingWeight: parseInt(sn.substring(60, 64), 16)
     };
   
@@ -77,16 +78,16 @@ function parseShare(arr) {
       preSeq: arr[0][2],
       issueDate: parseTimestamp(arr[0][3]),
       shareholder: arr[0][4],
-      priceOfPaid: ethers.utils.formatUnits(arr[0][5], 4),
-      priceOfPar: ethers.utils.formatUnits(arr[0][6], 4),
+      priceOfPaid: formatUnits(arr[0][5], 4),
+      priceOfPar: formatUnits(arr[0][6], 4),
       votingWeight: arr[0][7],
       argu: arr[0][8],
     },
     body: {
       payInDeadline: parseTimestamp(arr[1][0]),
-      paid: longDataParser(ethers.utils.formatUnits(arr[1][1].toString(), 4)),
-      par: longDataParser(ethers.utils.formatUnits(arr[1][2].toString(), 4)),
-      cleanPaid: longDataParser(ethers.utils.formatUnits(arr[1][3].toString(), 4)),
+      paid: longDataParser(formatUnits(arr[1][1].toString(), 4)),
+      par: longDataParser(formatUnits(arr[1][2].toString(), 4)),
+      cleanPaid: longDataParser(formatUnits(arr[1][3].toString(), 4)),
       distrWeight: arr[1][4],
     },
   };
@@ -107,12 +108,12 @@ async function obtainNewShare(tx) {
     "event IncreaseEquityOfClass(bool indexed isIncrease, uint indexed class, uint indexed amt)",
   ];
   
-  const iface = new ethers.utils.Interface(eventAbi);
+  const iface = new Interface(eventAbi);
   let seqOfShare = 0;
   let share = {};
   
   for (const log of receipt.logs) {
-    if (log.address == ros.address) {
+    if (log.address == await ros.getAddress()) {
       try {
         const parsedLog = iface.parseLog(log);
         
@@ -133,7 +134,7 @@ async function obtainNewShare(tx) {
 
 }
 
-module.exports = {
+export {
     printShare,
     printShares,
     codifyHeadOfShare,

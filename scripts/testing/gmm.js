@@ -5,11 +5,11 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
-const { BigNumber } = require("ethers");
-const { getAllMembers } = require("./rom");
-const { Bytes32Zero, parseTimestamp, parseUnits } = require("./utils");
-const { transferCBP } = require("./saveTool");
+import { network } from "hardhat";
+import { getAllMembers } from "./rom";
+import { Bytes32Zero, parseTimestamp } from "./utils";
+import { transferCBP } from "./saveTool";
+import { parseUnits } from "ethers";
 
 const typeOfMotion = [
   'ZeroPoint', 'Elect Officer', 'Remove Officer', 'Approve Doc',
@@ -42,14 +42,14 @@ const parseMotion = (arr) => {
       state: stateOfMotion[arr[1][6]],
     },
     votingRule: arr[2][0],
-    contents: parseUnits(arr[3], 0),
+    contents: (arr[3]).toString(16),
   };
 }
 
 function motionSnParser(sn) {
   let head = {
     typeOfMotion: parseInt(sn.substring(2, 6), 16),
-    seqOfMotion: BigNumber.from(`0x${sn.substring(6, 22)}`),
+    seqOfMotion: BigInt(`0x${sn.substring(6, 22)}`),
     seqOfVR: parseInt(sn.substring(22, 26), 16),
     creator: parseInt(sn.substring(26, 36), 16),
     executor: parseInt(sn.substring(36, 46), 16),
@@ -78,7 +78,9 @@ const castSupportVote = async (gk, signer, seqOfMotion) => {
 
 const allSupportMotion = async (gk, rom, seqOfMotion) => {
 
-  const signers = await hre.ethers.getSigners();
+  const { ethers } = await network.connect();
+
+  const signers = await ethers.getSigners();
 
   const membersList = await getAllMembers(rom);
   let len = membersList.length;
@@ -99,7 +101,7 @@ const allSupportLatestMotion = async (gk, rom, gmm) => {
   await allSupportMotion(gk, rom, seqOfMotion);
 }
 
-module.exports = {
+export {
     motionSnParser,
     parseMotion,
     getLatestSeqOfMotion,
@@ -107,6 +109,5 @@ module.exports = {
     castSupportVote,
     allSupportMotion,
     allSupportLatestMotion,
-    allSupportMotion,
 };
 

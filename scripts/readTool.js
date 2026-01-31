@@ -5,17 +5,15 @@
  * All Rights Reserved.
  * */
 
-const hre = require("hardhat");
+import { artifacts, network } from "hardhat";
 
-async function readContract(targetName, targetAddr) {
+export async function readTool(targetName, targetAddr) {
 
-  const art = hre.artifacts.readArtifactSync(targetName);
-  const target = await hre.ethers.getContractAt(art.abi, targetAddr);
-  console.log("Abtained ", targetName, "at address:", target.address, "\n");
+  const { ethers } = await network.connect();
+
+  const art = await artifacts.readArtifact(targetName);
+  const target = await ethers.getContractAt(art.abi, targetAddr);
+  console.log("Abtained ", targetName, "at address:", await target.getAddress(), "\n");
 
   return target;
-};
-
-module.exports = {
-  readContract,
 };

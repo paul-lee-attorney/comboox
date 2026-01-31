@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -28,7 +28,7 @@
 // refer to the instructions at the top of each test JS script.
 
 
-const { spawn } = require('child_process');
+import {spawn} from "child_process";
 
 const runScript = (command, args) => {
   return new Promise((resolve, reject) => {

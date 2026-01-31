@@ -5,9 +5,11 @@
  * All Rights Reserved.
  * */
 
-const { expect } = require("chai");
-const { getUserDepo } = require("./saveTool");
-const { parseTimestamp, longDataParser } = require("./utils");
+import { expect } from "chai";
+import { getUserDepo } from "./saveTool";
+import { parseTimestamp, longDataParser } from "./utils";
+import { network } from "hardhat";
+import { formatUnits, toUtf8String } from "ethers";
 
 const currencies = [
   'USD', 'GBP', 'EUR', 'JPY', 'KRW', 'CNY',
@@ -16,6 +18,9 @@ const currencies = [
 ]
 
 const depositOfUsers = async (rc, gk) => {
+
+  const { ethers } = await network.connect();
+
   const signers = await ethers.getSigners();
   
   for (let i=0; i<7; i++) {
@@ -25,7 +30,7 @@ const depositOfUsers = async (rc, gk) => {
     const depExpected = getUserDepo(userNo.toString());
     expect(depExpected).to.equal(BigInt(dep.toString()));
 
-    console.log('Deposit of User_', userNo, ':', longDataParser(ethers.utils.formatUnits(dep.toString(), 9)), '(GWei). \n');
+    console.log('Deposit of User_', userNo, ':', longDataParser(formatUnits(dep, 9)), '(GWei). \n');
   }
 
   const ethOfGK = await ethers.provider.getBalance(gk.address);
@@ -35,23 +40,26 @@ const depositOfUsers = async (rc, gk) => {
   const depExpected = getUserDepo("8");    
   expect(depExpected).to.equal(ethOfComp);
 
-  console.log('ETH of Comp:', longDataParser(ethers.utils.formatUnits(ethOfComp.toString(), 9)), '(GWei). \n');
+  console.log('ETH of Comp:', longDataParser(formatUnits(ethOfComp.toString(), 9)), '(GWei). \n');
 }
 
 const parseCompInfo = (arr) => {
   const info = {
     regNum: arr[0],
     regDate: parseTimestamp(arr[1]),
-    currency: currencies[arr[2]],
-    state: arr[3],
-    symbol: ethers.utils.toUtf8String(arr[4]).replace(/\x00/g, ""),
-    name: arr[5],
+    typeOfEntity: arr[2],
+    currency: currencies[arr[3]],
+    state: arr[4],
+    symbol: toUtf8String(arr[5]).replace(/\x00/g, ""),
+    name: arr[6],
   }
 
   return info;
 }
 
 const usdOfUsers = async (usdc, addrOfCashier) => {
+
+  const { ethers } = await network.connect();
   const signers = await ethers.getSigners();
   let bala = 0n;
   for (let i=0; i<7; i++) {  
@@ -62,7 +70,7 @@ const usdOfUsers = async (usdc, addrOfCashier) => {
   console.log("Balance Of Comp:", bala);
 }
 
-module.exports = {
+export {
   depositOfUsers,
   parseCompInfo,
   usdOfUsers,

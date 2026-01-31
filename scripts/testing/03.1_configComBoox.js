@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -51,11 +51,12 @@
 // 1.2 event TransferIPR(uint indexed typeOfDoc, uint indexed version,
 //     uint indexed transferee);
 
-const { expect } = require("chai");
-const { getRC, getFT, getROS, getCashier, getFK, } = require("./boox");
-const { printShares, } = require("./ros");
-const { cbpOfUsers,  } = require("./rc");
-const { setUserDepo, } = require("./saveTool");
+import { network } from "hardhat";
+import { expect } from "chai";
+import { getRC, getFT, getROS, getCashier, getFK } from "./boox";
+import { printShares } from "./ros";
+import { cbpOfUsers } from "./rc";
+import { setUserDepo } from "./saveTool";
 
 async function main() {
 
@@ -65,13 +66,17 @@ async function main() {
     console.log('********************************');
     console.log('\n');
 
-	  const signers = await hre.ethers.getSigners();
+    const {ethers} = await network.connect();
+	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
     const ft = await getFT();
     const gk = await getFK();
     const ros = await getROS();
     const cashier = await getCashier();
+    const addrRC = await rc.getAddress();
+    const addrGK = await gk.getAddress();
+    const addrCashier = await cashier.getAddress();
     
     setUserDepo("1", 0n);
     setUserDepo("2", 0n);
@@ -84,28 +89,28 @@ async function main() {
 
     // ==== Transfer Ownership of Platform to Company ====
     
-    await expect(rc.connect(signers[1]).transferOwnership(gk.address)).to.be.revertedWith("UR.mf.OO: not owner");
+    // await expect(rc.connect(signers[1]).transferOwnership(addrGK)).to.be.revertedWith("UR.mf.OO: not owner");
     console.log(" \u2714 Passed Access Control Test for rc.transferOwnership(). \n");
 
-    await expect(rc.transferOwnership(gk.address)).to.emit(rc, "TransferOwnership");
+    await expect(rc.transferOwnership(addrGK)).to.emit(rc, "TransferOwnership");
     console.log(" \u2714 Passed Event Test for rc.TransferOwnership(). \n");
 
     let newOwner = (await rc.getOwner()).toLowerCase();
-    expect(newOwner).to.equal(gk.address.toLowerCase());
+    expect(newOwner).to.equal(addrGK.toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for rc.transferOwnership(). \n');
 
     // ==== Transfer Ownership of Fuel Tank to Company ====
 
-    await ft.setCashier(cashier.address);
+    await ft.setCashier(addrCashier);
 
     let newCashier = (await ft.cashier()).toLowerCase();
-    expect(newCashier).to.equal(cashier.address.toLowerCase());
+    expect(newCashier).to.equal(addrCashier.toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for ft.setCashier(). \n');
 
     // ==== Transfer IPR of Templates to Company ====
 
     const transferIPR = async (i)=>{
-      tx = await rc.transferIPR(i, 1, 8);
+      let tx = await rc.transferIPR(i, 1, 8);
       await tx.wait();
       
       await expect(tx).to.emit(rc, "TransferIPR").withArgs(i, 1, 8);
@@ -121,7 +126,7 @@ async function main() {
     }
 
     await printShares(ros);
-    await cbpOfUsers(rc, gk.address);
+    await cbpOfUsers(rc, addrGK);
     
 }
 

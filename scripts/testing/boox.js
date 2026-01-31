@@ -5,141 +5,147 @@
  * All Rights Reserved.
  * */
 
-const path = require("path");
-const fs = require("fs");
-const tempsDir = path.join(__dirname, "..", "..", "server", "src", "contracts");
+import { join } from "path";
+import { readFileSync } from "fs";
+const __dirname = import.meta.dirname;
 
-const { readContract } = require("../readTool"); 
+const tempsDir = join(__dirname, "..", "..", "server", "src", "contracts");
 
-const fileNameOfTemps = path.join(tempsDir, "contracts-address.json");
-const Temps = JSON.parse(fs.readFileSync(fileNameOfTemps,"utf-8"));
+import { readTool } from "../readTool"; 
 
-const fileNameOfBoox = path.join(__dirname, "boox.json");
-let Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
+const fileNameOfTemps = join(tempsDir, "contracts-address.json");
+const Temps = JSON.parse(readFileSync(fileNameOfTemps,"utf-8"));
+
+const fileNameOfBoox = join(__dirname, "boox.json");
+let Boox = JSON.parse(readFileSync(fileNameOfBoox));
 
 const refreshBoox = () => {
-  Boox = JSON.parse(fs.readFileSync(fileNameOfBoox));
+  Boox = JSON.parse(readFileSync(fileNameOfBoox));
 }
 
 // ==== RegCenter ====
 
 const getRC = async () => {
-  return await readContract("RegCenter", Temps.RegCenter);
+  return await readTool("RegCenter", Temps.RegCenter);
 }
 
 const getCNC = async () => {
-  return await readContract("CreateNewComp", Temps.CreateNewComp);
+  return await readTool("CreateNewComp", Temps.CreateNewComp);
 }
 
-const getCNF = async () => {
-  return await readContract("CreateNewFund", Temps.CreateNewFund);
-}
+// const getCNF = async () => {
+//   return await readTool("CreateNewFund", Temps.CreateNewFund);
+// }
 
 // const getCNCUSD = async () => {
-//   return await readContract("CreateNewCompUSD", Temps.CreateNewCompUSD);
+//   return await readTool("CreateNewCompUSD", Temps.CreateNewCompUSD);
 // }
 
 const getFT = async () => {
-  return await readContract("UsdFuelTank", Temps.UsdFuelTank);
+  return await readTool("UsdFuelTank", Temps.UsdFuelTank);
+}
+
+const getBR = async () => {
+  return await readTool("BooksRepo", Temps.BooksRepo);
 }
 
 // ==== Boox ====
 
 const getGK = async (addr) => {
   if (!addr) addr = Boox.GK;
-  return await readContract("GeneralKeeper", addr);
+  return await readTool("CompKeeper", addr);
 }
 
 const getFK = async (addr) => {
   if (!addr) addr = Boox.FundKeeper;
-  return await readContract("FundKeeper", addr);
+  return await readTool("FundKeeper", addr);
 }
 
 const getBMM = async () => {
-  return await readContract("MeetingMinutes", Boox.BMM);
+  return await readTool("MeetingMinutes", Boox.BMM);
 }
 
 const getGMM = async () => {
-  return await readContract("MeetingMinutes", Boox.GMM);
+  return await readTool("MeetingMinutes", Boox.GMM);
 }
 
 const getLOO = async () => {
-  return await readContract("ListOfOrders", Boox.LOO);
+  return await readTool("ListOfOrders", Boox.LOO);
 }
 
 const getROA = async () => {
-  return await readContract("RegisterOfAgreements", Boox.ROA);
+  return await readTool("RegisterOfAgreements", Boox.ROA);
 }
 
 const getROC = async () => {
-  return await readContract("RegisterOfConstitution", Boox.ROC);
+  return await readTool("RegisterOfConstitution", Boox.ROC);
 }
 
 const getSHA = async () => {
-  return await readContract("ShareholdersAgreement", Boox.SHA);
+  return await readTool("ShareholdersAgreement", Boox.SHA);
 }
 
 const getROD = async () => {
-  return await readContract("RegisterOfDirectors", Boox.ROD);
+  return await readTool("RegisterOfDirectors", Boox.ROD);
 }
 
 const getROI = async () => {
-  return await readContract("RegisterOfInvestors", Boox.ROI);
+  return await readTool("RegisterOfInvestors", Boox.ROI);
 }
 
 const getROM = async () => {
-  return await readContract("RegisterOfMembers", Boox.ROM);
+  return await readTool("RegisterOfMembers", Boox.ROM);
 }
 
 const getROO = async () => {
-  return await readContract("RegisterOfOptions", Boox.ROO);
+  return await readTool("RegisterOfOptions", Boox.ROO);
 }
 
 const getROP = async () => {
-  return await readContract("RegisterOfPledges", Boox.ROP);
+  return await readTool("RegisterOfPledges", Boox.ROP);
 }
 
 const getROR = async () => {
-  return await readContract("RegisterOfRedemptions", Boox.ROR);
+  return await readTool("RegisterOfRedemptions", Boox.ROR);
 }
 
 const getROS = async () => {
-  return await readContract("RegisterOfShares", Boox.ROS);
+  return await readTool("RegisterOfShares", Boox.ROS);
 }
 
 const getUSDC = async () => {
-  return await readContract("MockUSDC", Boox.USDC);
+  return await readTool("MockUSDC", Boox.USDC);
 }
 
 const getCashier = async () => {
-  return await readContract("Cashier", Boox.Cashier);
+  return await readTool("Cashier", Boox.Cashier);
 }
 
 const getFundAccountant = async () => {
-  return await readContract("FundAccountant", Boox.Accountant);
+  return await readTool("FundAccountant", Boox.Accountant);
 }
 
 const getGMMKeeper = async () => {
-  return await readContract("GMMKeeper", Boox.GMMKeeper);
+  return await readTool("GMMKeeper", Boox.GMMKeeper);
 }
 
 const getLOOKeeper = async () => {
-  return await readContract("LOOKeeper", Boox.LOOKeeper);
+  return await readTool("LOOKeeper", Boox.LOOKeeper);
 }
 
 const getROAKeeper = async () => {
-  return await readContract("ROAKeeper", Boox.ROAKeeper);
+  return await readTool("ROAKeeper", Boox.ROAKeeper);
 }
 
 const getROMKeeper = async () => {
-  return await readContract("ROMKeeper", Boox.ROMKeeper);
+  return await readTool("ROMKeeper", Boox.ROMKeeper);
 }
 
 const getROOKeeper = async () => {
-  return await readContract("ROOKeeper", Boox.ROOKeeper);
+  return await readTool("ROOKeeper", Boox.ROOKeeper);
 }
 
-module.exports = {
+export {
   refreshBoox,
   getRC,
   getCNC,
