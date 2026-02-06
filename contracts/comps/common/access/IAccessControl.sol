@@ -21,8 +21,6 @@
 
 pragma solidity ^0.8.8;
 
-import "../../modules/IBaseKeeper.sol";
-
 interface IAccessControl {
 
     // ##################
@@ -31,15 +29,21 @@ interface IAccessControl {
 
     event SetDirectKeeper(address indexed keeper);
 
-    event SetNewGK(address indexed gk);
+    // event SetNewGK(address indexed gk);
 
     // ##################
     // ##    Write     ##
     // ##################
 
-    function initKeepers(address dk,address gk) external;
+    // function initKeepers(address dk,address gk) external;
 
-    function setNewGK(address gk) external;
+    // function setNewGK(address gk) external;
+
+    function initialize(
+        address owner, address regCenter,
+        address directKeeper, address generalKeeper
+    ) external;
+
 
     function setDirectKeeper(address keeper) external;
 
@@ -49,5 +53,5 @@ interface IAccessControl {
     // ##   Read I/O   ##
     // ##################
 
-    function getDK() external view returns (address);
+    // function getDK() external view returns (address);
 }

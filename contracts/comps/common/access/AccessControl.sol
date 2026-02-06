@@ -23,25 +23,93 @@ pragma solidity ^0.8.8;
 
 import "./IAccessControl.sol";
 import "../../../center/access/Ownable.sol";
+import "../../../lib/InterfacesHub.sol";
 
 contract AccessControl is IAccessControl, Ownable {
+    using InterfacesHub for address;
 
-    Admin internal _dk;
-    IBaseKeeper internal _gk;
+    enum Books {
+        ZeroPoint,
+        ROC,
+        ROD,
+        BMM,
+        ROM,
+        GMM,
+        ROA,
+        ROO,
+        ROP,
+        ROS,
+        LOO,
+        ROI,
+        Bank,
+        Blank_1,
+        Blank_2,
+        Cashier,
+        ROR
+    }
+
+    enum Keepers {
+        ZeroPoint,
+        ROCK,
+        RODK,
+        BMMK,
+        ROMK,
+        GMMK,
+        ROAK,
+        ROOK,
+        ROPK,
+        SHAK,
+        LOOK,
+        ROIK,
+        Accountant,
+        Blank_1,
+        Blank_2,
+        Blank_3,
+        RORK
+    }
+
+    // direct keeper
+    Admin public dk;
+    // general keeper
+    address public gk;
+
+    uint[50] private __gap;
+
+    function initialize(
+        address owner, address regCenter,
+        address directKeeper, address generalKeeper
+    ) external virtual initializer {
+        _init(owner, regCenter);
+        _initKeepers(directKeeper, generalKeeper);
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal virtual override {
+        require(
+            msg.sender == gk ||
+            msg.sender == dk.addr,
+            "AC._authorizeUpgrade: NOT GK or DK"
+        );
+    }
+
+    function upgradeTo(newImplementation) external virtual override {
+        _authorizeUpgrade(newImplementation);
+        _upgradeToAndCallUUPS(newImplementation, new bytes(0), false);
+        rc.obtainBOD().upgradeDoc(newImplementation);
+    }
 
     // ################
     // ##  Modifier  ##
     // ################
 
     modifier onlyDK {
-        require(_dk.addr == msg.sender,
+        require(dk.addr == msg.sender,
             "AC.onlyDK: not");
         _;
     }
 
-    modifier onlyKeeper {
-        require(_gk.isKeeper(msg.sender) || 
-            _dk.addr == msg.sender, 
+    modifier onlyKeeper virtual {
+        require(gk.getGK().isKeeper(msg.sender) || 
+            dk.addr == msg.sender, 
             "AC.onlyKeeper: NOT");
         _;
     }
@@ -50,34 +118,22 @@ contract AccessControl is IAccessControl, Ownable {
     // ##    Write    ##
     // #################
 
-    function initKeepers(address dk,address gk) external {
-        require(_dk.state == 0, 
-            "AC.initKeepers: already inited");
-        _dk.addr = dk;
-        _gk = IBaseKeeper(gk);
-        _dk.state = 1;
-    }
 
-    function setNewGK(address gk) external onlyDK {
-        _gk = IBaseKeeper(gk);
-        emit SetNewGK(gk);
+    function _initKeepers(address directKeeper,address generalKeeper) internal {
+        require(dk.state == 0, 
+            "AC.initKeepers: already inited");
+        dk.addr = directKeeper;
+        gk = generalKeeper;
+        dk.state = 1;
     }
 
     function setDirectKeeper(address acct) external onlyDK {
-        _dk.addr = acct;
+        dk.addr = acct;
         emit SetDirectKeeper(acct);
     }
 
     function takeBackKeys (address target) external onlyDK {
         IAccessControl(target).setDirectKeeper(msg.sender);
-    }
-
-    // ##############
-    // ##   Read   ##
-    // ##############
-
-    function getDK() external view returns (address) {
-        return _dk.addr;
     }
 
 }

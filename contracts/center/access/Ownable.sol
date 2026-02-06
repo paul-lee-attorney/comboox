@@ -23,11 +23,25 @@
 pragma solidity ^0.8.8;
 
 import "./IOwnable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../../lib/InterfacesHub.sol";
 
-contract Ownable is IOwnable {
+contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
+    using InterfacesHub for address;
 
-    Admin private _owner;
-    IRegCenter internal _rc;
+    Admin public owner;
+    address public rc;
+
+    uint[50] private __gap;
+
+    constructor(){
+        _disableInitializers();
+    }
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
+    }
 
     // ################
     // ##  Modifier  ##
@@ -45,31 +59,19 @@ contract Ownable is IOwnable {
     // ##  Write I/O  ##
     // #################
 
-    function init(
-        address owner,
-        address regCenter
-    ) public {
-        require(_owner.state == 0, "already inited");
-        _owner.addr = owner;
-        _owner.state = 1;
-        _rc = IRegCenter(regCenter);
+    function _init(
+        address owner_,
+        address regCenter_
+    ) internal {
+        require(owner.state == 0, "already inited");
+        owner.addr = owner_;
+        owner.state = 1;
+        rc = regCenter_;
     }
 
     function setNewOwner(address acct) onlyOwner public {
-        _owner.addr = acct;
+        owner.addr = acct;
         emit SetNewOwner(acct);
-    }
-
-    // ################
-    // ##  Read I/O  ##
-    // ################
-
-    function getOwner() public view returns (address) {
-        return _owner.addr;
-    }
-
-    function getRegCenter() public view returns (address) {
-        return address(_rc);
     }
 
 }

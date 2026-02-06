@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,18 +20,51 @@
 pragma solidity ^0.8.8;
 
 import "./IBookOfDocs.sol";
+import "../access/Ownable.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../comps/common/access/AccessControl.sol";
 
-import "../access/IOwnable.sol";
-
-import "./BookOfPoints.sol";
-
-contract BookOfDocs is IBookOfDocs, BookOfPoints {
+contract BookOfDocs is IBookOfDocs, Ownable {
     using DocsRepo for DocsRepo.Repo;
     using DocsRepo for DocsRepo.Head;
+    using InterfacesHub for address;
     
     DocsRepo.Repo private _docs;
-    
-    constructor(address keeper) BookOfPoints(keeper) {}
+    address public bou;
+
+    uint[50] private __gap;
+
+    modifier onlyKeeper {
+        require(
+            msg.sender == bou.getBOU().getBookeeper(),
+            "BOD.onlyKeeper: NOT"
+        );
+        _;
+    }
+
+    // ==== UUPSUpgradable ====
+
+    function initialize(
+        address bou_,
+        address regCenter
+    ) external initializer {
+        _init(address(0), regCenter);
+        _setBOU(bou_);
+    }
+
+    function _setBOU(address bou_) private {
+        require(msg.sender == bou_.getBOU().getBookeeper(),
+            "BOD.setBOU: NOT Keeper of BOU");
+        bou = bou_;
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyKeeper {}
+
+    function upgradeTo(address newImplementation) external override onlyProxy {
+        _authorizeUpgrade(newImplementation);
+        _upgradeToAndCallUUPS(newImplementation, new bytes(0), false);
+        _docs.upgradeDoc(newImplementation, address(this));
+    }
 
     // ###############
     // ##    Docs   ##
@@ -42,34 +74,108 @@ contract BookOfDocs is IBookOfDocs, BookOfPoints {
         uint typeOfDoc, address body, uint author
      ) external onlyKeeper {
         DocsRepo.Head memory head = 
-            _docs.setTemplate(typeOfDoc, body, author, getMyUserNo());
+            _docs.setTemplate(
+                typeOfDoc, 
+                body, 
+                author, 
+                bou.getBOU().getUserNo(msg.sender)
+            );
 
         emit SetTemplate(head.typeOfDoc, head.version, body);
     }
 
-    function transferIPR(uint typeOfDoc, uint version, uint transferee) external {
-        _docs.transferIPR(typeOfDoc, version, transferee, getMyUserNo());
+    function regProxy(
+        address temp,
+        address proxy
+    ) external onlyKeeper {
+        DocsRepo.Doc memory doc = _docs.regProxy(
+                temp,
+                proxy,
+                bou.getBOU().getUserNo(msg.sender)
+        );
 
+        emit RegProxy(doc.head.codifyHead(), proxy);
+    }
+
+    function transferIPR(
+        uint typeOfDoc, 
+        uint version, 
+        uint transferee
+    ) external {
+        _docs.transferIPR(
+            typeOfDoc, 
+            version, 
+            transferee, 
+            bou.getBOU().getUserNo(msg.sender)
+        );
         emit TransferIPR(typeOfDoc, version, transferee);
     }
 
-    function createDoc(bytes32 snOfDoc,address primeKeyOfOwner) external returns(
+    function cloneDoc(
+        uint typeOfDoc,
+        uint version,
+        address owner,
+        address dk,
+        address gk
+    ) external returns(
         DocsRepo.Doc memory doc
     ) {
-        doc = _docs.createDoc(snOfDoc, msg.sender);
-        IOwnable(doc.body).init(primeKeyOfOwner, address(this));
-        
-        emit CreateDoc(doc.head.codifyHead(), doc.body);
+        doc = _docs.cloneDoc(
+            typeOfDoc, 
+            version, 
+            bou.getBOU().getUserNo(owner)
+        );
+        IAccessControl(doc.body).initialize(owner, rc, dk, gk);
+        emit CloneDoc(doc.head.codifyHead(), doc.body);
+    }
+
+    function proxyDoc(
+        uint typeOfDoc,
+        uint version,
+        address owner,
+        address dk,
+        address gk
+    ) external returns(
+        DocsRepo.Doc memory doc
+    ) {
+        doc = _docs.proxyDoc(
+            typeOfDoc, 
+            version, 
+            bou.getBOU().getUserNo(owner),
+            owner,
+            rc,
+            dk,
+            gk
+        );
+        emit ProxyDoc(doc.head.codifyHead(), doc.body);
+    }
+
+    function upgradeDoc(
+        address temp
+    ) external {
+        DocsRepo.Doc memory doc = _docs.upgradeDoc(temp, msg.sender);
+        emit UpgradeDoc(doc.head.codifyHead(), doc.body);
     }
 
     // ##################
     // ##  Read I/O    ##
     // ##################
 
+    // ---- Type of Doc ----
 
     function counterOfTypes() external view returns(uint32) {
         return _docs.counterOfTypes();
     }
+
+    function typeExist(uint256 typeOfDoc) external view returns(bool) {
+        return _docs.typeExist(uint32(typeOfDoc));
+    }
+
+    function getTypesList() external view returns(uint[] memory) {
+        return _docs.getTypesList();
+    }
+
+    // ---- Counters ----
 
     function counterOfVersions(uint256 typeOfDoc) external view returns(uint32) {
         return _docs.counterOfVersions(uint32(typeOfDoc));
@@ -79,9 +185,7 @@ contract BookOfDocs is IBookOfDocs, BookOfPoints {
         return _docs.counterOfDocs(uint32(typeOfDoc), uint32(version));
     }
 
-    function docExist(address body) public view returns(bool) {
-        return _docs.docExist(body);
-    }
+    // ---- Authors ----
 
     function getAuthor(uint typeOfDoc, uint version) external view returns(uint40) {
         return _docs.getAuthor(typeOfDoc, version);
@@ -91,31 +195,51 @@ contract BookOfDocs is IBookOfDocs, BookOfPoints {
         return _docs.getAuthorByBody(body);
     }
 
-    function getHeadByBody(address body) public view returns (DocsRepo.Head memory ) {
-        return _docs.getHeadByBody(body);
+    // ---- Temps ----
+
+    function tempExist(address body) external view returns(bool) {
+        return _docs.tempExist(body);
     }
 
-    function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc) {
-        doc = _docs.getDoc(snOfDoc);
-    }
-
-    function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc) {
-        if (counterOfUsers() >= acct) { 
-            doc.body = _getUserByNo(acct).primeKey.pubKey;
-            if (_docs.docExist(doc.body)) doc.head = _docs.heads[doc.body];
-            else doc.body = address(0);
-        }
-    }
-
-    function verifyDoc(bytes32 snOfDoc) external view returns(bool flag) {
-        flag = _docs.verifyDoc(snOfDoc);
+    function getTemp(uint typeOfDoc, uint version) external view returns(DocsRepo.Doc memory doc) {
+        doc = _docs.getTemp(typeOfDoc, version);
     }
 
     function getVersionsList(uint256 typeOfDoc) external view returns(DocsRepo.Doc[] memory) {
         return _docs.getVersionsList(uint32(typeOfDoc));
     }
 
-    function getDocsList(bytes32 snOfDoc) external view returns(DocsRepo.Doc[] memory) {
-        return _docs.getDocsList(snOfDoc);
+    // ---- Docs ----
+
+    function docExist(address body) external view returns(bool) {
+        return _docs.docExist(body);
+    }
+
+    function getHeadByBody(address body) external view returns (DocsRepo.Head memory ) {
+        return _docs.getHeadByBody(body);
+    }
+
+    function getDoc(
+        uint typeOfDoc, uint version, uint seqOfDoc
+    ) external view returns(DocsRepo.Doc memory doc) {
+        doc = _docs.getDoc(typeOfDoc, version, seqOfDoc);
+    }
+
+    function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc) {
+        if (bou.getBOU().isUserNo(acct)) {
+            doc.body = bou.getBOU().getUserByNo(acct).primeKey.pubKey;
+            if (_docs.docExist(doc.body)) doc.head = _docs.heads[doc.body];
+            else doc.body = address(0);
+        }
+    }
+
+    function getDocsList(uint typeOfDoc, uint version) external view returns(DocsRepo.Doc[] memory) {
+        return _docs.getDocsList(typeOfDoc, version);
     } 
+
+    function verifyDoc(
+        uint typeOfDoc, uint version, uint seqOfDoc
+    ) external view returns(bool flag) {
+        flag = _docs.verifyDoc(typeOfDoc, version, seqOfDoc);
+    }
 }

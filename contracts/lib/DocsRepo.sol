@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,8 +19,13 @@
 
 pragma solidity ^0.8.8;
 
+import "../center/access/IOwnable.sol";
+import "../openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
+
 library DocsRepo {
-    
+    using EnumerableSet for EnumerableSet.UintSet;
+
     struct Head {
         uint32 typeOfDoc;
         uint32 version;
@@ -31,6 +36,7 @@ library DocsRepo {
     }
  
     struct Body {
+        uint32 version;
         uint64 seq;
         address addr;
     }
@@ -43,7 +49,10 @@ library DocsRepo {
     struct Repo {
         // typeOfDoc => version => seqOfDoc => Body
         mapping(uint256 => mapping(uint256 => mapping(uint256 => Body))) bodies;
+        // body address => Head
         mapping(address => Head) heads;
+        // typeOfDoc set
+        EnumerableSet.UintSet typesList;
     }
 
     //##################
@@ -83,46 +92,168 @@ library DocsRepo {
         head.author = uint40(author);
         head.creator = uint40(caller);
 
-        require(body != address(0), "DR.setTemplate: zero address");
-        require(head.typeOfDoc > 0, "DR.setTemplate: zero typeOfDoc");
-        if (head.typeOfDoc > counterOfTypes(repo))
-            head.typeOfDoc = _increaseCounterOfTypes(repo);
+        require(body != address(0),
+            "DR.setTemp: zero body");
+        require(repo.heads[body].typeOfDoc == 0, 
+            "DR.setTemp: temp already exists");
+        
+        require(head.typeOfDoc > 0, "DR.setTemp: zero typeOfDoc");
+        require(head.author > 0, "DR.setTemp: zero author");
+        require(head.creator > 0, "DR.setTemp: zero creator");
 
-        require(head.author > 0, "DR.setTemplate: zero author");
-        require(head.creator > 0, "DR.setTemplate: zero creator");
+        repo.typesList.add(head.typeOfDoc);
 
         head.version = _increaseCounterOfVersions(repo, head.typeOfDoc);
         head.createDate = uint48(block.timestamp);
-
+    
         repo.bodies[head.typeOfDoc][head.version][0].addr = body;
         repo.heads[body] = head;
     }
 
-    function createDoc(
-        Repo storage repo, 
-        bytes32 snOfDoc,
-        address creator
-    ) public returns (Doc memory doc)
-    {
-        doc.head = snParser(snOfDoc);
-        doc.head.creator = uint40(uint160(creator));
+    function _isProxy(
+        address temp, address proxy
+    ) public view returns(bool) {
+        return temp == IOwnable(proxy).getImplementation();
+    }
 
-        require(doc.head.typeOfDoc > 0, "DR.createDoc: zero typeOfDoc");
-        require(doc.head.version > 0, "DR.createDoc: zero version");
-        // require(doc.head.creator > 0, "DR.createDoc: zero creator");
-
-        address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0].addr;
-        require(temp != address(0), "DR.createDoc: template not ready");
-
-        doc.head.author = repo.heads[temp].author;
+    function _regDoc(
+        Repo storage repo,
+        Doc memory doc
+    ) private {
         doc.head.seqOfDoc = _increaseCounterOfDocs(repo, doc.head.typeOfDoc, doc.head.version);            
         doc.head.createDate = uint48(block.timestamp);
 
-        doc.body = _createClone(temp);
-
         repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc].addr = doc.body;
         repo.heads[doc.body] = doc.head;
+    }
 
+    function regProxy(
+        Repo storage repo,
+        address temp,
+        address proxy,
+        uint caller
+    ) public returns (Doc memory doc) {
+        require(caller != 0, 
+            "DR.regProxy: zero caller");
+        require(tempExist(repo, temp), 
+            "DR.regProxy: temp not exist");
+        require(proxy != address(0), 
+            "DR.regProxy: zero proxy");            
+        require(!docExist(repo, proxy), 
+            "DR.regProxy: already reged");
+        require(_isProxy(temp, proxy),
+            "DR.regProxy: wrong template");
+
+        doc.head = repo.heads[temp];
+        doc.head.creator = uint40(caller);
+        doc.body = proxy;
+
+        _regDoc(repo, doc);
+        
+    }
+
+    function cloneDoc(
+        Repo storage repo, 
+        uint typeOfDoc,
+        uint version,
+        uint creator
+    ) public returns (Doc memory doc)
+    {
+        // doc.head.typeOfDoc = uint32(typeOfDoc);
+        // doc.head.version = uint32(version);
+        // doc.head.creator = uint40(creator);
+
+        // require(doc.head.typeOfDoc > 0, "DR.cloneDoc: zero typeOfDoc");
+        // require(doc.head.version > 0, "DR.cloneDoc: zero version");
+        // require(doc.head.creator > 0, "DR.cloneDoc: zero creator");
+
+        // address temp = repo.bodies[uint32(typeOfDoc)][uint32(version)][0].addr;
+        // // require(temp != address(0), "DR.cloneDoc: template not ready");
+        // require(tempExist(repo, temp), "DR.cloneDoc: template not exist");
+
+        doc = getTemp(repo, typeOfDoc, version);
+        doc.head.creator = uint40(creator);
+        require(doc.head.creator > 0, "DR.cloneDoc: zero creator");
+
+        doc.body = _createClone(doc.body);
+        require(doc.body != address(0), "DR.cloneDoc: clone failed");
+
+        _regDoc(repo, doc);
+    }
+
+    function proxyDoc(
+        Repo storage repo, 
+        uint typeOfDoc,
+        uint version,
+        uint creator,
+        address owner,
+        address rc,
+        address dk,
+        address gk
+    ) public returns (Doc memory doc)
+    {
+        // doc.head.typeOfDoc = uint32(typeOfDoc);
+        // doc.head.version = uint32(version);
+        // doc.head.creator = uint40(creator);
+
+        // require(doc.head.typeOfDoc > 0, "DR.proxyDoc: zero typeOfDoc");
+        // require(doc.head.version > 0, "DR.proxyDoc: zero version");
+        // require(doc.head.creator > 0, "DR.proxyDoc: zero creator");
+
+        // address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0].addr;
+        // require(tempExist(repo, temp), "DR.proxyDoc: template not exist");
+
+
+        // doc.head.author = repo.heads[temp].author;
+
+        doc = getTemp(repo, typeOfDoc, version);
+        doc.head.creator = uint40(creator);
+        require(doc.head.creator > 0, "DR.proxyDoc: zero creator");
+        
+        bytes memory data = abi.encodeWithSignature(
+            "initialize(address,address,address,address)",
+            owner,
+            rc,
+            dk,
+            gk
+        );
+
+        doc.body = address(new ERC1967Proxy(doc.body, data));
+
+        _regDoc(repo, doc);
+    }
+
+    function upgradeDoc(
+        Repo storage repo, 
+        address temp,
+        address proxy
+    ) public returns (Doc memory doc) {
+
+        require(tempExist(repo, temp),
+            "DR.upgradeDoc: temp not exist");
+        require(docExist(repo, proxy),
+            "DR.upgradeDoc: proxy not exist");
+
+        doc.head = repo.heads[temp];
+        doc.body = proxy;
+
+        Head memory oldHead = repo.heads[proxy];
+    
+        require(oldHead.typeOfDoc == doc.head.typeOfDoc,
+            "DR.upgradeDoc: wrong typeOfDoc");
+        require(oldHead.version != doc.head.version,
+            "DR.upgradeDoc: wrong version");
+        require(_isProxy(temp, proxy),
+            "DR.upgradeDoc: wrong template");
+
+        _regDoc(repo, doc);
+
+        Body storage oldBody = 
+            repo.bodies[oldHead.typeOfDoc][oldHead.version][oldHead.seqOfDoc];
+
+        oldBody.addr = address(0);
+        oldBody.version = doc.head.version;
+        oldBody.seq = doc.head.seqOfDoc;
     }
 
     function transferIPR(
@@ -135,13 +266,6 @@ library DocsRepo {
         require (caller == getAuthor(repo, typeOfDoc, version),
             "DR.transferIPR: not author");
         repo.heads[repo.bodies[typeOfDoc][version][0].addr].author = uint40(transferee);
-    }
-
-    function _increaseCounterOfTypes(Repo storage repo) 
-        private returns(uint32) 
-    {
-        repo.bodies[0][0][0].seq++;
-        return uint32(repo.bodies[0][0][0].seq);
     }
 
     function _increaseCounterOfVersions(
@@ -233,10 +357,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     //##   read I/O   ##
     //##################
 
+    // ---- TypeOfDoc ---- 
 
     function counterOfTypes(Repo storage repo) public view returns(uint32) {
-        return uint32(repo.bodies[0][0][0].seq);
+        return uint32(repo.typesList.length());
     }
+
+    function typeExist(Repo storage repo, uint typeOfDoc) public view returns(bool) {
+        return repo.typesList.contains(typeOfDoc);
+    }
+
+    function getTypesList(Repo storage repo) public view returns(uint[] memory) {
+        return repo.typesList.values();
+    }
+
+    // ---- Counters ----
 
     function counterOfVersions(Repo storage repo, uint typeOfDoc) public view returns(uint32) {
         return uint32(repo.bodies[uint32(typeOfDoc)][0][0].seq);
@@ -245,6 +380,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     function counterOfDocs(Repo storage repo, uint typeOfDoc, uint version) public view returns(uint64) {
         return repo.bodies[uint32(typeOfDoc)][uint32(version)][0].seq;
     }
+
+    // ---- Authors ----
 
     function getAuthor(
         Repo storage repo,
@@ -265,6 +402,47 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return getAuthor(repo, head.typeOfDoc, head.version);
     }
 
+    // ---- Temps ----
+
+    function tempExist(Repo storage repo, address body) public view returns(bool) {
+        Head memory head = repo.heads[body];
+        if (   body == address(0) 
+            || head.typeOfDoc == 0 
+            || head.version == 0 
+            || head.seqOfDoc != 0
+        ) return false;
+   
+        return repo.bodies[head.typeOfDoc][head.version][0].addr == body;
+    }
+
+    function getTemp(
+        Repo storage repo,
+        uint typeOfDoc, uint version
+    ) public view returns(Doc memory doc) {
+        doc.body = repo.bodies[uint32(typeOfDoc)][uint32(version)][0].addr;
+        doc.head = repo.heads[doc.body];
+        require(tempExist(repo, doc.body),
+            "DR.getTemp: temp not exist");
+    }
+
+    function getVersionsList(
+        Repo storage repo,
+        uint typeOfDoc
+    ) public view returns(Doc[] memory)
+    {
+        uint32 len = counterOfVersions(repo, typeOfDoc);
+        Doc[] memory out = new Doc[](len);
+
+        while (len > 0) {
+            out[len - 1] = getTemp(repo, uint32(typeOfDoc), len);
+            len--;
+        }
+
+        return out;
+    }
+
+    // ---- Docs ----
+
     function docExist(Repo storage repo, address body) public view returns(bool) {
         Head memory head = repo.heads[body];
         if (   body == address(0) 
@@ -283,65 +461,51 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return repo.heads[body];
     }
 
-
     function getDoc(
         Repo storage repo,
-        bytes32 snOfDoc
+        uint typeOfDoc, uint version, uint seqOfDoc
     ) public view returns(Doc memory doc) {
-        doc.head = snParser(snOfDoc);
-
-        doc.body = repo.bodies[doc.head.typeOfDoc][doc.head.version][doc.head.seqOfDoc].addr;
+        doc.body = repo.bodies[uint32(typeOfDoc)][uint32(version)][uint64(seqOfDoc)].addr;
         doc.head = repo.heads[doc.body];
-    }
-
-    function getVersionsList(
-        Repo storage repo,
-        uint typeOfDoc
-    ) public view returns(Doc[] memory)
-    {
-        uint32 len = counterOfVersions(repo, typeOfDoc);
-        Doc[] memory out = new Doc[](len);
-
-        while (len > 0) {
-            Head memory head;
-            head.typeOfDoc = uint32(typeOfDoc);
-            head.version = len;
-
-            out[len - 1] = getDoc(repo, codifyHead(head));
-            len--;
-        }
-
-        return out;
+        require(docExist(repo, doc.body),
+            "DR.getDoc: doc not exist");
     }
 
     function getDocsList(
         Repo storage repo,
-        bytes32 snOfDoc
+        uint typeOfDoc, uint version
     ) public view returns(Doc[] memory) {
-        Head memory head = snParser(snOfDoc);
+        Head memory head;
+        head.typeOfDoc = uint32(typeOfDoc);
+        head.version = uint32(version);
                 
         uint64 len = counterOfDocs(repo, head.typeOfDoc, head.version);
         Doc[] memory out = new Doc[](len);
 
         while (len > 0) {
-            head.seqOfDoc = len;
-            out[len - 1] = getDoc(repo, codifyHead(head));
+            out[len - 1] = getDoc(repo, head.typeOfDoc, head.version, len);
             len--;
         }
 
         return out;
     }
 
+    // ---- Verification ----
+
     function verifyDoc(
         Repo storage repo, 
-        bytes32 snOfDoc
+        uint typeOfDoc, uint version, uint seqOfDoc
     ) public view returns(bool) {
-        Head memory head = snParser(snOfDoc);
+        Head memory head;
+        head.typeOfDoc = uint32(typeOfDoc);
+        head.version = uint32(version);
+        head.seqOfDoc = uint64(seqOfDoc);
 
         address temp = repo.bodies[head.typeOfDoc][head.version][0].addr;
         address target = repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc].addr;
 
-        return _isClone(temp, target);
+        return tempExist(repo, temp) && docExist(repo, target) && 
+                (_isClone(temp, target) || _isProxy(temp, target));
     }
 
 }

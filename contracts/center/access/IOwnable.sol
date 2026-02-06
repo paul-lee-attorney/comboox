@@ -21,8 +21,6 @@
 
 pragma solidity ^0.8.8;
 
-import "../IRegCenter.sol";
-
 interface IOwnable {
 
     struct Admin{
@@ -36,7 +34,9 @@ interface IOwnable {
     // ##    Write    ##
     // #################
 
-    function init(address owner, address regCenter) external;
+    // function init(address owner, address regCenter) external;
+    
+    function getImplementation() external view returns (address);
 
     function setNewOwner(address acct) external;
 
@@ -44,8 +44,8 @@ interface IOwnable {
     // ##   Read   ##
     // ##############
 
-    function getOwner() external view returns (address);
+    // function getOwner() external view returns (address);
 
-    function getRegCenter() external view returns (address);
+    // function getRegCenter() external view returns (address);
 
 }
