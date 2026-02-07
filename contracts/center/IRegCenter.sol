@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -20,65 +19,49 @@
 
 pragma solidity ^0.8.8;
 
+/// @title IRegCenter
+/// @notice Registry center interface combining docs, users, points, and ERC20 operations.
+/// @dev Extends IBookOfPoints, IBookOfDocs, IBookOfUsers, and IERC20.
 
 import "../lib/UsersRepo.sol";
 import "../lib/DocsRepo.sol";
-
 import "./books/IBookOfDocs.sol";
 import "./books/IBookOfPoints.sol";
 import "./books/IBookOfUsers.sol";
-
 import "../openzeppelin/token/ERC20/IERC20.sol";
 
 interface IRegCenter is IBookOfPoints, IERC20, IBookOfDocs, IBookOfUsers{
 
-    enum TypeOfDoc{
-        ZeroPoint,
-        ROCKeeper,      // 1
-        RODKeeper,      // 2
-        BMMKeeper,      // 3
-        ROMKeeper,      // 4
-        GMMKeeper,      // 5
-        ROAKeeper,      // 6
-        ROOKeeper,      // 7
-        ROPKeeper,      // 8
-        SHAKeeper,      // 9
-        LOOKeeper,      // 10
-        ROC,            // 11
-        ROD,            // 12
-        MeetingMinutes, // 13
-        ROM,            // 14
-        ROA,            // 15
-        ROO,            // 16
-        ROP,            // 17
-        ROS,            // 18
-        LOO,            // 19
-        GeneralKeeper,  // 20
-        IA,             // 21
-        SHA,            // 22 
-        AntiDilution,   // 23
-        LockUp,         // 24
-        Alongs,         // 25
-        Options,        // 26
-        LOP             // 27
-    }
-
+    /// @notice Register caller as a user and mint initial gift points if configured.
     function regUser() external;
 
+    /// @notice Resolve userNo and charge license fee according to royalty rules.
+    /// @param targetAddr User address to resolve.
+    /// @param fee License fee amount (in points' smallest unit).
+    /// @param author Author userNo.
+    /// @return userNo Resolved user number.
     function getUserNo(address targetAddr, uint fee, uint author) external returns (uint40);
 
     // ==== Self Query ====
 
+    /// @notice Get caller's user number.
     function getMyUserNo() external view returns(uint40);
 
+    /// @notice Get caller's user record.
     function getMyUser() external view returns (UsersRepo.User memory);
 
     // ==== Admin Checking ====
 
+    /// @notice Get user number by address (admin access in implementation).
+    /// @param targetAddr User address.
     function getUserNo(address targetAddr) external view returns (uint40);
 
+    /// @notice Get user record by address (admin access in implementation).
+    /// @param targetAddr User address.
     function getUser(address targetAddr) external view returns (UsersRepo.User memory);
 
+    /// @notice Get user record by user number (admin access in implementation).
+    /// @param acct User number.
     function getUserByNo(uint acct) external view returns (UsersRepo.User memory);
 
 }

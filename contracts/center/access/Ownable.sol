@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- *
- * v0.2.4
- *
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -25,10 +22,8 @@ pragma solidity ^0.8.8;
 import "./IOwnable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "../../lib/InterfacesHub.sol";
 
 contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
-    using InterfacesHub for address;
 
     Admin public owner;
     address public rc;

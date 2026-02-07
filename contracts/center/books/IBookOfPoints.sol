@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,14 +19,23 @@
 
 pragma solidity ^0.8.8;
 
+/// @title IBookOfPoints
+/// @notice ERC20-like points mint/burn interface used by the registry.
+/// @dev Exposes privileged mint and burn operations for platform points.
+
 interface IBookOfPoints {
 
     // ##################
     // ##    Write     ##
     // ##################
 
+    /// @notice Mint points to an address.
+    /// @param to Recipient address.
+    /// @param amt Amount to mint (uint256 in implementation).
     function mint(address to, uint amt) external;
 
+    /// @notice Burn points from the caller.
+    /// @param amt Amount to burn (uint256 in implementation).
     function burn(uint amt) external;
 
 }

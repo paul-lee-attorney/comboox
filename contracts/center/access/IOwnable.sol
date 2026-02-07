@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,33 +17,35 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
+
 pragma solidity ^0.8.8;
+
+/// @title IOwnable
+/// @notice Minimal ownership interface used by upgradeable components.
+/// @dev Exposes implementation address for UUPS checks and an owner update hook.
 
 interface IOwnable {
 
+    /// @notice Admin state container.
+    /// @dev `state` is a small flag used to guard initialization.
     struct Admin{
         address addr;
         uint8 state;
     }
 
+    /// @notice Emitted when the owner address is updated.
+    /// @param owner New owner address.
     event SetNewOwner(address indexed owner);
 
     // #################
     // ##    Write    ##
     // #################
-
-    // function init(address owner, address regCenter) external;
     
+    /// @notice Return current implementation address (UUPS compatibility check).
+    /// @return Implementation address.
     function getImplementation() external view returns (address);
 
+    /// @notice Update owner address.
+    /// @param acct New owner address (non-zero in implementations).
     function setNewOwner(address acct) external;
-
-    // ##############
-    // ##   Read   ##
-    // ##############
-
-    // function getOwner() external view returns (address);
-
-    // function getRegCenter() external view returns (address);
-
 }

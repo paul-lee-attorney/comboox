@@ -35,7 +35,7 @@ contract BookOfUsers is IBookOfUsers, Ownable {
     function initialize(
         address regCenter_,
         address keeper
-    ) external virtual initializer {
+    ) external virtual override initializer {
         _init(msg.sender, regCenter_);
         _initUsers(keeper);
     }
@@ -54,7 +54,7 @@ contract BookOfUsers is IBookOfUsers, Ownable {
     // ##    Modifiers    ##
     // #####################
 
-    modifier onlyOwner() {
+    modifier onlyOwner() override {
         require(msg.sender == _users.getOwner(),
             "BOU: not owner");
         _;
