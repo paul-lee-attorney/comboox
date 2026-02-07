@@ -66,6 +66,19 @@ library UsersRepo {
     // owner: users[0].primeKey.pubKey;
     // bookeeper: users[0].backupKey.pubKey;
 
+    modifier onlyOwner(Repo storage repo) {
+        require(msg.sender == repo.users[0].primeKey.pubKey,
+            "UR: not owner");
+        _;
+    }
+
+    modifier onlyKeeper(Repo storage repo) {
+        require(msg.sender == repo.users[0].backupKey.pubKey,
+            "UR: not keeper");
+        _;
+    }
+
+
     // ########################
     // ##  Config Setting    ##
     // ########################
@@ -86,12 +99,12 @@ library UsersRepo {
         });
     }
 
-    function transferOwnership(Repo storage repo, address newOwner) public {
+    function transferOwnership(Repo storage repo, address newOwner) public onlyOwner(repo) {
         require(newOwner != address(0), "UR.TO: zero address");
         repo.users[0].primeKey.pubKey = newOwner;
     }
 
-    function handoverCenterKey(Repo storage repo, address newKeeper) public {
+    function handoverCenterKey(Repo storage repo, address newKeeper) public onlyKeeper(repo) {
         require(newKeeper != address(0), "UR.HCK: zero address");
         repo.users[0].backupKey.pubKey = newKeeper;
     }
@@ -112,7 +125,7 @@ library UsersRepo {
         return out;
     }
 
-    function setPlatformRule(Repo storage repo, bytes32 snOfRule) public {
+    function setPlatformRule(Repo storage repo, bytes32 snOfRule) public onlyOwner(repo) {
 
         Rule memory rule = ruleParser(snOfRule);
 

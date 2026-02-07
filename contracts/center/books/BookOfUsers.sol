@@ -33,11 +33,10 @@ contract BookOfUsers is IBookOfUsers, Ownable {
     uint[50] private __gap;
 
     function initialize(
-        address owner_,
         address regCenter_,
         address keeper
     ) external virtual initializer {
-        _init(owner_, regCenter_);
+        _init(msg.sender, regCenter_);
         _initUsers(keeper);
     }
 
@@ -73,12 +72,12 @@ contract BookOfUsers is IBookOfUsers, Ownable {
 
     // ==== Config ====
 
-    function transferOwnership(address newOwner) external onlyOwner{
+    function transferOwnership(address newOwner) external {
         _users.transferOwnership(newOwner);
         emit TransferOwnership(newOwner);
     }
 
-    function handoverCenterKey(address newKeeper) external onlyKeeper{
+    function handoverCenterKey(address newKeeper) external {
         _users.handoverCenterKey(newKeeper);
         emit TurnOverCenterKey(newKeeper);
     }
@@ -100,7 +99,7 @@ contract BookOfUsers is IBookOfUsers, Ownable {
 
     // ==== Royalty & Coupon ====
 
-    function setPlatformRule(bytes32 snOfRule) external onlyOwner {
+    function setPlatformRule(bytes32 snOfRule) external {
         _users.setPlatformRule(snOfRule);
         emit SetPlatformRule(snOfRule);
     }
