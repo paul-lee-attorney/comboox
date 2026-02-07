@@ -45,12 +45,12 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);
 
-        IRegisterOfDirectors _rod = _gk.getROD();
+        IRegisterOfDirectors _rod = gk.getROD();
         
         require(_rod.hasNominationRight(seqOfPos, caller),
             "BMMKeeper.nominateOfficer: no rights");
      
-        _gk.getBMM().nominateOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, candidate, caller);
+        gk.getBMM().nominateOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, candidate, caller);
     }
 
     function createMotionToRemoveOfficer(
@@ -59,14 +59,14 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
         
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        require(gk.getROD().isDirector(caller), "BMMK: not director");
 
-        IRegisterOfDirectors _rod = _gk.getROD();
+        IRegisterOfDirectors _rod = gk.getROD();
         
         require(_rod.hasNominationRight(seqOfPos, caller),
             "BMMK.createMotionToRemoveOfficer: no rights");
 
-        _gk.getBMM().createMotionToRemoveOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, caller);
+        gk.getBMM().createMotionToRemoveOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, caller);
     }
 
     // ---- Docs ----
@@ -78,9 +78,9 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        require(gk.getROD().isDirector(caller), "BMMK: not director");
 
-        _gk.getBMM().createMotionToApproveDoc(doc, seqOfVR, executor, caller);
+        gk.getBMM().createMotionToApproveDoc(doc, seqOfVR, executor, caller);
     }
 
     function proposeToTransferFund(
@@ -93,12 +93,12 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 66000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        require(gk.getROD().isDirector(caller), "BMMK: not director");
         
-        IMeetingMinutes _bmm = _gk.getBMM();
+        IMeetingMinutes _bmm = gk.getBMM();
 
         require (amt <= 
-            uint(_gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold) * 
+            uint(gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold) * 
             (isCBP ? 10 ** 18 : 10 ** 6), "BMMK.transferFund: amt overflow");
 
         uint64 seqOfMotion = 
@@ -118,9 +118,9 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 66000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        require(gk.getROD().isDirector(caller), "BMMK: not director");
 
-        _gk.getBMM().createAction(
+        gk.getBMM().createAction(
             seqOfVR,
             targets,
             values,
@@ -139,10 +139,10 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        require(gk.getROD().isDirector(caller), "BMMK: not director");
 
         _avoidanceCheck(seqOfMotion, caller);
-        _gk.getBMM().entrustDelegate(seqOfMotion, delegate, caller);
+        gk.getBMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
     function proposeMotionToBoard (
@@ -150,9 +150,9 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        require(gk.getROD().isDirector(caller), "BMMK: not director");
 
-        _gk.getBMM().proposeMotionToBoard(seqOfMotion, caller);
+        gk.getBMM().proposeMotionToBoard(seqOfMotion, caller);
     }
 
     function castVote(
@@ -164,12 +164,12 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 36000);        
 
         _avoidanceCheck(seqOfMotion, caller);
-        _gk.getBMM().castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
+        gk.getBMM().castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
     function _avoidanceCheck(uint256 seqOfMotion, uint caller) private view {
 
-        MotionsRepo.Motion memory motion = _gk.getBMM().getMotion(seqOfMotion);
+        MotionsRepo.Motion memory motion = gk.getBMM().getMotion(seqOfMotion);
 
         if (motion.head.typeOfMotion == 
                 uint8(MotionsRepo.TypeOfMotion.ApproveDoc) &&
@@ -178,7 +178,7 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
             address doc = address(uint160(motion.contents));
             
             OfficersRepo.Position[] memory poses = 
-                _gk.getROD().getFullPosInfoInHand(caller);
+                gk.getROD().getFullPosInfoInHand(caller);
             uint256 len = poses.length;            
             while (len > 0) {
                 require (!ISigPage(doc).isSigner(poses[len-1].nominator), 
@@ -328,8 +328,8 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
     {
         _msgSender(msgSender, 58000);
         
-        IRegisterOfDirectors _rod = _gk.getROD();
-        IMeetingMinutes _bmm = _gk.getBMM();
+        IRegisterOfDirectors _rod = gk.getROD();
+        IMeetingMinutes _bmm = gk.getBMM();
         
         MotionsRepo.Motion memory motion = 
             _bmm.getMotion(seqOfMotion);
@@ -344,7 +344,7 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
             base = _calBase(_bmm, _rod, motion, base, case0);
         }
 
-        IShareholdersAgreement _sha = _gk.getSHA();
+        IShareholdersAgreement _sha = gk.getSHA();
 
         bool quorumFlag = (address(_sha) == address(0) || 
             base.attendHeadRatio >= 
@@ -363,7 +363,7 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
     ) external onlyKeeper {
         uint caller = _msgSender(msgSender, 38000);        
 
-        _gk.getBMM().transferFund(
+        gk.getBMM().transferFund(
             to,
             isCBP,
             amt,
@@ -375,7 +375,7 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         emit TransferFund(to, isCBP, amt, seqOfMotion, caller);
 
         if (!isCBP) {
-            _gk.getCashier().transferUsd(to, amt, bytes32((1<<255) + seqOfMotion));
+            gk.getCashier().transferUsd(to, amt, bytes32((1<<255) + seqOfMotion));
         }
     }
 
@@ -396,7 +396,7 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
             len--;
         }
 
-        return _gk.getBMM().execAction(
+        return gk.getBMM().execAction(
             typeOfAction,
             targets,
             values,

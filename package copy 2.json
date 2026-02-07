@@ -1,0 +1,23 @@
+{
+  "name": "comboox",
+  "version": "0.2.0",
+  "description": "company statutory booking system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Li Li @ Jingtian & Gongcheng",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chainlink/contracts": "^0.6.1",
+    "@identity.com/gateway-protocol-eth": "^0.0.4",
+    "dotenv": "^16.3.1",
+    "hardhat": "^3.1.4"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-verify": "^3.0.8",
+    "ethers": "^6.16.0",
+    "mocha": "^11.7.5"
+  }
+}

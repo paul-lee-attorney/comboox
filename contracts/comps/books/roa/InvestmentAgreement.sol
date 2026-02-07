@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -143,7 +143,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         
 
         swap = _repo.createSwap(seqOfMotion, seqOfDeal, paidOfTarget, 
-            seqOfPledge, caller, _gk.getROS(), _gk.getGMM());
+            seqOfPledge, caller, gk.getROS(), gk.getGMM());
 
         emit CreateSwap(seqOfDeal, SwapsRepo.codifySwap(swap));
     }
@@ -162,7 +162,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint seqOfSwap
     ) external onlyKeeper returns (SwapsRepo.Swap memory swap){
         swap = _repo.terminateSwap(seqOfMotion, seqOfDeal, 
-            seqOfSwap, _gk.getGMM());
+            seqOfSwap, gk.getGMM());
         emit TerminateSwap(seqOfDeal, seqOfSwap);        
     }
 

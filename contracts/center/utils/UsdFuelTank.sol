@@ -63,13 +63,13 @@ contract UsdFuelTank is Ownable {
       balance = auth.value - (rate * amt / 10 ** 18);
     }
 
-    if (amt > 0 && _rc.balanceOf(address(this)) >= amt) {
+    if (amt > 0 && rc.balanceOf(address(this)) >= amt) {
       sum += amt;
       emit Refuel (msg.sender, auth.value - balance, amt);
       //remark: CollectUSDCForRefuelCBP
       ICashier(cashier).collectUsd(auth,
         bytes32(0x436f6c6c65637455534443466f7252656675656c434250000000000000000000));
-      if (!_rc.transfer(msg.sender, amt)) {
+      if (!rc.transfer(msg.sender, amt)) {
         revert ('CBP Transfer Failed');
       } else if (balance > 0) {
         uint temp = balance;
@@ -83,9 +83,9 @@ contract UsdFuelTank is Ownable {
   }
 
   function withdrawFuel(uint amt) external onlyOwner {
-    if (_rc.balanceOf(address(this)) >= amt) {
+    if (rc.balanceOf(address(this)) >= amt) {
         emit WithdrawFuel(msg.sender, amt);
-        if (!_rc.transfer(msg.sender, amt)) {
+        if (!rc.transfer(msg.sender, amt)) {
           revert('CBP Transfer Failed');
         }
     } else revert('insufficient fuel');

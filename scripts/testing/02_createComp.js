@@ -97,7 +97,7 @@ import { getAddress, formatUnits, hexlify, toUtf8Bytes, id } from "ethers";
 import { expect } from "chai";
 import { saveBooxAddr, setUserCBP, setUserDepo } from "./saveTool";
 import { codifyHeadOfShare, printShares } from './ros';
-import { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC, getBR } from "./boox";
+import { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC, getROC } from "./boox";
 import { now, increaseTime } from "./utils";
 import { parseCompInfo } from "./gk";
 import { cbpOfUsers } from "./rc";
@@ -120,7 +120,7 @@ async function main() {
 
     // ==== Create Company ====
 
-    let tx = await cnc.createComp(signers[1].address);
+    let tx = await cnc.createComp(4, signers[1].address);
     let receipt = await tx.wait();
 
     await expect(tx).to.emit(rc, "CreateDoc");

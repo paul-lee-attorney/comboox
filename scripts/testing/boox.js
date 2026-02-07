@@ -149,7 +149,7 @@ export {
   refreshBoox,
   getRC,
   getCNC,
-  getCNF,
+  // getCNF,
   getFT,
   getGK,
   getFK,

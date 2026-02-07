@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -39,14 +39,14 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);
 
-        IMeetingMinutes _gmm = _gk.getGMM();
+        IMeetingMinutes _gmm = gk.getGMM();
         
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.ElectOfficer), 
             "BODK.takeSeat: not a suitable motion");
 
         _gmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _gk.getROD().takePosition(seqOfPos, caller);
+        gk.getROD().takePosition(seqOfPos, caller);
     }
 
     function removeDirector (
@@ -56,14 +56,14 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
 
-        IMeetingMinutes _gmm = _gk.getGMM();
+        IMeetingMinutes _gmm = gk.getGMM();
 
         require(_gmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.RemoveOfficer), 
             "BODK.removeDirector: not a suitable motion");
 
         _gmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _gk.getROD().removeOfficer(seqOfPos);
+        gk.getROD().removeOfficer(seqOfPos);
     }
 
     // ==== Officers ====
@@ -75,14 +75,14 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);
 
-        IMeetingMinutes _bmm = _gk.getBMM();
+        IMeetingMinutes _bmm = gk.getBMM();
     
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.ElectOfficer), 
             "BODK.takePos: not a suitable motion");
 
         _bmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _gk.getROD().takePosition(seqOfPos, caller);
+        gk.getROD().takePosition(seqOfPos, caller);
     }
 
     function removeOfficer (
@@ -92,14 +92,14 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
 
-        IMeetingMinutes _bmm = _gk.getBMM();
+        IMeetingMinutes _bmm = gk.getBMM();
 
         require(_bmm.getMotion(seqOfMotion).head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.RemoveOfficer), 
             "BODK.removeOfficer: not a suitable motion");
 
         _bmm.execResolution(seqOfMotion, seqOfPos, caller);
-        _gk.getROD().removeOfficer(seqOfPos);        
+        gk.getROD().removeOfficer(seqOfPos);        
     }
 
     // ==== Quit ====
@@ -108,7 +108,7 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
         external onlyDK 
     {
         uint caller = _msgSender(msgSender, 18000);
-        _gk.getROD().quitPosition(seqOfPos, caller);
+        gk.getROD().quitPosition(seqOfPos, caller);
     }
 
 }

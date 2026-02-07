@@ -40,7 +40,7 @@ contract Cashier is ICashier, RoyaltyCharge {
     //###############
 
     function _transferWithAuthorization(TransferAuth memory auth) private {
-        _gk.getBank().transferWithAuthorization(
+        gk.getBank().transferWithAuthorization(
             auth.from, 
             address(this), 
             auth.value,
@@ -73,7 +73,7 @@ contract Cashier is ICashier, RoyaltyCharge {
         _transferWithAuthorization(auth);
         emit ForwardUsd(auth.from, to, auth.value, remark);
 
-        require(_gk.getBank().transfer(to, auth.value),
+        require(gk.getBank().transfer(to, auth.value),
             "Cashier.forwardUsd: transfer failed");
     }
 
@@ -94,7 +94,7 @@ contract Cashier is ICashier, RoyaltyCharge {
 
         emit ReleaseUsd(from, to, amt, remark);
 
-        require(_gk.getBank().transfer(to, amt),
+        require(gk.getBank().transfer(to, amt),
             "Cashier.releaseUsd: transfer failed");
     }
 
@@ -105,7 +105,7 @@ contract Cashier is ICashier, RoyaltyCharge {
         
         emit TransferUsd(to, amt, remark);
 
-        require(_gk.getBank().transfer(to, amt),
+        require(gk.getBank().transfer(to, amt),
             "Cashier.transferUsd: transfer failed");        
     }
 
@@ -119,11 +119,11 @@ contract Cashier is ICashier, RoyaltyCharge {
             "Cashier.DistrUsd: insufficient amt");
 
         RulesParser.DistrRule memory rule =
-            _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
+            gk.getSHA().getRule(seqOfDR).DistrRuleParser();
 
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         WaterfallsRepo.Drop memory drop;
 
         if ( rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.ProRata)) {
@@ -152,10 +152,10 @@ contract Cashier is ICashier, RoyaltyCharge {
             "Cashier.DistrUsd: insufficient amt");
 
         RulesParser.DistrRule memory rule = 
-            _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
+            gk.getSHA().getRule(seqOfDR).DistrRuleParser();
 
-        IRegisterOfMembers _rom = _gk.getROM();
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfMembers _rom = gk.getROM();
+        IRegisterOfShares _ros = gk.getROS();
         WaterfallsRepo.Drop memory drop;
 
         if ( rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.ProRata)) {
@@ -203,7 +203,7 @@ contract Cashier is ICashier, RoyaltyCharge {
 
             emit PickupUsd(msg.sender, caller, value);
 
-            require(_gk.getBank().transfer(msg.sender, value),
+            require(gk.getBank().transfer(msg.sender, value),
                 "Cashier.PickupUsd: transfer failed");
 
         } else revert("Cashier.pickupDeposit: no balance");
@@ -230,7 +230,7 @@ contract Cashier is ICashier, RoyaltyCharge {
     }
 
     function balanceOfComp() public view returns(uint) {
-        uint amt = _gk.getBank().balanceOf(address(this));        
+        uint amt = gk.getBank().balanceOf(address(this));        
         return amt - _coffers[address(0)] - _lockers[0];
     }
 

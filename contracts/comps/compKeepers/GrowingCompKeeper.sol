@@ -30,8 +30,8 @@ import "./IGrowingCompKeeper.sol";
 contract GrowingCompKeeper is IGrowingCompKeeper, SHAKs, ROOKs, CoreKeeper {
 
     function createCorpSeal() external override virtual onlyDK {
-        _rc.regUser();
-        _info.regNum = _rc.getMyUserNo();
+        rc.regUser();
+        _info.regNum = rc.getMyUserNo();
         _info.regDate = uint48(block.timestamp);
         _info.typeOfEntity = uint8(TypeOfEntity.GrowingCompany);
     }

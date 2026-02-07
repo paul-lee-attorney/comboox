@@ -356,9 +356,9 @@ contract CreateNewComp is ICreateNewComp, Ownable {
     function _createDocAtLatestVersion(uint256 typeOfDoc, address primeKeyOfOwner) internal
         returns(address body)
     {
-        uint256 latest = _rc.counterOfVersions(typeOfDoc);
+        uint256 latest = rc.counterOfVersions(typeOfDoc);
         bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(latest << 192));
-        body = _rc.createDoc(snOfDoc, primeKeyOfOwner).body;
+        body = rc.createDoc(snOfDoc, primeKeyOfOwner).body;
     }
 
 }

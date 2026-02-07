@@ -34,10 +34,10 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
     function _pledgerIsVerified(
         uint pledgor
     ) private view {
-        require (_gk.getROI().getInvestor(pledgor).state == 
+        require (gk.getROI().getInvestor(pledgor).state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved), 
             "ROPK: buyer not verified");
-        require(_gk.getSHA().isSigner(pledgor),
+        require(gk.getSHA().isSigner(pledgor),
             "ROPK:buyer not signer of SHA");
     }
 
@@ -51,7 +51,7 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 66000);
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
 
         PledgesRepo.Head memory head = snOfPld.snParser();
         
@@ -62,7 +62,7 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         require(_ros.notLocked(head.seqOfShare, block.timestamp),
             "ROPK.createPledge: target share locked");
 
-        head = _gk.getROP().createPledge(
+        head = gk.getROP().createPledge(
             snOfPld,
             paid,
             par,
@@ -81,7 +81,7 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);
-        _gk.getROP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
+        gk.getROP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
     }
 
     function refundDebt(
@@ -93,9 +93,9 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 36000);        
 
         PledgesRepo.Pledge memory pld = 
-            _gk.getROP().refundDebt(seqOfShare, seqOfPld, amt, caller);
+            gk.getROP().refundDebt(seqOfShare, seqOfPld, amt, caller);
 
-        _gk.getROS().increaseCleanPaid(seqOfShare, pld.body.paid);
+        gk.getROS().increaseCleanPaid(seqOfShare, pld.body.paid);
     }
 
     function extendPledge(
@@ -105,7 +105,7 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
-        _gk.getROP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
+        gk.getROP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
     }
 
     function lockPledge(
@@ -115,7 +115,7 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         address msgSender
     ) external onlyDK {        
         uint caller = _msgSender(msgSender, 58000);
-        _gk.getROP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
+        gk.getROP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
     }
 
     function releasePledge(
@@ -123,8 +123,8 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         uint256 seqOfPld, 
         string memory hashKey
     ) external onlyDK {
-        uint64 paid = _gk.getROP().releasePledge(seqOfShare, seqOfPld, hashKey);
-        _gk.getROS().increaseCleanPaid(seqOfShare, paid);
+        uint64 paid = gk.getROP().releasePledge(seqOfShare, seqOfPld, hashKey);
+        gk.getROS().increaseCleanPaid(seqOfShare, paid);
     }
 
     function execPledge(
@@ -138,14 +138,14 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
 
         _pledgerIsVerified(buyer);
 
-        IRegisterOfPledges _rop = _gk.getROP();
+        IRegisterOfPledges _rop = gk.getROP();
         _rop.execPledge(seqOfShare, seqOfPld, caller);
 
         PledgesRepo.Pledge memory pld = 
             _rop.getPledge(seqOfShare, seqOfPld);
 
-        IRegisterOfShares _ros = _gk.getROS();
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfShares _ros = gk.getROS();
+        IRegisterOfMembers _rom = gk.getROM();
 
         require(_ros.notLocked(pld.head.seqOfShare, block.timestamp),
             "ROPK.createPledge: share locked");
@@ -176,13 +176,13 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
         
-        IRegisterOfPledges _rop = _gk.getROP();
+        IRegisterOfPledges _rop = gk.getROP();
 
         PledgesRepo.Pledge memory pld = _rop.getPledge(seqOfShare, seqOfPld);
         require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
 
         _rop.revokePledge(seqOfShare, seqOfPld, caller);
-        _gk.getROS().increaseCleanPaid(seqOfShare, pld.body.paid);   
+        gk.getROS().increaseCleanPaid(seqOfShare, pld.body.paid);   
         
     }
 }

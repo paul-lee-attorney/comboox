@@ -40,15 +40,16 @@ async function main() {
 	const libAddress = await deployTool(signers[0], "Address", libraries, params);
 	const libInvestorsRepo = await deployTool(signers[0], "InvestorsRepo", libraries, params);
 	const libWaterfallsRepo = await deployTool(signers[0], "WaterfallsRepo", libraries, params);
+	const libBooksRepo = await deployTool(signers[0], "BooksRepo", libraries, params);
 
 	libraries = {
-		"GoldChain": await libGoldChain,
+		"GoldChain": libGoldChain,
 	};
 	// const libOrdersRepo = await deployTool(signers[0], "OrdersRepo", libraries, params);
 	const libUsdOrdersRepo = await deployTool(signers[0], "UsdOrdersRepo", libraries, params);
 
 	libraries = {
-		"EnumerableSet": await libEnumerableSet,
+		"EnumerableSet": libEnumerableSet,
 	};	
 	const libCondsRepo = await deployTool(signers[0], "CondsRepo", libraries, params);
 	const libDTClaims = await deployTool(signers[0], "DTClaims", libraries, params);
@@ -191,7 +192,7 @@ async function main() {
 		"Address": libAddress
 	}
 
-	let gk = await deployTool(signers[0], "GeneralKeeper", libraries, params);
+	let gk = await deployTool(signers[0], "CompKeeper", libraries, params);
 	let fk = await deployTool(signers[0], "FundKeeper", libraries, params);
 	let lpFundKeeper = await deployTool(signers[0], "LPFundKeeper", libraries, params);
 	let listedLPFundKeeper = await deployTool(signers[0], "ListedLPFundKeeper", libraries, params);
@@ -205,9 +206,8 @@ async function main() {
 	let rooKeeper = await deployTool(signers[0], "ROOKeeper", libraries, params);
 	let romKeeper = await deployTool(signers[0], "ROMKeeper", libraries, params);
 	let rodKeeper = await deployTool(signers[0], "RODKeeper", libraries, params);
-	let rorKeeper = await deployTool(signers[0], "FundRORKeeper", libraries, params);
+	let fundRORKeeper = await deployTool(signers[0], "FundRORKeeper", libraries, params);
 	let accountant = await deployTool(signers[0], "Accountant", libraries, params);
-	
 
 	// let usdKeeper = await deployTool(signers[0], "USDKeeper", libraries, params);
 	// let usdRomKeeper = await deployTool(signers[0], "UsdROMKeeper", libraries, params);
@@ -528,26 +528,26 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( 46, addrCNC, 1);
 	console.log("set template for CreateNewComp at address: ", addrCNC, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 47, privCompKeeper, 1);
-	console.log("set template for PrivateCompKeeper at address: ", privCompKeeper, "\n");
+	// await rc.connect(signers[1]).setTemplate( 47, privCompKeeper, 1);
+	// console.log("set template for PrivateCompKeeper at address: ", privCompKeeper, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 48, growingCompKeeper, 1);
-	console.log("set template for GrowingCompKeeper at address: ", growingCompKeeper, "\n");
+	// await rc.connect(signers[1]).setTemplate( 48, growingCompKeeper, 1);
+	// console.log("set template for GrowingCompKeeper at address: ", growingCompKeeper, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 49, listedCompKeeper, 1);
-	console.log("set template for ListedCompKeeper at address: ", listedCompKeeper, "\n");
+	// await rc.connect(signers[1]).setTemplate( 49, listedCompKeeper, 1);
+	// console.log("set template for ListedCompKeeper at address: ", listedCompKeeper, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 50, lpFundKeeper, 1);
-	console.log("set template for lpFundKeeper at address: ", lpFundKeeper, "\n");
+	// await rc.connect(signers[1]).setTemplate( 50, lpFundKeeper, 1);
+	// console.log("set template for lpFundKeeper at address: ", lpFundKeeper, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 51, listedLPFundKeeper, 1);
-	console.log("set template for listedLPFundKeeper at address: ", listedLPFundKeeper, "\n");
+	// await rc.connect(signers[1]).setTemplate( 51, listedLPFundKeeper, 1);
+	// console.log("set template for listedLPFundKeeper at address: ", listedLPFundKeeper, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 52, openFundKeeper, 1);
-	console.log("set template for openFundKeeper at address: ", openFundKeeper, "\n");
+	// await rc.connect(signers[1]).setTemplate( 52, openFundKeeper, 1);
+	// console.log("set template for openFundKeeper at address: ", openFundKeeper, "\n");
 
-	await rc.connect(signers[1]).setTemplate( 53, listedOpenFundKeeper, 1);
-	console.log("set template for listedOpenFundKeeper at address: ", listedOpenFundKeeper, "\n");
+	// await rc.connect(signers[1]).setTemplate( 53, listedOpenFundKeeper, 1);
+	// console.log("set template for listedOpenFundKeeper at address: ", listedOpenFundKeeper, "\n");
 
 	// await rc.connect(signers[1]).setOracle(pc);
 	// console.log("set Oracle at address: ", pc, "\n");

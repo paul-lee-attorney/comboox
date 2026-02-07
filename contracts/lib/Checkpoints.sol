@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -76,7 +74,12 @@ library Checkpoints {
     function _increaseCounter(History storage self)
         public
     {
-        self.checkpoints[0].timestamp++;
+        unchecked {
+            self.checkpoints[0].timestamp = 
+                self.checkpoints[0].timestamp == type(uint48).max
+                    ? 1
+                    : self.checkpoints[0].timestamp + 1;
+        }
     }
 
     function updateDistrPoints(

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -62,7 +62,7 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {
         require(block.timestamp >= _repo.frExecDeadline(ia),
             "ROA.computeFR: not reached frExecDeadline");
-        output = _frClaims[ia].computeFirstRefusal(seqOfDeal, _gk.getROM());
+        output = _frClaims[ia].computeFirstRefusal(seqOfDeal, gk.getROM());
         emit ComputeFirstRefusal(ia, seqOfDeal);
     }
 
@@ -115,9 +115,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     function createMockOfIA(address ia) external onlyKeeper {
         if (_mockOfIA[ia].qtyOfMembers() == 0) {
             (TopChain.Node[] memory list, TopChain.Para memory para) = 
-                _gk.getROM().getSnapshot();
+                gk.getROM().getSnapshot();
             _mockOfIA[ia].restoreChain(list, para);
-            _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia), _gk.getROS());
+            _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia), gk.getROS());
         }
     }
     

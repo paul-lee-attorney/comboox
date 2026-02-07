@@ -32,7 +32,7 @@ abstract contract RORKs is IRORKs, AccessControl {
     // #################
 
     function _getRORKeeper() private view returns(IRORKeeper) {
-        return IRORKeeper(_gk.getKeeper(16));
+        return IRORKeeper(gk.getKeeper(16));
     }
 
     function addRedeemableClass(uint class) external {

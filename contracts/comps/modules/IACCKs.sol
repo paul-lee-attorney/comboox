@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * v0.2.5
+ *
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,36 +21,39 @@
 
 pragma solidity ^0.8.8;
 
-import "./IERC20.sol";
 
-// Decimal = 6 
-interface IUSDC is IERC20{
+import "../keepers/IAccountant.sol";
 
-    event AuthorizationUsed(address indexed authorizer, bytes32 indexed nonce);
+interface IACCKs {
+    
+    // ###################
+    // ##  Accountants  ##
+    // ###################
 
-    function authorizationState(address authorizer, bytes32 nonce)
-        external
-        view
-        returns (bool);
+    function initClass(uint class) external;
 
-    // ---- Mint & Burn ----
+    function distributeProfits(
+        uint amt,
+        uint expireDate,
+        uint seqOfDR,
+        uint seqOfMotion
+    ) external;
 
-    function mint(address to, uint amt) external;
+    function distributeIncome(
+        uint amt,
+        uint expireDate,
+        uint seqOfDR,
+        uint fundManager,
+        uint seqOfMotion
+    ) external;
 
-    function burn(uint amt) external;
-
-    // ---- TransferWithAuthorization ----
-
-    function transferWithAuthorization(
-        address from,
+    function transferFund(
+        bool fromBMM,
         address to,
-        uint256 value,
-        uint256 validAfter,
-        uint256 validBefore,
-        bytes32 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        bool isCBP,
+        uint amt,
+        uint expireDate,
+        uint seqOfMotion
     ) external;
 
 }

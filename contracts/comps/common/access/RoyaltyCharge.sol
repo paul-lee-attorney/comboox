@@ -33,9 +33,9 @@ contract RoyaltyCharge is AccessControl {
         address msgSender,
         uint rate
     ) internal returns(uint40 usr) {
-        DocsRepo.Head memory head = _rc.getHeadByBody(address(this));
-        head.author = _rc.getAuthorByBody(address(this));
-        usr = _rc.getUserNo(
+        DocsRepo.Head memory head = rc.getHeadByBody(address(this));
+        head.author = rc.getAuthorByBody(address(this));
+        usr = rc.getUserNo(
             msgSender, rate * (10 ** 10), head.author
         );
         emit ChargeRoyalty(

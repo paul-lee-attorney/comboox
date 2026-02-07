@@ -33,7 +33,7 @@ abstract contract ROOKs is IROOKs, AccessControl {
     // #################
 
     function _getROOKeeper() private view returns(IROOKeeper) {
-        return IROOKeeper(_gk.getKeeper(7));
+        return IROOKeeper(gk.getKeeper(7));
     }
 
     function updateOracle(

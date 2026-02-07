@@ -33,7 +33,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
     // #################
 
     function _getLOOKeeper() private view returns(ILOOKeeper) {
-        return ILOOKeeper(_gk.getKeeper(10));
+        return ILOOKeeper(gk.getKeeper(10));
     }
 
     function placeInitialOffer(

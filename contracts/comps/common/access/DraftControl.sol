@@ -3,7 +3,7 @@
 /* *
  * V.0.2.4
  *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -48,7 +48,7 @@ contract DraftControl is IDraftControl, AccessControl {
 
     modifier attorneyOrKeeper {
         require(_roles.hasRole(_ATTORNEYS, msg.sender) ||
-            _gk.isKeeper(msg.sender),
+            gk.isKeeper(msg.sender),
             "AC.md.attorneyOrKeeper: NOT");
         _;
     }

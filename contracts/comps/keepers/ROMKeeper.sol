@@ -31,21 +31,21 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
     // ###################
 
     function setMaxQtyOfMembers(uint max) external onlyDK {
-        _gk.getROM().setMaxQtyOfMembers(max);
+        gk.getROM().setMaxQtyOfMembers(max);
     }
 
     function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) 
     external onlyDK {
-        _gk.getROS().setPayInAmt(seqOfShare, amt, expireDate, hashLock);
+        gk.getROS().setPayInAmt(seqOfShare, amt, expireDate, hashLock);
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
     external onlyDK {
-        _gk.getROS().requestPaidInCapital(hashLock, hashKey);
+        gk.getROS().requestPaidInCapital(hashLock, hashKey);
     }
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
-        _gk.getROS().withdrawPayInAmt(hashLock, seqOfShare);
+        gk.getROS().withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function payInCapital(
@@ -56,7 +56,7 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
     ) external onlyDK {
         
         uint caller = _msgSender(msgSender, 36000);
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
         
         require(share.head.shareholder == caller,
@@ -65,7 +65,7 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
         auth.from = msgSender;
         auth.value = share.head.priceOfPaid * paid / 100;
 
-        _gk.getCashier().collectUsd(auth, bytes32("PayInCapital"));
+        gk.getCashier().collectUsd(auth, bytes32("PayInCapital"));
 
         _ros.payInCapital(seqOfShare, paid);
 
@@ -78,17 +78,17 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
         uint par,
         uint amt
     ) external onlyDK {
-        IRegisterOfShares _ros=_gk.getROS();
+        IRegisterOfShares _ros=gk.getROS();
         _ros.decreaseCapital(seqOfShare, paid, par);
         uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
-        _gk.getCashier().depositUsd(shareholder, amt, bytes32("DecreaseCapital"));
+        gk.getCashier().depositUsd(shareholder, amt, bytes32("DecreaseCapital"));
     }
 
     function updatePaidInDeadline(
         uint256 seqOfShare, 
         uint line
     ) external onlyDK {
-        _gk.getROS().updatePaidInDeadline(seqOfShare, line);
+        gk.getROS().updatePaidInDeadline(seqOfShare, line);
     }
 
 }

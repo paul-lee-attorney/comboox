@@ -28,28 +28,28 @@ contract FundRORKeeper is IRORKeeper, RoyaltyCharge {
     using BooksRepo for IBaseKeeper;
 
     function _gpOrManager(uint caller) private view{
-        require(_gk.getROM().isClassMember(caller, 1) ||
-            _gk.getROD().isDirector(caller),
+        require(gk.getROM().isClassMember(caller, 1) ||
+            gk.getROD().isDirector(caller),
             "FundRORK: not GP or Manager");
     }
 
     function addRedeemableClass(uint class, address msgSender) external onlyDK{
         uint caller = _msgSender(msgSender, 18000);
         _gpOrManager(caller);
-        _gk.getROR().addRedeemableClass(class);
+        gk.getROR().addRedeemableClass(class);
     }
 
     function removeRedeemableClass(uint class, address msgSender) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
         _gpOrManager(caller);
-        _gk.getROR().removeRedeemableClass(class);
+        gk.getROR().removeRedeemableClass(class);
     }
 
     function updateNavPrice(uint class, uint price, address msgSender) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
         _gpOrManager(caller);
         require(price > 0, "FundRORK: zero navPrice");
-        _gk.getROR().updateNavPrice(class, price); 
+        gk.getROR().updateNavPrice(class, price); 
     }
 
     function requestForRedemption(
@@ -57,9 +57,9 @@ contract FundRORKeeper is IRORKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
-        IRegisterOfMembers _rom = _gk.getROM();
-        IRegisterOfShares _ros = _gk.getROS();
-        IRegisterOfRedemptions _ror = _gk.getROR();
+        IRegisterOfMembers _rom = gk.getROM();
+        IRegisterOfShares _ros = gk.getROS();
+        IRegisterOfRedemptions _ror = gk.getROR();
         
         require(_rom.isClassMember(caller, class),
             "FundRORK: not class member");
@@ -105,10 +105,10 @@ contract FundRORKeeper is IRORKeeper, RoyaltyCharge {
         _gpOrManager(caller);
 
         (RedemptionsRepo.Request[] memory list, RedemptionsRepo.Request memory info) = 
-            _gk.getROR().redeem(class, seqOfPack);
+            gk.getROR().redeem(class, seqOfPack);
 
-        ICashier _cashier = _gk.getCashier();
-        IRegisterOfShares _ros = _gk.getROS();
+        ICashier _cashier = gk.getCashier();
+        IRegisterOfShares _ros = gk.getROS();
 
         require(info.value * 100 <= _cashier.balanceOfComp(), 
             "FundRORK: insufficient balance of Comp");

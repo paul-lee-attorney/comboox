@@ -33,8 +33,8 @@ contract ListedLPFundKeeper is IListedLPFundKeeper, LOOKs, CoreKeeper {
     // ######################
 
     function createCorpSeal() external override onlyDK {
-        _rc.regUser();
-        _info.regNum = _rc.getMyUserNo();
+        rc.regUser();
+        _info.regNum = rc.getMyUserNo();
         _info.regDate = uint48(block.timestamp);
         _info.typeOfEntity = uint8(TypeOfEntity.ListedLPFund);
     }

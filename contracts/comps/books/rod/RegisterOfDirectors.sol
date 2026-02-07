@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -150,12 +150,12 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
 
     function hasTitle(uint acct, uint title) external view returns (bool flag)
     {
-        flag = _repo.hasTitle(acct, title, _gk.getROM());
+        flag = _repo.hasTitle(acct, title, gk.getROM());
     }
 
     function hasNominationRight(uint seqOfPos, uint acct) external view returns (bool)
     {
-        return _repo.hasNominationRight(seqOfPos, acct, _gk.getROM());
+        return _repo.hasNominationRight(seqOfPos, acct, gk.getROM());
     }
 
     // ==== seatsCalculator ====

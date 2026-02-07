@@ -17,7 +17,20 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
+/// @notice typeOfDoc numbering rules (uint32): four 8-bit segments shown as two hex chars each.
+/// @dev Bit ranges (MSB -> LSB):
+///      (0~7)   Domain: RegCenter, Comps, Funds, OpenZeppelin, ...
+///      (8~15)  Category: Libraries, Routers, Keepers, Registers, Utils, ...
+///      (16~23) Feature: GeneralKeeper, ROAKeeper, ROCKeeper, ...
+///      (24~32) Interface variants: e.g. GeneralKeeper -> PrivateComp, ListedComp, ListedOpenComp, ...
+/// @dev For proxy upgrades, the top 24 bits (0~23) must match; only interface variants may differ.
+
 pragma solidity ^0.8.8;
+
+/// @title DocsRepo - TypeOfDoc: 0x01010201 (Domain: RegCenter, Category: Libraries, Feature: DocsRepo, Interface: v1)
+/// @notice In-memory indexed repository of document templates, proxies, and clones.
+/// @dev Stores document metadata (Head) and body addresses in nested mappings keyed by
+///      typeOfDoc -> version -> seqOfDoc. Provides registration, upgrade, and query helpers.
 
 import "../center/access/IOwnable.sol";
 import "../openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
@@ -26,6 +39,8 @@ import "../openzeppelin/utils/structs/EnumerableSet.sol";
 library DocsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @notice Document header metadata encoded in a 32-byte identifier.
+    /// @dev Fields are packed when encoded via {codifyHead}.
     struct Head {
         uint32 typeOfDoc;
         uint32 version;
@@ -35,17 +50,23 @@ library DocsRepo {
         uint48 createDate;
     }
  
+    /// @notice Minimal body reference for a document instance.
+    /// @dev `version` and `seq` are used to link upgrades.
     struct Body {
         uint32 version;
         uint64 seq;
         address addr;
     }
 
+    /// @notice Full document tuple (header + body).
     struct Doc {
         Head head;
         address body;
     }
 
+    /// @notice Repository storage container.
+    /// @dev `bodies[type][version][seq]` stores the body address for a specific doc instance.
+    ///      `heads[body]` stores the header for a given body address.
     struct Repo {
         // typeOfDoc => version => seqOfDoc => Body
         mapping(uint256 => mapping(uint256 => mapping(uint256 => Body))) bodies;
@@ -59,6 +80,9 @@ library DocsRepo {
     //##  Write I/O   ##
     //##################
 
+    /// @notice Decode a document identifier into a {Head}.
+    /// @param sn Encoded document identifier.
+    /// @return head Decoded document header.
     function snParser(bytes32 sn) public pure returns(Head memory head) {
         uint _sn = uint(sn);
 
@@ -68,6 +92,9 @@ library DocsRepo {
         head.author = uint40(_sn >> 88);
     }
 
+    /// @notice Encode a {Head} into a 32-byte identifier.
+    /// @param head Document header.
+    /// @return sn Encoded identifier.
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             head.typeOfDoc,
@@ -81,6 +108,14 @@ library DocsRepo {
         }
     }
 
+    /// @notice Register a template contract for a document type.
+    /// @dev Creates version=1..n and seqOfDoc=0 for templates.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type (must be > 0).
+    /// @param body Template contract address (non-zero, not registered).
+    /// @param author Author userNo (must be > 0).
+    /// @param caller Creator userNo (must be > 0).
+    /// @return head The created template header.
     function setTemplate(
         Repo storage repo,
         uint typeOfDoc, 
@@ -110,12 +145,19 @@ library DocsRepo {
         repo.heads[body] = head;
     }
 
+    /// @notice Check if a proxy points to the given template implementation.
+    /// @param temp Template implementation address.
+    /// @param proxy Proxy address.
+    /// @return True if proxy implementation equals template.
     function _isProxy(
         address temp, address proxy
     ) public view returns(bool) {
         return temp == IOwnable(proxy).getImplementation();
     }
 
+    /// @notice Internal helper to register a document instance.
+    /// @param repo Repository storage.
+    /// @param doc Document instance (head + body).
     function _regDoc(
         Repo storage repo,
         Doc memory doc
@@ -127,6 +169,12 @@ library DocsRepo {
         repo.heads[doc.body] = doc.head;
     }
 
+    /// @notice Register a proxy instance created externally.
+    /// @param repo Repository storage.
+    /// @param temp Template implementation address (must exist).
+    /// @param proxy Proxy address to register (non-zero, not already registered).
+    /// @param caller Creator userNo (must be > 0).
+    /// @return doc Registered document instance.
     function regProxy(
         Repo storage repo,
         address temp,
@@ -152,6 +200,12 @@ library DocsRepo {
         
     }
 
+    /// @notice Create and register a minimal-proxy clone of a template.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @param creator Creator userNo (must be > 0).
+    /// @return doc Registered document instance.
     function cloneDoc(
         Repo storage repo, 
         uint typeOfDoc,
@@ -169,6 +223,16 @@ library DocsRepo {
         _regDoc(repo, doc);
     }
 
+    /// @notice Create and register an ERC1967 proxy initialized via `initialize`.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @param creator Creator userNo (must be > 0).
+    /// @param owner Owner address for the proxy initializer.
+    /// @param rc Registry center address for the proxy initializer.
+    /// @param dk Director keeper address for the proxy initializer.
+    /// @param gk General keeper address for the proxy initializer.
+    /// @return doc Registered document instance.
     function proxyDoc(
         Repo storage repo, 
         uint typeOfDoc,
@@ -196,6 +260,11 @@ library DocsRepo {
         _regDoc(repo, doc);
     }
 
+    /// @notice Register a proxy upgrade to a new template version.
+    /// @param repo Repository storage.
+    /// @param temp New template implementation (must exist).
+    /// @param proxy Existing proxy address (must be registered).
+    /// @return doc Registered upgraded document instance.
     function upgradeDoc(
         Repo storage repo, 
         address temp,
@@ -211,8 +280,10 @@ library DocsRepo {
 
         Head memory oldHead = repo.heads[proxy];
     
-        require(oldHead.typeOfDoc == doc.head.typeOfDoc,
+        require(
+            (oldHead.typeOfDoc & 0xFFFFFF00) == (doc.head.typeOfDoc & 0xFFFFFF00),
             "DR.upgradeDoc: wrong typeOfDoc");
+
         require(oldHead.version != doc.head.version,
             "DR.upgradeDoc: wrong version");
         require(_isProxy(temp, proxy),
@@ -228,6 +299,12 @@ library DocsRepo {
         oldBody.seq = doc.head.seqOfDoc;
     }
 
+    /// @notice Transfer IPR by updating author for a template.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @param transferee New author userNo.
+    /// @param caller Caller userNo (must equal current author).
     function transferIPR(
         Repo storage repo,
         uint typeOfDoc,
@@ -240,6 +317,10 @@ library DocsRepo {
         repo.heads[repo.bodies[typeOfDoc][version][0].addr].author = uint40(transferee);
     }
 
+    /// @notice Increment template version counter for a document type.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @return New version (uint32), wraps to 1 on overflow.
     function _increaseCounterOfVersions(
         Repo storage repo, 
         uint256 typeOfDoc
@@ -255,6 +336,11 @@ library DocsRepo {
         return uint32(repo.bodies[typeOfDoc][0][0].seq);
     }
 
+    /// @notice Increment doc instance counter for a document type/version.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @return New seqOfDoc (uint64), wraps to 1 on overflow.
     function _increaseCounterOfDocs(
         Repo storage repo, 
         uint256 typeOfDoc, 
@@ -295,6 +381,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //solhint-disable no-inline-assembly
 
 
+    /// @notice Create an EIP-1167 minimal proxy clone of `temp`.
+    /// @param temp Template implementation address.
+    /// @return result Clone address (zero on failure).
     function _createClone(address temp) private returns (address result) {
         bytes20 tempBytes = bytes20(temp);
         assembly {
@@ -312,6 +401,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
     }
 
+    /// @notice Check if `query` is an EIP-1167 clone of `temp`.
+    /// @param temp Template implementation address.
+    /// @param query Address to test.
+    /// @return result True if `query` is a clone of `temp`.
     function _isClone(address temp, address query)
         private view returns (bool result)
     {
@@ -343,30 +436,54 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // ---- TypeOfDoc ---- 
 
+    /// @notice Get number of document types.
+    /// @param repo Repository storage.
+    /// @return Number of types.
     function counterOfTypes(Repo storage repo) public view returns(uint32) {
         return uint32(repo.typesList.length());
     }
 
+    /// @notice Check if a document type exists.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @return True if exists.
     function typeExist(Repo storage repo, uint typeOfDoc) public view returns(bool) {
         return repo.typesList.contains(typeOfDoc);
     }
 
+    /// @notice Get all document types.
+    /// @param repo Repository storage.
+    /// @return Array of document types.
     function getTypesList(Repo storage repo) public view returns(uint[] memory) {
         return repo.typesList.values();
     }
 
     // ---- Counters ----
 
+    /// @notice Get latest version for a document type.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @return Latest version counter.
     function counterOfVersions(Repo storage repo, uint typeOfDoc) public view returns(uint32) {
         return uint32(repo.bodies[uint32(typeOfDoc)][0][0].seq);
     }
 
+    /// @notice Get count of docs for a document type/version.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @return Latest doc counter.
     function counterOfDocs(Repo storage repo, uint typeOfDoc, uint version) public view returns(uint64) {
         return repo.bodies[uint32(typeOfDoc)][uint32(version)][0].seq;
     }
 
     // ---- Authors ----
 
+    /// @notice Get author userNo for a template.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @return Author userNo.
     function getAuthor(
         Repo storage repo,
         uint typeOfDoc,
@@ -378,6 +495,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return repo.heads[temp].author;
     }
 
+    /// @notice Get author userNo by body address.
+    /// @param repo Repository storage.
+    /// @param body Document body address.
+    /// @return Author userNo.
     function getAuthorByBody(
         Repo storage repo,
         address body
@@ -388,6 +509,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // ---- Temps ----
 
+    /// @notice Check if a template exists for a body address.
+    /// @param repo Repository storage.
+    /// @param body Template address.
+    /// @return True if exists.
     function tempExist(Repo storage repo, address body) public view returns(bool) {
         Head memory head = repo.heads[body];
         if (   body == address(0) 
@@ -399,6 +524,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return repo.bodies[head.typeOfDoc][head.version][0].addr == body;
     }
 
+    /// @notice Get template document for a type/version.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @return doc Template document.
     function getTemp(
         Repo storage repo,
         uint typeOfDoc, uint version
@@ -409,6 +539,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             "DR.getTemp: temp not exist");
     }
 
+    /// @notice Get all templates for a document type.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @return Array of templates ordered by version.
     function getVersionsList(
         Repo storage repo,
         uint typeOfDoc
@@ -427,6 +561,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // ---- Docs ----
 
+    /// @notice Check if a document instance exists for a body address.
+    /// @param repo Repository storage.
+    /// @param body Document body address.
+    /// @return True if exists.
     function docExist(Repo storage repo, address body) public view returns(bool) {
         Head memory head = repo.heads[body];
         if (   body == address(0) 
@@ -438,6 +576,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return repo.bodies[head.typeOfDoc][head.version][head.seqOfDoc].addr == body;
     }
 
+    /// @notice Get header by body address.
+    /// @param repo Repository storage.
+    /// @param body Document body address.
+    /// @return Header (zeroed if not found).
     function getHeadByBody(
         Repo storage repo,
         address body
@@ -445,6 +587,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return repo.heads[body];
     }
 
+    /// @notice Get a specific document instance by type/version/seq.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @param seqOfDoc Document sequence number.
+    /// @return doc Document instance.
     function getDoc(
         Repo storage repo,
         uint typeOfDoc, uint version, uint seqOfDoc
@@ -455,6 +603,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             "DR.getDoc: doc not exist");
     }
 
+    /// @notice Get all documents for a type/version.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @return Array of documents ordered by seq.
     function getDocsList(
         Repo storage repo,
         uint typeOfDoc, uint version
@@ -476,6 +629,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // ---- Verification ----
 
+    /// @notice Verify that a document instance is a valid clone or proxy of its template.
+    /// @param repo Repository storage.
+    /// @param typeOfDoc Document type.
+    /// @param version Template version.
+    /// @param seqOfDoc Document sequence number.
+    /// @return True if the instance matches its template.
     function verifyDoc(
         Repo storage repo, 
         uint typeOfDoc, uint version, uint seqOfDoc

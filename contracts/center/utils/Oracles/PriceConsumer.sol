@@ -18,7 +18,7 @@ contract PriceConsumer is IPriceConsumer{
         Denominations.ETH, Denominations.BTC
     ];
 
-    address private _rc;
+    address private rc;
 
     /**
      * Network: Arbitrum One
@@ -79,16 +79,16 @@ contract PriceConsumer is IPriceConsumer{
         _priceFeeds[_currencies[17]] = AggregatorV3Interface(
             0x04b7384473A2aDF1903E3a98aCAc5D62ba8C2702
         );
-        _rc = rc;
+        rc = rc;
     }
 
     function setPriceFeed(uint seq, address _feed) external {
-        require (msg.sender == _rc, "PC.setPriceFeed: not rc");
+        require (msg.sender == rc, "PC.setPriceFeed: not rc");
         _priceFeeds[_currencies[seq]] = AggregatorV3Interface(_feed);
     }
 
     function getRC() external view returns(address) {
-        return address(_rc);
+        return address(rc);
     }
 
     function getPriceFeed(uint seq) external view returns (address) {

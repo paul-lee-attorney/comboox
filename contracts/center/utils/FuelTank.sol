@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -50,10 +50,10 @@ contract FuelTank is Ownable {
 
     uint amt = msg.value * rate / 10000;
 
-    if (amt > 0 && _rc.balanceOf(address(this)) >= amt) {
+    if (amt > 0 && rc.balanceOf(address(this)) >= amt) {
       sum += amt;
       emit Refuel (msg.sender, msg.value, amt);
-      if (!_rc.transfer(msg.sender, amt)) {
+      if (!rc.transfer(msg.sender, amt)) {
         revert ('CBP Transfer Failed');
       }
     } else revert ('zero amt or insufficient balance');
@@ -67,9 +67,9 @@ contract FuelTank is Ownable {
   }
 
   function withdrawFuel(uint amt) external onlyOwner {
-    if (_rc.balanceOf(address(this)) >= amt) {
+    if (rc.balanceOf(address(this)) >= amt) {
         emit WithdrawFuel(msg.sender, amt);
-        if (!_rc.transfer(msg.sender, amt)) {
+        if (!rc.transfer(msg.sender, amt)) {
           revert('CBP Transfer Failed');
         }
     } else revert('insufficient fuel');

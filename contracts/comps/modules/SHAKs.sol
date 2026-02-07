@@ -33,7 +33,7 @@ abstract contract SHAKs is ISHAKs, AccessControl{
     // ###################
 
     function _getSHAKeeper() private view returns(ISHAKeeper) {
-        return ISHAKeeper(_gk.getKeeper(9));
+        return ISHAKeeper(gk.getKeeper(9));
     }
 
     // ======= TagAlong ========

@@ -37,7 +37,7 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         uint d2,
         uint d3
     ) external onlyDK {
-        _gk.getROO().updateOracle(seqOfOpt, d1, d2, d3);
+        gk.getROO().updateOracle(seqOfOpt, d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt, address msgSender)
@@ -45,7 +45,7 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
     {
         uint caller = _msgSender(msgSender, 18000);
 
-        _gk.getROO().execOption(seqOfOpt, caller);
+        gk.getROO().execOption(seqOfOpt, caller);
     }
 
     function createSwap(
@@ -57,10 +57,10 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);
 
-        uint closingDate = _gk.getROO().getOption(seqOfOpt).body.closingDeadline;
+        uint closingDate = gk.getROO().getOption(seqOfOpt).body.closingDeadline;
 
-        IRegisterOfOptions _roo = _gk.getROO(); 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfOptions _roo = gk.getROO(); 
+        IRegisterOfShares _ros = gk.getROS();
 
         require(_ros.notLocked(seqOfTarget, closingDate),
             "ROOK.CreateSwap: target share locked");
@@ -83,9 +83,9 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
 
         uint caller = _msgSender(msgSender, 40000);
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         SwapsRepo.Swap memory swap = 
-            _gk.getROO().getSwap(seqOfOpt, seqOfSwap);
+            gk.getROO().getSwap(seqOfOpt, seqOfSwap);
 
         uint seller = _msgSender(to, 18000);
 
@@ -98,7 +98,7 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         auth.value = valueOfDeal;
 
         // remark: PayOffSwap
-        _gk.getCashier().forwardUsd(
+        gk.getCashier().forwardUsd(
             auth, 
             to, 
             bytes32(0x5061794f66665377617000000000000000000000000000000000000000000000)
@@ -112,10 +112,10 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         uint seqOfOpt, uint seqOfSwap, uint caller
     ) private {
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
 
         SwapsRepo.Swap memory swap =
-            _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap);
+            gk.getROO().payOffSwap(seqOfOpt, seqOfSwap);
 
         require(_ros.notLocked(swap.seqOfTarget, block.timestamp),
             "ROOK.payOffSwap: target locked");
@@ -143,9 +143,9 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 58000);        
     
         SwapsRepo.Swap memory swap = 
-            _gk.getROO().terminateSwap(seqOfOpt, seqOfSwap);
+            gk.getROO().terminateSwap(seqOfOpt, seqOfSwap);
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         uint seller = _ros.getShare(swap.seqOfTarget).head.shareholder;
 
         require (caller == seller, "ROOK.terminateSwap: wrong ");
@@ -173,10 +173,10 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
 
         SwapsRepo.Swap memory swap =
-            IInvestmentAgreement(ia).createSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
+            IInvestmentAgreement(ia).createSwap(gk.getROA().getFile(ia).head.seqOfMotion, 
                 seqOfDeal, paidOfTarget, seqOfPledge, caller);
 
         require(_ros.notLocked(swap.seqOfPledge, block.timestamp),
@@ -192,7 +192,7 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
     ) external onlyDK {
 
         uint caller = _msgSender(msgSender, 40000);
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         SwapsRepo.Swap memory swap = 
             IInvestmentAgreement(ia).getSwap(seqOfDeal, seqOfSwap);
 
@@ -206,7 +206,7 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         auth.from = msgSender;
 
         // remark: PayOffRejectedDeal
-        _gk.getCashier().forwardUsd(
+        gk.getCashier().forwardUsd(
             auth, 
             to, 
             bytes32(0x5061794f666652656a65637465644465616c0000000000000000000000000000)
@@ -223,16 +223,16 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
         uint caller
     ) private {
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
 
         SwapsRepo.Swap memory swap = 
             IInvestmentAgreement(ia).payOffSwap(seqOfDeal, seqOfSwap);
 
         uint seqOfMotion = 
-            _gk.getROA().getFile(ia).head.seqOfMotion;
+            gk.getROA().getFile(ia).head.seqOfMotion;
         
         MotionsRepo.Motion memory motion = 
-            _gk.getGMM().getMotion(seqOfMotion);
+            gk.getGMM().getMotion(seqOfMotion);
 
         require(motion.body.state == 
             uint8(MotionsRepo.StateOfMotion.Rejected_ToBuy));
@@ -265,10 +265,10 @@ contract ROOKeeper is IROOKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
         
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
 
         SwapsRepo.Swap memory swap = 
-            IInvestmentAgreement(ia).terminateSwap(_gk.getROA().getFile(ia).head.seqOfMotion, 
+            IInvestmentAgreement(ia).terminateSwap(gk.getROA().getFile(ia).head.seqOfMotion, 
                 seqOfDeal, seqOfSwap);
 
         uint40 seller = _ros.getShare(swap.seqOfTarget).head.shareholder;

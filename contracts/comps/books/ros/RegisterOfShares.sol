@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -58,7 +58,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         SharesRepo.Share memory share
     ) public onlyKeeper {
 
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
 
         share = _repo.addShare(share);
 
@@ -154,7 +154,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint priceOfPar
     ) external onlyKeeper {
 
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
@@ -218,7 +218,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             0
         );
 
-        _gk.getROM().capIncrease(
+        gk.getROM().capIncrease(
             share.head.votingWeight,            
             share.body.distrWeight,
             paid, 
@@ -236,8 +236,8 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint paid
     ) external {
 
-        require(msg.sender == address(_gk.getROP()) ||
-            _gk.isKeeper(msg.sender), 
+        require(msg.sender == address(gk.getROP()) ||
+            gk.isKeeper(msg.sender), 
             "ROS.decrClean: access denied");
 
         _repo.increaseCleanPaid(
@@ -254,8 +254,8 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint paid
     ) external {
 
-        require(msg.sender == address(_gk.getROP()) ||
-            _gk.isKeeper(msg.sender), 
+        require(msg.sender == address(gk.getROP()) ||
+            gk.isKeeper(msg.sender), 
             "ROS.DCA: neither keeper nor ROP");
 
         _repo.increaseCleanPaid(
@@ -315,7 +315,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint amount
     ) private {
 
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
 
         _repo.payInCapital(share.head.seqOfShare, amount);
 
@@ -345,7 +345,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint par
     ) private {
 
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
 
         if (par == share.body.par) {
 
@@ -468,7 +468,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint seqOfShare,
         uint closingDate
     ) external view returns(bool) {
-        IShareholdersAgreement _sha = _gk.getSHA();
+        IShareholdersAgreement _sha = gk.getSHA();
 
         if (!_sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.LockUp))){
             return true;

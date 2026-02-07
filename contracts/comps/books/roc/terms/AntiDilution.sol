@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -108,7 +108,7 @@ contract AntiDilution is IAntiDilution, DraftControl {
             IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         SharesRepo.Share memory share = 
-            _gk.getROS().getShare(seqOfShare);
+            gk.getROS().getShare(seqOfShare);
 
         require (isTriggered(deal, share.head.class), "AD.getGiftPaid: AD not triggered");
 

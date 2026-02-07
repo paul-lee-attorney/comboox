@@ -55,7 +55,7 @@ abstract contract BaseKeeper is IBaseKeeper, AccessControl {
     }
 
     function getCompUser() external view onlyOwner returns (UsersRepo.User memory) {
-        return _rc.getUser();
+        return rc.getUser();
     }
 
     // ---- Keepers ----

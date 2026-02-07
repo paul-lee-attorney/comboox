@@ -21,35 +21,34 @@
 
 pragma solidity ^0.8.8;
 
-import "./BaseKeeper.sol";
+import "./GeneralKeeper.sol";
 
 import "./ICoreKeeper.sol";
 
-abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
-    using Address for address;
+abstract contract CoreKeeper is ICoreKeeper, GeneralKeeper {
     
     // ##################
     // ##  ROCKeeper   ##
     // ##################
 
     function createSHA(uint version) external {
-        IROCKeeper(_keepers[uint8(TitleOfKeepers.ROCK)]).createSHA(version, msg.sender); 
+        IROCKeeper(_keepers[uint8(Keepers.ROCK)]).createSHA(version, msg.sender); 
     }
 
     function circulateSHA(address body, bytes32 docUrl, bytes32 docHash) external {
-        IROCKeeper(_keepers[uint8(TitleOfKeepers.ROCK)]).circulateSHA(body, docUrl, docHash, msg.sender); 
+        IROCKeeper(_keepers[uint8(Keepers.ROCK)]).circulateSHA(body, docUrl, docHash, msg.sender); 
     }
 
     function signSHA(address sha, bytes32 sigHash) external {
-        IROCKeeper(_keepers[uint8(TitleOfKeepers.ROCK)]).signSHA(sha, sigHash, msg.sender); 
+        IROCKeeper(_keepers[uint8(Keepers.ROCK)]).signSHA(sha, sigHash, msg.sender); 
     }
 
     function activateSHA(address body) external {
-        IROCKeeper(_keepers[uint8(TitleOfKeepers.ROCK)]).activateSHA(body, msg.sender);
+        IROCKeeper(_keepers[uint8(Keepers.ROCK)]).activateSHA(body, msg.sender);
     }
 
     function acceptSHA(bytes32 sigHash) external {
-        IROCKeeper(_keepers[uint8(TitleOfKeepers.ROCK)]).acceptSHA(sigHash, msg.sender); 
+        IROCKeeper(_keepers[uint8(Keepers.ROCK)]).acceptSHA(sigHash, msg.sender); 
     }
 
     // ###################
@@ -57,15 +56,15 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ###################
 
     function nominateOfficer(uint256 seqOfPos, uint candidate) external {
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).nominateOfficer(seqOfPos, candidate, msg.sender);
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).nominateOfficer(seqOfPos, candidate, msg.sender);
     }
 
     function createMotionToRemoveOfficer(uint256 seqOfPos) external {
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).createMotionToRemoveOfficer(seqOfPos, msg.sender);
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).createMotionToRemoveOfficer(seqOfPos, msg.sender);
     }
 
     function createMotionToApproveDoc(uint doc, uint seqOfVR, uint executor) external{
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).createMotionToApproveDoc(doc, seqOfVR, executor, msg.sender); 
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).createMotionToApproveDoc(doc, seqOfVR, executor, msg.sender); 
     }
 
     function createAction(
@@ -76,23 +75,23 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         bytes32 desHash,
         uint executor
     ) external{
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).createAction(seqOfVR, targets, values, params, desHash, executor, msg.sender);
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).createAction(seqOfVR, targets, values, params, desHash, executor, msg.sender);
     }
 
     function entrustDelegaterForBoardMeeting(uint256 seqOfMotion, uint delegate) external {
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).entrustDelegaterForBoardMeeting(seqOfMotion, delegate, msg.sender); 
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).entrustDelegaterForBoardMeeting(seqOfMotion, delegate, msg.sender); 
     }
 
     function proposeMotionToBoard (uint seqOfMotion) external {
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).proposeMotionToBoard(seqOfMotion, msg.sender);
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).proposeMotionToBoard(seqOfMotion, msg.sender);
     }
 
     function castVote(uint256 seqOfMotion, uint attitude, bytes32 sigHash) external{
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).castVote(seqOfMotion, attitude, sigHash, msg.sender);
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).castVote(seqOfMotion, attitude, sigHash, msg.sender);
     }
 
     function voteCounting(uint256 seqOfMotion) external{
-        IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).voteCounting(seqOfMotion, msg.sender);
+        IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).voteCounting(seqOfMotion, msg.sender);
     }
 
     function execAction(
@@ -103,7 +102,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         bytes32 desHash,
         uint256 seqOfMotion
     ) external {
-        uint contents = IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).execAction(typeOfAction, targets, values, params, desHash, seqOfMotion, msg.sender);
+        uint contents = IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).execAction(typeOfAction, targets, values, params, desHash, seqOfMotion, msg.sender);
         _execute(targets, values, params);
         emit ExecAction(contents);
     }
@@ -113,23 +112,23 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ###################
 
     function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[uint8(TitleOfKeepers.RODK)]).takeSeat(seqOfMotion, seqOfPos, msg.sender);
+        IRODKeeper(_keepers[uint8(Keepers.RODK)]).takeSeat(seqOfMotion, seqOfPos, msg.sender);
     }
 
     function removeDirector (uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[uint8(TitleOfKeepers.RODK)]).removeDirector(seqOfMotion, seqOfPos, msg.sender);         
+        IRODKeeper(_keepers[uint8(Keepers.RODK)]).removeDirector(seqOfMotion, seqOfPos, msg.sender);         
     }
 
     function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[uint8(TitleOfKeepers.RODK)]).takePosition(seqOfMotion, seqOfPos, msg.sender);
+        IRODKeeper(_keepers[uint8(Keepers.RODK)]).takePosition(seqOfMotion, seqOfPos, msg.sender);
     }
 
     function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external {
-        IRODKeeper(_keepers[uint8(TitleOfKeepers.RODK)]).removeOfficer(seqOfMotion, seqOfPos, msg.sender);
+        IRODKeeper(_keepers[uint8(Keepers.RODK)]).removeOfficer(seqOfMotion, seqOfPos, msg.sender);
     }
 
     function quitPosition(uint256 seqOfPos) external {
-        IRODKeeper(_keepers[uint8(TitleOfKeepers.RODK)]).quitPosition(seqOfPos, msg.sender);
+        IRODKeeper(_keepers[uint8(Keepers.RODK)]).quitPosition(seqOfPos, msg.sender);
     }
 
     // ###################
@@ -137,15 +136,15 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ###################
 
     function nominateDirector(uint256 seqOfPos, uint candidate) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).nominateDirector(seqOfPos, candidate, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).nominateDirector(seqOfPos, candidate, msg.sender);
     }
 
     function createMotionToRemoveDirector(uint256 seqOfPos) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).createMotionToRemoveDirector(seqOfPos, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).createMotionToRemoveDirector(seqOfPos, msg.sender);
     }
 
     function proposeDocOfGM(uint doc, uint seqOfVR, uint executor) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).proposeDocOfGM(doc, seqOfVR, executor, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).proposeDocOfGM(doc, seqOfVR, executor, msg.sender);
     }
 
     function createActionOfGM(
@@ -156,7 +155,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         bytes32 desHash,
         uint executor
     ) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).createActionOfGM(
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).createActionOfGM(
             seqOfVR,
             targets,
             values,
@@ -168,15 +167,15 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     }
 
     function proposeToDeprecateGK(address payable receiver) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).proposeToDeprecateGK(receiver, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).proposeToDeprecateGK(receiver, msg.sender);
     }
 
     function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).entrustDelegaterForGeneralMeeting(seqOfMotion, delegate, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).entrustDelegaterForGeneralMeeting(seqOfMotion, delegate, msg.sender);
     }
 
     function proposeMotionToGeneralMeeting(uint256 seqOfMotion) external{
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).proposeMotionToGeneralMeeting(seqOfMotion, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).proposeMotionToGeneralMeeting(seqOfMotion, msg.sender);
     }
 
     function castVoteOfGM(
@@ -184,11 +183,11 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         uint attitude,
         bytes32 sigHash
     ) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).castVoteOfGM(seqOfMotion, attitude, sigHash, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).castVoteOfGM(seqOfMotion, attitude, sigHash, msg.sender);
     }
 
     function voteCountingOfGM(uint256 seqOfMotion) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).voteCountingOfGM(seqOfMotion, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).voteCountingOfGM(seqOfMotion, msg.sender);
     }
 
     function execActionOfGM(
@@ -199,7 +198,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         bytes32 desHash,
         uint256 seqOfMotion
     ) external {
-        uint contents = IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).execActionOfGM(
+        uint contents = IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).execActionOfGM(
             seqOfVR,
             targets,
             values,
@@ -223,10 +222,10 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     }
 
     function deprecateGK(address payable receiver, uint seqOfMotion) external {
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).deprecateGK(receiver, seqOfMotion, msg.sender);
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).deprecateGK(receiver, seqOfMotion, msg.sender);
 
-        uint balanceOfCBP = _rc.balanceOf(address(this));
-        if (balanceOfCBP > 0) _rc.transfer(receiver, balanceOfCBP);
+        uint balanceOfCBP = rc.balanceOf(address(this));
+        if (balanceOfCBP > 0) rc.transfer(receiver, balanceOfCBP);
 
         uint balanceOfETH = address(this).balance;
         if (balanceOfETH > 0) Address.sendValue(receiver, balanceOfETH);
@@ -250,7 +249,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         uint fundManager,
         uint executor
     ) external{
-        IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).proposeToDistributeUsd(
+        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).proposeToDistributeUsd(
             amt, 
             expireDate,
             seqOfVR,
@@ -271,7 +270,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         uint executor
     ) external{
         if (toBMM)
-            IBMMKeeper(_keepers[uint8(TitleOfKeepers.BMMK)]).proposeToTransferFund(
+            IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).proposeToTransferFund(
                 to, 
                 isCBP, 
                 amt, 
@@ -280,7 +279,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
                 executor, 
                 msg.sender
             );
-        else IGMMKeeper(_keepers[uint8(TitleOfKeepers.GMMK)]).proposeToTransferFund(
+        else IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).proposeToTransferFund(
                 to, 
                 isCBP, 
                 amt, 
@@ -302,23 +301,23 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ###################
 
     function setMaxQtyOfMembers(uint max) external onlyDK {
-        IROMKeeper(_keepers[uint8(TitleOfKeepers.ROMK)]).setMaxQtyOfMembers(max);
+        IROMKeeper(_keepers[uint8(Keepers.ROMK)]).setMaxQtyOfMembers(max);
     }
 
     function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) external onlyDK {
-        IROMKeeper(_keepers[uint8(TitleOfKeepers.ROMK)]).setPayInAmt(seqOfShare, amt, expireDate, hashLock);
+        IROMKeeper(_keepers[uint8(Keepers.ROMK)]).setPayInAmt(seqOfShare, amt, expireDate, hashLock);
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey) external {
-        IROMKeeper(_keepers[uint8(TitleOfKeepers.ROMK)]).requestPaidInCapital(hashLock, hashKey);
+        IROMKeeper(_keepers[uint8(Keepers.ROMK)]).requestPaidInCapital(hashLock, hashKey);
     }
 
     function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
-        IROMKeeper(_keepers[uint8(TitleOfKeepers.ROMK)]).withdrawPayInAmt(hashLock, seqOfShare);
+        IROMKeeper(_keepers[uint8(Keepers.ROMK)]).withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function payInCapital(ICashier.TransferAuth memory auth, uint seqOfShare, uint paid) external {
-        IROMKeeper(_keepers[uint8(TitleOfKeepers.ROMK)]).payInCapital(auth, seqOfShare, paid, msg.sender);
+        IROMKeeper(_keepers[uint8(Keepers.ROMK)]).payInCapital(auth, seqOfShare, paid, msg.sender);
     }
 
     // ###################
@@ -326,45 +325,45 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ###################
 
     function createIA(uint256 snOfIA) external {
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).createIA(snOfIA, msg.sender);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).createIA(snOfIA, msg.sender);
     }
 
     function circulateIA(address body, bytes32 docUrl, bytes32 docHash) external {
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).circulateIA(body, docUrl, docHash, msg.sender);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).circulateIA(body, docUrl, docHash, msg.sender);
     }
 
     function signIA(address ia, bytes32 sigHash) external {
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).signIA(ia, msg.sender, sigHash);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).signIA(ia, msg.sender, sigHash);
     }
 
     // ======== Deal Closing ========
 
     function pushToCoffer(address ia, uint256 seqOfDeal, bytes32 hashLock, uint closingDeadline) 
     external{
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).pushToCoffer(ia, seqOfDeal, hashLock, closingDeadline, msg.sender);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).pushToCoffer(ia, seqOfDeal, hashLock, closingDeadline, msg.sender);
     }
 
     function closeDeal(address ia, uint256 seqOfDeal, string memory hashKey) 
     external{
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).closeDeal(ia, seqOfDeal, hashKey);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).closeDeal(ia, seqOfDeal, hashKey);
     }
 
     function issueNewShare(address ia, uint256 seqOfDeal) external{
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).issueNewShare(ia, seqOfDeal, msg.sender);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).issueNewShare(ia, seqOfDeal, msg.sender);
     }
 
     function transferTargetShare(address ia, uint256 seqOfDeal) external{
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).transferTargetShare(ia, seqOfDeal, msg.sender);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).transferTargetShare(ia, seqOfDeal, msg.sender);
     }
 
     function terminateDeal(address ia, uint256 seqOfDeal) external{
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).terminateDeal(ia, seqOfDeal, msg.sender);
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).terminateDeal(ia, seqOfDeal, msg.sender);
     }
 
     function payOffApprovedDeal(
         ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, address to
     ) external {
-        IROAKeeper(_keepers[uint8(TitleOfKeepers.ROAK)]).payOffApprovedDeal(
+        IROAKeeper(_keepers[uint8(Keepers.ROAK)]).payOffApprovedDeal(
             auth, ia, seqOfDeal, to, msg.sender
         );
     }
@@ -374,36 +373,36 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ###################
 
     function createPledge(bytes32 snOfPld, uint paid, uint par, uint guaranteedAmt, uint execDays) external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).createPledge(snOfPld, paid, par, guaranteedAmt, execDays, msg.sender);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).createPledge(snOfPld, paid, par, guaranteedAmt, execDays, msg.sender);
     }
 
     function transferPledge(uint256 seqOfShare, uint256 seqOfPld, uint buyer, uint amt) 
     external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).transferPledge(seqOfShare, seqOfPld, buyer, amt, msg.sender);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).transferPledge(seqOfShare, seqOfPld, buyer, amt, msg.sender);
     }
 
     function refundDebt(uint256 seqOfShare, uint256 seqOfPld, uint amt) external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).refundDebt(seqOfShare, seqOfPld, amt, msg.sender);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).refundDebt(seqOfShare, seqOfPld, amt, msg.sender);
     }
 
     function extendPledge(uint256 seqOfShare, uint256 seqOfPld, uint extDays) external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).extendPledge(seqOfShare, seqOfPld, extDays, msg.sender);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).extendPledge(seqOfShare, seqOfPld, extDays, msg.sender);
     }
 
     function lockPledge(uint256 seqOfShare, uint256 seqOfPld, bytes32 hashLock) external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).lockPledge(seqOfShare, seqOfPld, hashLock, msg.sender);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).lockPledge(seqOfShare, seqOfPld, hashLock, msg.sender);
     }
 
     function releasePledge(uint256 seqOfShare, uint256 seqOfPld, string memory hashKey) external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).releasePledge(seqOfShare, seqOfPld, hashKey);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).releasePledge(seqOfShare, seqOfPld, hashKey);
     }
 
     function execPledge(uint seqOfShare, uint256 seqOfPld, uint buyer, uint groupOfBuyer) external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).execPledge(seqOfShare, seqOfPld, buyer, groupOfBuyer, msg.sender);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).execPledge(seqOfShare, seqOfPld, buyer, groupOfBuyer, msg.sender);
     }
 
     function revokePledge(uint256 seqOfShare, uint256 seqOfPld) external{
-        IROPKeeper(_keepers[uint8(TitleOfKeepers.ROPK)]).revokePledge(seqOfShare, seqOfPld, msg.sender);
+        IROPKeeper(_keepers[uint8(Keepers.ROPK)]).revokePledge(seqOfShare, seqOfPld, msg.sender);
     }
 
     // ###################
@@ -411,7 +410,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // ###################
 
     function _getAccountant() private view returns(IAccountant) {
-        return IAccountant(_gk.getKeeper(12));
+        return IAccountant(gk.getKeeper(12));
     }
 
     function initClass(uint class) external onlyDK {
@@ -467,7 +466,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
             seqOfMotion, 
             msg.sender
         );
-        if (isCBP) _rc.transfer(to, amt);
+        if (isCBP) rc.transfer(to, amt);
     }
 
     // #################
@@ -475,17 +474,17 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     // #################
 
     function pause(uint seqOfLR) external {
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).pause(seqOfLR, msg.sender);
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).pause(seqOfLR, msg.sender);
     }
 
     function unPause(uint seqOfLR) external {
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).unPause(seqOfLR, msg.sender);
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).unPause(seqOfLR, msg.sender);
     }
 
     function freezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
     ) external {
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).freezeShare(
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).freezeShare(
             seqOfLR, seqOfShare, paid, msg.sender, hashOrder
         );
     }
@@ -493,7 +492,7 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
     function unfreezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
     ) external {
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).unfreezeShare(
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).unfreezeShare(
             seqOfLR, seqOfShare, paid, msg.sender, hashOrder
         );
     }
@@ -502,23 +501,23 @@ abstract contract CoreKeeper is ICoreKeeper, BaseKeeper {
         uint seqOfLR, uint seqOfShare, uint paid, 
         address addrTo, bytes32 hashOrder
     ) external {
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).forceTransfer(
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).forceTransfer(
             seqOfLR, seqOfShare, paid, addrTo, msg.sender, hashOrder
         );
     }
 
     function regInvestor(address bKey, uint groupRep, bytes32 idHash) external {
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).regInvestor(
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).regInvestor(
             msg.sender, bKey, groupRep, idHash
         );
     }
 
     function approveInvestor(uint userNo, uint seqOfLR) external{
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).approveInvestor(userNo, msg.sender,seqOfLR);        
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).approveInvestor(userNo, msg.sender,seqOfLR);        
     }
 
     function revokeInvestor(uint userNo, uint seqOfLR) external{
-        IROIKeeper(_keepers[uint8(TitleOfKeepers.ROIK)]).revokeInvestor(userNo, msg.sender,seqOfLR);
+        IROIKeeper(_keepers[uint8(Keepers.ROIK)]).revokeInvestor(userNo, msg.sender,seqOfLR);
     }
 
 }

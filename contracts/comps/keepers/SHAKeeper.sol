@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -42,8 +42,8 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
 
         uint caller = _msgSender(msgSender, 88000);
         
-        IRegisterOfAgreements _roa = _gk.getROA();
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfAgreements _roa = gk.getROA();
+        IRegisterOfShares _ros = gk.getROS();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
@@ -77,9 +77,9 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         
 
         IAlongs _al = dragAlong
-            ? IAlongs(_gk.getSHA().
+            ? IAlongs(gk.getSHA().
                 getTerm(uint8(IShareholdersAgreement.TitleOfTerm.DragAlong)))
-            : IAlongs(_gk.getSHA().
+            : IAlongs(gk.getSHA().
                 getTerm(uint8(IShareholdersAgreement.TitleOfTerm.TagAlong)));
 
         require(
@@ -99,7 +99,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         }
 
         if(_al.getLinkRule(deal.head.seller).proRata) {
-            IRegisterOfMembers _rom = _gk.getROM();
+            IRegisterOfMembers _rom = gk.getROM();
             
             if (_rom.basedOnPar())
                 require ( par <= 
@@ -119,7 +119,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);
         
-        IRegisterOfAgreements _roa = _gk.getROA();
+        IRegisterOfAgreements _roa = gk.getROA();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
@@ -133,7 +133,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             DTClaims.Claim memory claim = claims[len - 1];
 
             SharesRepo.Share memory share = 
-                _gk.getROS().getShare(claim.seqOfShare);
+                gk.getROS().getShare(claim.seqOfShare);
 
             _createAlongDeal(_ia, claim, deal, share);
 
@@ -180,7 +180,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
 
         _ia.regDeal(aDeal);
 
-        _gk.getROS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
+        gk.getROS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
     }
 
     // ======== AntiDilution ========
@@ -194,7 +194,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
         
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         SharesRepo.Share memory tShare = _ros.getShare(seqOfShare);
@@ -202,12 +202,12 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         require(caller == tShare.head.shareholder, "SHAK.execAD: not shareholder");
         require(!_ia.isInitSigner(caller), "SHAK.execAD: is InitSigner");
 
-        require(_gk.getROA().getHeadOfFile(ia).state == 
+        require(gk.getROA().getHeadOfFile(ia).state == 
             uint8(FilesRepo.StateOfFile.Circulated), "SHAK.execAD: wrong file state");
 
         _ia.requestPriceDiff(seqOfDeal, seqOfShare);
 
-        IAntiDilution _ad = IAntiDilution(_gk.getSHA().getTerm(
+        IAntiDilution _ad = IAntiDilution(gk.getSHA().getTerm(
             uint8(IShareholdersAgreement.TitleOfTerm.AntiDilution)
         ));
 
@@ -237,7 +237,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         bytes32 sigHash
     ) private {
 
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
 
         deal.body.groupOfBuyer = _rom.groupRep(deal.body.buyer);
 
@@ -314,7 +314,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 58000);
         
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
@@ -324,7 +324,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             "SHAK.takeGift: share locked");
 
         if (_ia.takeGift(seqOfDeal))
-            _gk.getROA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
+            gk.getROA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
 
         _ros.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
         _ros.transferShare(
@@ -362,18 +362,18 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             _ia.getDeal(seqOfDeal).head;
         
         RulesParser.FirstRefusalRule memory rule = 
-            _gk.getSHA().getRule(seqOfFRRule).firstRefusalRuleParser();
+            gk.getSHA().getRule(seqOfFRRule).firstRefusalRuleParser();
 
         require(rule.typeOfDeal == headOfDeal.typeOfDeal, 
             "SHAK.EFR: rule and deal are not same type");
 
         require(
-            (rule.membersEqual && _gk.getROM().isMember(caller)) || 
+            (rule.membersEqual && gk.getROM().isMember(caller)) || 
             rule.rightholders[seqOfRightholder] == caller,
             "SHAK.EFR: caller NOT rightholder"
         );
 
-        _gk.getROA().claimFirstRefusal(ia, seqOfDeal, caller, sigHash);
+        gk.getROA().claimFirstRefusal(ia, seqOfDeal, caller, sigHash);
 
         if (_ia.getDeal(seqOfDeal).body.state != 
             uint8(DealsRepo.StateOfDeal.Terminated))
@@ -387,7 +387,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
         
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
@@ -404,7 +404,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
 
         FRClaims.Claim[] memory cls = 
-            _gk.getROA().computeFirstRefusal(ia, seqOfDeal);
+            gk.getROA().computeFirstRefusal(ia, seqOfDeal);
 
         uint256 len = cls.length;
         DealsRepo.Deal memory frDeal;

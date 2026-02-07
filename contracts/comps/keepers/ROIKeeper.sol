@@ -36,15 +36,15 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function _checkVerifierLicense(uint seqOfLR, uint caller) private {
         RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
-        require(_gk.getROD().hasTitle(caller, lr.titleOfVerifier),
+            gk.getSHA().getRule(seqOfLR).listingRuleParser();
+        require(gk.getROD().hasTitle(caller, lr.titleOfVerifier),
             "ROIK.checkVerifierLicense: no rights");
     }
 
     function _checkEnforcerLicense(uint seqOfLR, uint caller) private {
         RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
-        require(_gk.getROD().hasTitle(caller, lr.para),
+            gk.getSHA().getRule(seqOfLR).listingRuleParser();
+        require(gk.getROD().hasTitle(caller, lr.para),
             "ROIK.checkEnforcerLicense: no rights");
     }
 
@@ -52,14 +52,14 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 18000);
         _checkEnforcerLicense(seqOfLR, caller);
 
-        _gk.getROI().pause(caller);
+        gk.getROI().pause(caller);
     }
 
     function unPause(uint seqOfLR, address msgSender) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
         _checkEnforcerLicense(seqOfLR, caller);
 
-        _gk.getROI().unPause(caller);
+        gk.getROI().unPause(caller);
     }
 
     // ==== Freeze Share ====
@@ -71,10 +71,10 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 36000);
         _checkEnforcerLicense(seqOfLR, caller);
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         _ros.decreaseCleanPaid(seqOfShare, paid);
         uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
-        _gk.getROI().freezeShare(shareholder, seqOfShare, paid, caller, hashOrder);
+        gk.getROI().freezeShare(shareholder, seqOfShare, paid, caller, hashOrder);
     }
 
     function unfreezeShare(
@@ -84,10 +84,10 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 36000);
         _checkEnforcerLicense(seqOfLR, caller);
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         _ros.increaseCleanPaid(seqOfShare, paid);
         uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
-        _gk.getROI().unfreezeShare(shareholder, seqOfShare, paid, caller, hashOrder);
+        gk.getROI().unfreezeShare(shareholder, seqOfShare, paid, caller, hashOrder);
     }
 
     function forceTransfer(
@@ -97,12 +97,12 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 18000);
         _checkEnforcerLicense(seqOfLR, caller);
         
-        IRegisterOfInvestors _roi = _gk.getROI();
+        IRegisterOfInvestors _roi = gk.getROI();
         uint to = _msgSender(addrTo, 88000);
         require(_roi.isInvestor(to), 
             "ROIKeeper.forceTransfer: to is NOT a Verified Investor");
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
         _ros.increaseCleanPaid(seqOfShare, paid);
 
@@ -124,16 +124,16 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
             "ROIK.regInvestor: wrong backupKey");
 
         if (_isContract(msgSender)) {
-            require(_rc.getHeadByBody(msgSender).typeOfDoc == 20,
+            require(rc.getHeadByBody(msgSender).typeOfDoc == 20,
                 "ROIK.RegInvestor: COA applicant not GK");
         }
 
         if (_isContract(bKey)) {
-            require(_rc.getHeadByBody(bKey).typeOfDoc == 20,
+            require(rc.getHeadByBody(bKey).typeOfDoc == 20,
                 "ROIK.RegInvestor: COA backupKey not GK");
         }
 
-        _gk.getROI().regInvestor(caller, groupRep, idHash);
+        gk.getROI().regInvestor(caller, groupRep, idHash);
     }
 
     function _isContract(address acct) private view returns (bool) {
@@ -152,10 +152,10 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 18000);
         _checkVerifierLicense(seqOfLR, caller);
 
-        IRegisterOfInvestors _roi = _gk.getROI();
+        IRegisterOfInvestors _roi = gk.getROI();
 
         RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+            gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
         require(lr.maxQtyOfInvestors == 0 ||
             _roi.getQtyOfInvestors() < lr.maxQtyOfInvestors,
@@ -172,6 +172,6 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 18000);
         _checkVerifierLicense(seqOfLR, caller);
 
-        _gk.getROI().revokeInvestor(userNo, caller);
+        gk.getROI().revokeInvestor(userNo, caller);
     }
 }

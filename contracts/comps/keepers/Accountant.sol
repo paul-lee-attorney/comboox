@@ -29,8 +29,8 @@ contract Accountant is IAccountant, RoyaltyCharge {
     using BooksRepo for IBaseKeeper;
 
     function initClass(uint class) external onlyDK {
-        uint sum = _gk.getROS().getInfoOfClass(class).body.paid;
-        _gk.getCashier().initClass(class, sum);
+        uint sum = gk.getROS().getInfoOfClass(class).body.paid;
+        gk.getCashier().initClass(class, sum);
     }
 
     function distrProfits(
@@ -42,7 +42,7 @@ contract Accountant is IAccountant, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
 
-        _gk.getGMM().distributeUsd(
+        gk.getGMM().distributeUsd(
             amt,
             expireDate,
             seqOfDR,
@@ -51,7 +51,7 @@ contract Accountant is IAccountant, RoyaltyCharge {
             caller
         );
 
-        _gk.getCashier().distrProfits(amt, seqOfDR);
+        gk.getCashier().distrProfits(amt, seqOfDR);
     }
 
     function distrIncome(
@@ -65,10 +65,10 @@ contract Accountant is IAccountant, RoyaltyCharge {
 
         uint caller = _msgSender(msgSender, 18000);
 
-        IRegisterOfShares _ros = _gk.getROS();
-        ICashier _cashier = _gk.getCashier();
+        IRegisterOfShares _ros = gk.getROS();
+        ICashier _cashier = gk.getCashier();
 
-        _gk.getGMM().distributeUsd(
+        gk.getGMM().distributeUsd(
             amt,
             expireDate,
             seqOfDR,
@@ -107,7 +107,7 @@ contract Accountant is IAccountant, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 76000);
 
         if (fromBMM) {
-            _gk.getBMM().transferFund(
+            gk.getBMM().transferFund(
                 to,
                 isCBP,
                 amt,
@@ -116,7 +116,7 @@ contract Accountant is IAccountant, RoyaltyCharge {
                 caller
             );
         } else {
-            _gk.getGMM().transferFund(
+            gk.getGMM().transferFund(
                 to,
                 isCBP,
                 amt,
@@ -127,7 +127,7 @@ contract Accountant is IAccountant, RoyaltyCharge {
         }
 
         if (!isCBP) {
-            _gk.getCashier().transferUsd(to, amt, bytes32(seqOfMotion));
+            gk.getCashier().transferUsd(to, amt, bytes32(seqOfMotion));
         }
     }
 }

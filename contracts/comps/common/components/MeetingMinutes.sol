@@ -3,7 +3,7 @@
 /* *
  * v0.2.4
  *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -217,9 +217,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint proposer
     ) external onlyKeeper {
         
-        IShareholdersAgreement _sha = _gk.getSHA();
+        IShareholdersAgreement _sha = gk.getSHA();
 
-        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _sha, _gk.getROM(), _gk.getROD(), proposer);
+        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _sha, gk.getROM(), gk.getROD(), proposer);
         emit ProposeMotionToGeneralMeeting(seqOfMotion, proposer);
     }
 
@@ -228,9 +228,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller
     ) external onlyDK {
         
-        IShareholdersAgreement _sha = _gk.getSHA();
+        IShareholdersAgreement _sha = gk.getSHA();
 
-        _repo.proposeMotionToBoard(seqOfMotion, _sha, _gk.getROD(), caller);
+        _repo.proposeMotionToBoard(seqOfMotion, _sha, gk.getROD(), caller);
         emit ProposeMotionToBoard(seqOfMotion, caller);
     }
 
@@ -245,8 +245,8 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             seqOfMotion,
             delegate,
             principal,
-            _gk.getROM(),
-            _gk.getROD()
+            gk.getROM(),
+            gk.getROD()
         ))
         emit EntrustDelegate(seqOfMotion, delegate, principal);
     }
@@ -259,7 +259,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROM());
+        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, gk.getROM());
         emit CastVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -269,7 +269,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROD());
+        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, gk.getROD());
         emit CastVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 

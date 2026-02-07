@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -31,10 +31,10 @@ contract ListOfProjects is IListOfProjects, Ownable {
 		uint8 private _currency;
 
     function _msgSender(uint price) private returns (uint40 usr) {
-        usr = _rc.getUserNo(
+        usr = rc.getUserNo(
             msg.sender, 
             price * (10 ** 10), 
-            _rc.getAuthorByBody(address(this))
+            rc.getAuthorByBody(address(this))
         );
     }
 
@@ -150,7 +150,7 @@ contract ListOfProjects is IListOfProjects, Ownable {
 
 	function payWages() external payable {
 		uint amt = msg.value;
-		uint exRate = _rc.getCentPriceInWei(_currency);
+		uint exRate = rc.getCentPriceInWei(_currency);
 		_pop.distributePayment(amt, exRate);
 		emit PayWages(amt, exRate);
 	}

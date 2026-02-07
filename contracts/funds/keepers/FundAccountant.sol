@@ -29,8 +29,8 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
     using BooksRepo for IBaseKeeper;
 
     function initClass(uint class) external onlyDK {
-        uint sum = _gk.getROS().getInfoOfClass(class).body.paid;
-        _gk.getCashier().initClass(class, sum);
+        uint sum = gk.getROS().getInfoOfClass(class).body.paid;
+        gk.getCashier().initClass(class, sum);
     }
 
     function distrProfits(
@@ -42,10 +42,10 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
 
-        require(_gk.getROM().isClassMember(caller, 1), 
+        require(gk.getROM().isClassMember(caller, 1), 
             "Accountant: not GP");
 
-        _gk.getGMM().distributeUsd(
+        gk.getGMM().distributeUsd(
             amt,
             expireDate,
             seqOfDR,
@@ -54,7 +54,7 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
             caller
         );
 
-        _gk.getCashier().distrProfits(amt, seqOfDR);
+        gk.getCashier().distrProfits(amt, seqOfDR);
     }
 
     function distrIncome(
@@ -68,13 +68,13 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
 
         uint caller = _msgSender(msgSender, 18000);
 
-        require(_gk.getROM().isClassMember(caller, 1), 
+        require(gk.getROM().isClassMember(caller, 1), 
             "Accountant: not GP");
 
-        IRegisterOfShares _ros = _gk.getROS();
-        ICashier _cashier = _gk.getCashier();
+        IRegisterOfShares _ros = gk.getROS();
+        ICashier _cashier = gk.getCashier();
 
-        _gk.getGMM().distributeUsd(
+        gk.getGMM().distributeUsd(
             amt,
             expireDate,
             seqOfDR,
@@ -87,7 +87,7 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
             _cashier.distrIncome(amt, seqOfDR, fundManager);
 
         RulesParser.DistrRule memory rule =
-            _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
+            gk.getSHA().getRule(seqOfDR).DistrRuleParser();
 
         uint len = list.length;
         while(len > 0) {
@@ -97,8 +97,8 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
             if (rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.ProRata)) {
 
                 uint[] memory seqs = 
-                    _gk.getROM().sharesInHand(drop.member);
-                uint paids = _gk.getROM().pointsOfMember(drop.member).paid * 100;
+                    gk.getROM().sharesInHand(drop.member);
+                uint paids = gk.getROM().pointsOfMember(drop.member).paid * 100;
 
                 uint lenOfShares = seqs.length;
                 while (lenOfShares >0) {
@@ -136,12 +136,12 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 76000);
 
-        require(_gk.getROM().isClassMember(caller, 1) ||
-            _gk.getROD().isDirector(caller), 
+        require(gk.getROM().isClassMember(caller, 1) ||
+            gk.getROD().isDirector(caller), 
             "GMMK: not GP");
 
         if (fromBMM) {
-            _gk.getBMM().transferFund(
+            gk.getBMM().transferFund(
                 to,
                 isCBP,
                 amt,
@@ -150,7 +150,7 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
                 caller
             );
         } else {
-            _gk.getGMM().transferFund(
+            gk.getGMM().transferFund(
                 to,
                 isCBP,
                 amt,
@@ -161,7 +161,7 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
         }
 
         if (!isCBP) {
-            _gk.getCashier().transferUsd(to, amt, bytes32(seqOfMotion));
+            gk.getCashier().transferUsd(to, amt, bytes32(seqOfMotion));
         }
     }
 }

@@ -109,7 +109,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         uint seqOfPledge,
         uint caller
     ) external onlyKeeper returns (SwapsRepo.Swap memory swap) {
-        swap = _repo.createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, caller, _gk.getROS());
+        swap = _repo.createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, caller, gk.getROS());
         emit RegSwap(seqOfOpt, SwapsRepo.codifySwap(swap));
     }
 

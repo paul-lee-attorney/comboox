@@ -29,7 +29,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     using BooksRepo for IBaseKeeper;
 
     modifier whenNotPaused() {
-        require(!_gk.getROI().isPaused(),
+        require(!gk.getROI().isPaused(),
             "LOOK: LOO is paused");
         _;
     }
@@ -46,15 +46,15 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     ) external onlyDK whenNotPaused {
         uint caller = _msgSender(msgSender, 18000);
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
         
         RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+            gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
-        require(_gk.getROM().isClassMember(caller, 1),
+        require(gk.getROM().isClassMember(caller, 1),
             "LOOK.placeIO: not GP");
 
-        require(_gk.getCashier().getGulfInfo(classOfShare).principal == 0,
+        require(gk.getCashier().getGulfInfo(classOfShare).principal == 0,
             "LOOK: class established");
 
         require(lr.classOfShare == classOfShare,
@@ -94,7 +94,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
          GoldChain.Order[] memory expired, 
          uint lenOfExpired,
          UsdOrdersRepo.Deal memory offer) = 
-            _gk.getLOO().placeSellOrder(input, execHours);
+            gk.getLOO().placeSellOrder(input, execHours);
 
         if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, true);
         if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
@@ -114,10 +114,10 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
 
     function _closeDeals(UsdOrdersRepo.Deal[] memory deals, uint len, bool isOffer) private {
 
-        ICashier _cashier = _gk.getCashier();
+        ICashier _cashier = gk.getCashier();
 
-        IRegisterOfShares _ros = _gk.getROS();
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfShares _ros = gk.getROS();
+        IRegisterOfMembers _rom = gk.getROM();
 
         while (len > 0) {
 
@@ -216,7 +216,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     function _restoreOrder(GoldChain.Order memory order) private {
 
         if (order.node.isOffer) {
-            IRegisterOfShares _ros = _gk.getROS();
+            IRegisterOfShares _ros = gk.getROS();
             if (order.data.seqOfShare > 0) {
                 _ros.increaseCleanPaid(order.data.seqOfShare, order.node.paid);
             } else {
@@ -224,7 +224,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
             }
         } else {
             // remark: RefundValueOfBidOrder
-            _gk.getCashier().releaseUsd(
+            gk.getCashier().releaseUsd(
                 order.data.pubKey,
                 order.data.pubKey, 
                 _eightToSix(order.data.margin),
@@ -249,7 +249,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
 
-        IListOfOrders _loo = _gk.getLOO();
+        IListOfOrders _loo = gk.getLOO();
 
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, true);
@@ -257,13 +257,13 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
         require(order.data.seqOfShare == 0,
             "LOOK.withdrawInitOrder: not initOrder");
 
-        require(_gk.getROM().isClassMember(caller, 1),
+        require(gk.getROM().isClassMember(caller, 1),
             "LOOK.placeIO: not GP");
 
         RulesParser.ListingRule memory lr =
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+            gk.getSHA().getRule(seqOfLR).listingRuleParser();
         
-        require(_gk.getROD().hasTitle(caller, lr.titleOfIssuer),
+        require(gk.getROD().hasTitle(caller, lr.titleOfIssuer),
             "LOOK.withdrawInitOrder: has no title");
 
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, true);
@@ -277,17 +277,17 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     ) external onlyDK whenNotPaused {
         uint caller = _msgSender(msgSender, 58000);
 
-        require (_gk.getROI().getInvestor(caller).state == 
+        require (gk.getROI().getInvestor(caller).state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved),
                 "LOOK.placeSellOrder: wrong stateOfInvestor");
 
-        // require(_gk.getCashier().getInitSeaInfo(seqOfClass).principal > 0,
+        // require(gk.getCashier().getInitSeaInfo(seqOfClass).principal > 0,
         //     "LOOK: class not established");
 
-        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfShares _ros = gk.getROS();
 
         RulesParser.ListingRule memory lr = 
-            _gk.getSHA().getRule(seqOfLR).listingRuleParser();
+            gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
         require(seqOfClass == lr.classOfShare,
             "LOOK.placePut: wrong class");
@@ -296,7 +296,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
             "LOOK.placePut: lower than offPrice");
 
         uint[] memory sharesInhand = 
-            _gk.getROM().sharesInClass(caller, lr.classOfShare);
+            gk.getROM().sharesInClass(caller, lr.classOfShare);
 
         uint len = sharesInhand.length;
 
@@ -351,8 +351,8 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
-        IListOfOrders _loo = _gk.getLOO();
-        IRegisterOfShares _ros = _gk.getROS();
+        IListOfOrders _loo = gk.getLOO();
+        IRegisterOfShares _ros = gk.getROS();
 
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, true);
@@ -380,7 +380,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 
-            _gk.getROI().getInvestor(caller);
+            gk.getROI().getInvestor(caller);
 
         require (investor.state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved),
@@ -410,7 +410,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 88000);
 
         InvestorsRepo.Investor memory investor = 
-            _gk.getROI().getInvestor(caller);
+            gk.getROI().getInvestor(caller);
 
         require (investor.state == 
             uint8(InvestorsRepo.StateOfInvestor.Approved),
@@ -435,7 +435,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
         ICashier.TransferAuth memory auth, UsdOrdersRepo.Deal memory input, uint execHours
     ) private {
 
-        ICashier _cashier = _gk.getCashier();
+        ICashier _cashier = gk.getCashier();
 
         // remark: CustodyValueOfBid
         _cashier.custodyUsd(
@@ -448,7 +448,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
          GoldChain.Order[] memory expired,
          uint lenOfExpired,
          UsdOrdersRepo.Deal memory bid) = 
-            _gk.getLOO().placeBuyOrder(input, execHours);
+            gk.getLOO().placeBuyOrder(input, execHours);
 
         if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, false);
         if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
@@ -470,7 +470,7 @@ contract FundLOOKeeper is ILOOKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 88000);
 
-        IListOfOrders _loo = _gk.getLOO();
+        IListOfOrders _loo = gk.getLOO();
 
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, false);

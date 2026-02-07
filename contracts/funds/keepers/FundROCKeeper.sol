@@ -39,21 +39,21 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
 
         uint caller = _msgSender(msgSender, 18000);
 
-        require(_gk.getROM().isClassMember(caller, 1), "not GP");
+        require(gk.getROM().isClassMember(caller, 1), "not GP");
 
         bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 224) +
             uint224(version << 192)); 
 
-        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, msgSender);
+        DocsRepo.Doc memory doc = rc.createDoc(snOfDoc, msgSender);
 
         IAccessControl(doc.body).initKeepers(
             address(this),
-            address(_gk)
+            address(gk)
         );
 
         IShareholdersAgreement(doc.body).initDefaultRules();
 
-        _gk.getROC().regFile(DocsRepo.codifyHead(doc.head), doc.body);
+        gk.getROC().regFile(DocsRepo.codifyHead(doc.head), doc.body);
     }
 
     function circulateSHA(
@@ -64,7 +64,7 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
     ) external onlyDK {
         uint caller = _msgSender(msgSender, 18000);
 
-        require(_gk.getROM().isClassMember(caller, 1), "not GP");
+        require(gk.getROM().isClassMember(caller, 1), "not GP");
 
         require(IDraftControl(sha).isFinalized(), 
             "BOHK.CSHA: SHA not finalized");
@@ -76,11 +76,11 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
         uint16 signingDays = _sha.getSigningDays();
         uint16 closingDays = _sha.getClosingDays();
 
-        RulesParser.VotingRule memory vr = address(_gk.getSHA()) == address(0) 
+        RulesParser.VotingRule memory vr = address(gk.getSHA()) == address(0) 
             ? _sha.getRule(8).votingRuleParser()
-            : _gk.getSHA().getRule(8).votingRuleParser();
+            : gk.getSHA().getRule(8).votingRuleParser();
 
-        _gk.getROC().circulateFile(sha, signingDays, closingDays, vr, docUrl, docHash);
+        gk.getROC().circulateFile(sha, signingDays, closingDays, vr, docUrl, docHash);
     }
 
     // ======== Sign SHA ========
@@ -95,7 +95,7 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
         require(ISigPage(sha).isParty(caller), "NOT Party of Doc");
 
         require(
-            _gk.getROC().getHeadOfFile(sha).state == uint8(FilesRepo.StateOfFile.Circulated),
+            gk.getROC().getHeadOfFile(sha).state == uint8(FilesRepo.StateOfFile.Circulated),
             "SHA not in Circulated State"
         );
 
@@ -121,8 +121,8 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
 
         require(ISigPage(sha).isParty(caller), "NOT Party of Doc");
         
-        IRegisterOfConstitution _roc = _gk.getROC();
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfConstitution _roc = gk.getROC();
+        IRegisterOfMembers _rom = gk.getROM();
 
         require(sha != address(0), "ROCK.actSHA: zero sha");
         IShareholdersAgreement _sha = IShareholdersAgreement(sha);
@@ -130,7 +130,7 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
         uint seqOfMotion = _roc.getHeadOfFile(sha).seqOfMotion;
 
         if (seqOfMotion > 0) {
-            _gk.getGMM().execResolution(
+            gk.getGMM().execResolution(
                 seqOfMotion,
                 uint(uint160(sha)),
                 caller
@@ -162,11 +162,11 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
 
     function _regOptionTerms(IShareholdersAgreement _sha) private {
         address opts = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.Options));
-        _gk.getROO().regOptionTerms(opts);
+        gk.getROO().regOptionTerms(opts);
     }
 
     function _updatePositionSetting(IShareholdersAgreement _sha) private {
-        IRegisterOfDirectors _rod = _gk.getROD();
+        IRegisterOfDirectors _rod = gk.getROD();
 
         uint256 len = _sha.getRule(256).positionAllocateRuleParser().qtyOfSubRule;
         uint256 i;
@@ -199,7 +199,7 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
 
 
     function _updateGrouping(IShareholdersAgreement _sha) private {
-        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfMembers _rom = gk.getROM();
 
         uint256 len = _sha.getRule(768).groupUpdateOrderParser().qtyOfSubRule;
         uint256 i;
@@ -230,7 +230,7 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
     function acceptSHA(bytes32 sigHash, address msgSender) external onlyDK {
         uint caller = _msgSender(msgSender, 36000);
 
-        IShareholdersAgreement _sha = _gk.getSHA();
+        IShareholdersAgreement _sha = gk.getSHA();
         _sha.addBlank(false, true, 1, caller);
         _sha.signDoc(false, caller, sigHash);
     }
