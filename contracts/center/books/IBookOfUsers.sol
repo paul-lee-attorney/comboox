@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -42,10 +41,6 @@ interface IBookOfUsers {
 
     // ==== Opts Setting ====
 
-    function setPlatformRule(bytes32 snOfRule) external;
-    
-    // ==== Power transfer ====
-
     function transferOwnership(address newOwner) external;
 
     function handoverCenterKey(address newKeeper) external;
@@ -55,6 +50,10 @@ interface IBookOfUsers {
     function setBackupKey(address bKey) external;
 
     function upgradeBackupToPrime() external;
+
+    // ==== Royalty & Coupon ====
+
+    function setPlatformRule(bytes32 snOfRule) external;
 
     function setRoyaltyRule(bytes32 snOfRoyalty) external;
 
@@ -72,13 +71,24 @@ interface IBookOfUsers {
         
     // ==== Users ====
 
-    function isKey(address key) external view returns (bool);
+    function isUserNo(uint acct) external view returns (bool);
 
-    function counterOfUsers() external view returns(uint40);
+    // function getMyUserNo() external view returns (uint40);
 
-    function getUser() external view returns (UsersRepo.User memory);
+    function counterOfUsers() external view returns(uint);
 
-    function getMyUserNo() external returns (uint40);
+    function getUserNoList() external view returns(uint[] memory);
+
+    // function getMyUser() external view returns (UsersRepo.User memory);
+
+    // ==== Royalty & Coupon ====
 
     function getRoyaltyRule(uint author)external view returns (UsersRepo.Key memory);
+
+    // ==== Keys ====
+
+    function usedKey(address key) external view returns (bool);
+
+    function isPrimeKey(address key) external view returns (bool);
+
 }

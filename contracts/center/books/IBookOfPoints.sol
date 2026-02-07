@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
  * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -20,30 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../lib/LockersRepo.sol";
-
 interface IBookOfPoints {
-
-    // ##################
-    // ##    Event     ##
-    // ##################
-
-    // ==== Points ====
-
-    event LockPoints(bytes32 indexed headSn, bytes32 indexed hashLock);
-
-    event LockPointsInCoffer(address indexed beneficiary, uint indexed amt);
-
-    event LockConsideration(bytes32 indexed headSn, address indexed counterLocker, bytes payload, bytes32 indexed hashLock);
-
-    event PickupPoints(bytes32 indexed head);
-
-    event PickupPointsFromCoffer(address indexed from, address indexed to, uint indexed amt);
-
-    event WithdrawPoints(bytes32 indexed head);
-    
-    event WithdrawPointsFromLocker(address indexed from, uint indexed amt);
-
 
     // ##################
     // ##    Write     ##
@@ -53,27 +29,4 @@ interface IBookOfPoints {
 
     function burn(uint amt) external;
 
-    function mintAndLockPoints(uint to, uint amtOfGLee, uint expireDate, bytes32 hashLock) external;
-
-    // ==== Points Trade ====
-
-    function lockPoints(uint to, uint amtOfGLee, uint expireDate, bytes32 hashLock) external;
-
-    function lockConsideration(uint to, uint amtOfGLee, uint expireDate, address counterLocker, bytes memory payload, bytes32 hashLock) external;
-
-    function pickupPoints(bytes32 hashLock, string memory hashKey) external;
-
-    function withdrawPoints(bytes32 hashLock) external;
-
-    // ##################
-    // ##    Read      ##
-    // ##################
-
-    function getDepositAmt(address from) external view returns(uint);
-
-    function getLocker(bytes32 hashLock) external view 
-        returns (LockersRepo.Locker memory locker);
-
-    function getLocksList() external view 
-        returns (bytes32[] memory);
 }

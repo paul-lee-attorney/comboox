@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.8;
 
-import "./access/IOwnable.sol";
 
 import "../lib/UsersRepo.sol";
 import "../lib/DocsRepo.sol";
@@ -29,9 +28,9 @@ import "./books/IBookOfDocs.sol";
 import "./books/IBookOfPoints.sol";
 import "./books/IBookOfUsers.sol";
 
-import "./ERC20/IERC20.sol";
+import "../openzeppelin/token/ERC20/IERC20.sol";
 
-interface IRegCenter is IBookOfDocs, IBookOfPoints, IERC20, IBookOfUsers{
+interface IRegCenter is IBookOfPoints, IERC20, IBookOfDocs, IBookOfUsers{
 
     enum TypeOfDoc{
         ZeroPoint,
@@ -64,12 +63,22 @@ interface IRegCenter is IBookOfDocs, IBookOfPoints, IERC20, IBookOfUsers{
         LOP             // 27
     }
 
-    event SetPriceFeed(uint indexed seq, address indexed feed_);
-
     function regUser() external;
 
     function getUserNo(address targetAddr, uint fee, uint author) external returns (uint40);
-    
-    function getCentPriceInWei(uint seq) external view returns(uint);
+
+    // ==== Self Query ====
+
+    function getMyUserNo() external view returns(uint40);
+
+    function getMyUser() external view returns (UsersRepo.User memory);
+
+    // ==== Admin Checking ====
+
+    function getUserNo(address targetAddr) external view returns (uint40);
+
+    function getUser(address targetAddr) external view returns (UsersRepo.User memory);
+
+    function getUserByNo(uint acct) external view returns (UsersRepo.User memory);
 
 }

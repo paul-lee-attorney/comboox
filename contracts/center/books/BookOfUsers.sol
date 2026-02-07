@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,28 +20,49 @@
 pragma solidity ^0.8.8;
 
 import "./IBookOfUsers.sol";
+import "../access/Ownable.sol";
 
-contract BookOfUsers is IBookOfUsers {
+contract BookOfUsers is IBookOfUsers, Ownable {
     using UsersRepo for UsersRepo.Repo;
     using UsersRepo for uint256;
     
     UsersRepo.Repo private _users;
-    
-    constructor(address keeper) {
+
+    // ==== UUPSUpgradable ====
+
+    uint[50] private __gap;
+
+    function initialize(
+        address owner_,
+        address regCenter_,
+        address keeper
+    ) external virtual initializer {
+        _init(owner_, regCenter_);
+        _initUsers(keeper);
+    }
+
+    function _initUsers(address keeper) internal {
+        require(keeper != address(0), "BOU: zero keeper");
         _users.users[0].primeKey.pubKey = msg.sender;
         _users.users[0].backupKey.pubKey = keeper;
         _users.regUser(msg.sender);
         _users.regUser(keeper);
     }
 
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyKeeper {}
+
+    // #####################
+    // ##    Modifiers    ##
+    // #####################
+
     modifier onlyOwner() {
-        require(msg.sender == getOwner(),
+        require(msg.sender == _users.getOwner(),
             "BOU: not owner");
         _;
     }
 
     modifier onlyKeeper() {
-        require(msg.sender == getBookeeper(),
+        require(msg.sender == _users.getBookeeper(),
             "BOU: not keeper");
         _;
     }
@@ -53,18 +73,13 @@ contract BookOfUsers is IBookOfUsers {
 
     // ==== Config ====
 
-    function setPlatformRule(bytes32 snOfRule) external {
-        _users.setPlatformRule(snOfRule, msg.sender);
-        emit SetPlatformRule(snOfRule);
-    }
-
-    function transferOwnership(address newOwner) external {
-        _users.transferOwnership(newOwner, msg.sender);
+    function transferOwnership(address newOwner) external onlyOwner{
+        _users.transferOwnership(newOwner);
         emit TransferOwnership(newOwner);
     }
 
-    function handoverCenterKey(address newKeeper) external {
-        _users.handoverCenterKey(newKeeper, msg.sender);
+    function handoverCenterKey(address newKeeper) external onlyKeeper{
+        _users.handoverCenterKey(newKeeper);
         emit TurnOverCenterKey(newKeeper);
     }
 
@@ -83,9 +98,20 @@ contract BookOfUsers is IBookOfUsers {
         _users.upgradeBackupToPrime(msg.sender);
     }
 
+    // ==== Royalty & Coupon ====
+
+    function setPlatformRule(bytes32 snOfRule) external onlyOwner {
+        _users.setPlatformRule(snOfRule);
+        emit SetPlatformRule(snOfRule);
+    }
+
     function setRoyaltyRule(bytes32 snOfRoyalty) external {
         _users.setRoyaltyRule(snOfRoyalty, msg.sender);
-    }    
+    }
+
+    function _addCouponOnce(address targetAddr) internal {
+        _users.addCouponOnce(targetAddr);
+    }
 
     // ################
     // ##  Read I/O  ##
@@ -106,35 +132,45 @@ contract BookOfUsers is IBookOfUsers {
     }
 
     // ==== Users ====
-
-    function isKey(address key) external view returns (bool) {
-        return _users.isKey(key);
-    }
-
-    function counterOfUsers() public view returns(uint40) {
-        return _users.counterOfUsers();
-    }
-
-    function _getUserByNo(uint acct) internal view returns (UsersRepo.User memory)
-    {
-        require(acct>0, "BOU: zero userNo");
-        return _users.users[acct];
-    }
-
-    function getUser() external view returns (UsersRepo.User memory)
-    {
-        return _users.getUser(msg.sender);
+    
+    function isUserNo(uint acct) public view returns (bool) {
+        return _users.isUserNo(acct);
     }
 
     function _getUserNo(address targetAddr) internal view returns (uint40) {
         return _users.getUserNo(targetAddr);
     }
 
-    function getMyUserNo() public view returns(uint40) {
-        return _users.getUserNo(msg.sender);
+    function counterOfUsers() external view returns(uint) {
+        return _users.counterOfUsers();
     }
 
-    function getRoyaltyRule(uint author)public view returns (UsersRepo.Key memory) {
+    function getUserNoList() external view returns(uint[] memory) {
+        return _users.getUserNoList();
+    }
+
+    function _getUser(address targetAddr) internal view returns (UsersRepo.User memory)
+    {
+        return _users.getUser(targetAddr);
+    }
+
+    function _getUserByNo(uint acct) internal view returns (UsersRepo.User memory usr)
+    {
+        if (_users.isUserNo(acct)) {
+            usr = _users.users[acct];
+        } else revert ("BOU: not registered");
+    }
+
+    function getRoyaltyRule(uint author) public view returns (UsersRepo.Key memory) {
         return _users.getRoyaltyRule(author);
     }
+
+    function usedKey(address key) external view returns (bool) {
+        return _users.usedKey(key);
+    }
+
+    function isPrimeKey(address key) external view returns (bool) {
+        return _users.isPrimeKey(key);
+    }
+
 }

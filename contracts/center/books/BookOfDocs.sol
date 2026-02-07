@@ -20,50 +20,24 @@
 pragma solidity ^0.8.8;
 
 import "./IBookOfDocs.sol";
+import "./BookOfUsers.sol";
 import "../access/Ownable.sol";
-import "../../lib/InterfacesHub.sol";
 import "../../comps/common/access/AccessControl.sol";
 
-contract BookOfDocs is IBookOfDocs, Ownable {
+contract BookOfDocs is IBookOfDocs, BookOfUsers {
     using DocsRepo for DocsRepo.Repo;
     using DocsRepo for DocsRepo.Head;
-    using InterfacesHub for address;
     
     DocsRepo.Repo private _docs;
-    address public bou;
-
-    uint[50] private __gap;
-
-    modifier onlyKeeper {
-        require(
-            msg.sender == bou.getBOU().getBookeeper(),
-            "BOD.onlyKeeper: NOT"
-        );
-        _;
-    }
 
     // ==== UUPSUpgradable ====
 
-    function initialize(
-        address bou_,
-        address regCenter
-    ) external initializer {
-        _init(address(0), regCenter);
-        _setBOU(bou_);
-    }
+    uint[50] private __gap;
 
-    function _setBOU(address bou_) private {
-        require(msg.sender == bou_.getBOU().getBookeeper(),
-            "BOD.setBOU: NOT Keeper of BOU");
-        bou = bou_;
-    }
-
-    function _authorizeUpgrade(address newImplementation) internal override onlyKeeper {}
-
-    function upgradeTo(address newImplementation) external override onlyProxy {
-        _authorizeUpgrade(newImplementation);
-        _upgradeToAndCallUUPS(newImplementation, new bytes(0), false);
-        _docs.upgradeDoc(newImplementation, address(this));
+    function upgradeCenterTo(address newImplementation) external virtual override {
+        upgradeTo(newImplementation);
+        DocsRepo.Doc memory doc = _docs.upgradeDoc(newImplementation, address(this));
+        emit UpgradeDoc(doc.head.codifyHead(), doc.body);
     }
 
     // ###############
@@ -78,7 +52,7 @@ contract BookOfDocs is IBookOfDocs, Ownable {
                 typeOfDoc, 
                 body, 
                 author, 
-                bou.getBOU().getUserNo(msg.sender)
+                _getUserNo(msg.sender)
             );
 
         emit SetTemplate(head.typeOfDoc, head.version, body);
@@ -91,7 +65,7 @@ contract BookOfDocs is IBookOfDocs, Ownable {
         DocsRepo.Doc memory doc = _docs.regProxy(
                 temp,
                 proxy,
-                bou.getBOU().getUserNo(msg.sender)
+                _getUserNo(msg.sender)
         );
 
         emit RegProxy(doc.head.codifyHead(), proxy);
@@ -106,7 +80,7 @@ contract BookOfDocs is IBookOfDocs, Ownable {
             typeOfDoc, 
             version, 
             transferee, 
-            bou.getBOU().getUserNo(msg.sender)
+            _getUserNo(msg.sender)
         );
         emit TransferIPR(typeOfDoc, version, transferee);
     }
@@ -123,7 +97,7 @@ contract BookOfDocs is IBookOfDocs, Ownable {
         doc = _docs.cloneDoc(
             typeOfDoc, 
             version, 
-            bou.getBOU().getUserNo(owner)
+            _getUserNo(owner)
         );
         IAccessControl(doc.body).initialize(owner, rc, dk, gk);
         emit CloneDoc(doc.head.codifyHead(), doc.body);
@@ -141,7 +115,7 @@ contract BookOfDocs is IBookOfDocs, Ownable {
         doc = _docs.proxyDoc(
             typeOfDoc, 
             version, 
-            bou.getBOU().getUserNo(owner),
+            _getUserNo(owner),
             owner,
             rc,
             dk,
@@ -150,9 +124,7 @@ contract BookOfDocs is IBookOfDocs, Ownable {
         emit ProxyDoc(doc.head.codifyHead(), doc.body);
     }
 
-    function upgradeDoc(
-        address temp
-    ) external {
+    function upgradeDoc(address temp) external {
         DocsRepo.Doc memory doc = _docs.upgradeDoc(temp, msg.sender);
         emit UpgradeDoc(doc.head.codifyHead(), doc.body);
     }
@@ -226,8 +198,8 @@ contract BookOfDocs is IBookOfDocs, Ownable {
     }
 
     function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc) {
-        if (bou.getBOU().isUserNo(acct)) {
-            doc.body = bou.getBOU().getUserByNo(acct).primeKey.pubKey;
+        if (isUserNo(acct)) {
+            doc.body = _getUserByNo(acct).primeKey.pubKey;
             if (_docs.docExist(doc.body)) doc.head = _docs.heads[doc.body];
             else doc.body = address(0);
         }

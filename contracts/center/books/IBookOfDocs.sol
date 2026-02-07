@@ -32,48 +32,105 @@ interface IBookOfDocs {
     
     event SetTemplate(uint256 indexed typeOfDoc, uint256 indexed version, address indexed body);
 
+    event RegProxy(bytes32 indexed snOfDoc, address indexed body);
+
     event TransferIPR(uint indexed typeOfDoc, uint indexed version, uint indexed transferee);
 
-    event CreateDoc(bytes32 indexed snOfDoc, address indexed body);
+    event CloneDoc(bytes32 indexed snOfDoc, address indexed body);
 
-    event InsertDoc(bytes32 indexed snOfDoc, address indexed body);
+    event ProxyDoc(bytes32 indexed snOfDoc, address indexed body);
+
+    event UpgradeDoc(bytes32 indexed snOfDoc, address indexed body);
 
     // ##################
     // ##    Write     ##
     // ##################
 
-    function setTemplate(uint typeOfDoc, address body, uint author) external;
+    function setTemplate(
+        uint typeOfDoc, address body, uint author
+     ) external;
 
-    function transferIPR(uint typeOfDoc, uint version, uint transferee) external;
+    function regProxy(
+        address temp,
+        address proxy
+    ) external;
 
-    function createDoc(bytes32 snOfDoc, address primeKeyOfOwner) external 
-        returns(DocsRepo.Doc memory doc);
+    function transferIPR(
+        uint typeOfDoc, 
+        uint version, 
+        uint transferee
+    ) external;
 
-    // #################
-    // ##   Read      ##
-    // #################
+    function cloneDoc(
+        uint typeOfDoc,
+        uint version,
+        address owner,
+        address dk,
+        address gk
+    ) external returns(
+        DocsRepo.Doc memory doc
+    );
+
+    function proxyDoc(
+        uint typeOfDoc,
+        uint version,
+        address owner,
+        address dk,
+        address gk
+    ) external returns(
+        DocsRepo.Doc memory doc
+    );
+
+    function upgradeDoc(address temp) external;
+
+    // ##################
+    // ##  Read I/O    ##
+    // ##################
+
+    // ---- Type of Doc ----
 
     function counterOfTypes() external view returns(uint32);
 
-    function counterOfVersions(uint256 typeOfDoc) external view returns(uint32 seq);
+    function typeExist(uint256 typeOfDoc) external view returns(bool);
 
-    function counterOfDocs(uint256 typeOfDoc, uint256 version) external view returns(uint64 seq);
+    function getTypesList() external view returns(uint[] memory);
 
-    function docExist(address body) external view returns(bool);
+    // ---- Counters ----
+
+    function counterOfVersions(uint256 typeOfDoc) external view returns(uint32);
+
+    function counterOfDocs(uint256 typeOfDoc, uint256 version) external view returns(uint64);
+
+    // ---- Authors ----
 
     function getAuthor(uint typeOfDoc, uint version) external view returns(uint40);
 
     function getAuthorByBody(address body) external view returns(uint40);
 
-    function getHeadByBody(address body) external view returns (DocsRepo.Head memory );
-    
-    function getDoc(bytes32 snOfDoc) external view returns(DocsRepo.Doc memory doc);
+    // ---- Temps ----
 
-    function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc);
+    function tempExist(address body) external view returns(bool);
 
-    function verifyDoc(bytes32 snOfDoc) external view returns(bool flag);
+    function getTemp(uint typeOfDoc, uint version) external view returns(DocsRepo.Doc memory doc);
 
     function getVersionsList(uint256 typeOfDoc) external view returns(DocsRepo.Doc[] memory);
 
-    function getDocsList(bytes32 snOfDoc) external view returns(DocsRepo.Doc[] memory);
+    // ---- Docs ----
+
+    function docExist(address body) external view returns(bool);
+
+    function getHeadByBody(address body) external view returns (DocsRepo.Head memory );
+
+    function getDoc(
+        uint typeOfDoc, uint version, uint seqOfDoc
+    ) external view returns(DocsRepo.Doc memory doc);
+
+    function getDocByUserNo(uint acct) external view returns (DocsRepo.Doc memory doc);
+
+    function getDocsList(uint typeOfDoc, uint version) external view returns(DocsRepo.Doc[] memory);
+
+    function verifyDoc(
+        uint typeOfDoc, uint version, uint seqOfDoc
+    ) external view returns(bool flag);
+
 }

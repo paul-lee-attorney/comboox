@@ -21,27 +21,17 @@
 pragma solidity ^0.8.8;
 
 import "./IRegCenter.sol";
-import "./Oracles/IPriceConsumer.sol";
-import "./books/BookOfDocs.sol";
+import "./books/BookOfPoints.sol";
 
-contract RegCenter is IRegCenter, BookOfDocs {
-    
-    IPriceConsumer private _oracle;
+contract RegCenter is IRegCenter, BookOfPoints {
 
-    constructor(address keeper) BookOfDocs(keeper){}
+    // ==== UUPSUpgradable ====
+
+    uint256[50] private __gap;
 
     // #################
     // ##    Write    ##
     // #################
-
-    function setOracle(address pf) external onlyKeeper {
-        _oracle = IPriceConsumer(pf);
-    }
-
-    function setPriceFeed(uint seq, address feed_ ) onlyKeeper external {
-        _oracle.setPriceFeed(seq, feed_);
-        emit SetPriceFeed(seq, feed_);
-    }
 
     function regUser() external {
         uint gift = _regUser();
@@ -55,7 +45,7 @@ contract RegCenter is IRegCenter, BookOfDocs {
         uint40 target = _getUserNo(targetAddr);
 
         require(docExist(msg.sender), 
-            "RC.getUserNo: not registered ");
+            "RC.getUserNo: Doc NOT registered");
             
         UsersRepo.Key memory rr = getRoyaltyRule(author);
         address authorAddr = _getUserByNo(author).primeKey.pubKey; 
@@ -72,7 +62,7 @@ contract RegCenter is IRegCenter, BookOfDocs {
         UsersRepo.Key memory rr
     ) private {
 
-        UsersRepo.User memory t = _getUserByNo(_getUserNo(targetAddr));
+        UsersRepo.User memory t = _getUser(targetAddr);
         address ownerAddr = getOwner();
 
         UsersRepo.Rule memory pr = getPlatformRule();
@@ -100,23 +90,31 @@ contract RegCenter is IRegCenter, BookOfDocs {
                 _transfer(t.primeKey.pubKey, authorAddr, balaceAmt - giftAmt);
         }
 
-        t.primeKey.coupon++;
+        _addCouponOnce(targetAddr);
     }
 
-    function getOracle () external view returns(address) {
-        return address(_oracle);
+    // ==== Self Query ====
+
+    function getMyUserNo() external view returns(uint40) {
+        return _getUserNo(msg.sender);
     }
 
-    function getPriceFeed(uint seq) external view returns (address) {
-        return _oracle.getPriceFeed(seq);
+    function getMyUser() external view returns (UsersRepo.User memory) {
+        return _getUser(msg.sender);
     }
 
-    function decimals(address quote) public view returns (uint8) {
-        return _oracle.decimals(quote);
+    // ==== Admin Checking ====
+
+    function getUserNo(address targetAddr) external view onlyKeeper returns (uint40) {
+        return _getUserNo(targetAddr);
     }
 
-    function getCentPriceInWei(uint seq) external view returns(uint) {
-        return _oracle.getCentPriceInWei(seq);
+    function getUser(address targetAddr) external view onlyKeeper returns (UsersRepo.User memory) {
+        return _getUser(targetAddr);
+    }
+
+    function getUserByNo(uint acct) external view onlyKeeper returns (UsersRepo.User memory) {
+        return _getUserByNo(acct);
     }
 
 }

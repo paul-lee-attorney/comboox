@@ -19,10 +19,10 @@
 
 pragma solidity ^0.8.8;
 
-import "./LockersRepo.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
 library UsersRepo {
-    using LockersRepo for LockersRepo.Repo;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     struct Key {
         address pubKey;
@@ -49,7 +49,8 @@ library UsersRepo {
         mapping(uint256 => User) users;
         // key => userNo
         mapping(address => uint) userNo;
-        LockersRepo.Repo lockers;       
+        // userNo set        
+        EnumerableSet.UintSet usersList;
     }
 
     // platformRule: Rule({
@@ -65,31 +66,11 @@ library UsersRepo {
     // owner: users[0].primeKey.pubKey;
     // bookeeper: users[0].backupKey.pubKey;
 
-    // ####################
-    // ##    Modifier    ##
-    // ####################
-
-    modifier onlyOwner(Repo storage repo, address msgSender) {
-        require(msgSender == getOwner(repo), 
-            "UR.mf.OO: not owner");
-        _;
-    }
-
-    modifier onlyKeeper(Repo storage repo, address msgSender) {
-        require(msgSender == getBookeeper(repo), 
-            "UR.mf.OK: not bookeeper");
-        _;
-    }
-
-    modifier onlyPrimeKey(Repo storage repo, address msgSender) {
-        require(msgSender == repo.users[getUserNo(repo, msgSender)].primeKey.pubKey, 
-            "UR.mf.OPK: not primeKey");
-        _;
-    }
-
     // ########################
-    // ##    Opts Setting    ##
+    // ##  Config Setting    ##
     // ########################
+
+    // ==== Platform  ====
 
     function ruleParser(bytes32 sn) public pure 
         returns(Rule memory rule) 
@@ -105,49 +86,17 @@ library UsersRepo {
         });
     }
 
-    function setPlatformRule(Repo storage repo, bytes32 snOfRule, address msgSender) 
-        public onlyOwner(repo, msgSender) 
-    {
-
-        Rule memory rule = ruleParser(snOfRule);
-
-        User storage opt = repo.users[0];
-
-        opt.primeKey.discount = rule.rate;
-        opt.primeKey.gift = rule.eoaRewards;
-
-        opt.backupKey.discount = rule.para;
-        opt.backupKey.gift = rule.coaRewards;
-        opt.backupKey.coupon = rule.floor;
-    }
-
-    function getPlatformRule(Repo storage repo) public view 
-        returns (Rule memory rule) 
-    {
-        User storage opt = repo.users[0];
-
-        rule = Rule({
-            eoaRewards: opt.primeKey.gift,
-            coaRewards: opt.backupKey.gift,
-            floor: opt.backupKey.coupon,
-            rate: opt.primeKey.discount,
-            para: opt.backupKey.discount
-        });
-    }
-
-    function transferOwnership(Repo storage repo, address newOwner, address msgSender) 
-        public onlyOwner(repo, msgSender)
-    {
+    function transferOwnership(Repo storage repo, address newOwner) public {
+        require(newOwner != address(0), "UR.TO: zero address");
         repo.users[0].primeKey.pubKey = newOwner;
     }
 
-    function handoverCenterKey(Repo storage repo, address newKeeper, address msgSender) 
-        public onlyKeeper(repo, msgSender) 
-    {
+    function handoverCenterKey(Repo storage repo, address newKeeper) public {
+        require(newKeeper != address(0), "UR.HCK: zero address");
         repo.users[0].backupKey.pubKey = newKeeper;
     }
 
-    // ==== Author Setting ====
+    // ==== Coupon ====
 
     function infoParser(bytes32 info) public pure returns(Key memory)
     {
@@ -163,11 +112,25 @@ library UsersRepo {
         return out;
     }
 
+    function setPlatformRule(Repo storage repo, bytes32 snOfRule) public {
+
+        Rule memory rule = ruleParser(snOfRule);
+
+        User storage opt = repo.users[0];
+
+        opt.primeKey.discount = rule.rate;
+        opt.primeKey.gift = rule.eoaRewards;
+
+        opt.backupKey.discount = rule.para;
+        opt.backupKey.gift = rule.coaRewards;
+        opt.backupKey.coupon = rule.floor;
+    }
+
     function setRoyaltyRule(
         Repo storage repo,
         bytes32 snOfRoyalty,
         address msgSender
-    ) public onlyPrimeKey(repo, msgSender) {
+    ) public {
 
         Key memory rule = infoParser(snOfRoyalty);
 
@@ -180,128 +143,32 @@ library UsersRepo {
 
     }
 
-    function getRoyaltyRule(Repo storage repo, uint author)
-        public view returns (Key memory) 
-    {
-        require (author > 0, 'zero author');
-
-        Key memory rule = repo.users[author].backupKey;
-        delete rule.pubKey;
-
-        return rule;
+    function addCouponOnce(Repo storage repo, address targetAddr) public {
+        User storage user = repo.users[getUserNo(repo, targetAddr)];
+        unchecked {
+            user.primeKey.coupon = 
+                (user.primeKey.coupon == type(uint40).max) 
+                    ? 1 
+                    : user.primeKey.coupon + 1;
+        }
     }
 
-    // ##################
-    // ##    Points    ##
-    // ##################
+    // ==== Reg User ====
 
-    function mintAndLockPoints(Repo storage repo, uint to, uint amt, uint expireDate, bytes32 hashLock, address msgSender) 
-        public onlyOwner(repo, msgSender) returns (LockersRepo.Head memory head)
-    {
-        head = _prepareLockerHead(repo, to, amt, expireDate, msgSender);
-        repo.lockers.lockPoints(head, hashLock);
-    }
+    function regUser(
+        Repo storage repo, address msgSender
+    ) public returns (User memory ) {
+        require(msgSender != address(0), "UserRepo.RegUser: zero address");
+        require(!usedKey(repo, msgSender), "UserRepo.RegUser: used key");
 
-    function _prepareLockerHead(
-        Repo storage repo, 
-        uint to, 
-        uint amt, 
-        uint expireDate, 
-        address msgSender
-    ) private view returns (LockersRepo.Head memory head) {
-        uint40 caller = getUserNo(repo, msgSender);
+        uint userNo = block.timestamp;
+        do {
+            userNo = uint40(uint(keccak256(abi.encodePacked(
+                userNo, msgSender
+            ))));
+        } while (userNo == 0 || !repo.usersList.add(userNo));
 
-        require((amt >> 128) == 0, 
-            "UR.prepareLockerHead: amt overflow");
-
-        head = LockersRepo.Head({
-            from: caller,
-            to: uint40(to),
-            expireDate: uint48(expireDate),
-            value: uint128(amt)
-        });
-    }
-
-    function lockPoints(Repo storage repo, uint to, uint amt, uint expireDate, bytes32 hashLock, address msgSender) 
-        public onlyPrimeKey(repo, msgSender) returns (LockersRepo.Head memory head)
-    {
-        head = _prepareLockerHead(repo, to, amt, expireDate, msgSender);
-        repo.lockers.lockPoints(head, hashLock);
-    }
-
-    function lockConsideration(
-        Repo storage repo, 
-        uint to, 
-        uint amt, 
-        uint expireDate, 
-        address counterLocker, 
-        bytes calldata payload, 
-        bytes32 hashLock, 
-        address msgSender
-    ) public onlyPrimeKey(repo, msgSender) returns (LockersRepo.Head memory head) {
-        head = _prepareLockerHead(repo, to, amt, expireDate, msgSender);
-        LockersRepo.Body memory body = LockersRepo.Body({
-            counterLocker: counterLocker,
-            payload: payload 
-        });
-        repo.lockers.lockConsideration(head, body, hashLock);
-    }
-
-    function pickupPoints(
-        Repo storage repo, 
-        bytes32 hashLock, 
-        string memory hashKey,
-        address msgSender
-    ) public returns (LockersRepo.Head memory head) 
-    {
-        uint caller = getUserNo(repo, msgSender);
-        head = repo.lockers.pickupPoints(hashLock, hashKey, caller);
-    }
-
-    function withdrawDeposit(
-        Repo storage repo, 
-        bytes32 hashLock, 
-        address msgSender
-    ) public onlyPrimeKey(repo, msgSender) returns (LockersRepo.Head memory head) {
-        uint caller = getUserNo(repo, msgSender);
-        head = repo.lockers.withdrawDeposit(hashLock, caller);
-    }
-
-    function getLocker(
-        Repo storage repo,
-        bytes32 hashLock
-    ) public view returns (LockersRepo.Locker memory locker) 
-    {
-        locker = repo.lockers.getLocker(hashLock);
-    }
-
-    function getLocksList(
-        Repo storage repo
-    ) public view returns (bytes32[] memory) 
-    {
-        return repo.lockers.getSnList();
-    }
-
-    // ##########################
-    // ##    User & Members    ##
-    // ##########################
-
-    // ==== reg user ====
-
-    function _increaseCounterOfUsers(Repo storage repo) private returns (uint40) {
-        repo.users[0].primeKey.coupon++;
-        return repo.users[0].primeKey.coupon;
-    }
-
-    function regUser(Repo storage repo, address msgSender) public 
-        returns (User memory )
-    {
-
-        require(!isKey(repo, msgSender), "UserRepo.RegUser: used key");
-
-        uint seqOfUser = _increaseCounterOfUsers(repo);
-
-        repo.userNo[msgSender] = seqOfUser;
+        repo.userNo[msgSender] = userNo;
 
         User memory user;
 
@@ -314,7 +181,7 @@ library UsersRepo {
             user.primeKey.gift = rule.coaRewards;
         } else user.primeKey.gift = rule.eoaRewards;
 
-        repo.users[seqOfUser] = user;
+        repo.users[userNo] = user;
 
         return user;
     }
@@ -327,10 +194,14 @@ library UsersRepo {
         return size != 0;
     }
 
-    function setBackupKey(Repo storage repo, address bKey, address msgSender) 
-        public onlyPrimeKey(repo, msgSender)
-    {
-        require (!isKey(repo, bKey), "UR.SBK: used key");
+    function setBackupKey(
+        Repo storage repo, 
+        address bKey, 
+        address msgSender
+    ) public {
+        require(msgSender != address(0), "UserRepo.SetBackupKey: zero address");
+        require(bKey != address(0), "UserRepo.SetBackupKey: zero address");
+        require (!usedKey(repo, bKey), "UserRepo.SetBackupKey: used key");
 
         uint caller = getUserNo(repo, msgSender);
 
@@ -348,7 +219,14 @@ library UsersRepo {
         Repo storage repo,
         address msgSender
     ) public {
+        require(usedKey(repo, msgSender), 
+            "UR.UBP: not registered");
+        
         User storage user = repo.users[getUserNo(repo, msgSender)];
+
+        require(user.backupKey.pubKey != address(0), 
+            "UR.UBP: zero backup key");
+
         (user.primeKey.pubKey, user.backupKey.pubKey) =
             (user.backupKey.pubKey, user.primeKey.pubKey);
     }
@@ -358,12 +236,8 @@ library UsersRepo {
     // ## Read I/O ##
     // ##############
 
-    // ==== options ====
-
-    function counterOfUsers(Repo storage repo) public view returns (uint40) {
-        return repo.users[0].primeKey.coupon;
-    }
-
+    // ==== Config ====
+     
     function getOwner(Repo storage repo) public view returns (address) {
         return repo.users[0].primeKey.pubKey;
     }
@@ -372,24 +246,70 @@ library UsersRepo {
         return repo.users[0].backupKey.pubKey;
     }
 
-    // ==== register ====
-
-    function isKey(Repo storage repo, address key) public view returns (bool) {
-        return repo.userNo[key] > 0;
-    }
-
-    function getUser(Repo storage repo, address msgSender) 
-        public view returns (User memory)
+    function getPlatformRule(Repo storage repo) public view 
+        returns (Rule memory rule) 
     {
-        return repo.users[getUserNo(repo, msgSender)];
+        User storage opt = repo.users[0];
+
+        rule = Rule({
+            eoaRewards: opt.primeKey.gift,
+            coaRewards: opt.backupKey.gift,
+            floor: opt.backupKey.coupon,
+            rate: opt.primeKey.discount,
+            para: opt.backupKey.discount
+        });
+    }
+    
+    // ==== User & No ====
+
+    function isUserNo(Repo storage repo, uint acct) public view returns (bool) {
+        return repo.usersList.contains(acct);
     }
 
-    function getUserNo(Repo storage repo, address msgSender) 
+    function getUserNo(Repo storage repo, address targetAddr) 
         public view returns(uint40) 
     {
-        uint40 user = uint40(repo.userNo[msgSender]);
+        uint40 user = uint40(repo.userNo[targetAddr]);
 
         if (user > 0) return user;
         else revert ("UR.getUserNo: not registered");
     }
+
+    function counterOfUsers(Repo storage repo) public view returns (uint) {
+        return repo.usersList.length();
+    }
+
+    function getUserNoList(Repo storage repo) public view returns (uint[] memory) { 
+        return repo.usersList.values(); 
+    }
+
+    function getUser(Repo storage repo, address targetAddr) 
+        public view returns (User memory)
+    {
+        return repo.users[getUserNo(repo, targetAddr)];
+    }
+
+    function getRoyaltyRule(Repo storage repo, uint author)
+        public view returns (Key memory) 
+    {
+        require (author > 0, "zero author");
+
+        Key memory rule = repo.users[author].backupKey;
+        delete rule.pubKey;
+
+        return rule;
+    }
+
+    // ==== Key ====
+
+    function usedKey(Repo storage repo, address key) public view returns (bool) {
+        return repo.userNo[key] > 0;
+    }
+
+    function isPrimeKey(Repo storage repo, address key) public view returns (bool) {
+        if (usedKey(repo, key)) {
+            return key == repo.users[repo.userNo[key]].primeKey.pubKey;
+        } else return false;
+    }
+
 }

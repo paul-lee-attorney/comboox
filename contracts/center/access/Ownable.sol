@@ -33,11 +33,33 @@ contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
     Admin public owner;
     address public rc;
 
+    // ==== UUPSUpgradable ====
+
     uint[50] private __gap;
 
     constructor(){
         _disableInitializers();
     }
+
+    function initialize(
+        address owner_,
+        address regCenter_
+    ) external virtual initializer {
+        _init(owner_, regCenter_);
+    }
+
+    function _init(
+        address owner_,
+        address regCenter_
+    ) internal {
+        require(owner.state == 0, "already inited");
+        require(regCenter_ != address(0), "zero regCenter");
+        owner.addr = owner_;
+        owner.state = 1;
+        rc = regCenter_;
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyOwner {}
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
@@ -47,9 +69,9 @@ contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
     // ##  Modifier  ##
     // ################
 
-    modifier onlyOwner {
+    modifier onlyOwner virtual {
         require(
-            _owner.addr == msg.sender,
+            owner.addr == msg.sender,
             "O.onlyOwner: NOT"
         );
         _;
@@ -58,16 +80,6 @@ contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
     // #################
     // ##  Write I/O  ##
     // #################
-
-    function _init(
-        address owner_,
-        address regCenter_
-    ) internal {
-        require(owner.state == 0, "already inited");
-        owner.addr = owner_;
-        owner.state = 1;
-        rc = regCenter_;
-    }
 
     function setNewOwner(address acct) onlyOwner public {
         owner.addr = acct;

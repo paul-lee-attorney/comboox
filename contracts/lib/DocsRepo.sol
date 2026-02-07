@@ -159,18 +159,6 @@ library DocsRepo {
         uint creator
     ) public returns (Doc memory doc)
     {
-        // doc.head.typeOfDoc = uint32(typeOfDoc);
-        // doc.head.version = uint32(version);
-        // doc.head.creator = uint40(creator);
-
-        // require(doc.head.typeOfDoc > 0, "DR.cloneDoc: zero typeOfDoc");
-        // require(doc.head.version > 0, "DR.cloneDoc: zero version");
-        // require(doc.head.creator > 0, "DR.cloneDoc: zero creator");
-
-        // address temp = repo.bodies[uint32(typeOfDoc)][uint32(version)][0].addr;
-        // // require(temp != address(0), "DR.cloneDoc: template not ready");
-        // require(tempExist(repo, temp), "DR.cloneDoc: template not exist");
-
         doc = getTemp(repo, typeOfDoc, version);
         doc.head.creator = uint40(creator);
         require(doc.head.creator > 0, "DR.cloneDoc: zero creator");
@@ -190,22 +178,7 @@ library DocsRepo {
         address rc,
         address dk,
         address gk
-    ) public returns (Doc memory doc)
-    {
-        // doc.head.typeOfDoc = uint32(typeOfDoc);
-        // doc.head.version = uint32(version);
-        // doc.head.creator = uint40(creator);
-
-        // require(doc.head.typeOfDoc > 0, "DR.proxyDoc: zero typeOfDoc");
-        // require(doc.head.version > 0, "DR.proxyDoc: zero version");
-        // require(doc.head.creator > 0, "DR.proxyDoc: zero creator");
-
-        // address temp = repo.bodies[doc.head.typeOfDoc][doc.head.version][0].addr;
-        // require(tempExist(repo, temp), "DR.proxyDoc: template not exist");
-
-
-        // doc.head.author = repo.heads[temp].author;
-
+    ) public returns (Doc memory doc) {
         doc = getTemp(repo, typeOfDoc, version);
         doc.head.creator = uint40(creator);
         require(doc.head.creator > 0, "DR.proxyDoc: zero creator");
@@ -228,7 +201,6 @@ library DocsRepo {
         address temp,
         address proxy
     ) public returns (Doc memory doc) {
-
         require(tempExist(repo, temp),
             "DR.upgradeDoc: temp not exist");
         require(docExist(repo, proxy),
@@ -272,7 +244,14 @@ library DocsRepo {
         Repo storage repo, 
         uint256 typeOfDoc
     ) private returns(uint32) {
-        repo.bodies[typeOfDoc][0][0].seq++;
+
+        unchecked {
+            repo.bodies[typeOfDoc][0][0].seq = 
+                repo.bodies[typeOfDoc][0][0].seq == type(uint32).max
+                    ? 1
+                    : repo.bodies[typeOfDoc][0][0].seq + 1;   
+        }
+
         return uint32(repo.bodies[typeOfDoc][0][0].seq);
     }
 
@@ -281,7 +260,12 @@ library DocsRepo {
         uint256 typeOfDoc, 
         uint256 version
     ) private returns(uint64) {
-        repo.bodies[typeOfDoc][version][0].seq++;
+        unchecked {
+            repo.bodies[typeOfDoc][version][0].seq = 
+                repo.bodies[typeOfDoc][version][0].seq == type(uint64).max
+                    ? 1
+                    : repo.bodies[typeOfDoc][version][0].seq + 1;   
+        }
         return repo.bodies[typeOfDoc][version][0].seq;
     }
 
