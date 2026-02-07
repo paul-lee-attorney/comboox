@@ -20,8 +20,6 @@
 pragma solidity ^0.8.8;
 
 import "../center/IRegCenter.sol";
-import "../center/books/IBookOfDocs.sol";
-import "../center/books/IBookOfUsers.sol";
 
 import "../comps/modules/IGeneralKeeper.sol";
 
@@ -36,7 +34,7 @@ import "../comps/books/loo/IListOfOrders.sol";
 import "../comps/books/roo/IRegisterOfOptions.sol";
 import "../comps/books/rop/IRegisterOfPledges.sol";
 import "../comps/books/roi/IRegisterOfInvestors.sol";
-import "../center/ERC20/IUSDC.sol";
+import "../center/utils/MockUSDC/IUSDC.sol";
 import "../comps/books/cashier/ICashier.sol";
 import "../comps/books/ror/IRegisterOfRedemptions.sol";
 
@@ -100,22 +98,6 @@ library InterfacesHub {
     
     function getRC(address rc) public pure returns(IRegCenter) {
         return IRegCenter(rc);
-    }
-
-    function obtainBOU(address rc) public view returns (IBookOfUsers) {
-        return getBOU(getRC(rc).bou());
-    }
-
-    function obtainBOD(address rc) public view returns (IBookOfDocs) {
-        return getBOD(getRC(rc).bod());
-    }
-
-    function getBOU(address bou) public pure returns (IBookOfUsers) {
-        return IBookOfUsers(bou);
-    }
-
-    function getBOD(address bod) public pure returns (IBookOfDocs) {
-        return IBookOfDocs(bod);
     }
 
     // ==== GeneralKeeper ====
