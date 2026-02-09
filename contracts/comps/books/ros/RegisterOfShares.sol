@@ -29,10 +29,17 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     using SharesRepo for SharesRepo.Share;
     using SharesRepo for SharesRepo.Head;
     using SharesRepo for uint256;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for shares and their classes, amounts, paid and par values, 
+    // distribution weights, and payment deadlines.
     SharesRepo.Repo private _repo;
+    // Repository for lockers of pay-in capital, which are used to secure the 
+    // payment of shares.
     LockersRepo.Repo private _lockers;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //##################
     //##  Write I/O   ##

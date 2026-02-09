@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.4
- *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -30,59 +28,72 @@ contract AccessControl is IAccessControl, Ownable {
 
     enum Books {
         ZeroPoint,
-        ROC,
+        ROC,        //1
         ROD,
         BMM,
         ROM,
-        GMM,
+        GMM,        //5
         ROA,
         ROO,
         ROP,
         ROS,
-        LOO,
+        LOO,        //10
         ROI,
         Bank,
         Blank_1,
         Blank_2,
-        Cashier,
+        Cashier,    //15
         ROR
     }
 
     enum Keepers {
         ZeroPoint,
-        ROCK,
+        ROCK,       //1
         RODK,
         BMMK,
         ROMK,
-        GMMK,
+        GMMK,       //5
         ROAK,
         ROOK,
         ROPK,
         SHAK,
-        LOOK,
-        ROIK,
+        LOOK,       //10
+        ROIK,       
         Accountant,
         Blank_1,
         Blank_2,
-        Blank_3,
+        Blank_3,    //15
         RORK
     }
 
-    // direct keeper
+    /// @notice Direct keeper admin record.
     Admin public dk;
-    // general keeper
+    /// @notice General keeper address.
     address public gk;
 
+    // ==== UUPSUpgradable ====
+
+    /// @dev Storage gap for upgrade safety.
     uint[50] private __gap;
 
-    function initialize(
-        address owner, address regCenter,
-        address directKeeper, address generalKeeper
-    ) external virtual initializer {
-        _init(owner, regCenter);
+    // function initialize(
+    //     address owner, 
+    //     address regCenter,
+    //     address directKeeper, 
+    //     address generalKeeper
+    // ) external virtual initializer {
+    //     _init(owner, regCenter);
+    //     _initKeepers(directKeeper, generalKeeper);
+    // }
+
+    function initKeepers(
+        address directKeeper, 
+        address generalKeeper
+    ) external virtual reinitializer(2) {
         _initKeepers(directKeeper, generalKeeper);
     }
 
+    /// @dev Authorize UUPS upgrades. Caller must be GK or DK.
     function _authorizeUpgrade(address newImplementation) internal virtual override {
         require(
             msg.sender == gk ||
@@ -91,22 +102,23 @@ contract AccessControl is IAccessControl, Ownable {
         );
     }
 
-    function upgradeTo(newImplementation) external virtual override {
-        _authorizeUpgrade(newImplementation);
-        _upgradeToAndCallUUPS(newImplementation, new bytes(0), false);
-        rc.obtainBOD().upgradeDoc(newImplementation);
+    function upgradeDocTo(address newImplementation) external virtual {
+        upgradeTo(newImplementation);
+        rc.getRC().upgradeDoc(newImplementation);
     }
 
     // ################
     // ##  Modifier  ##
     // ################
 
+    /// @notice Restrict to direct keeper.
     modifier onlyDK {
         require(dk.addr == msg.sender,
             "AC.onlyDK: not");
         _;
     }
 
+    /// @notice Restrict to general keeper or direct keeper.
     modifier onlyKeeper virtual {
         require(gk.getGK().isKeeper(msg.sender) || 
             dk.addr == msg.sender, 
@@ -119,6 +131,9 @@ contract AccessControl is IAccessControl, Ownable {
     // #################
 
 
+    /// @notice Initialize keeper addresses (one-time).
+    /// @param directKeeper Direct keeper address.
+    /// @param generalKeeper General keeper address.
     function _initKeepers(address directKeeper,address generalKeeper) internal {
         require(dk.state == 0, 
             "AC.initKeepers: already inited");
@@ -127,11 +142,15 @@ contract AccessControl is IAccessControl, Ownable {
         dk.state = 1;
     }
 
+    /// @notice Update direct keeper address.
+    /// @param acct New direct keeper address.
     function setDirectKeeper(address acct) external onlyDK {
         dk.addr = acct;
         emit SetDirectKeeper(acct);
     }
 
+    /// @notice Reclaim keeper control from a subordinate contract.
+    /// @param target Target contract address.
     function takeBackKeys (address target) external onlyDK {
         IAccessControl(target).setDirectKeeper(msg.sender);
     }

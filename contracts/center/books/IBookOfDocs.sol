@@ -98,16 +98,10 @@ interface IBookOfDocs {
     /// @notice Create and register an EIP-1167 clone from a template.
     /// @param typeOfDoc Document type.
     /// @param version Template version.
-    /// @param owner Owner address for clone-specific initialization (if any).
-    /// @param dk Director keeper address.
-    /// @param gk General keeper address.
     /// @return doc Registered document instance.
     function cloneDoc(
         uint typeOfDoc,
-        uint version,
-        address owner,
-        address dk,
-        address gk
+        uint version
     ) external returns(
         DocsRepo.Doc memory doc
     );
@@ -115,16 +109,10 @@ interface IBookOfDocs {
     /// @notice Create and register an ERC1967 proxy initialized via `initialize`.
     /// @param typeOfDoc Document type.
     /// @param version Template version.
-    /// @param owner Owner address for the proxy initializer.
-    /// @param dk Director keeper address.
-    /// @param gk General keeper address.
     /// @return doc Registered document instance.
     function proxyDoc(
         uint typeOfDoc,
-        uint version,
-        address owner,
-        address dk,
-        address gk
+        uint version
     ) external returns(
         DocsRepo.Doc memory doc
     );

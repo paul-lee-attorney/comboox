@@ -20,13 +20,17 @@
 
 pragma solidity ^0.8.8;
 
+/// @title RolesRepo
+/// @notice Library for role membership and admin management.
 library RolesRepo {
 
+    /// @notice Role with admin and members.
     struct Role {
         address admin;
         mapping(address => bool) isMember;
     }
 
+    /// @notice Repository of roles by id.
     struct Repo {
         mapping(bytes32 => Role) roles;
     }
@@ -35,6 +39,10 @@ library RolesRepo {
     // ##    Modifier  ##
     // ##################
 
+    /// @dev Reverts if caller is not role admin.
+    /// @param repo Storage repo.
+    /// @param role Role id.
+    /// @param caller Caller address.
     modifier onlyAdmin(
         Repo storage repo, 
         bytes32 role, 
@@ -49,6 +57,10 @@ library RolesRepo {
     // ##    Write    ##
     // #################
 
+    /// @notice Set role admin and add as member.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Admin address (non-zero).
     function setRoleAdmin(
         Repo storage repo,
         bytes32 role,
@@ -58,6 +70,10 @@ library RolesRepo {
         repo.roles[role].isMember[acct] = true;
     }
 
+    /// @notice Remove role admin and its membership.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param caller Current admin address.
     function quitRoleAdmin(
         Repo storage repo,
         bytes32 role,
@@ -67,6 +83,11 @@ library RolesRepo {
         delete repo.roles[role].isMember[caller];
     }
     
+    /// @notice Grant a role to an account.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Account address (non-zero).
+    /// @param caller Admin address.
     function grantRole(
         Repo storage repo,
         bytes32 role,
@@ -76,6 +97,11 @@ library RolesRepo {
         repo.roles[role].isMember[acct] = true;
     }
 
+    /// @notice Revoke a role from an account.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Account address (non-zero).
+    /// @param caller Admin address.
     function revokeRole(
         Repo storage repo,
         bytes32 role,
@@ -85,6 +111,10 @@ library RolesRepo {
         delete repo.roles[role].isMember[acct];
     }
 
+    /// @notice Renounce a role held by caller.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param caller Caller address.
     function renounceRole(
         Repo storage repo,
         bytes32 role,
@@ -93,6 +123,9 @@ library RolesRepo {
         delete repo.roles[role].isMember[caller];
     }
 
+    /// @notice Abandon a role and all members.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
     function abandonRole(
         Repo storage repo,
         bytes32 role
@@ -104,12 +137,19 @@ library RolesRepo {
     // ##   Read    ##
     // ###############
 
+    /// @notice Get role admin address.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
     function getRoleAdmin(Repo storage repo, bytes32 role)
         public view returns (address)
     {
         return repo.roles[role].admin;
     }
 
+    /// @notice Check whether an account has a role.
+    /// @param repo Storage repo.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Account address (non-zero).
     function hasRole(
         Repo storage repo,
         bytes32 role,

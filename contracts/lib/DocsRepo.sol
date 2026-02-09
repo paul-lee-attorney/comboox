@@ -76,6 +76,16 @@ library DocsRepo {
         EnumerableSet.UintSet typesList;
     }
 
+    modifier proxyable(uint typeOfDoc) {
+        uint32 typeOfDoc32 = uint32(typeOfDoc);
+        require(
+            (typeOfDoc32 & 0xFFFF0000 != 0x020e0000) && // not regCenter
+            (typeOfDoc32 & 0xFFFF0000 != 0x060e0000), // not regCenter utils
+            "DR.proxyable: NOT"
+        );
+        _;
+    }
+
     //##################
     //##  Write I/O   ##
     //##################
@@ -211,7 +221,7 @@ library DocsRepo {
         uint typeOfDoc,
         uint version,
         uint creator
-    ) public returns (Doc memory doc)
+    ) public proxyable(typeOfDoc) returns (Doc memory doc)
     {
         doc = getTemp(repo, typeOfDoc, version);
         doc.head.creator = uint40(creator);
@@ -228,32 +238,22 @@ library DocsRepo {
     /// @param typeOfDoc Document type.
     /// @param version Template version.
     /// @param creator Creator userNo (must be > 0).
-    /// @param owner Owner address for the proxy initializer.
-    /// @param rc Registry center address for the proxy initializer.
-    /// @param dk Director keeper address for the proxy initializer.
-    /// @param gk General keeper address for the proxy initializer.
     /// @return doc Registered document instance.
     function proxyDoc(
         Repo storage repo, 
         uint typeOfDoc,
         uint version,
-        uint creator,
-        address owner,
-        address rc,
-        address dk,
-        address gk
-    ) public returns (Doc memory doc) {
+        uint creator
+    ) public proxyable(typeOfDoc) returns (Doc memory doc) {
         doc = getTemp(repo, typeOfDoc, version);
         doc.head.creator = uint40(creator);
         require(doc.head.creator > 0, "DR.proxyDoc: zero creator");
         
         bytes memory data = abi.encodeWithSignature(
-            "initialize(address,address,address,address)",
-            owner,
-            rc,
-            dk,
-            gk
-        );
+                    "initialize(address,address)",
+                    msg.sender,
+                    address(this)
+                );
 
         doc.body = address(new ERC1967Proxy(doc.body, data));
 

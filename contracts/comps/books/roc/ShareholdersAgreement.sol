@@ -23,17 +23,23 @@ pragma solidity ^0.8.8;
 
 import "./IShareholdersAgreement.sol";
 import "../../common/components/SigPage.sol";
+import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
+import "../../../lib/InterfacesHub.sol";
 
 contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
-    using EnumerableSet for EnumerableSet.UintSet;    
+    using EnumerableSet for EnumerableSet.UintSet;
+    using InterfacesHub for address;
 
+    /// @notice Mapping of term document types to term addresses.
     TermsRepo private _terms;
+    /// @notice Repository of voting and governance rules.
     RulesRepo private _rules;
 
     //####################
     //##    modifier    ##
     //####################
 
+    /// @dev Reverts if the term title does not exist.
     modifier titleExist(uint256 title) {
         require(
             hasTitle(title),
@@ -46,32 +52,36 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     //##  Write I/O   ##
     //##################
 
-    function createTerm(uint title, uint version)
+    function createTerm(uint typeOfDoc, uint version)
         external
         onlyGC
     {
         address gc = msg.sender;
 
-        uint typeOfDoc = title > 3 ? 21 + title : 22 + title;
+        // uint typeOfDoc = title > 3 ? 21 + title : 22 + title;
 
-        bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(version << 192));
+        // bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(version << 192));
 
-        DocsRepo.Doc memory doc = rc.createDoc(snOfDoc, address(this));
-
-        IAccessControl(doc.body).initKeepers(
-            address(this),
-            address(gk)
+        DocsRepo.Doc memory doc = rc.getRC().cloneDoc(
+            typeOfDoc,
+            version,
+            address(this), // owner
+            address(this), // dk
+            gk
         );
 
-        IDraftControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);
+        IDraftControl(doc.body).setRoleAdmin(
+            keccak256(bytes("Attorneys")), 
+            gc
+        );
 
-        _terms.terms[title] = doc.body;
-        _terms.seqList.add(title);
+        _terms.terms[typeOfDoc] = doc.body;
+        _terms.seqList.add(typeOfDoc);
     }
 
-    function removeTerm(uint title) external onlyAttorney {
-        if (_terms.seqList.remove(title)) {
-            delete _terms.terms[title];
+    function removeTerm(uint typeOfDoc) external onlyAttorney {
+        if (_terms.seqList.remove(typeOfDoc)) {
+            delete _terms.terms[typeOfDoc];
         }
     }
 
@@ -81,6 +91,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         _addRule(seqOfRule, rule);
     }
 
+    /// @dev Insert or overwrite a rule and track its sequence number.
     function _addRule(uint seqOfRule, bytes32 rule) private {
         // uint seqOfRule = uint16(uint(rule) >> 240);
 
@@ -152,8 +163,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     // ==== Terms ====
 
-    function hasTitle(uint256 title) public view returns (bool) {
-        return _terms.seqList.contains(title);
+    function hasTitle(uint256 typeOfDoc) public view returns (bool) {
+        return _terms.seqList.contains(typeOfDoc);
     }
 
     function qtyOfTerms() external view returns (uint256) {
@@ -164,8 +175,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         return _terms.seqList.values();
     }
 
-    function getTerm(uint256 title) external view titleExist(title) returns (address) {
-        return _terms.terms[title];
+    function getTerm(uint256 typeOfDoc) external view titleExist(typeOfDoc) returns (address) {
+        return _terms.terms[typeOfDoc];
     }
 
     // ==== Rules ====

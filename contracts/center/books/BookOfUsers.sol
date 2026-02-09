@@ -33,10 +33,9 @@ contract BookOfUsers is IBookOfUsers, Ownable {
     uint[50] private __gap;
 
     function initialize(
-        address regCenter_,
         address keeper
-    ) external virtual override initializer {
-        _init(msg.sender, regCenter_);
+    ) external initializer {
+        _init(msg.sender, address(this));
         _initUsers(keeper);
     }
 
@@ -48,7 +47,7 @@ contract BookOfUsers is IBookOfUsers, Ownable {
         _users.regUser(keeper);
     }
 
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyKeeper {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyKeeper {}
 
     // #####################
     // ##    Modifiers    ##

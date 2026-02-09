@@ -22,18 +22,27 @@ pragma solidity ^0.8.8;
 import "../../lib/PledgesRepo.sol";
 import "../../lib/DealsRepo.sol";
 import "../../lib/InvestorsRepo.sol";
-import "../../lib/BooksRepo.sol";
+import "../../lib/InterfacesHub.sol";
 
 import "../books/rop/IRegisterOfPledges.sol";
 import "../books/ros/IRegisterOfShares.sol";
 import "../books/rom/IRegisterOfMembers.sol";
 
+/// @title IROPKeeper
+/// @notice Interface for pledge operations via keeper.
 interface IROPKeeper {
 
     // ###################
     // ##   ROPKeeper   ##
     // ###################
 
+    /// @notice Create a pledge.
+    /// @param snOfPld Pledge serial number.
+    /// @param paid Paid amount pledged.
+    /// @param par Par amount pledged.
+    /// @param guaranteedAmt Guaranteed amount.
+    /// @param execDays Execution days after default.
+    /// @param msgSender Caller address.
     function createPledge(
         bytes32 snOfPld,
         uint paid,
@@ -43,6 +52,12 @@ interface IROPKeeper {
         address msgSender
     ) external;
 
+    /// @notice Transfer a pledge.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param buyer New creditor user number.
+    /// @param amt Transfer amount.
+    /// @param msgSender Caller address.
     function transferPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
@@ -51,6 +66,11 @@ interface IROPKeeper {
         address msgSender        
     ) external;
 
+    /// @notice Refund debt against a pledge.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param amt Refunded amount.
+    /// @param msgSender Caller address.
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
@@ -58,6 +78,11 @@ interface IROPKeeper {
         address msgSender
     ) external;
 
+    /// @notice Extend pledge execution days.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param extDays Extension days.
+    /// @param msgSender Caller address.
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
@@ -65,6 +90,11 @@ interface IROPKeeper {
         address msgSender
     ) external;
 
+    /// @notice Lock a pledge with hash lock.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param hashLock Hash lock.
+    /// @param msgSender Caller address.
     function lockPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
@@ -72,12 +102,22 @@ interface IROPKeeper {
         address msgSender
     ) external;
 
+    /// @notice Release a pledge with hash key.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param hashKey Hash key.
     function releasePledge(
         uint256 seqOfShare, 
         uint256 seqOfPld, 
         string memory hashKey
     ) external;
 
+    /// @notice Execute a pledge.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param buyer Buyer user number.
+    /// @param groupOfBuyer Buyer group number.
+    /// @param msgSender Caller address.
     function execPledge(
         uint seqOfShare,
         uint256 seqOfPld,
@@ -86,6 +126,10 @@ interface IROPKeeper {
         address msgSender
     ) external;
 
+    /// @notice Revoke a pledge.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param msgSender Caller address.
     function revokePledge(
         uint256 seqOfShare, 
         uint256 seqOfPld,

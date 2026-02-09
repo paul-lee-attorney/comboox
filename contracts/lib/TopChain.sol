@@ -24,8 +24,11 @@ import "../comps/books/ros/IRegisterOfShares.sol";
 
 import "./DealsRepo.sol";
 
+/// @title TopChain
+/// @notice Voting power chain for members and groups.
 library TopChain {
 
+    /// @notice Node categories in chain.
     enum CatOfNode {
         IndepMemberInQueue, // 0
         GroupRepInQueue,    // 1
@@ -34,6 +37,7 @@ library TopChain {
         GroupRepOnChain     // 4
     }
 
+    /// @notice Chain node for a member or group.
     struct Node {
         uint40 prev;
         uint40 next;
@@ -43,6 +47,7 @@ library TopChain {
         uint8 cat;
     }
 
+    /// @notice Chain parameters and counters.
     struct Para {
         uint40 tail;
         uint40 head;
@@ -55,6 +60,7 @@ library TopChain {
         uint16 argu;
     }
 
+    /// @notice Chain storage by user number.
     struct Chain {
         // usrNo => Node
         mapping(uint256 => Node) nodes;
@@ -74,6 +80,7 @@ library TopChain {
     //##   Modifier  ##
     //#################
 
+    /// @notice Ensure member exists in chain.
     modifier memberExist(Chain storage chain, uint256 acct) {
         require(isMember(chain, acct), "TC.memberExist: acct not member");
         _;
@@ -85,15 +92,24 @@ library TopChain {
     
     // ==== Options ====
 
+    /// @notice Set max member count.
+    /// @param chain Storage chain.
+    /// @param max Max member count.
     function setMaxQtyOfMembers(Chain storage chain, uint max) public {
         chain.para.maxQtyOfMembers = uint32(max);
     }
 
+    /// @notice Set minimum vote ratio required on chain.
+    /// @param chain Storage chain.
+    /// @param min Minimum ratio (0-4999).
     function setMinVoteRatioOnChain(Chain storage chain, uint min) public {
         require(min < 5000, "minVoteRatioOnChain: overflow");
         chain.para.minVoteRatioOnChain = uint16(min);
     }
 
+    /// @notice Set vote base to par or paid.
+    /// @param chain Storage chain.
+    /// @param _basedOnPar True for par, false for paid.
     function setVoteBase(
         Chain storage chain, 
         bool _basedOnPar
@@ -103,6 +119,9 @@ library TopChain {
 
     // ==== Node ====
 
+    /// @notice Add a member node to chain.
+    /// @param chain Storage chain.
+    /// @param acct Member user number.
     function addNode(Chain storage chain, uint acct) public {
 
         require(acct > 0, "TC.addNode: zero acct");
@@ -122,6 +141,9 @@ library TopChain {
         }
     }
 
+    /// @notice Delete a member node from chain.
+    /// @param chain Storage chain.
+    /// @param acct Member user number.
     function delNode(Chain storage chain, uint acct) public {
         _carveOut(chain, acct);
         delete chain.nodes[acct];
@@ -130,6 +152,10 @@ library TopChain {
 
     // ==== ChangeAmt ====
 
+    /// @notice Update total votes.
+    /// @param chain Storage chain.
+    /// @param deltaAmt Delta amount.
+    /// @param isIncrease True to increase, false to decrease.
     function increaseTotalVotes(
         Chain storage chain,
         uint deltaAmt, 
@@ -140,6 +166,11 @@ library TopChain {
         else _decreaseTotalVotes(chain, amt);
     }
 
+    /// @notice Update member amount and re-balance chain.
+    /// @param chain Storage chain.
+    /// @param acct Member user number.
+    /// @param deltaAmt Delta amount.
+    /// @param isIncrease True to increase, false to decrease.
     function increaseAmt(
         Chain storage chain, 
         uint256 acct, 
@@ -201,6 +232,10 @@ library TopChain {
 
     // ==== Grouping ====
 
+    /// @notice Move an independent member under a group root.
+    /// @param chain Storage chain.
+    /// @param acct Member user number.
+    /// @param root Group root user number.
     function top2Sub(
         Chain storage chain,
         uint256 acct,
@@ -218,6 +253,9 @@ library TopChain {
         _vInsert(chain, n.ptr, uint40(root));
     }
 
+    /// @notice Promote group member to independent member.
+    /// @param chain Storage chain.
+    /// @param acct Member user number.
     function sub2Top(Chain storage chain, uint256 acct) public {
 
         Node storage n = chain.nodes[acct];
@@ -596,6 +634,9 @@ library TopChain {
     //##    Read    ##
     //################
 
+    /// @notice Check whether a user is a member.
+    /// @param chain Storage chain.
+    /// @param acct User number.
     function isMember(Chain storage chain, uint256 acct)
         public
         view
@@ -606,24 +647,34 @@ library TopChain {
 
     // ==== Zero Node ====
 
+    /// @notice Get tail node id of chain.
+    /// @param chain Storage chain.
     function tail(Chain storage chain) public view returns (uint40) {
         return chain.nodes[0].prev;
     }
 
+    /// @notice Get head node id of chain.
+    /// @param chain Storage chain.
     function head(Chain storage chain) public view returns (uint40) {
         return chain.nodes[0].next;
     }
 
+    /// @notice Get total votes sum.
+    /// @param chain Storage chain.
     function totalVotes(Chain storage chain) public view returns (uint64) {
         return chain.nodes[0].sum;
     }
 
+    /// @notice Check if votes are based on par.
+    /// @param chain Storage chain.
     function basedOnPar(Chain storage chain) public view returns (bool) {
         return chain.nodes[0].cat == 1;
     }
 
     // ---- Para ----
 
+    /// @notice Get head of off-chain queue.
+    /// @param chain Storage chain.
     function headOfQueue(Chain storage chain)
         public
         view
@@ -632,6 +683,8 @@ library TopChain {
         return  chain.para.head;
     }
 
+    /// @notice Get tail of off-chain queue.
+    /// @param chain Storage chain.
     function tailOfQueue(Chain storage chain)
         public
         view
@@ -640,6 +693,8 @@ library TopChain {
         return  chain.para.tail;
     }
 
+    /// @notice Get max member limit.
+    /// @param chain Storage chain.
     function maxQtyOfMembers(Chain storage chain)
         public
         view
@@ -648,6 +703,8 @@ library TopChain {
         return chain.para.maxQtyOfMembers; 
     }
 
+    /// @notice Get minimum vote ratio required on chain.
+    /// @param chain Storage chain.
     function minVoteRatioOnChain(Chain storage chain)
         public
         view
@@ -657,14 +714,20 @@ library TopChain {
         return min > 0 ? min : 500; 
     }
 
+    /// @notice Get number of branch groups.
+    /// @param chain Storage chain.
     function qtyOfBranches(Chain storage chain) public view returns (uint32) {
         return chain.para.qtyOfBranches;
     }
 
+    /// @notice Get number of groups (branches + sticks).
+    /// @param chain Storage chain.
     function qtyOfGroups(Chain storage chain) public view returns (uint32) {
         return chain.para.qtyOfBranches + chain.para.qtyOfSticks;
     }
 
+    /// @notice Get count of top-level members.
+    /// @param chain Storage chain.
     function qtyOfTopMembers(Chain storage chain) 
         public view 
         returns(uint qty) 
@@ -677,12 +740,20 @@ library TopChain {
         }
     }
 
+    /// @notice Get total member count.
+    /// @param chain Storage chain.
     function qtyOfMembers(Chain storage chain) public view returns (uint32) {
         return chain.para.qtyOfMembers;
     }
 
     // ==== locate position ====
 
+    /// @notice Find insertion position for amount.
+    /// @param chain Storage chain.
+    /// @param amount Target amount.
+    /// @param prev Previous node id.
+    /// @param next Next node id.
+    /// @param increase True when amount increased.
     function getPos(
         Chain storage chain,
         uint256 amount,
@@ -704,6 +775,9 @@ library TopChain {
         return (prev, next);
     }
 
+    /// @notice Get next node id in traversal order.
+    /// @param chain Storage chain.
+    /// @param acct Member user number.
     function nextNode(Chain storage chain, uint256 acct)
         public view returns (uint256 next)
     {

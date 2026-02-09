@@ -20,9 +20,19 @@
 pragma solidity ^0.8.8;
 
 import "../../common/components/ISigPage.sol";
-import "../../../lib/EnumerableSet.sol";
+import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
 import "../../../lib/DocsRepo.sol";
 
+/// @notice Design notes:
+/// - The implementation is created via BookOfDocs/DocsRepo `cloneDoc()` and is not upgradeable.
+/// - `typeOfDoc` and `version` are validated in RegCenter/BookOfDocs/DocsRepo `cloneDoc()`.
+/// - Overwrites during drafting are allowed by design; before finalization, contents are mutable.
+/// - Finalization calls `lockContents()` (onlyOwner) and revokes the Attorneys role and Owner, so no further edits are possible.
+/// - Drafting changes do not require on-chain state tracking; only finalized Terms/Rules are used by other registers.
+/// - `finalizeSHA()` is intended to be triggered by the Owner after validation, then submitted to shareholder approval;
+///   once effective, Terms/Rules serve as the ledger source for other contracts.
+/// @title IShareholdersAgreement
+/// @notice Interface for terms/rules registry in the Shareholders Agreement.
 interface IShareholdersAgreement is ISigPage {
 
     enum TitleOfTerm {
@@ -77,7 +87,7 @@ interface IShareholdersAgreement is ISigPage {
 */
 
     struct TermsRepo {
-        // title => body
+        // typeOfDoc => body
         mapping(uint256 => address) terms;
         EnumerableSet.UintSet seqList;
     }
@@ -97,12 +107,17 @@ interface IShareholdersAgreement is ISigPage {
      * and its version number (`version`).
      * Note `typeOfDoc` and `version` shall be bigger than zero.
      */
+    /// @notice Create a term clone by type and version.
+    /// @param typeOfDoc Term type identifier (> 0).
+    /// @param version Template version (> 0).
     function createTerm(uint typeOfDoc, uint version) external;
 
     /**
      * @dev Remove tracking of a clone contract from mapping as per its template 
      * type number (`typeOfDoc`). 
      */
+    /// @notice Remove a term by type.
+    /// @param typeOfDoc Term type identifier.
     function removeTerm(uint typeOfDoc) external;
 
     /**
@@ -111,17 +126,23 @@ interface IShareholdersAgreement is ISigPage {
      * RuleParser library, and such `seqNumber` shall be used as the search key to 
      * retrieve the rule from the Rules Mapping.
      */
+    /// @notice Add a rule by sequence.
+    /// @param seqOfRule Rule sequence.
+    /// @param rule Packed rule bytes32.
     function addRule(uint seqOfRule, bytes32 rule) external;
 
     /**
      * @dev Remove tracking of a rule from the Rules Mapping as per its sequence 
      * number (`seq`). 
      */
+    /// @notice Remove a rule by sequence.
+    /// @param seq Rule sequence.
     function removeRule(uint256 seq) external;
 
     /**
      * @dev Initiate the Shareholders Agreement with predefined default rules. 
      */
+    /// @notice Initialize default rules.
     function initDefaultRules() external;
 
     /**
@@ -129,6 +150,7 @@ interface IShareholdersAgreement is ISigPage {
      * so as to fix the contents of the Shareholders Agreement avoiding any further 
      * revision by any EOA. 
      */
+    /// @notice Finalize SHA and lock contents.
     function finalizeSHA() external;
 
     //################
@@ -138,28 +160,38 @@ interface IShareholdersAgreement is ISigPage {
     // ==== Terms ====
  
     /**
-     * @dev Returns whether a specific Term numbered as `title` exist  
+     * @dev Returns whether a specific Term numbered as `typeOfDoc` exist  
      * in the current Shareholders Agreemnt.
      */
-    function hasTitle(uint256 title) external view returns (bool);
+    /// @notice Check if a term exists.
+    /// @param typeOfDoc Term type identifier.
+    /// @return True if exists.
+    function hasTitle(uint256 typeOfDoc) external view returns (bool);
 
     /**
      * @dev Returns total quantities of Terms in the current 
      * Shareholders Agreemnt.
      */
+    /// @notice Get number of terms.
+    /// @return Term count.
     function qtyOfTerms() external view returns (uint256);
 
     /**
      * @dev Returns total quantities of Terms stiputed in the current 
      * Shareholders Agreemnt.
      */
+    /// @notice Get term type list.
+    /// @return Term type ids.
     function getTitles() external view returns (uint256[] memory);
 
     /**
      * @dev Returns the contract address of the specific Term  
-     * numbered as `title` from the Terms Mapping of the Shareholders Agreemnt.
+     * numbered as `typeOfDoc` from the Terms Mapping of the Shareholders Agreemnt.
      */
-    function getTerm(uint256 title) external view returns (address);
+    /// @notice Get term contract address.
+    /// @param typeOfDoc Term type identifier.
+    /// @return Term contract address.
+    function getTerm(uint256 typeOfDoc) external view returns (address);
 
     // ==== Rules ====
 
@@ -167,23 +199,33 @@ interface IShareholdersAgreement is ISigPage {
      * @dev Returns whether a specific Rule numbered as `seq` exist  
      * in the current Shareholders Agreemnt.
      */    
+    /// @notice Check if a rule exists.
+    /// @param seq Rule sequence.
+    /// @return True if exists.
     function hasRule(uint256 seq) external view returns (bool);
 
     /**
      * @dev Returns total quantities of Rules in the current 
      * Shareholders Agreemnt.
      */
+    /// @notice Get number of rules.
+    /// @return Rule count.
     function qtyOfRules() external view returns (uint256);
 
     /**
      * @dev Returns total quantities of Rules stiputed in the current 
      * Shareholders Agreemnt.
      */
+    /// @notice Get rule sequence list.
+    /// @return Rule ids.
     function getRules() external view returns (uint256[] memory);
 
     /**
      * @dev Returns the specific Rule numbered as `seq` from the Rules Mapping
      * of the Shareholders Agreemnt.
      */
+    /// @notice Get a rule by sequence.
+    /// @param seq Rule sequence.
+    /// @return Packed rule bytes32.
     function getRule(uint256 seq) external view returns (bytes32);
 }

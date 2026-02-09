@@ -24,7 +24,7 @@ import "../common/access/RoyaltyCharge.sol";
 import "./IRODKeeper.sol";
 
 contract RODKeeper is IRODKeeper, RoyaltyCharge {    
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     //###############
     //##   Write   ##

@@ -3,7 +3,7 @@
 /* *
  * v0.2.5
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -22,19 +22,16 @@
 pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
+import "../../lib/InterfacesHub.sol";
 
 import "./ISHAKs.sol";
 
 abstract contract SHAKs is ISHAKs, AccessControl{
-    // using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // ###################
     // ##   SHAKeeper   ##
     // ###################
-
-    function _getSHAKeeper() private view returns(ISHAKeeper) {
-        return ISHAKeeper(gk.getKeeper(9));
-    }
 
     // ======= TagAlong ========
 
@@ -46,7 +43,7 @@ abstract contract SHAKs is ISHAKs, AccessControl{
         uint par,
         bytes32 sigHash
     ) external{
-        _getSHAKeeper().execAlongRight(
+        gk.getSHAKeeper().execAlongRight(
                 ia,
                 seqOfDeal,
                 false,
@@ -68,7 +65,7 @@ abstract contract SHAKs is ISHAKs, AccessControl{
         uint par,
         bytes32 sigHash
     ) external{
-        _getSHAKeeper().execAlongRight(
+        gk.getSHAKeeper().execAlongRight(
                 ia,
                 seqOfDeal,
                 true,
@@ -85,7 +82,7 @@ abstract contract SHAKs is ISHAKs, AccessControl{
         uint256 seqOfDeal,
         bytes32 sigHash
     ) external{
-        _getSHAKeeper().acceptAlongDeal(ia, seqOfDeal, msg.sender, sigHash);
+        gk.getSHAKeeper().acceptAlongDeal(ia, seqOfDeal, msg.sender, sigHash);
     }
 
     // ======== AntiDilution ========
@@ -96,11 +93,11 @@ abstract contract SHAKs is ISHAKs, AccessControl{
         uint256 seqOfShare,
         bytes32 sigHash
     ) external{
-        _getSHAKeeper().execAntiDilution(ia, seqOfDeal, seqOfShare, msg.sender, sigHash);
+        gk.getSHAKeeper().execAntiDilution(ia, seqOfDeal, seqOfShare, msg.sender, sigHash);
     }
 
     function takeGiftShares(address ia, uint256 seqOfDeal) external{
-        _getSHAKeeper().takeGiftShares(ia, seqOfDeal, msg.sender);
+        gk.getSHAKeeper().takeGiftShares(ia, seqOfDeal, msg.sender);
     }
 
     // ======== First Refusal ========
@@ -112,14 +109,14 @@ abstract contract SHAKs is ISHAKs, AccessControl{
         uint256 seqOfDeal,
         bytes32 sigHash
     ) external{
-        _getSHAKeeper().execFirstRefusal(seqOfRule, seqOfRightholder, ia, seqOfDeal, msg.sender, sigHash);
+        gk.getSHAKeeper().execFirstRefusal(seqOfRule, seqOfRightholder, ia, seqOfDeal, msg.sender, sigHash);
     }
 
     function computeFirstRefusal(
         address ia,
         uint256 seqOfDeal
     ) external{
-        _getSHAKeeper().computeFirstRefusal(
+        gk.getSHAKeeper().computeFirstRefusal(
                 ia,
                 seqOfDeal,
                 msg.sender

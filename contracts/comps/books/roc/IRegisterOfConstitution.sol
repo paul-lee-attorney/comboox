@@ -21,23 +21,31 @@ pragma solidity ^0.8.8;
 
 import "../../common/components/IFilesFolder.sol";
 
+/// @title IRegisterOfConstitution
+/// @notice Interface for managing the constitution document register.
 interface IRegisterOfConstitution is IFilesFolder{
 
     //##############
     //##  Event   ##
     //##############
 
+    /// @notice Emitted when the active pointer is updated.
+    /// @param pointer New pointer address.
     event ChangePointer(address indexed pointer);
 
     //#############
     //##  Write  ##
     //#############
 
+    /// @notice Update the active pointer to a registered document.
+    /// @param body Document contract address.
     function changePointer(address body) external;
 
     //################
     //##    Read    ##
     //################
 
+    /// @notice Get the current pointer address.
+    /// @return Current document pointer address.
     function pointer() external view returns (address);
 }

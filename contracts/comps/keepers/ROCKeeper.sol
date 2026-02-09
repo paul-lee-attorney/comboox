@@ -26,7 +26,7 @@ import "./IROCKeeper.sol";
 contract ROCKeeper is IROCKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
     
     // #############
     // ##   SHA   ##

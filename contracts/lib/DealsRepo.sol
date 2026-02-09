@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "./MotionsRepo.sol";
 import "./SwapsRepo.sol";
 import "./SharesRepo.sol";
@@ -28,6 +28,8 @@ import "../comps/common/components/IMeetingMinutes.sol";
 import "../comps/books/ros/IRegisterOfShares.sol";
 
 
+/// @title DealsRepo
+/// @notice Repository for investment agreements and deal lifecycle.
 library DealsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
     using SwapsRepo for SwapsRepo.Repo;
@@ -38,6 +40,7 @@ library DealsRepo {
     //     typeOfDeal: typeOfIA;
     // }    
 
+    /// @notice Deal types.
     enum TypeOfDeal {
         ZeroPoint,
         CapitalIncrease,
@@ -50,6 +53,7 @@ library DealsRepo {
         FreeGift
     }
 
+    /// @notice Composite IA type based on deal mix.
     enum TypeOfIA {
         ZeroPoint,
         CapitalIncrease,
@@ -61,6 +65,7 @@ library DealsRepo {
         CI_SText
     }
 
+    /// @notice Deal lifecycle state.
     enum StateOfDeal {
         Drafting,
         Locked,
@@ -69,6 +74,7 @@ library DealsRepo {
         Terminated
     }
 
+    /// @notice Deal head fields.
     struct Head {
         uint8 typeOfDeal;
         uint16 seqOfDeal;
@@ -82,6 +88,7 @@ library DealsRepo {
         uint16 votingWeight;
     }
 
+    /// @notice Deal body fields.
     struct Body {
         uint40 buyer;
         uint40 groupOfBuyer;
@@ -93,12 +100,14 @@ library DealsRepo {
         bool flag;
     }
 
+    /// @notice Full deal record.
     struct Deal {
         Head head;
         Body body;
         bytes32 hashLock;
     }
 
+    /// @notice Repository of deals and swaps.
     struct Repo {
         mapping(uint256 => Deal) deals;
         mapping(uint256 => SwapsRepo.Repo) swaps;
@@ -111,6 +120,9 @@ library DealsRepo {
     //##   Modifier   ##
     //##################
 
+    /// @notice Ensure deal is cleared.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     modifier onlyCleared(Repo storage repo, uint256 seqOfDeal) {
         require(
             repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Cleared),
@@ -119,6 +131,9 @@ library DealsRepo {
         _;
     }
 
+    /// @notice Ensure deal exists.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     modifier dealExist(Repo storage repo, uint seqOfDeal) {
         require(isDeal(repo, seqOfDeal), "DR.mf.dealExist: not");
         _;
@@ -128,6 +143,8 @@ library DealsRepo {
     //##  Write I/O  ##
     //#################
 
+    /// @notice Parse deal head from bytes32.
+    /// @param sn Packed head bytes32.
     function snParser(bytes32 sn) public pure returns(Head memory head) {
         uint _sn = uint(sn);
 
@@ -146,6 +163,8 @@ library DealsRepo {
 
     } 
 
+    /// @notice Pack deal head into bytes32.
+    /// @param head Deal head.
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             head.typeOfDeal,
@@ -163,6 +182,14 @@ library DealsRepo {
         }
     }
 
+    /// @notice Add a deal from packed head.
+    /// @param repo Storage repo.
+    /// @param sn Packed head bytes32.
+    /// @param buyer Buyer user number.
+    /// @param groupOfBuyer Buyer group number.
+    /// @param paid Paid amount.
+    /// @param par Par amount.
+    /// @param distrWeight Distribution weight.
     function addDeal(
         Repo storage repo,
         bytes32 sn,
@@ -186,6 +213,9 @@ library DealsRepo {
         seqOfDeal = regDeal(repo, deal);
     }
 
+    /// @notice Register a deal in storage.
+    /// @param repo Storage repo.
+    /// @param deal Deal record.
     function regDeal(Repo storage repo, Deal memory deal) 
         public returns(uint16 seqOfDeal) 
     {
@@ -208,6 +238,9 @@ library DealsRepo {
         seqOfDeal = repo.deals[0].head.preSeq;
     }
 
+    /// @notice Delete a deal by sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function delDeal(Repo storage repo, uint256 seqOfDeal) public returns (bool flag) {
         if (repo.seqList.remove(seqOfDeal)) {
             delete repo.deals[seqOfDeal];
@@ -216,6 +249,9 @@ library DealsRepo {
         }
     }
 
+    /// @notice Lock a deal subject.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function lockDealSubject(Repo storage repo, uint256 seqOfDeal) public returns (bool flag) {
         if (repo.deals[seqOfDeal].body.state == uint8(StateOfDeal.Drafting)) {
             repo.deals[seqOfDeal].body.state = uint8(StateOfDeal.Locked);
@@ -223,6 +259,9 @@ library DealsRepo {
         }
     }
 
+    /// @notice Release a deal subject back to drafting.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function releaseDealSubject(Repo storage repo, uint256 seqOfDeal) public returns (bool flag)
     {
         uint8 state = repo.deals[seqOfDeal].body.state;
@@ -238,6 +277,11 @@ library DealsRepo {
         }
     }
 
+    /// @notice Clear a deal with hash lock and deadline.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param hashLock Hash lock key.
+    /// @param closingDeadline Closing deadline timestamp.
     function clearDealCP(
         Repo storage repo,
         uint256 seqOfDeal,
@@ -259,6 +303,10 @@ library DealsRepo {
         }
     }
 
+    /// @notice Close a deal using hash preimage.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param hashKey Preimage string.
     function closeDeal(Repo storage repo, uint256 seqOfDeal, string memory hashKey)
         public onlyCleared(repo, seqOfDeal) returns (bool flag)
     {
@@ -270,6 +318,9 @@ library DealsRepo {
         return _closeDeal(repo, seqOfDeal);
     }
 
+    /// @notice Close a locked deal directly.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function directCloseDeal(Repo storage repo, uint seqOfDeal) 
         public returns (bool flag) 
     {
@@ -297,6 +348,9 @@ library DealsRepo {
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
+    /// @notice Terminate a locked/cleared deal.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function terminateDeal(Repo storage repo, uint256 seqOfDeal) public returns(bool flag){
         Body storage body = repo.deals[seqOfDeal].body;
 
@@ -310,6 +364,9 @@ library DealsRepo {
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
+    /// @notice Accept a free gift deal.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function takeGift(Repo storage repo, uint256 seqOfDeal)
         public returns (bool flag)
     {
@@ -337,6 +394,8 @@ library DealsRepo {
         repo.deals[0].head.seqOfDeal++;
     }
 
+    /// @notice Calculate composite IA type.
+    /// @param repo Storage repo.
     function calTypeOfIA(Repo storage repo) public {
         uint[3] memory types;
 
@@ -369,6 +428,15 @@ library DealsRepo {
 
     // ==== Swap ====
 
+    /// @notice Create a swap for a terminated deal.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfDeal Deal sequence.
+    /// @param paidOfTarget Paid target amount.
+    /// @param seqOfPledge Pledge share sequence.
+    /// @param caller Caller user number.
+    /// @param _ros Register of shares.
+    /// @param _gmm Meeting minutes.
     function createSwap(
         Repo storage repo,
         uint seqOfMotion,
@@ -426,6 +494,10 @@ library DealsRepo {
         return repo.swaps[seqOfDeal].regSwap(swap);
     }
 
+    /// @notice Pay off a swap.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfSwap Swap sequence.
     function payOffSwap(
         Repo storage repo,
         // uint seqOfMotion,
@@ -445,6 +517,12 @@ library DealsRepo {
         return repo.swaps[seqOfDeal].payOffSwap(seqOfSwap);
     }
 
+    /// @notice Terminate a swap after exec period.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfSwap Swap sequence.
+    /// @param _gmm Meeting minutes.
     function terminateSwap(
         Repo storage repo,
         uint seqOfMotion,
@@ -462,6 +540,10 @@ library DealsRepo {
         return repo.swaps[seqOfDeal].terminateSwap(seqOfSwap);
     }
 
+    /// @notice Close an approved deal by buyer payment.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param caller Buyer user number.
     function payOffApprovedDeal(
         Repo storage repo,
         uint seqOfDeal,
@@ -490,6 +572,10 @@ library DealsRepo {
         flag = (counterOfDeal(repo) == counterOfClosedDeal(repo));
     }
 
+    /// @notice Request price difference for a share.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfShare Share sequence.
     function requestPriceDiff(
         Repo storage repo,
         uint seqOfDeal,
@@ -505,64 +591,110 @@ library DealsRepo {
     //  ##       Read I/O       ##
     //  ##########################
 
+    /// @notice Get composite IA type.
+    /// @notice Get composite IA type.
+    /// @param repo Storage repo.
     function getTypeOfIA(Repo storage repo) external view returns (uint8) {
         return repo.deals[0].head.typeOfDeal;
     }
 
+    /// @notice Get deal counter.
+    /// @notice Get deal counter.
+    /// @param repo Storage repo.
     function counterOfDeal(Repo storage repo) public view returns (uint16) {
         return repo.deals[0].head.preSeq;
     }
 
+    /// @notice Get closed deal counter.
+    /// @notice Get closed deal counter.
+    /// @param repo Storage repo.
     function counterOfClosedDeal(Repo storage repo) public view returns (uint16) {
         return repo.deals[0].head.seqOfDeal;
     }
 
+    /// @notice Check whether a deal exists.
+    /// @notice Check whether a deal exists.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function isDeal(Repo storage repo, uint256 seqOfDeal) public view returns (bool) {
         return repo.seqList.contains(seqOfDeal);
     }
     
+    /// @notice Get deal by sequence.
+    /// @notice Get deal by sequence.
+    /// @param repo Storage repo.
+    /// @param seq Deal sequence.
     function getDeal(Repo storage repo, uint256 seq) 
         external view dealExist(repo, seq) returns (Deal memory)
     {
         return repo.deals[seq];
     }
 
+    /// @notice Get deal sequence list.
+    /// @notice Get deal sequence list.
+    /// @param repo Storage repo.
     function getSeqList(Repo storage repo) external view returns (uint[] memory) {
         return repo.seqList.values();
     }
     
     // ==== Swap ====
 
+    /// @notice Get swap counter for deal.
+    /// @notice Get swap counter for a deal.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function counterOfSwaps(Repo storage repo, uint seqOfDeal)
         public view returns (uint16)
     {
         return repo.swaps[seqOfDeal].counterOfSwaps();
     }
 
+    /// @notice Get sum of swap paid target.
+    /// @notice Get total paid target amount for a deal.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function sumPaidOfTarget(Repo storage repo, uint seqOfDeal)
         public view returns (uint64)
     {
         return repo.swaps[seqOfDeal].sumPaidOfTarget();
     }
 
+    /// @notice Check whether swap exists.
+    /// @notice Check whether a swap exists.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfSwap Swap sequence.
     function isSwap(Repo storage repo, uint seqOfDeal, uint256 seqOfSwap)
         public view returns (bool)
     {
         return repo.swaps[seqOfDeal].isSwap(seqOfSwap);
     }
 
+    /// @notice Get swap by sequence.
+    /// @notice Get swap by sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfSwap Swap sequence.
     function getSwap(Repo storage repo, uint seqOfDeal, uint256 seqOfSwap)
         public view returns (SwapsRepo.Swap memory)
     {
         return repo.swaps[seqOfDeal].getSwap(seqOfSwap);
     }
 
+    /// @notice Get all swaps for a deal.
+    /// @notice Get all swaps for a deal.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function getAllSwaps(Repo storage repo, uint seqOfDeal)
         public view returns (SwapsRepo.Swap[] memory )
     {
         return repo.swaps[seqOfDeal].getAllSwaps();
     }
 
+    /// @notice Check whether all swaps are closed.
+    /// @notice Check whether all swaps are closed for a deal.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
     function allSwapsClosed(Repo storage repo, uint seqOfDeal)
         public view returns (bool)
     {
@@ -580,6 +712,11 @@ library DealsRepo {
     //     return repo.swaps[seqOfDeal].checkValueOfSwap(seqOfSwap, centPrice);
     // }
 
+    /// @notice Calculate deal value at cent price.
+    /// @notice Calculate deal value in wei.
+    /// @param repo Storage repo.
+    /// @param seqOfDeal Deal sequence.
+    /// @param centPrice Cent price in wei.
     function checkValueOfDeal(
         Repo storage repo, 
         uint seqOfDeal, 

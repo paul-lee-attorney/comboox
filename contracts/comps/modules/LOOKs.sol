@@ -3,7 +3,7 @@
 /* *
  * v0.2.5
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -24,17 +24,14 @@ pragma solidity ^0.8.8;
 import "../common/access/AccessControl.sol";
 
 import "./ILOOKs.sol";
+import "../../lib/InterfacesHub.sol";
 
 abstract contract LOOKs is ILOOKs, AccessControl {
-    // using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // #################
     // ##  LOOKeeper  ##
     // #################
-
-    function _getLOOKeeper() private view returns(ILOOKeeper) {
-        return ILOOKeeper(gk.getKeeper(10));
-    }
 
     function placeInitialOffer(
         uint classOfShare,
@@ -43,7 +40,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
         uint price,
         uint seqOfLR
     ) external{
-        _getLOOKeeper().placeInitialOffer(
+        gk.getLOOKeeper().placeInitialOffer(
             msg.sender,
             classOfShare,
             execHours,
@@ -58,7 +55,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
         uint seqOfOrder,
         uint seqOfLR
     ) external{
-        _getLOOKeeper().withdrawInitialOffer(
+        gk.getLOOKeeper().withdrawInitialOffer(
             msg.sender,
             classOfShare,
             seqOfOrder,
@@ -73,7 +70,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
         uint price,
         uint seqOfLR
     ) external{
-        _getLOOKeeper().placeSellOrder(
+        gk.getLOOKeeper().placeSellOrder(
             msg.sender,
             seqOfClass,
             execHours,
@@ -87,7 +84,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
         uint classOfShare,
         uint seqOfOrder
     ) external{
-        _getLOOKeeper().withdrawSellOrder(
+        gk.getLOOKeeper().withdrawSellOrder(
             msg.sender,
             classOfShare,
             seqOfOrder
@@ -98,7 +95,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
         ICashier.TransferAuth memory auth, uint classOfShare, 
         uint paid, uint price, uint execHours
     ) external {
-        _getLOOKeeper().placeBuyOrder(
+        gk.getLOOKeeper().placeBuyOrder(
             auth, msg.sender, classOfShare, paid, price, execHours
         );
     }
@@ -107,7 +104,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
         ICashier.TransferAuth memory auth, uint classOfShare, 
         uint paid, uint execHours
     ) external{
-        _getLOOKeeper().placeMarketBuyOrder(
+        gk.getLOOKeeper().placeMarketBuyOrder(
             auth, msg.sender, classOfShare, paid, execHours
         );
     }
@@ -116,7 +113,7 @@ abstract contract LOOKs is ILOOKs, AccessControl {
         uint classOfShare,
         uint seqOfOrder
     ) external {
-        _getLOOKeeper().withdrawBuyOrder(
+        gk.getLOOKeeper().withdrawBuyOrder(
             msg.sender,
             classOfShare,
             seqOfOrder

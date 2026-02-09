@@ -19,13 +19,17 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "../comps/books/rom/IRegisterOfMembers.sol";
 
+/// @title OfficersRepo
+/// @notice Library for managing officer/director positions and memberships.
+/// @dev Stores positions, holders, and nomination rules.
 library OfficersRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @notice Officer title identifiers.
     enum TitleOfOfficers {
         ZeroPoint,
         Shareholder,
@@ -45,6 +49,7 @@ library OfficersRepo {
         ViceManager      
     }
 
+    /// @notice Position record.
     struct Position {
         uint16 title;
         uint16 seqOfPos;
@@ -57,6 +62,7 @@ library OfficersRepo {
         uint16 argu;
     }
 
+    /// @notice Group of positions and accounts.
     struct Group {
         // seqList
         EnumerableSet.UintSet posList;
@@ -64,6 +70,7 @@ library OfficersRepo {
         EnumerableSet.UintSet acctList;
     }
 
+    /// @notice Repository storage for officer positions.
     struct Repo {
         //seqOfPos => Position
         mapping(uint => Position)  positions;
@@ -77,6 +84,7 @@ library OfficersRepo {
     //##   Modifier  ##
     //#################
 
+    /// @dev Reverts if the position is occupied.
     modifier isVacant(Repo storage repo, uint256 seqOfPos) {
         require(!isOccupied(repo, seqOfPos), 
             "OR.mf.IV: position occupied");
@@ -89,6 +97,8 @@ library OfficersRepo {
 
     // ==== snParser ====
 
+    /// @notice Parse encoded position data.
+    /// @param sn Encoded position head.
     function snParser(bytes32 sn) public pure returns (Position memory position) {
         uint _sn = uint(sn);
 
@@ -105,6 +115,7 @@ library OfficersRepo {
         });
     }
 
+    /// @notice Encode position fields into bytes32.
     function codifyPosition(Position memory position) public pure returns (bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             position.title,
@@ -123,6 +134,8 @@ library OfficersRepo {
 
     // ======== Setting ========
 
+    /// @notice Create a position from encoded data.
+    /// @param snOfPos Encoded position head (non-zero, valid fields).
     function createPosition (Repo storage repo, bytes32 snOfPos) 
         public 
     {
@@ -130,6 +143,8 @@ library OfficersRepo {
         addPosition(repo, pos);
     }
 
+    /// @notice Add or update a position.
+    /// @param pos Position struct (seqOfPos > 0, title > Shareholder, endDate > startDate).
     function addPosition(
         Repo storage repo,
         Position memory pos
@@ -152,6 +167,8 @@ library OfficersRepo {
         repo.positions[pos.seqOfPos] = pos;
     }
 
+    /// @notice Remove a vacant position.
+    /// @param seqOfPos Position sequence number (> 0).
     function removePosition(Repo storage repo, uint256 seqOfPos) 
         public isVacant(repo, seqOfPos) returns (bool flag)
     {
@@ -163,6 +180,9 @@ library OfficersRepo {
         }
     }
 
+    /// @notice Assign a position to an account.
+    /// @param seqOfPos Position sequence number (> 0).
+    /// @param acct Account id (> 0).
     function takePosition (
         Repo storage repo,
         uint256 seqOfPos,
@@ -187,6 +207,9 @@ library OfficersRepo {
         flag = true;
     }
 
+    /// @notice Quit a position held by an account.
+    /// @param seqOfPos Position sequence number (> 0).
+    /// @param acct Account id (> 0).
     function quitPosition(
         Repo storage repo, 
         uint256 seqOfPos,
@@ -199,6 +222,8 @@ library OfficersRepo {
         flag = vacatePosition(repo, seqOfPos);
     }
 
+    /// @notice Vacate a position.
+    /// @param seqOfPos Position sequence number (> 0).
     function vacatePosition (
         Repo storage repo,
         uint seqOfPos
@@ -228,18 +253,26 @@ library OfficersRepo {
 
     // ==== Positions ====
 
+    /// @notice Check whether a position exists and is active.
+    /// @param seqOfPos Position sequence number (> 0).
     function posExist(Repo storage repo, uint256 seqOfPos) public view returns (bool flag) {
         flag = repo.positions[seqOfPos].endDate > block.timestamp;
     } 
 
+    /// @notice Check whether a position is occupied.
+    /// @param seqOfPos Position sequence number (> 0).
     function isOccupied(Repo storage repo, uint256 seqOfPos) public view returns (bool flag) {
         flag = repo.positions[seqOfPos].acct > 0;
     }
 
+    /// @notice Get position details.
+    /// @param seqOfPos Position sequence number (> 0).
     function getPosition(Repo storage repo, uint256 seqOfPos) public view returns (Position memory pos) {
         pos = repo.positions[seqOfPos];
     }
 
+    /// @notice Get full position info for a list of positions.
+    /// @param pl Position sequence list.
     function getFullPosInfo(Repo storage repo, uint[] memory pl) 
         public view returns(Position[] memory) 
     {
@@ -256,22 +289,28 @@ library OfficersRepo {
 
     // ==== Managers ====
 
+    /// @notice Check whether an account is a manager.
+    /// @param acct Account id (> 0).
     function isManager(Repo storage repo, uint256 acct) public view returns (bool flag) {
         flag = repo.managers.acctList.contains(acct);
     }
 
+    /// @notice Get number of managers.
     function getNumOfManagers(Repo storage repo) public view returns (uint256 num) {
         num = repo.managers.acctList.length();
     }
 
+    /// @notice Get manager account list.
     function getManagersList(Repo storage repo) public view returns (uint256[] memory ls) {
         ls = repo.managers.acctList.values();
     }
 
+    /// @notice Get manager position list.
     function getManagersPosList(Repo storage repo) public view returns(uint[] memory list) {
         list = repo.managers.posList.values();
     }
 
+    /// @notice Get full manager position info.
     function getManagersFullPosInfo(Repo storage repo) public view 
         returns(Position[] memory output) 
     {
@@ -281,30 +320,36 @@ library OfficersRepo {
 
     // ==== Directors ====
 
+    /// @notice Check whether an account is a director.
+    /// @param acct Account id (> 0).
     function isDirector(Repo storage repo, uint256 acct) 
         public view returns (bool flag) 
     {
         flag = repo.directors.acctList.contains(acct);
     }
 
+    /// @notice Get number of directors.
     function getNumOfDirectors(Repo storage repo) public view 
         returns (uint256 num) 
     {
         num = repo.directors.acctList.length();
     }
 
+    /// @notice Get director account list.
     function getDirectorsList(Repo storage repo) public view 
         returns (uint256[] memory ls) 
     {
         ls = repo.directors.acctList.values();
     }
 
+    /// @notice Get director position list.
     function getDirectorsPosList(Repo storage repo) public view 
         returns (uint256[] memory ls) 
     {
         ls = repo.directors.posList.values();
     }
 
+    /// @notice Get full director position info.
     function getDirectorsFullPosInfo(Repo storage repo) public view 
         returns(Position[] memory output) 
     {
@@ -314,18 +359,25 @@ library OfficersRepo {
 
     // ==== Executives ====
 
+    /// @notice Check whether an account holds a position.
+    /// @param acct Account id (> 0).
+    /// @param seqOfPos Position sequence number (> 0).
     function hasPosition(Repo storage repo, uint256 acct, uint256 seqOfPos) 
         public view returns (bool flag) 
     {
         flag = repo.posInHand[acct].contains(seqOfPos);
     }
 
+    /// @notice Get positions held by an account.
+    /// @param acct Account id (> 0).
     function getPosInHand(Repo storage repo, uint256 acct) 
         public view returns (uint256[] memory ls) 
     {
         ls = repo.posInHand[acct].values();
     }
 
+    /// @notice Get full position info held by an account.
+    /// @param acct Account id (> 0).
     function getFullPosInfoInHand(Repo storage repo, uint acct) 
         public view returns (Position[] memory output) 
     {
@@ -333,6 +385,10 @@ library OfficersRepo {
         output = getFullPosInfo(repo, pl);
     }
 
+    /// @notice Check whether an account holds a title.
+    /// @param acct Account id (> 0).
+    /// @param title Title id (see TitleOfOfficers).
+    /// @param _rom Register of members.
     function hasTitle(Repo storage repo, uint acct, uint title, IRegisterOfMembers _rom)
         public view returns (bool)
     {
@@ -352,6 +408,10 @@ library OfficersRepo {
         return false;
     }
 
+    /// @notice Check whether an account has nomination rights for a position.
+    /// @param seqOfPos Position sequence number (> 0).
+    /// @param acct Account id (> 0).
+    /// @param _rom Register of members.
     function hasNominationRight(Repo storage repo, uint seqOfPos, uint acct, IRegisterOfMembers _rom)
         public view returns (bool)
     {
@@ -364,6 +424,8 @@ library OfficersRepo {
 
     // ==== seatsCalculator ====
 
+    /// @notice Get board seats quota nominated by an account.
+    /// @param acct Account id (> 0).
     function getBoardSeatsQuota(Repo storage repo, uint256 acct) public view 
         returns (uint256 quota)
     {
@@ -376,6 +438,8 @@ library OfficersRepo {
         }       
     }
 
+    /// @notice Get number of occupied board seats under an account's nomination.
+    /// @param acct Account id (> 0).
     function getBoardSeatsOccupied(Repo storage repo, uint acct) public view 
         returns (uint256 num)
     {

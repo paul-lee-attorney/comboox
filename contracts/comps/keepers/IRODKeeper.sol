@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,19 +21,29 @@ pragma solidity ^0.8.8;
 
 import "../common/components/IMeetingMinutes.sol";
 
-import "../../lib/BooksRepo.sol";
+import "../../lib/InterfacesHub.sol";
 import "../../lib/MotionsRepo.sol";
 
+/// @title IRODKeeper
+/// @notice Interface for director and officer appointment actions.
 interface IRODKeeper {
 
     // ==== Directors ====
 
+    /// @notice Take a director seat after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
+    /// @param msgSender Caller address.
     function takeSeat(
         uint256 seqOfMotion,
         uint256 seqOfPos,
         address msgSender 
     ) external;
 
+    /// @notice Remove a director after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
+    /// @param msgSender Caller address.
     function removeDirector (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
@@ -42,12 +52,20 @@ interface IRODKeeper {
 
     // ==== Officers ====
 
+    /// @notice Take an officer position after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
+    /// @param msgSender Caller address.
     function takePosition(
         uint256 seqOfMotion,
         uint256 seqOfPos,
         address msgSender 
     ) external;
 
+    /// @notice Remove an officer after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
+    /// @param msgSender Caller address.
     function removeOfficer (
         uint256 seqOfMotion, 
         uint256 seqOfPos,
@@ -56,6 +74,9 @@ interface IRODKeeper {
 
     // ==== Quit ====
 
+    /// @notice Quit an officer position.
+    /// @param seqOfPos Position sequence.
+    /// @param msgSender Caller address.
     function quitPosition(uint256 seqOfPos, address msgSender) external;
 
 }

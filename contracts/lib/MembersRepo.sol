@@ -20,17 +20,20 @@
 pragma solidity ^0.8.8;
 
 import "./Checkpoints.sol";
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "./SharesRepo.sol";
 import "./TopChain.sol";
 
 import "../comps/books/ros/IRegisterOfShares.sol";
 
+/// @title MembersRepo
+/// @notice Repository for member votes, classes, and share holdings.
 library MembersRepo {
     using Checkpoints for Checkpoints.History;
     using EnumerableSet for EnumerableSet.UintSet;
     using TopChain for TopChain.Chain;
 
+    /// @notice Member holdings and vote history.
     struct Member {
         Checkpoints.History votesInHand;
         // class => seqList
@@ -53,6 +56,7 @@ library MembersRepo {
         cat: basedOnPar;
     } */
 
+    /// @notice Repository of members and class lists.
     struct Repo {
         TopChain.Chain chain;
         mapping(uint256 => Member) members;
@@ -64,6 +68,9 @@ library MembersRepo {
     //##  Modifer  ##
     //###############
 
+    /// @notice Ensure the member exists.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     modifier memberExist(
         Repo storage repo,
         uint acct
@@ -79,6 +86,10 @@ library MembersRepo {
 
     // ==== Zero Node Setting ====
 
+    /// @notice Switch vote base between par and paid.
+    /// @param repo Storage repo.
+    /// @param ros Register of shares.
+    /// @param _basedOnPar True for par-based votes.
     function setVoteBase(
         Repo storage repo,
         IRegisterOfShares ros,
@@ -151,6 +162,9 @@ library MembersRepo {
 
     // ==== Member ====
 
+    /// @notice Add a member to the repo.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function addMember(
         Repo storage repo, 
         uint acct
@@ -161,6 +175,9 @@ library MembersRepo {
         }
     }
 
+    /// @notice Remove a member and clear storage.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function delMember(
         Repo storage repo, 
         uint acct
@@ -171,6 +188,9 @@ library MembersRepo {
         }
     }
 
+    /// @notice Link a share to its member owner.
+    /// @param repo Storage repo.
+    /// @param head Share head.
     function addShareToMember(
         Repo storage repo,
         SharesRepo.Head memory head
@@ -184,6 +204,9 @@ library MembersRepo {
                 repo.membersOfClass[head.class].add(head.shareholder);
     }
 
+    /// @notice Remove a share from its member owner.
+    /// @param repo Storage repo.
+    /// @param head Share head.
     function removeShareFromMember(
         Repo storage repo,
         SharesRepo.Head memory head
@@ -203,6 +226,14 @@ library MembersRepo {
 
     }
 
+    /// @notice Update member vote and distribution points.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
+    /// @param votingWeight Voting weight in percent.
+    /// @param distrWeight Distribution weight in percent.
+    /// @param deltaPaid Change in paid amount.
+    /// @param deltaPar Change in par amount.
+    /// @param isIncrease True to increase, false to decrease.
     function increaseAmtOfMember(
         Repo storage repo,
         uint acct,
@@ -302,6 +333,13 @@ library MembersRepo {
     //     }
     // }
 
+    /// @notice Update total capital votes and checkpoints.
+    /// @param repo Storage repo.
+    /// @param votingWeight Voting weight in percent.
+    /// @param distrWeight Distribution weight in percent.
+    /// @param deltaPaid Change in paid amount.
+    /// @param deltaPar Change in par amount.
+    /// @param isIncrease True to increase, false to decrease.
     function increaseAmtOfCap(
         Repo storage repo,
         uint votingWeight,
@@ -324,6 +362,9 @@ library MembersRepo {
 
     // ==== Restore ====
 
+    /// @notice Restore member/share relations from snapshots.
+    /// @param repo Storage repo.
+    /// @param shares Share list.
     function restoreSharesInRepo(Repo storage repo, SharesRepo.Share[] memory shares) public {
         uint len = shares.length;
 
@@ -348,6 +389,9 @@ library MembersRepo {
 
     // ==== member ====
 
+    /// @notice Check whether a user is a member.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function isMember(
         Repo storage repo,
         uint acct
@@ -355,12 +399,16 @@ library MembersRepo {
         return repo.membersOfClass[0].contains(acct);
     }
     
+    /// @notice Get total member count.
+    /// @param repo Storage repo.
     function qtyOfMembers(
         Repo storage repo
     ) public view returns(uint) {
         return repo.membersOfClass[0].length();
     }
 
+    /// @notice Get all member user numbers.
+    /// @param repo Storage repo.
     function membersList(
         Repo storage repo
     ) public view returns(uint[] memory) {
@@ -369,18 +417,25 @@ library MembersRepo {
 
     // ---- Votes ----
 
+    /// @notice Get owners' equity checkpoint.
+    /// @param repo Storage repo.
     function ownersEquity(
         Repo storage repo
     ) public view returns(Checkpoints.Checkpoint memory) {
         return repo.members[0].votesInHand.latest();
     }
 
+    /// @notice Get owners' distribution points.
+    /// @param repo Storage repo.
     function ownersPoints(
         Repo storage repo
     ) public view returns(Checkpoints.Checkpoint memory) {
         return repo.members[0].votesInHand.getDistrPoints();
     }
 
+    /// @notice Get capital checkpoint at date.
+    /// @param repo Storage repo.
+    /// @param date Timestamp.
     function capAtDate(
         Repo storage repo,
         uint date
@@ -388,12 +443,17 @@ library MembersRepo {
         return repo.members[0].votesInHand.getAtDate(date);
     }
 
+    /// @notice Get owners' equity history.
+    /// @param repo Storage repo.
     function ownersEquityHistory(Repo storage repo) public view 
         returns (Checkpoints.Checkpoint[] memory) 
     {
         return repo.members[0].votesInHand.pointsOfHistory();
     }
 
+    /// @notice Get member equity checkpoint.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function equityOfMember(
         Repo storage repo,
         uint acct
@@ -403,6 +463,9 @@ library MembersRepo {
         return repo.members[acct].votesInHand.latest();
     }
 
+    /// @notice Get member distribution points.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function pointsOfMember(
         Repo storage repo,
         uint acct
@@ -412,6 +475,10 @@ library MembersRepo {
         return repo.members[acct].votesInHand.getDistrPoints();
     }
 
+    /// @notice Get member equity at date.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
+    /// @param date Timestamp.
     function equityAtDate(
         Repo storage repo,
         uint acct,
@@ -422,6 +489,10 @@ library MembersRepo {
         return repo.members[acct].votesInHand.getAtDate(date);
     }
 
+    /// @notice Get member votes at date.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
+    /// @param date Timestamp.
     function votesAtDate(
         Repo storage repo,
         uint256 acct,
@@ -430,6 +501,9 @@ library MembersRepo {
         return repo.members[acct].votesInHand.getAtDate(date).points;
     }
 
+    /// @notice Get member vote history.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function votesHistory(
         Repo storage repo,
         uint acct
@@ -441,6 +515,10 @@ library MembersRepo {
 
     // ---- Class ----
 
+    /// @notice Check if member belongs to class.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
+    /// @param class Share class.
     function isClassMember(
         Repo storage repo, 
         uint256 acct, 
@@ -449,6 +527,9 @@ library MembersRepo {
         return repo.members[acct].classesBelonged.contains(class);
     }
 
+    /// @notice Get classes a member belongs to.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function classesBelonged(
         Repo storage repo, 
         uint256 acct
@@ -456,6 +537,9 @@ library MembersRepo {
         return repo.members[acct].classesBelonged.values();
     }
 
+    /// @notice Get member count for a class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function qtyOfClassMember(
         Repo storage repo, 
         uint class
@@ -463,6 +547,9 @@ library MembersRepo {
         return repo.membersOfClass[class].length();
     }
 
+    /// @notice Get members of a class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function getMembersOfClass(
         Repo storage repo, 
         uint class
@@ -472,6 +559,9 @@ library MembersRepo {
 
     // ---- Share ----
 
+    /// @notice Get count of shares held by member.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function qtyOfSharesInHand(
         Repo storage repo, 
         uint acct
@@ -479,6 +569,9 @@ library MembersRepo {
         return repo.members[acct].sharesOfClass[0].length();
     }
 
+    /// @notice Get share list held by member.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
     function sharesInHand(
         Repo storage repo, 
         uint acct
@@ -486,6 +579,10 @@ library MembersRepo {
         return repo.members[acct].sharesOfClass[0].values();
     }
 
+    /// @notice Get count of shares in class held by member.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
+    /// @param class Share class.
     function qtyOfSharesInClass(
         Repo storage repo, 
         uint acct,
@@ -496,6 +593,10 @@ library MembersRepo {
         return repo.members[acct].sharesOfClass[class].length();
     }
 
+    /// @notice Get share list in class held by member.
+    /// @param repo Storage repo.
+    /// @param acct Member user number.
+    /// @param class Share class.
     function sharesInClass(
         Repo storage repo, 
         uint acct,

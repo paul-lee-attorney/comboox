@@ -19,14 +19,18 @@
 
 pragma solidity ^0.8.8;
 
+/// @title InvestorsRepo
+/// @notice Repository for investor onboarding and approval status.
 library InvestorsRepo {
 
+    /// @notice Lifecycle state of an investor.
     enum StateOfInvestor {
         Pending,
         Approved,
         Revoked
     }
 
+    /// @notice Investor record.
     struct Investor {
         uint40 userNo;
         uint40 groupRep;
@@ -38,6 +42,7 @@ library InvestorsRepo {
         bytes32 idHash;
     }
 
+    /// @notice Storage repo keyed by user number.
     struct Repo {
         mapping(uint256 => Investor) investors;
         uint[] investorsList;
@@ -47,6 +52,9 @@ library InvestorsRepo {
     //##  Modifier  ##
     //################
 
+    /// @notice Ensure the investor exists.
+    /// @param repo Storage repo.
+    /// @param acct Investor user number.
     modifier investorExist(
         Repo storage repo,
         uint acct
@@ -62,6 +70,11 @@ library InvestorsRepo {
 
     // ==== Investor ====
 
+    /// @notice Register or update investor profile.
+    /// @param repo Storage repo.
+    /// @param userNo Investor user number.
+    /// @param groupRep Group representative user number.
+    /// @param idHash Hash of investor ID document.
     function regInvestor(
         Repo storage repo,
         uint userNo,
@@ -92,6 +105,10 @@ library InvestorsRepo {
         }
     }
 
+    /// @notice Approve a pending investor.
+    /// @param repo Storage repo.
+    /// @param acct Investor user number.
+    /// @param verifier Approver user number.
     function approveInvestor(
         Repo storage repo,
         uint acct,
@@ -110,6 +127,10 @@ library InvestorsRepo {
         _increaseQtyOfInvestors(repo);
     }
 
+    /// @notice Revoke an approved investor.
+    /// @param repo Storage repo.
+    /// @param acct Investor user number.
+    /// @param verifier Revoker user number.
     function revokeInvestor(
         Repo storage repo,
         uint acct,
@@ -128,18 +149,26 @@ library InvestorsRepo {
         _decreaseQtyOfInvestors(repo);
     }
 
+    /// @notice Increment approved investor counter.
+    /// @param repo Storage repo.
     function _increaseQtyOfInvestors(
         Repo storage repo
     ) private {
         repo.investors[0].verifier++;
     }
 
+    /// @notice Decrement approved investor counter.
+    /// @param repo Storage repo.
     function _decreaseQtyOfInvestors(
         Repo storage repo
     ) private {
         repo.investors[0].verifier--;
     }
 
+    /// @notice Restore repo from snapshots.
+    /// @param repo Storage repo.
+    /// @param list Investor list to restore.
+    /// @param qtyOfInvestors Approved investor count.
     function restoreRepo(
         Repo storage repo, Investor[] memory list, uint qtyOfInvestors
     ) public {            
@@ -160,6 +189,9 @@ library InvestorsRepo {
 
     // ==== Investor ====
 
+    /// @notice Check whether an investor exists.
+    /// @param repo Storage repo.
+    /// @param acct Investor user number.
     function isInvestor(
         Repo storage repo,
         uint acct
@@ -167,6 +199,9 @@ library InvestorsRepo {
         return repo.investors[acct].regDate > 0;
     }
 
+    /// @notice Get investor record.
+    /// @param repo Storage repo.
+    /// @param acct Investor user number.
     function getInvestor(
         Repo storage repo,
         uint acct
@@ -174,18 +209,24 @@ library InvestorsRepo {
         return repo.investors[acct];
     }
 
+    /// @notice Get approved investor count.
+    /// @param repo Storage repo.
     function getQtyOfInvestors(
         Repo storage repo
     ) public view returns(uint) {
         return repo.investors[0].verifier;
     }
 
+    /// @notice Get list of investor user numbers.
+    /// @param repo Storage repo.
     function investorList(
         Repo storage repo
     ) public view returns(uint[] memory) {
         return repo.investorsList;
     }
 
+    /// @notice Get full investor info list.
+    /// @param repo Storage repo.
     function investorInfoList(
         Repo storage repo
     ) public view returns(Investor[] memory list) {

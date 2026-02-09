@@ -23,12 +23,8 @@ pragma solidity ^0.8.8;
 
 
 import "../modules/CoreKeeper.sol";
-import "../modules/BMMKs.sol";
-import "../modules/ROPKs.sol";
 import "../modules/SHAKs.sol";
 import "../modules/ROOKs.sol";
 import "../modules/LOOKs.sol";
-import "../modules/ROIKs.sol";
-import "../modules/ACCKs.sol";
 
-contract GeneralComp is CoreKeeper, BMMKs, ROPKs, SHAKs, ROOKs, LOOKs, ROIKs, ACCKs {}
+contract GeneralComp is CoreKeeper, SHAKs, ROOKs, LOOKs {}

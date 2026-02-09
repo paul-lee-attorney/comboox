@@ -19,8 +19,13 @@
 
 pragma solidity ^0.8.8;
 
+/// @title ArrayUtils
+/// @notice Utility functions for uint256 array operations.
 library ArrayUtils {
 
+    /// @notice Merge two arrays into a unique list (no duplicates).
+    /// @param arrA First array.
+    /// @param arrB Second array.
     function merge(uint256[] memory arrA, uint256[] memory arrB)
         public pure returns(uint256[] memory)
     {
@@ -33,6 +38,10 @@ library ArrayUtils {
         return resize(arrC, lenC);
     }
 
+    /// @notice Append unique elements from arrA into arrC.
+    /// @param arrA Source array.
+    /// @param arrC Target array buffer.
+    /// @param lenC Current length used in arrC.
     function filter(uint256[] memory arrA, uint256[] memory arrC, uint256 lenC) 
         public pure returns(uint256[] memory, uint256)
     {
@@ -58,6 +67,8 @@ library ArrayUtils {
         return (arrC, lenC);
     }
 
+    /// @notice Remove duplicates from an array.
+    /// @param arrA Source array.
     function refine(uint256[] memory arrA) 
         public pure returns(uint256[] memory)
     {
@@ -68,6 +79,9 @@ library ArrayUtils {
         return resize(arrB, lenB);
     }
 
+    /// @notice Resize an array to a specific length (truncate).
+    /// @param arrA Source array.
+    /// @param len New length (<= arrA.length).
     function resize(uint256[] memory arrA, uint256 len)
         public pure returns(uint256[] memory)
     {
@@ -82,6 +96,9 @@ library ArrayUtils {
     }
 
 
+    /// @notice Concatenate two arrays (keeps duplicates).
+    /// @param arrA First array.
+    /// @param arrB Second array.
     function combine(uint256[] memory arrA, uint256[] memory arrB)
         public pure returns (uint256[] memory)
     {
@@ -97,6 +114,9 @@ library ArrayUtils {
         return arrC;
     }
 
+    /// @notice Return elements in arrA that are not in arrB.
+    /// @param arrA Source array.
+    /// @param arrB Exclusion array.
     function minus(uint256[] memory arrA, uint256[] memory arrB)
         public pure returns (uint256[] memory)
     {
@@ -130,6 +150,9 @@ library ArrayUtils {
         return resize(arrC, pointer);
     }
 
+    /// @notice Check whether arrA is fully covered by arrB.
+    /// @param arrA Required elements.
+    /// @param arrB Cover elements.
     function fullyCoveredBy(uint256[] memory arrA, uint256[] memory arrB)
         public pure returns (bool)
     {
@@ -152,6 +175,9 @@ library ArrayUtils {
         return true;
     }
 
+    /// @notice Check whether two arrays have no overlapping elements.
+    /// @param arrA First array.
+    /// @param arrB Second array.
     function noOverlapWith(uint[] memory arrA, uint[] memory arrB) public pure returns(bool) {
         uint lenA = arrA.length;
         uint lenB = arrB.length;

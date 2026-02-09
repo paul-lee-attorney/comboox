@@ -28,7 +28,11 @@ contract SigPage is ISigPage, DraftControl {
     using EnumerableSet for EnumerableSet.UintSet;
     using SigsRepo for SigsRepo.Page;
 
+    // Repository for signatures, their deadlines, and the parties involved in the
     SigsRepo.Page[2] internal _sigPages;
+
+    // ==== UUPS Upgradeable ====
+    uint256[50] private __gap;
 
     //#############
     //##  Write  ##

@@ -19,11 +19,14 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title DTClaims
+/// @notice Library for drag-along/tag-along claims tracking.
 library DTClaims {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @notice Encoded claim head data.
     struct Head {
         uint16 seqOfDeal;
         bool dragAlong;
@@ -35,6 +38,7 @@ library DTClaims {
         uint16 argu;
     }
 
+    /// @notice Claim record for a share.
     struct Claim {
         uint8 typeOfClaim;
         uint32 seqOfShare;
@@ -45,18 +49,23 @@ library DTClaims {
         bytes32 sigHash;
     }
 
+    /// @notice Pack of claims for a deal and claim type.
     struct Pack {
         //seqOfShare => Claim
         mapping(uint256 => Claim) claims;
         EnumerableSet.UintSet shares;
     }
 
+    /// @notice Claims repository keyed by deal.
     struct Claims {
         // seqOfDeal => drag/tag/merged => Pack
         mapping(uint256 => mapping(uint256 => Pack)) packs;
         EnumerableSet.UintSet deals;
     }
 
+    /// @dev Reverts if deal has no claims.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence.
     modifier dealExist(Claims storage cls, uint seqOfDeal) {
         require (hasClaim(cls, seqOfDeal), "DTClaims.mf.dealExist: not");
         _;
@@ -66,6 +75,8 @@ library DTClaims {
     //##  Write I/O  ##
     //#################
 
+    /// @notice Parse encoded claim head.
+    /// @param sn Encoded head bytes32.
     function snParser(bytes32 sn) public pure returns(Head memory head) {
         uint _sn = uint(sn);
         head = Head({
@@ -80,6 +91,8 @@ library DTClaims {
         });
     }
 
+    /// @notice Encode claim head into bytes32.
+    /// @param head Claim head.
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             head.seqOfDeal,
@@ -97,6 +110,15 @@ library DTClaims {
         }
     }
 
+    /// @notice Register a drag-along or tag-along claim.
+    /// @param cls Storage claims.
+    /// @param dragAlong True for drag-along, false for tag-along.
+    /// @param seqOfDeal Deal sequence number (> 0).
+    /// @param seqOfShare Share sequence number (> 0).
+    /// @param paid Paid amount (uint64 range).
+    /// @param par Par amount (uint64 range).
+    /// @param claimer Claimer account id (> 0).
+    /// @param sigHash Signature hash.
     function execAlongRight(
         Claims storage cls,
         bool dragAlong,
@@ -135,6 +157,7 @@ library DTClaims {
         }
     }
 
+    /// @dev Consolidate per-share claims into merged pack.
     function _consolidateClaimsOfShare(
         Claims storage cls,
         uint intSeqOfDeal,
@@ -162,6 +185,9 @@ library DTClaims {
         }
     }
 
+    /// @notice Mark claims of a deal as accepted.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence number (> 0).
     function acceptAlongClaims(
         Claims storage cls,
         uint seqOfDeal
@@ -174,14 +200,23 @@ library DTClaims {
     //  ##       Read I/O             ##
     //  ################################
 
+    /// @notice Check whether a deal has any claims.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence number (> 0).
     function hasClaim(Claims storage cls, uint seqOfDeal) public view returns(bool) {
         return cls.deals.contains(seqOfDeal);
     }
 
+    /// @notice Get list of deals with claims.
+    /// @param cls Storage claims.
     function getDeals(Claims storage cls) public view returns(uint[] memory) {
         return cls.deals.values();
     }
 
+    /// @notice Get all claims of a deal.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfDeal Deal sequence number (> 0).
     function getClaimsOfDeal(
         Claims storage cls,
         uint seqOfDeal
@@ -202,6 +237,12 @@ library DTClaims {
         return output;
     }
 
+    /// @notice Check whether a deal has a claim for a share.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfDeal Deal sequence number (> 0).
+    /// @param seqOfShare Share sequence number (> 0).
     function hasShare(
         Claims storage cls,
         uint seqOfDeal,
@@ -210,6 +251,12 @@ library DTClaims {
         return cls.packs[seqOfDeal][2].shares.contains(seqOfShare);
     }
 
+    /// @notice Get claim for a specific share.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfDeal Deal sequence number (> 0).
+    /// @param seqOfShare Share sequence number (> 0).
     function getClaimForShare(
         Claims storage cls,
         uint seqOfDeal,
@@ -219,6 +266,8 @@ library DTClaims {
         return cls.packs[seqOfDeal][2].claims[seqOfShare];
     }
 
+    /// @notice Check whether all deals' claims are accepted.
+    /// @param cls Storage claims.
     function allAccepted(Claims storage cls) public view returns(bool flag) {
         uint[] memory dealsList = cls.deals.values();
         uint len = dealsList.length;

@@ -2,7 +2,7 @@
 
 /* *
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -20,23 +20,38 @@
 
 pragma solidity ^0.8.8;
 
-import "../../lib/BooksRepo.sol";
 import "../keepers/IRORKeeper.sol";
 
+/// @title IRORKs
+/// @notice Module interface for RORKeeper redemption workflows.
+/// @dev Handles redeemable classes, NAV updates, and redemption execution.
 interface IRORKs {
 
     // #################
     // ##  RORKeeper  ##
     // #################
 
+    /// @notice Add a redeemable share class.
+    /// @param class Share class id (expected > 0).
     function addRedeemableClass(uint class) external;
 
+    /// @notice Remove a redeemable share class.
+    /// @param class Share class id (expected > 0).
     function removeRedeemableClass(uint class) external;
 
+    /// @notice Update NAV price for a class.
+    /// @param class Share class id (expected > 0).
+    /// @param price NAV price (uint, expected > 0).
     function updateNavPrice(uint class, uint price) external;
 
+    /// @notice Request redemption for a paid amount in a class.
+    /// @param class Share class id (expected > 0).
+    /// @param paid Paid amount/quantity to redeem (uint, expected > 0).
     function requestForRedemption(uint class, uint paid) external;
 
+    /// @notice Execute redemption for a request pack.
+    /// @param class Share class id (expected > 0).
+    /// @param seqOfPack Redemption pack sequence id (expected > 0).
     function redeem(uint class, uint seqOfPack) external;
 
 }

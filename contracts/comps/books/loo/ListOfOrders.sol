@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -30,8 +30,13 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     using GoldChain for GoldChain.Data;
     using EnumerableSet for EnumerableSet.UintSet;
 
+    // class of share => order book for the class
     mapping (uint => UsdOrdersRepo.Repo) private _ordersOfClass;
+    // List of classes traded in this order book.
     EnumerableSet.UintSet private _classesList;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //#################
     //##  Write I/O  ##

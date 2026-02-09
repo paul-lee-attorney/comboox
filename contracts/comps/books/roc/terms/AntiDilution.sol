@@ -25,7 +25,7 @@ import "./IAntiDilution.sol";
 
 contract AntiDilution is IAntiDilution, DraftControl {
     using EnumerableSet for EnumerableSet.UintSet;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     Ruler private _ruler;
 

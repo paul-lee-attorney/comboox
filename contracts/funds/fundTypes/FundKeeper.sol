@@ -20,13 +20,6 @@
 
 pragma solidity ^0.8.8;
 
-import "./ListedOpenFundKeeper.sol";
+import "./ListedOpenFund.sol";
 
-contract FundKeeper is ListedOpenFundKeeper {
-
-    function createCorpSeal() external override virtual onlyDK {
-        rc.regUser();
-        _info.regNum = rc.getMyUserNo();
-        _info.typeOfEntity = uint8(TypeOfEntity.FullFuncFund);
-    }
-}
+contract FundKeeper is ListedOpenFund {}

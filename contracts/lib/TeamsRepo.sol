@@ -19,12 +19,15 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title TeamsRepo
+/// @notice Repository for project teams, members, and payroll flows.
 library TeamsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    struct Member {
+	/// @notice Member or team/project info record.
+	struct Member {
         uint16 seqOfTeam;
         uint40 userNo;
         uint8 state;
@@ -36,25 +39,29 @@ library TeamsRepo {
         uint32 paidAmt;
     }
 
-    struct Team {
+	/// @notice Team with member list and records.
+	struct Team {
         EnumerableSet.UintSet membersList;
         mapping(uint256 => Member) members;
     }
 
-    struct Repo {
+	/// @notice Repository of teams and payroll balances.
+	struct Repo {
         EnumerableSet.UintSet teamsList;
         mapping(uint256 => Team) teams;
         EnumerableSet.UintSet payroll;
         mapping(uint256 => uint256) cashBox;
     }
 
-    modifier onlyManager(Repo storage repo, uint caller) {
+	/// @notice Ensure caller is project manager.
+	modifier onlyManager(Repo storage repo, uint caller) {
         require(isManager(repo, caller),
             "TR.onlyManager: not");
         _;
     }
 
-    modifier onlyListedTeam(
+	/// @notice Ensure team exists in list.
+	modifier onlyListedTeam(
         Repo storage repo,
         uint seqOfTeam
     ) {
@@ -63,7 +70,8 @@ library TeamsRepo {
         _;
     }
   
-    modifier onlyTeamLeader(
+	/// @notice Ensure caller is team leader.
+	modifier onlyTeamLeader(
         Repo storage repo, 
         uint caller,
         uint seqOfTeam
@@ -77,11 +85,18 @@ library TeamsRepo {
     //   Write I/O   //
     ///////////////////
 
-    function setManager(Repo storage repo, uint acct) public {
+	/// @notice Set initial project manager.
+	/// @param repo Storage repo.
+	/// @param acct Manager user number.
+	function setManager(Repo storage repo, uint acct) public {
         repo.teams[0].members[0].userNo = uint40(acct);    
     }
 
-    function transferProject(
+	/// @notice Transfer project manager role.
+	/// @param repo Storage repo.
+	/// @param caller Current manager user number.
+	/// @param newManager New manager user number.
+	function transferProject(
         Repo storage repo,
         uint caller,
         uint newManager
@@ -91,7 +106,11 @@ library TeamsRepo {
 
     // ---- Project ----
 
-    function setBudget(
+	/// @notice Set initial project budget.
+	/// @param repo Storage repo.
+	/// @param caller Manager user number.
+	/// @param budget Budget amount.
+	function setBudget(
         Repo storage repo,
         uint caller,
         uint budget
@@ -101,7 +120,10 @@ library TeamsRepo {
         info.budgetAmt = uint32(budget);
     }
 
-    function fixBudget(Repo storage repo, uint caller) 
+	/// @notice Fix project budget (lock initial state).
+	/// @param repo Storage repo.
+	/// @param caller Manager user number.
+	function fixBudget(Repo storage repo, uint caller) 
 			public onlyManager(repo, caller) 
 		{
         Member storage info = repo.teams[0].members[0];
@@ -109,7 +131,11 @@ library TeamsRepo {
         info.state = 1;
     }
 
-    function increaseBudget(
+		/// @notice Increase project budget after fixation.
+		/// @param repo Storage repo.
+		/// @param caller Manager user number.
+		/// @param deltaAmt Increase amount.
+		function increaseBudget(
         Repo storage repo,
         uint caller,
 				uint deltaAmt
@@ -122,7 +148,11 @@ library TeamsRepo {
 
     // ---- Team ----
 
-    function createTeam(
+	/// @notice Create a new team with leader and budget.
+	/// @param repo Storage repo.
+	/// @param caller Team leader user number.
+	/// @param budget Team budget.
+	function createTeam(
         Repo storage repo,
         uint caller,
         uint budget
@@ -146,7 +176,12 @@ library TeamsRepo {
 				repo.teamsList.add(projInfo.seqOfTeam);
     }
 
-    function updateTeam(
+	/// @notice Update team budget before approval.
+	/// @param repo Storage repo.
+	/// @param caller Team leader user number.
+	/// @param seqOfTeam Team sequence.
+	/// @param budget New budget.
+	function updateTeam(
         Repo storage repo,
         uint caller,
         uint seqOfTeam,
@@ -162,7 +197,11 @@ library TeamsRepo {
 				teamInfo.budgetAmt = uint32(budget);
     }
 
-    function enrollTeam(
+	/// @notice Approve and enroll a listed team.
+	/// @param repo Storage repo.
+	/// @param caller Manager user number.
+	/// @param seqOfTeam Team sequence.
+	function enrollTeam(
         Repo storage repo,
         uint caller,
         uint seqOfTeam
@@ -193,7 +232,12 @@ library TeamsRepo {
         teamInfo.approvedAmt += member.budgetAmt;
 		}
 
-    function replaceLeader(
+	/// @notice Replace team leader.
+	/// @param repo Storage repo.
+	/// @param caller Manager user number.
+	/// @param seqOfTeam Team sequence.
+	/// @param leader New leader user number.
+	function replaceLeader(
         Repo storage repo,
         uint caller,
         uint seqOfTeam,
@@ -206,7 +250,12 @@ library TeamsRepo {
 				repo.teams[seqOfTeam].members[0].userNo = acct;
     }
 
-    function increaseTeamBudget(
+	/// @notice Increase team budget by delta.
+	/// @param repo Storage repo.
+	/// @param caller Manager user number.
+	/// @param seqOfTeam Team sequence.
+	/// @param delta Increase amount.
+	function increaseTeamBudget(
         Repo storage repo,
         uint caller,
         uint seqOfTeam,
@@ -239,7 +288,14 @@ library TeamsRepo {
 
     // ---- Member ----
 
-    function enrollMember(
+	/// @notice Enroll a member into a team.
+	/// @param repo Storage repo.
+	/// @param caller Team leader user number.
+	/// @param seqOfTeam Team sequence.
+	/// @param userNo Member user number.
+	/// @param rate Pay rate.
+	/// @param budgetAmt Member budget.
+	function enrollMember(
         Repo storage repo,
         uint caller,
         uint seqOfTeam,
@@ -270,6 +326,11 @@ library TeamsRepo {
         repo.payroll.add(acct);
     }
 
+		/// @notice Remove a member from team.
+		/// @param repo Storage repo.
+		/// @param caller Team leader user number.
+		/// @param seqOfTeam Team sequence.
+		/// @param userNo Member user number.
 		function removeMember(
 				Repo storage repo,
 				uint caller,
@@ -320,6 +381,11 @@ library TeamsRepo {
 		}
 
 
+		/// @notice Restore a previously removed member.
+		/// @param repo Storage repo.
+		/// @param caller Team leader user number.
+		/// @param seqOfTeam Team sequence.
+		/// @param userNo Member user number.
 		function restoreMember(
 				Repo storage repo,
 				uint caller,
@@ -346,6 +412,12 @@ library TeamsRepo {
 				}
 		}
 
+		/// @notice Increase a member's budget within team.
+		/// @param repo Storage repo.
+		/// @param caller Team leader user number.
+		/// @param seqOfTeam Team sequence.
+		/// @param userNo Member user number.
+		/// @param delta Increase amount.
 		function increaseMemberBudget(
 				Repo storage repo,
 				uint caller,
@@ -363,6 +435,13 @@ library TeamsRepo {
 				_increaseBudget(teamInfo, member, delta);
 		}
 
+		/// @notice Adjust a member's rate.
+		/// @param repo Storage repo.
+		/// @param caller Team leader user number.
+		/// @param seqOfTeam Team sequence.
+		/// @param userNo Member user number.
+		/// @param increase True to increase, false to decrease.
+		/// @param delta Rate delta.
 		function adjustSalary(
 				Repo storage repo,
 				uint caller,
@@ -391,6 +470,11 @@ library TeamsRepo {
 
 	  // ---- Work ----
 
+		/// @notice Apply working hours for approval.
+		/// @param repo Storage repo.
+		/// @param caller Member user number.
+		/// @param seqOfTeam Team sequence.
+		/// @param hrs Working hours.
 		function applyWorkingHour(
 				Repo storage repo,
 				uint caller,
@@ -414,6 +498,12 @@ library TeamsRepo {
 				member.state = 2;
 		}
 
+		/// @notice Verify a member's applied work.
+		/// @param repo Storage repo.
+		/// @param caller Team leader user number.
+		/// @param seqOfTeam Team sequence.
+		/// @param userNo Member user number.
+		/// @param ratio Approve ratio (0-10000).
 		function verifyMemberWork(
 				Repo storage repo,
 				uint caller,
@@ -434,6 +524,11 @@ library TeamsRepo {
 				teamInfo.workHours += member.approvedAmt;
 		}
 
+		/// @notice Verify team work and update receivables.
+		/// @param repo Storage repo.
+		/// @param caller Manager user number.
+		/// @param seqOfTeam Team sequence.
+		/// @param ratio Approve ratio (0-10000).
 		function verifyTeamWork(
 				Repo storage repo,
 				uint caller,
@@ -480,6 +575,10 @@ library TeamsRepo {
 				}
 		}
 
+		/// @notice Distribute payment to all teams by receivables.
+		/// @param repo Storage repo.
+		/// @param amtInWei Amount in wei.
+		/// @param centPriceInWei Cent price in wei.
 		function distributePayment(
 				Repo storage repo,
 				uint amtInWei,
@@ -539,6 +638,10 @@ library TeamsRepo {
 				}
 		}
 
+		/// @notice Withdraw balance from payroll.
+		/// @param repo Storage repo.
+		/// @param caller User number.
+		/// @param amt Amount in wei.
 		function pickupDeposit(
 				Repo storage repo,
 				uint caller,
@@ -560,6 +663,9 @@ library TeamsRepo {
 		//   Read I/O    //
 		///////////////////
 
+		/// @notice Check if user is project manager.
+		/// @param repo Storage repo.
+		/// @param acct User number.
 		function isManager(
 				Repo storage repo,
 				uint acct
@@ -568,6 +674,8 @@ library TeamsRepo {
 						repo.teams[0].members[0].userNo == acct;
 		}
 
+		/// @notice Get project info record.
+		/// @param repo Storage repo.
 		function getProjectInfo(
 				Repo storage repo
 		) public view returns(Member memory info) {
@@ -576,18 +684,25 @@ library TeamsRepo {
 
 		// ---- Teams ----
 
+		/// @notice Get number of teams.
+		/// @param repo Storage repo.
 		function qtyOfTeams (
 				Repo storage repo
 		) public view returns(uint) {
 				return repo.teams[0].members[0].seqOfTeam;
 		}
 
+		/// @notice Get list of team ids.
+		/// @param repo Storage repo.
 		function getListOfTeams(
 				Repo storage repo
 		) public view returns(uint[] memory) {
 				return repo.teamsList.values();
 		}
 
+		/// @notice Check if team is listed.
+		/// @param repo Storage repo.
+		/// @param seqOfTeam Team sequence.
 		function teamIsListed(
 				Repo storage repo,
 				uint seqOfTeam
@@ -595,6 +710,9 @@ library TeamsRepo {
 				return repo.teamsList.contains(seqOfTeam);
 		}
 
+		/// @notice Check if team is enrolled.
+		/// @param repo Storage repo.
+		/// @param seqOfTeam Team sequence.
 		function teamIsEnrolled(
 				Repo storage repo,
 				uint seqOfTeam
@@ -605,6 +723,10 @@ library TeamsRepo {
 
 		// ---- TeamInfo ----
 
+		/// @notice Check if user is team leader.
+		/// @param repo Storage repo.
+		/// @param acct User number.
+		/// @param seqOfTeam Team sequence.
 		function isTeamLeader(
 				Repo storage repo,
 				uint acct,
@@ -614,6 +736,9 @@ library TeamsRepo {
 						repo.teams[seqOfTeam].members[0].userNo == acct;
 		}
 
+		/// @notice Get team info record.
+		/// @param repo Storage repo.
+		/// @param seqOfTeam Team sequence.
 		function getTeamInfo(
 				Repo storage repo,
 				uint seqOfTeam
@@ -625,6 +750,10 @@ library TeamsRepo {
 
 		// ---- Member ----
 
+		/// @notice Check if user is a team member.
+		/// @param repo Storage repo.
+		/// @param acct User number.
+		/// @param seqOfTeam Team sequence.
 		function isMember(
 				Repo storage repo,
 				uint acct,
@@ -634,6 +763,10 @@ library TeamsRepo {
 						repo.teams[seqOfTeam].membersList.contains(acct);
 		}
 
+		/// @notice Check if member is enrolled.
+		/// @param repo Storage repo.
+		/// @param acct User number.
+		/// @param seqOfTeam Team sequence.
 		function isEnrolledMember(
 				Repo storage repo,
 				uint acct,
@@ -644,6 +777,9 @@ library TeamsRepo {
 					repo.teams[seqOfTeam].members[acct].state > 0;
 		}
 
+		/// @notice Get member list of a team.
+		/// @param repo Storage repo.
+		/// @param seqOfTeam Team sequence.
 		function getTeamMembersList(
 				Repo storage repo,
 				uint seqOfTeam
@@ -653,6 +789,10 @@ library TeamsRepo {
 				}
 		}
 
+		/// @notice Get member info for a team.
+		/// @param repo Storage repo.
+		/// @param acct User number.
+		/// @param seqOfTeam Team sequence.
 		function getMemberInfo(
 				Repo storage repo,
 				uint acct,
@@ -666,6 +806,9 @@ library TeamsRepo {
 				}
 		}
 
+		/// @notice Get all members of a team.
+		/// @param repo Storage repo.
+		/// @param seqOfTeam Team sequence.
 		function getMembersOfTeam(Repo storage repo,uint seqOfTeam) 
 				public view returns (Member[] memory) 
 		{
@@ -685,12 +828,17 @@ library TeamsRepo {
 
 		// ---- Payroll ----
 
+		/// @notice Get payroll user list.
+		/// @param repo Storage repo.
 		function getPayroll(
 				Repo storage repo
 		) public view returns (uint[] memory list) {
 				return repo.payroll.values();
 		}
 
+		/// @notice Check if user is in payroll.
+		/// @param repo Storage repo.
+		/// @param acct User number.
 		function inPayroll(
 				Repo storage repo,
 				uint acct
@@ -698,6 +846,9 @@ library TeamsRepo {
 				return repo.payroll.contains(acct);
 		}
 
+		/// @notice Get payroll balance for user.
+		/// @param repo Storage repo.
+		/// @param acct User number.
 		function getBalanceOf(
 				Repo storage repo,
 				uint acct

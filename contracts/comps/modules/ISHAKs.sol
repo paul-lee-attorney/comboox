@@ -3,7 +3,7 @@
 /* *
  * v0.2.5
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,9 +21,11 @@
 
 pragma solidity ^0.8.8;
 
-import "../../lib/BooksRepo.sol";
 import "../keepers/ISHAKeeper.sol";
 
+/// @title ISHAKs
+/// @notice Module interface for SHAKeeper shareholder agreement actions.
+/// @dev Covers tag-along, drag-along, anti-dilution, and first-refusal flows.
 interface ISHAKs {
 
     // ###################
@@ -32,6 +34,13 @@ interface ISHAKs {
 
     // ======= TagAlong ========
 
+    /// @notice Execute tag-along rights for a deal.
+    /// @param ia IA contract address (non-zero).
+    /// @param seqOfDeal Deal sequence id (expected > 0).
+    /// @param seqOfShare Share sequence id (expected > 0).
+    /// @param paid Paid amount/quantity (uint, expected > 0).
+    /// @param par Par value (uint, expected > 0).
+    /// @param sigHash Signature hash (bytes32, non-zero expected).
     function execTagAlong(
         address ia,
         uint256 seqOfDeal,
@@ -43,6 +52,13 @@ interface ISHAKs {
 
     // ======= DragAlong ========
 
+    /// @notice Execute drag-along rights for a deal.
+    /// @param ia IA contract address (non-zero).
+    /// @param seqOfDeal Deal sequence id (expected > 0).
+    /// @param seqOfShare Share sequence id (expected > 0).
+    /// @param paid Paid amount/quantity (uint, expected > 0).
+    /// @param par Par value (uint, expected > 0).
+    /// @param sigHash Signature hash (bytes32, non-zero expected).
     function execDragAlong(
         address ia,
         uint256 seqOfDeal,
@@ -52,6 +68,10 @@ interface ISHAKs {
         bytes32 sigHash
     ) external;
 
+    /// @notice Accept a tag/drag-along deal.
+    /// @param ia IA contract address (non-zero).
+    /// @param seqOfDeal Deal sequence id (expected > 0).
+    /// @param sigHash Signature hash (bytes32, non-zero expected).
     function acceptAlongDeal(
         address ia,
         uint256 seqOfDeal,
@@ -60,6 +80,11 @@ interface ISHAKs {
 
     // ======== AntiDilution ========
 
+    /// @notice Execute anti-dilution adjustment for a deal.
+    /// @param ia IA contract address (non-zero).
+    /// @param seqOfDeal Deal sequence id (expected > 0).
+    /// @param seqOfShare Share sequence id (expected > 0).
+    /// @param sigHash Signature hash (bytes32, non-zero expected).
     function execAntiDilution(
         address ia,
         uint256 seqOfDeal,
@@ -67,10 +92,19 @@ interface ISHAKs {
         bytes32 sigHash
     ) external;
 
+    /// @notice Claim gifted shares from an anti-dilution adjustment.
+    /// @param ia IA contract address (non-zero).
+    /// @param seqOfDeal Deal sequence id (expected > 0).
     function takeGiftShares(address ia, uint256 seqOfDeal) external;
 
     // ======== First Refusal ========
 
+    /// @notice Execute a first-refusal right.
+    /// @param seqOfRule Rule sequence id (expected > 0).
+    /// @param seqOfRightholder Right-holder sequence id (expected > 0).
+    /// @param ia IA contract address (non-zero).
+    /// @param seqOfDeal Deal sequence id (expected > 0).
+    /// @param sigHash Signature hash (bytes32, non-zero expected).
     function execFirstRefusal(
         uint256 seqOfRule,
         uint256 seqOfRightholder,
@@ -79,6 +113,9 @@ interface ISHAKs {
         bytes32 sigHash
     ) external;
 
+    /// @notice Compute the first-refusal allocation for a deal.
+    /// @param ia IA contract address (non-zero).
+    /// @param seqOfDeal Deal sequence id (expected > 0).
     function computeFirstRefusal(
         address ia,
         uint256 seqOfDeal

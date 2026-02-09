@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -25,9 +25,13 @@ import "../../common/access/AccessControl.sol";
 
 contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Repo;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for options and swaps.
     OptionsRepo.Repo private _repo;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     // ################
     // ## Write I/O ##

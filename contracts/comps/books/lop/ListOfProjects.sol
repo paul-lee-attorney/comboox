@@ -22,19 +22,24 @@ pragma solidity ^0.8.8;
 import "../../../center/access/Ownable.sol";
 
 import "./IListOfProjects.sol";
-import "../../../lib/Address.sol";
+import "../../../openzeppelin/utils/Address.sol";
+import "../../../lib/InterfacesHub.sol";
 
 contract ListOfProjects is IListOfProjects, Ownable {
     using TeamsRepo for TeamsRepo.Repo;
+	using InterfacesHub for address;
 
     TeamsRepo.Repo private _pop;
 		uint8 private _currency;
 
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
+
     function _msgSender(uint price) private returns (uint40 usr) {
-        usr = rc.getUserNo(
+        usr = rc.getRC().getUserNo(
             msg.sender, 
             price * (10 ** 10), 
-            rc.getAuthorByBody(address(this))
+            rc.getRC().getAuthorByBody(address(this))
         );
     }
 
@@ -150,7 +155,7 @@ contract ListOfProjects is IListOfProjects, Ownable {
 
 	function payWages() external payable {
 		uint amt = msg.value;
-		uint exRate = rc.getCentPriceInWei(_currency);
+		uint exRate = rc.getRC().getCentPriceInWei(_currency);
 		_pop.distributePayment(amt, exRate);
 		emit PayWages(amt, exRate);
 	}

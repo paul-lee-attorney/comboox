@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,21 +21,35 @@ pragma solidity ^0.8.8;
 
 import "./AccessControl.sol";
 import "../../../lib/DocsRepo.sol";
+import "../../../lib/InterfacesHub.sol";
 
+/// @title RoyaltyCharge
+/// @notice Internal helper for charging royalty fees via RegCenter.
 contract RoyaltyCharge is AccessControl {
+    using InterfacesHub for address;
 
+    /// @notice Emitted when a royalty charge is applied.
+    /// @param typeOfDoc Document type identifier.
+    /// @param version Document version.
+    /// @param rate Royalty rate (unit defined by caller).
+    /// @param user User number charged.
+    /// @param author Author user number receiving royalty.
     event ChargeRoyalty(
         uint indexed typeOfDoc, uint version, uint indexed rate, 
         uint indexed user, uint author
     );
 
+    /// @notice Resolve sender user number and charge royalty.
+    /// @param msgSender Caller address.
+    /// @param rate Royalty rate (unit defined by caller).
+    /// @return usr User number of the caller.
     function _msgSender(
         address msgSender,
         uint rate
     ) internal returns(uint40 usr) {
-        DocsRepo.Head memory head = rc.getHeadByBody(address(this));
-        head.author = rc.getAuthorByBody(address(this));
-        usr = rc.getUserNo(
+        DocsRepo.Head memory head = rc.getRC().getHeadByBody(address(this));
+        head.author = rc.getRC().getAuthorByBody(address(this));
+        usr = rc.getRC().getUserNo(
             msgSender, rate * (10 ** 10), head.author
         );
         emit ChargeRoyalty(

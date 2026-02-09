@@ -20,14 +20,23 @@
 pragma solidity ^0.8.8;
 
 import "../../../../lib/OptionsRepo.sol";
-import "../../../../lib/EnumerableSet.sol";
+import "../../../../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title IOptions
+/// @notice Interface for option term management and queries.
 interface IOptions {
     
     // ################
     // ## Write I/O ##
     // ################
 
+    /// @notice Create an option from encoded inputs.
+    /// @param snOfOpt Option serial number.
+    /// @param snOfCond Condition serial number.
+    /// @param rightholder Rightholder account.
+    /// @param paid Paid amount.
+    /// @param par Par amount.
+    /// @return head Option head.
     function createOption(
         bytes32 snOfOpt,
         bytes32 snOfCond,
@@ -36,13 +45,24 @@ interface IOptions {
         uint par
     ) external returns (OptionsRepo.Head memory head); 
 
+    /// @notice Remove a pending option.
+    /// @param seqOfOpt Option sequence number.
+    /// @return flag True if removed.
     function delOption(uint256 seqOfOpt) external returns(bool flag);
 
+    /// @notice Add an obligor to an option.
+    /// @param seqOfOpt Option sequence number.
+    /// @param obligor Account id.
+    /// @return flag True if added.
     function addObligorIntoOpt(
         uint256 seqOfOpt,
         uint256 obligor
     ) external returns (bool flag);
 
+    /// @notice Remove an obligor from an option.
+    /// @param seqOfOpt Option sequence number.
+    /// @param obligor Account id.
+    /// @return flag True if removed.
     function removeObligorFromOpt(
         uint256 seqOfOpt,
         uint256 obligor
@@ -55,26 +75,47 @@ interface IOptions {
 
     // ==== Option ====
 
+    /// @notice Get the option counter.
+    /// @return Counter value.
     function counterOfOptions() external view returns (uint32);
 
+    /// @notice Get number of options.
+    /// @return Count.
     function qtyOfOptions() external view returns (uint);
 
+    /// @notice Check whether an option exists.
+    /// @param seqOfOpt Option sequence number.
+    /// @return True if exists.
     function isOption(uint256 seqOfOpt) external view returns (bool);
 
+    /// @notice Get an option by sequence number.
+    /// @param seqOfOpt Option sequence number.
+    /// @return option Option record.
     function getOption(uint256 seqOfOpt) external view
         returns (OptionsRepo.Option memory option); 
 
+    /// @notice Get all options.
+    /// @return Option list.
     function getAllOptions() external view returns (OptionsRepo.Option[] memory);
 
     // ==== Obligor ====
 
+    /// @notice Check whether an account is an obligor.
+    /// @param seqOfOpt Option sequence number.
+    /// @param acct Account id.
+    /// @return True if obligor.
     function isObligor(uint256 seqOfOpt, uint256 acct) external 
         view returns (bool); 
 
+    /// @notice Get obligors of an option.
+    /// @param seqOfOpt Option sequence number.
+    /// @return Obligor accounts.
     function getObligorsOfOption(uint256 seqOfOpt) external view
         returns (uint256[] memory);
 
     // ==== snOfOpt ====
+    /// @notice Get list of option sequence numbers.
+    /// @return Option ids.
     function getSeqList() external view returns(uint[] memory);
 
 }

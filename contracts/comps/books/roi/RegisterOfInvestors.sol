@@ -26,6 +26,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     using InvestorsRepo for InvestorsRepo.Repo;
     using EnumerableSet for EnumerableSet.UintSet;
 
+    // Repository for investors and their groupings.
     InvestorsRepo.Repo private _investors;
 
     /// @dev mapping from seqOfShare to paid amount under frozen;
@@ -35,6 +36,9 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     mapping(uint => EnumerableSet.UintSet) private _frozenShares;
 
     bool private _paused;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //#################
     //##  Write I/O  ##

@@ -3,7 +3,7 @@
 /* *
  * v0.2.5
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -104,7 +104,6 @@ abstract contract CoreKeeper is ICoreKeeper, GeneralKeeper {
     ) external {
         uint contents = IBMMKeeper(_keepers[uint8(Keepers.BMMK)]).execAction(typeOfAction, targets, values, params, desHash, seqOfMotion, msg.sender);
         _execute(targets, values, params);
-        emit ExecAction(contents);
     }
 
     // ###################
@@ -166,10 +165,6 @@ abstract contract CoreKeeper is ICoreKeeper, GeneralKeeper {
         );
     }
 
-    function proposeToDeprecateGK(address payable receiver) external {
-        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).proposeToDeprecateGK(receiver, msg.sender);
-    }
-
     function entrustDelegaterForGeneralMeeting(uint256 seqOfMotion, uint delegate) external {
         IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).entrustDelegaterForGeneralMeeting(seqOfMotion, delegate, msg.sender);
     }
@@ -208,33 +203,6 @@ abstract contract CoreKeeper is ICoreKeeper, GeneralKeeper {
             msg.sender
         );
         _execute(targets, values, params);
-        emit ExecAction(contents);
-    }
-
-    function _execute(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory params
-    ) private {
-        for (uint256 i = 0; i < targets.length; i++) {
-            Address.valuedCallWithNoReturn(targets[i], params[i], values[i]);
-        }
-    }
-
-    function deprecateGK(address payable receiver, uint seqOfMotion) external {
-        IGMMKeeper(_keepers[uint8(Keepers.GMMK)]).deprecateGK(receiver, seqOfMotion, msg.sender);
-
-        uint balanceOfCBP = rc.balanceOf(address(this));
-        if (balanceOfCBP > 0) rc.transfer(receiver, balanceOfCBP);
-
-        uint balanceOfETH = address(this).balance;
-        if (balanceOfETH > 0) Address.sendValue(receiver, balanceOfETH);
-
-        _info.state = 1;
-        _info.name = address(receiver).toString();
-        _info.symbol = bytes18("DEPRECATED");
-
-        emit DeprecateGK(receiver, balanceOfCBP, balanceOfETH);
     }
 
     // ############
@@ -288,12 +256,6 @@ abstract contract CoreKeeper is ICoreKeeper, GeneralKeeper {
                 executor, 
                 msg.sender
             );
-    }
-
-    // ---- Receive ETH ----
-
-    receive() external payable {
-        emit ReceivedCash(msg.sender, msg.value);
     }
 
     // ###################

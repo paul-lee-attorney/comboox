@@ -19,6 +19,8 @@
 
 pragma solidity ^0.8.8;
 
+/// @title RulesParser
+/// @notice Decode rule snapshots packed into bytes32.
 library RulesParser {
 
     // ======== GovernanceRule ========
@@ -26,6 +28,7 @@ library RulesParser {
     // bytes32 public constant SHA_INIT_GR = 
     //     bytes32(uint(0x0000000000000000010000000000000000000000000000000000000000000000));
 
+    /// @notice Governance rule parameters.
     struct GovernanceRule {
         uint32 fundApprovalThreshold; 
         bool basedOnPar;
@@ -44,6 +47,8 @@ library RulesParser {
         uint16 minVoteRatioOnChain;
     }
 
+    /// @notice Parse governance rule from bytes32.
+    /// @param sn Packed rule bytes32.
     function governanceRuleParser(bytes32 sn) public pure returns (GovernanceRule memory rule) {
         uint _sn = uint(sn);
 
@@ -71,6 +76,7 @@ library RulesParser {
     // bytes32 public constant SHA_INIT_VR = 
     //     bytes32(uint(0x00080c080100001a0b0000010000000000000100000000000000000000000000));
 
+    /// @notice Voting rule parameters.
     struct VotingRule{
         uint16 seqOfRule;
         uint8 qtyOfSubRule;
@@ -93,6 +99,8 @@ library RulesParser {
         uint16 class;
     }
 
+    /// @notice Parse voting rule from bytes32.
+    /// @param sn Packed rule bytes32.
     function votingRuleParser(bytes32 sn) public pure returns (VotingRule memory rule) {
         uint _sn = uint(sn);
 
@@ -128,6 +136,7 @@ library RulesParser {
     ...
 */
 
+    /// @notice Board seat allocation rule.
     struct PositionAllocateRule {
         uint16 seqOfRule;
         uint8 qtyOfSubRule;
@@ -144,6 +153,8 @@ library RulesParser {
         uint32 data;
     }
 
+    /// @notice Parse position allocation rule from bytes32.
+    /// @param sn Packed rule bytes32.
     function positionAllocateRuleParser(bytes32 sn) public pure returns(PositionAllocateRule memory rule) {
         uint _sn = uint(sn);
 
@@ -167,6 +178,7 @@ library RulesParser {
 
     // ---- FirstRefusal Rule ----
 
+    /// @notice First refusal rule parameters.
     struct FirstRefusalRule {
         uint16 seqOfRule;
         uint8 qtyOfSubRule;
@@ -180,6 +192,8 @@ library RulesParser {
         uint16 argu;        
     }
 
+    /// @notice Parse first refusal rule from bytes32.
+    /// @param sn Packed rule bytes32.
     function firstRefusalRuleParser(bytes32 sn) public pure returns(FirstRefusalRule memory rule) {
         uint _sn = uint(sn);
 
@@ -199,6 +213,7 @@ library RulesParser {
 
     // ---- GroupUpdateOrder ----
 
+    /// @notice Group membership update order.
     struct GroupUpdateOrder {
         uint16 seqOfRule;
         uint8 qtyOfSubRule;
@@ -209,6 +224,8 @@ library RulesParser {
         uint16 para;        
     }
 
+    /// @notice Parse group update order from bytes32.
+    /// @param sn Packed order bytes32.
     function groupUpdateOrderParser(bytes32 sn) public pure returns(GroupUpdateOrder memory order) {
         uint _sn = uint(sn);
         
@@ -230,6 +247,7 @@ library RulesParser {
 
     // ---- ListingRule ----
 
+    /// @notice Listing rule parameters for LOO.
     struct ListingRule {
         uint16 seqOfRule;
         uint16 titleOfIssuer;
@@ -246,6 +264,8 @@ library RulesParser {
         uint16 para;
     }
 
+    /// @notice Parse listing rule from bytes32.
+    /// @param sn Packed rule bytes32.
     function listingRuleParser(bytes32 sn) public pure returns(ListingRule memory rule) {
         uint _sn = uint(sn);
         
@@ -268,6 +288,7 @@ library RulesParser {
 
     // ======== LinkRule ========
 
+    /// @notice Link rule parameters.
     struct LinkRule {
         uint48 triggerDate;
         uint16 effectiveDays;
@@ -282,6 +303,8 @@ library RulesParser {
         uint64 data;
     }
 
+    /// @notice Parse link rule from bytes32.
+    /// @param sn Packed rule bytes32.
     function linkRuleParser(bytes32 sn) public pure returns (LinkRule memory rule) {
         uint _sn = uint(sn);
 
@@ -302,6 +325,7 @@ library RulesParser {
 
     // ======== DistributionRule ========
 
+    /// @notice Distribution types.
     enum TypeOfDistr {
         ProRata,
         IntFront,
@@ -310,6 +334,7 @@ library RulesParser {
     }
 
     // rule: 1280
+    /// @notice Distribution rule parameters.
     struct DistrRule {
         uint8 typeOfDistr;
         uint8 numOfTiers;
@@ -319,6 +344,8 @@ library RulesParser {
         uint16[7] rates;
     }
 
+    /// @notice Parse distribution rule from bytes32.
+    /// @param sn Packed rule bytes32.
     function DistrRuleParser(bytes32 sn) public pure returns (DistrRule memory rule) {
         uint _sn = uint(sn);
 

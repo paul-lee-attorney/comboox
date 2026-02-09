@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -26,9 +26,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
     using Checkpoints for Checkpoints.History;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for members and their shares, votes, equity, points, and groupings.
     MembersRepo.Repo private _repo;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //##################
     //##   Modifier   ##

@@ -19,8 +19,12 @@
 
 pragma solidity ^0.8.8;
 
+/// @title Checkpoints
+/// @notice Library for timestamped checkpoint history.
+/// @dev Uses index 0 as metadata storage.
 library Checkpoints {
 
+    /// @notice Snapshot of values at a timestamp.
     struct Checkpoint {
         uint48 timestamp;
         uint16 rate;
@@ -37,6 +41,7 @@ library Checkpoints {
     //     points: distrPoints;
     // }
 
+    /// @notice Checkpoint history mapping.
     struct History {
         mapping (uint256 => Checkpoint) checkpoints;
     }
@@ -45,6 +50,12 @@ library Checkpoints {
     //##  Write I/O  ##
     //##################
 
+    /// @notice Append a checkpoint at the current block time.
+    /// @param self Storage history.
+    /// @param rate Distribution rate (uint16 range).
+    /// @param paid Paid amount (uint64 range).
+    /// @param par Par amount (uint64 range).
+    /// @param points Distribution points (uint64 range).
     function push(
         History storage self,
         uint rate,
@@ -71,6 +82,7 @@ library Checkpoints {
         }
     }
 
+    /// @dev Increase checkpoint counter with wrap avoidance.
     function _increaseCounter(History storage self)
         public
     {
@@ -82,6 +94,12 @@ library Checkpoints {
         }
     }
 
+    /// @notice Update distribution parameters stored at index 0.
+    /// @param self Storage history.
+    /// @param rate Distribution rate (uint16 range).
+    /// @param paid Paid amount (uint64 range).
+    /// @param par Par amount (uint64 range).
+    /// @param points Distribution points (uint64 range).
     function updateDistrPoints(
         History storage self,
         uint rate,
@@ -96,6 +114,9 @@ library Checkpoints {
         c.points = uint64(points);
     }
 
+    /// @notice Restore history from a list.
+    /// @param self Storage history.
+    /// @param list Checkpoints ordered by index.
     function restoreHistory(History storage self, Checkpoint[] memory list) public {
         uint len = list.length;
         while (len > 0) {
@@ -109,12 +130,16 @@ library Checkpoints {
     //##    Read    ##
     //################
 
+    /// @notice Get number of checkpoints.
+    /// @param self Storage history.
     function counterOfPoints(History storage self)
         public view returns (uint256)
     {
         return self.checkpoints[0].timestamp;
     }
 
+    /// @notice Get the latest checkpoint.
+    /// @param self Storage history.
     function latest(History storage self)
         public view returns (Checkpoint memory point)
     {
@@ -125,6 +150,9 @@ library Checkpoints {
         return (a & b) + ((a ^ b) >> 1);
     }
 
+    /// @notice Get checkpoint at or before a timestamp.
+    /// @param self Storage history.
+    /// @param timestamp Unix timestamp (<= block.timestamp).
     function getAtDate(History storage self, uint256 timestamp)
         public view returns (Checkpoint memory point)
     {
@@ -146,6 +174,8 @@ library Checkpoints {
         if (high > 1) point = self.checkpoints[high - 1];
     }
 
+    /// @notice Get all checkpoints in history order.
+    /// @param self Storage history.
     function pointsOfHistory(History storage self)
         public view returns (Checkpoint[] memory) 
     {
@@ -161,6 +191,8 @@ library Checkpoints {
         return output;
     }
 
+    /// @notice Get distribution parameters stored at index 0.
+    /// @param self Storage history.
     function getDistrPoints(History storage self)
         public view returns (Checkpoint memory) 
     {

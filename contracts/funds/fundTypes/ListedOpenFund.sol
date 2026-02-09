@@ -2,7 +2,7 @@
 
 /* *
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -22,21 +22,7 @@ pragma solidity ^0.8.8;
 
 
 import "../../comps/modules/CoreKeeper.sol";
+import "../../comps/modules/RORKs.sol";
 import "../../comps/modules/LOOKs.sol";
 
-import "./IListedLPFundKeeper.sol";
-
-contract ListedLPFundKeeper is IListedLPFundKeeper, LOOKs, CoreKeeper {
-
-    // ######################
-    // ##   AccessControl  ##
-    // ######################
-
-    function createCorpSeal() external override onlyDK {
-        rc.regUser();
-        _info.regNum = rc.getMyUserNo();
-        _info.regDate = uint48(block.timestamp);
-        _info.typeOfEntity = uint8(TypeOfEntity.ListedLPFund);
-    }
-
-}
+contract ListedOpenFund is CoreKeeper, LOOKs, RORKs {}

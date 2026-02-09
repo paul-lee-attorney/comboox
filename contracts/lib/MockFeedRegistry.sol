@@ -4,6 +4,8 @@ pragma solidity ^0.8.8;
 
 import "@chainlink/contracts/src/v0.8/Denominations.sol";
 
+/// @title MockFeedRegistry
+/// @notice Mock Chainlink Feed Registry for testing.
 contract MockFeedRegistry {
     
     /**
@@ -11,12 +13,14 @@ contract MockFeedRegistry {
      * Feed Registry: 0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf
      */
 
+    /// @notice Return fixed decimals for mock feed.
     function decimals() external pure returns (uint8) {
         // require(base == Denominations.ETH, "not based on ETH");
         // require(quote != address(0), "zero quote");
         return 8;
     }
 
+    /// @notice Return mocked round data.
     function latestRoundData() external 
         view returns (
             uint80 roundID,

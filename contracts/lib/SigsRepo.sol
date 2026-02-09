@@ -19,11 +19,14 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title SigsRepo
+/// @notice Library for managing signature pages and signer metadata.
 library SigsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @notice Signature metadata for a party.
     struct Signature {
         uint40 signer;
         uint48 sigDate;
@@ -36,6 +39,7 @@ library SigsRepo {
         uint32 data;
     }
 
+    /// @notice Party-specific blank containing deal list and signature data.
     struct Blank{
         EnumerableSet.UintSet seqOfDeals;
         Signature sig;
@@ -51,6 +55,7 @@ library SigsRepo {
     //     attr: closingDays;
     // }
 
+    /// @notice Signature page with buyers and sellers.
     struct Page {
         // party => Blank
         mapping(uint256 => Blank) blanks;
@@ -62,12 +67,14 @@ library SigsRepo {
     //##    设置接口    ##
     //###################
 
+    /// @notice Set circulate date for the page.
     function circulateDoc(
         Page storage p
     ) public {
         p.blanks[0].sig.sigDate = uint48(block.timestamp);
     }
 
+    /// @notice Set signing and closing windows (in days).
     function setTiming(
         Page storage p,
         uint signingDays,
@@ -77,6 +84,7 @@ library SigsRepo {
         p.blanks[0].sig.attr = uint16(closingDays);
     }
 
+    /// @notice Add a party and its deal sequence to the page.
     function addBlank(
         Page storage p,
         bool beBuyer,
@@ -99,6 +107,7 @@ library SigsRepo {
             _increaseCounterOfBlanks(p);
     }
 
+    /// @notice Remove a deal sequence for a party and cleanup if empty.
     function removeBlank(
         Page storage p,
         uint256 seq,
@@ -115,6 +124,7 @@ library SigsRepo {
         }
     }
 
+    /// @notice Record a party signature for a page.
     function signDoc(Page storage p, uint256 acct, bytes32 sigHash) 
         public 
     {
@@ -140,6 +150,7 @@ library SigsRepo {
         }
     }
 
+    /// @notice Register a signature with a provided date.
     function regSig(Page storage p, uint256 acct, uint sigDate, bytes32 sigHash)
         public returns (bool flag)
     {
@@ -166,14 +177,17 @@ library SigsRepo {
 
     }
 
+    /// @dev Increment blank counter.
     function _increaseCounterOfBlanks(Page storage p) private {
         p.blanks[0].sig.para++;
     }
 
+    /// @dev Decrement blank counter.
     function _decreaseCounterOfBlanks(Page storage p) private {
         p.blanks[0].sig.para--;
     }
 
+    /// @dev Increase signature counter by deal count.
     function _increaseCounterOfSigs(Page storage p, uint qtyOfDeals) private {
         p.blanks[0].sig.arg += uint16(qtyOfDeals);
     }
@@ -182,51 +196,62 @@ library SigsRepo {
     //##    Read I/O    ##
     //####################
 
+    /// @notice Check whether the page is circulated.
     function circulated(Page storage p) public view returns (bool)
     {
         return p.blanks[0].sig.sigDate > 0;
     }
 
+    /// @notice Check whether all required signatures are collected.
     function established(Page storage p) public view returns (bool)
     {
         return counterOfBlanks(p) > 0 
             && counterOfBlanks(p) == counterOfSigs(p);
     }
 
+    /// @notice Get number of blanks.
     function counterOfBlanks(Page storage p) public view returns(uint16) {
         return p.blanks[0].sig.para;
     }
 
+    /// @notice Get number of collected signatures.
     function counterOfSigs(Page storage p) public view returns(uint16) {
         return p.blanks[0].sig.arg;
     }
 
+    /// @notice Get circulate date.
     function getCirculateDate(Page storage p) public view returns(uint48) {
         return p.blanks[0].sig.sigDate;
     }
 
+    /// @notice Get signing window in days.
     function getSigningDays(Page storage p) public view returns(uint16) {
         return p.blanks[0].sig.seq;
     }
 
+    /// @notice Get closing window in days.
     function getClosingDays(Page storage p) public view returns(uint16) {
         return p.blanks[0].sig.attr;
     }
 
+    /// @notice Get signature deadline timestamp.
     function getSigDeadline(Page storage p) public view returns(uint48) {
         return p.blanks[0].sig.sigDate + uint48(p.blanks[0].sig.seq) * 86400; 
     }
 
+    /// @notice Get closing deadline timestamp.
     function getClosingDeadline(Page storage p) public view returns(uint48) {
         return p.blanks[0].sig.sigDate + uint48(p.blanks[0].sig.attr) * 86400; 
     }
 
+    /// @notice Check whether a party has signed.
     function isSigner(Page storage p, uint256 acct) 
         public view returns (bool) 
     {
         return p.blanks[acct].sig.signer > 0;
     }
 
+    /// @notice Get signature data of a party.
     function sigOfParty(Page storage p, uint256 acct) public view
         returns (
             uint256[] memory seqOfDeals, 
@@ -239,6 +264,7 @@ library SigsRepo {
         sigHash = p.blanks[acct].sigHash;
     }
 
+    /// @notice Get signatures of buyers and sellers.
     function sigsOfPage(Page storage p) public view
         returns (
             Signature[] memory sigsOfBuyer, 
@@ -249,6 +275,7 @@ library SigsRepo {
         sigsOfSeller = sigsOfSide(p, p.sellers);
     }
 
+    /// @notice Get signatures of a side (buyers or sellers).
     function sigsOfSide(Page storage p, EnumerableSet.UintSet storage partiesOfSide) 
         public view
         returns (Signature[] memory)

@@ -22,18 +22,6 @@ pragma solidity ^0.8.8;
 
 
 import "../../comps/modules/CoreKeeper.sol";
-import "../../comps/modules/RORKs.sol";
 import "../../comps/modules/LOOKs.sol";
 
-import "./IListedOpenFundKeeper.sol";
-
-contract ListedOpenFundKeeper is IListedOpenFundKeeper, LOOKs, RORKs, CoreKeeper {
-
-    function createCorpSeal() external override virtual onlyDK {
-        rc.regUser();
-        _info.regNum = rc.getMyUserNo();
-        _info.regDate = uint48(block.timestamp);
-        _info.typeOfEntity = uint8(TypeOfEntity.ListedOpenFund);
-    }
-
-}
+contract ListedCloseFund is CoreKeeper, LOOKs {}

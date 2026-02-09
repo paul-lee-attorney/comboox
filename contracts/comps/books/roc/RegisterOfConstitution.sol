@@ -25,8 +25,14 @@ import "../../common/components/FilesFolder.sol";
 
 contract RegisterOfConstitution is IRegisterOfConstitution, FilesFolder {
 
+    /// @notice Current active constitution document address.
     address private _pointer;
 
+    // ==== UUPSUpgradeable ====
+
+    /// @dev Storage gap for upgrade safety.
+    uint[50] private __gap;
+    
     //##################
     //##  Write I/O  ##
     //##################

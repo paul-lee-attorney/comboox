@@ -27,7 +27,7 @@ import "./AccessControl.sol";
 contract DraftControl is IDraftControl, AccessControl {
     using RolesRepo for RolesRepo.Repo;
 
-    bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
+    bytes32 private constant _ATTORNEYS = keccak256(bytes("Attorneys"));
     RolesRepo.Repo private _roles;
 
     // ################

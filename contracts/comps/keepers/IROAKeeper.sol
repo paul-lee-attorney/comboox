@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../lib/BooksRepo.sol";
+import "../../lib/InterfacesHub.sol";
 import "../../lib/DocsRepo.sol";
 import "../../lib/DealsRepo.sol";
 import "../../lib/InvestorsRepo.sol";
@@ -39,14 +39,24 @@ import "../../comps/books/roc/terms/ILockUp.sol";
 import "../../comps/books/rom/IRegisterOfMembers.sol";
 import "../../comps/books/ros/IRegisterOfShares.sol";
 
+/// @title IROAKeeper
+/// @notice Interface for investment agreements and deal execution.
 interface IROAKeeper {
 
     // #################
     // ##   Write IO  ##
     // #################
 
+    /// @notice Create a new investment agreement.
+    /// @param version Agreement version.
+    /// @param msgSender Caller address.
     function createIA(uint256 version, address msgSender) external;
 
+    /// @notice Circulate an IA document for signature.
+    /// @param ia Investment agreement address.
+    /// @param docUrl Document URL hash.
+    /// @param docHash Document content hash.
+    /// @param msgSender Caller address.
     function circulateIA(
         address ia,
         bytes32 docUrl,
@@ -54,6 +64,10 @@ interface IROAKeeper {
         address msgSender
     ) external;
 
+    /// @notice Sign an IA document.
+    /// @param ia Investment agreement address.
+    /// @param msgSender Caller address.
+    /// @param sigHash Signature hash.
     function signIA(
         address ia,
         address msgSender,
@@ -62,6 +76,12 @@ interface IROAKeeper {
 
     // ==== Deal & IA ====
 
+    /// @notice Push deal funds into coffer with hash lock.
+    /// @param ia Investment agreement address.
+    /// @param seqOfDeal Deal sequence.
+    /// @param hashLock Hash lock for closing.
+    /// @param closingDeadline Closing deadline timestamp.
+    /// @param msgSender Caller address.
     function pushToCoffer(
         address ia,
         uint256 seqOfDeal,
@@ -70,26 +90,48 @@ interface IROAKeeper {
         address msgSender
     ) external;
 
+    /// @notice Close a deal using hash key.
+    /// @param ia Investment agreement address.
+    /// @param seqOfDeal Deal sequence.
+    /// @param hashKey Hash key for closing.
     function closeDeal(
         address ia,
         uint256 seqOfDeal,
         string memory hashKey
     ) external;
 
+    /// @notice Transfer target share per deal terms.
+    /// @param ia Investment agreement address.
+    /// @param seqOfDeal Deal sequence.
+    /// @param msgSender Caller address.
     function transferTargetShare(
         address ia,
         uint256 seqOfDeal,
         address msgSender
     ) external;
 
+    /// @notice Issue new share for a deal.
+    /// @param ia Investment agreement address.
+    /// @param seqOfDeal Deal sequence.
+    /// @param msgSender Caller address.
     function issueNewShare(address ia, uint256 seqOfDeal, address msgSender) external;
 
+    /// @notice Terminate a deal.
+    /// @param ia Investment agreement address.
+    /// @param seqOfDeal Deal sequence.
+    /// @param msgSender Caller address.
     function terminateDeal(
         address ia,
         uint256 seqOfDeal,
         address msgSender
     ) external;
 
+    /// @notice Pay off an approved deal with transfer authorization.
+    /// @param auth Transfer authorization.
+    /// @param ia Investment agreement address.
+    /// @param seqOfDeal Deal sequence.
+    /// @param to Recipient address.
+    /// @param msgSender Caller address.
     function payOffApprovedDeal(
         ICashier.TransferAuth memory auth, address ia, uint seqOfDeal,
         address to, address msgSender

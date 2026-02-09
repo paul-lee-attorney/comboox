@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.5
  *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
@@ -21,8 +20,6 @@
 
 pragma solidity ^0.8.8;
 
-import "../modules/CoreKeeper.sol";
-import "../modules/BMMKs.sol";
-import "../modules/ACCKs.sol";
+import "../../comps/modules/CoreKeeper.sol";
 
-contract PrivateCompWithBoardAndUSDC is CoreKeeper, BMMKs, ACCKs {}
+contract CloseFund is CoreKeeper {}

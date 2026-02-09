@@ -19,11 +19,14 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title CondsRepo
+/// @notice Library for condition encoding and evaluation.
 library CondsRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
+    /// @notice Logical operator codes.
     enum LogOps {
         ZeroPoint,  // 0
         And,           
@@ -48,6 +51,7 @@ library CondsRepo {
         NeOr        
     }
 
+    /// @notice Comparison operator codes.
     enum ComOps {
         ZeroPoint,
         Equal,
@@ -58,6 +62,7 @@ library CondsRepo {
         SmallerOrEqual
     }
 
+    /// @notice Encoded condition.
     struct Cond {
         uint32 seqOfCond;
         uint8 logicOpr;    
@@ -69,6 +74,7 @@ library CondsRepo {
         uint64 para3;                               
     }
 
+    /// @notice Repository of conditions.
     struct Repo {
         mapping(uint256 => Cond) conds;
         EnumerableSet.Bytes32Set seqList;
@@ -80,6 +86,8 @@ library CondsRepo {
 
     // ==== codify / parser ====
 
+    /// @notice Parse encoded condition.
+    /// @param sn Encoded condition bytes32.
     function snParser(bytes32 sn) public pure returns(Cond memory cond)
     {
         uint _sn = uint(sn);
@@ -96,6 +104,8 @@ library CondsRepo {
         });
     }
 
+    /// @notice Encode condition into bytes32.
+    /// @param cond Condition struct.
     function codifyCond(Cond memory cond) public pure returns(bytes32 sn)
     {
         bytes memory _sn = abi.encodePacked(
@@ -114,11 +124,17 @@ library CondsRepo {
     }
 
     // ==== create / reg ====
+    /// @notice Create and register a condition.
+    /// @param repo Storage repo.
+    /// @param sn Encoded condition bytes32.
     function createCond(Repo storage repo, bytes32 sn) public returns(uint32 seqOfCond)
     {
         seqOfCond = regCond(repo, snParser(sn));
     }
 
+    /// @notice Register a condition struct.
+    /// @param repo Storage repo.
+    /// @param cond Condition struct.
     function regCond(Repo storage repo, Cond memory cond) public returns(uint32 seqOfCond)
     {
         cond.seqOfCond = _increaseCounterOfConds(repo);
@@ -127,12 +143,16 @@ library CondsRepo {
         seqOfCond = cond.seqOfCond;
     }
 
+    /// @dev Increase condition counter.
     function _increaseCounterOfConds(Repo storage repo) private returns(uint32)
     {
         repo.conds[0].seqOfCond++;
         return repo.conds[0].seqOfCond;
     }
 
+    /// @notice Remove a condition by sequence number.
+    /// @param repo Storage repo.
+    /// @param seqOfCond Condition sequence number (> 0).
     function removeCond(Repo storage repo, uint256 seqOfCond) public returns(bool flag)
     {
         if (repo.seqList.remove(codifyCond(repo.conds[seqOfCond])))
@@ -146,10 +166,14 @@ library CondsRepo {
     // ##   Write I/O  ##
     // ##################
 
+    /// @notice Get number of conditions.
+    /// @param repo Storage repo.
     function counterOfConds(Repo storage repo) public view returns(uint32 seqOfCond) {
         seqOfCond = repo.conds[0].seqOfCond;
     }
 
+    /// @notice Get all conditions.
+    /// @param repo Storage repo.
     function getConds(Repo storage repo) public view returns(Cond[] memory)
     {
         uint256 len = repo.seqList.length();
@@ -163,6 +187,10 @@ library CondsRepo {
         return output;
     }
 
+    /// @notice Evaluate a comparison.
+    /// @param compOpr Comparison operator (see ComOps).
+    /// @param para Comparison parameter.
+    /// @param data Data to compare.
     function checkCond(
         uint compOpr,
         uint para,
@@ -177,6 +205,7 @@ library CondsRepo {
         else revert ("CR.CSC: compOpr overflow");
     }
 
+    /// @notice Evaluate a single condition.
     function checkSoleCond(
         Cond memory cond,
         uint data
@@ -184,6 +213,7 @@ library CondsRepo {
         flag = checkCond(cond.compOpr1, cond.para1, data);
     }
 
+    /// @notice Evaluate a condition with two inputs.
     function checkCondsOfTwo(
         Cond memory cond,
         uint data1,
@@ -202,6 +232,7 @@ library CondsRepo {
         else revert("CR.CCO2: logicOpr overflow");
     }
 
+    /// @notice Evaluate a condition with three inputs.
     function checkCondsOfThree(
         Cond memory cond,
         uint data1,

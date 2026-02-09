@@ -21,8 +21,11 @@ pragma solidity ^0.8.8;
 
 import "../comps/books/rom/IRegisterOfMembers.sol";
 
+/// @title FRClaims
+/// @notice Library for first-refusal claims tracking and allocation.
 library FRClaims {
 
+    /// @notice Claim record for a deal.
     struct Claim {
         uint16 seqOfDeal;
         uint40 claimer;
@@ -32,6 +35,7 @@ library FRClaims {
         bytes32 sigHash;
     }
 
+    /// @notice Package of claims for a deal.
     struct Package {
         uint64 sumOfWeight;
         Claim[] claims;
@@ -43,6 +47,7 @@ library FRClaims {
     //     isClaimer: isClaimer;
     // }
 
+    /// @notice Claims repository keyed by deal.
     struct Claims {
         // seqOfDeal => Package
         mapping(uint256 => Package) packages;
@@ -52,6 +57,11 @@ library FRClaims {
     //##  Write I/O  ##
     //##################
 
+    /// @notice Submit a first-refusal claim.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence number (> 0).
+    /// @param acct Claimer account id (> 0).
+    /// @param sigHash Signature hash.
     function claimFirstRefusal(
         Claims storage cls,
         uint256 seqOfDeal,
@@ -84,6 +94,10 @@ library FRClaims {
         cls.packages[0].isClaimer[cl.claimer] = true;
     }
 
+    /// @notice Compute claim weights and ratios.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence number (> 0).
+    /// @param rom Register of members.
     function computeFirstRefusal(
         Claims storage cls,
         uint256 seqOfDeal,
@@ -130,10 +144,17 @@ library FRClaims {
     //  ##       Read I/O             ##
     //  ################################
 
+    /// @notice Check whether an account has any claim.
+    /// @param cls Storage claims.
+    /// @param acct Account id (> 0).
     function isClaimer(Claims storage cls, uint acct) public view returns(bool) {
         return cls.packages[0].isClaimer[acct];
     }
 
+    /// @notice Check whether an account claimed a deal.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence number (> 0).
+    /// @param acct Account id (> 0).
     function isClaimerOfDeal(
         Claims storage cls, 
         uint seqOfDeal, 
@@ -142,6 +163,9 @@ library FRClaims {
         return cls.packages[seqOfDeal].isClaimer[acct];
     }
 
+    /// @notice Check whether a deal has claims.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence number (> 0).
     function isDeal(
         Claims storage cls,
         uint seqOfDeal
@@ -149,6 +173,8 @@ library FRClaims {
         return cls.packages[seqOfDeal].claims.length > 0;
     }
 
+    /// @notice Get list of deals with claims.
+    /// @param cls Storage claims.
     function getDeals(Claims storage cls) public view returns(uint[] memory) {
         Claim[] memory claims = cls.packages[0].claims;
         uint len = claims.length;
@@ -162,6 +188,9 @@ library FRClaims {
         return deals;
     }
 
+    /// @notice Get claims of a deal.
+    /// @param cls Storage claims.
+    /// @param seqOfDeal Deal sequence number (> 0).
     function getClaimsOfDeal(Claims storage cls, uint256 seqOfDeal)
         public view returns (Claim[] memory)
     {
@@ -169,6 +198,8 @@ library FRClaims {
         return cls.packages[seqOfDeal].claims;
     }
 
+    /// @notice Check whether all deals have computed allocations.
+    /// @param cls Storage claims.
     function allAccepted(Claims storage cls) public view returns (bool) {
 
         uint[] memory deals = getDeals(cls);

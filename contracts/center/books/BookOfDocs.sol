@@ -21,8 +21,8 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfDocs.sol";
 import "./BookOfUsers.sol";
-import "../access/Ownable.sol";
-import "../../comps/common/access/AccessControl.sol";
+// import "../access/Ownable.sol";
+// import "../../comps/common/access/AccessControl.sol";
 
 contract BookOfDocs is IBookOfDocs, BookOfUsers {
     using DocsRepo for DocsRepo.Repo;
@@ -34,7 +34,7 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
 
     uint[50] private __gap;
 
-    function upgradeCenterTo(address newImplementation) external virtual override {
+    function upgradeCenterTo(address newImplementation) external {
         upgradeTo(newImplementation);
         DocsRepo.Doc memory doc = _docs.upgradeDoc(newImplementation, address(this));
         emit UpgradeDoc(doc.head.codifyHead(), doc.body);
@@ -87,39 +87,30 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
 
     function cloneDoc(
         uint typeOfDoc,
-        uint version,
-        address owner,
-        address dk,
-        address gk
+        uint version
     ) external returns(
         DocsRepo.Doc memory doc
     ) {
+        address owner = msg.sender;
         doc = _docs.cloneDoc(
             typeOfDoc, 
             version, 
             _getUserNo(owner)
         );
-        IAccessControl(doc.body).initialize(owner, rc, dk, gk);
+        IOwnable(doc.body).initialize(owner, address(this));
         emit CloneDoc(doc.head.codifyHead(), doc.body);
     }
 
     function proxyDoc(
         uint typeOfDoc,
-        uint version,
-        address owner,
-        address dk,
-        address gk
+        uint version
     ) external returns(
         DocsRepo.Doc memory doc
     ) {
         doc = _docs.proxyDoc(
             typeOfDoc, 
-            version, 
-            _getUserNo(owner),
-            owner,
-            rc,
-            dk,
-            gk
+            version,
+            _getUserNo(msg.sender)
         );
         emit ProxyDoc(doc.head.codifyHead(), doc.body);
     }

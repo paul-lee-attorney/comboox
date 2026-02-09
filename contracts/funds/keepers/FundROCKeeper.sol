@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -26,7 +26,7 @@ import "../../comps/keepers/IROCKeeper.sol";
 contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
     
     // #############
     // ##   SHA   ##

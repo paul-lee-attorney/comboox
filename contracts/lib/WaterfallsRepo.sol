@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -23,12 +23,15 @@ import "./RulesParser.sol";
 
 import "../comps/books/rom/IRegisterOfMembers.sol";
 
+/// @title WaterfallsRepo
+/// @notice Waterfall distribution repository for funds and members.
 library WaterfallsRepo {
 
     uint public constant TWO_TO_40 = 1 << 40 - 1;
     uint public constant TWO_TO_16 = 1 << 16 - 1;
     uint public constant TWO_TO_32 = 1 << 32 - 1;
 
+    /// @notice Distribution drop record.
     struct Drop {
         uint24 seqOfDistr;
         uint40 member;
@@ -38,24 +41,28 @@ library WaterfallsRepo {
         uint64 income;
     }
 
+    /// @notice Flow of drops for shares.
     struct Flow {
         // seqOfShare => drop
         mapping(uint => Drop) drops;
         uint[] shares;
     }
 
+    /// @notice Creek of flows per class.
     struct Creek {
         // class => Flow
         mapping(uint => Flow) flows;
         uint[] classes;
     }
 
+    /// @notice Stream of creeks per member.
     struct Stream {
         // member => Creek
         mapping(uint => Creek) creeks;
         uint[] members;
     }
 
+    /// @notice Repository of distribution streams.
     struct Repo {
         // seqOfDistr => Stream
         mapping(uint => Stream) streams;
@@ -65,6 +72,10 @@ library WaterfallsRepo {
     //##     Write      ##
     //####################
 
+    /// @notice Initialize a class with principal.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param principal Principal amount.
     function initClass(
         Repo storage repo, uint class, uint principal
     ) public returns(Drop memory info) {
@@ -85,6 +96,10 @@ library WaterfallsRepo {
         counter.classes.push(info.class);
     }
 
+    /// @notice Redeem principal for a class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param principal Principal amount.
     function redeemClass(
         Repo storage repo, uint class, uint principal
     ) public {
@@ -106,6 +121,12 @@ library WaterfallsRepo {
 
     // ---- ProRata ----
 
+    /// @notice Distribute pro-rata by member points or shares.
+    /// @param repo Storage repo.
+    /// @param amt Amount to distribute.
+    /// @param _rom Register of members.
+    /// @param _ros Register of shares.
+    /// @param refundPrincipal True to refund principal.
     function proRataDistr(
         Repo storage repo, uint amt, IRegisterOfMembers _rom, 
         IRegisterOfShares _ros, bool refundPrincipal
@@ -213,6 +234,11 @@ library WaterfallsRepo {
 
     // ---- IntFrontDistr ----
 
+    /// @notice Distribute interest-first by tiers.
+    /// @param repo Storage repo.
+    /// @param amt Amount to distribute.
+    /// @param _ros Register of shares.
+    /// @param rule Distribution rule.
     function intFrontDistr(
         Repo storage repo, uint amt, IRegisterOfShares _ros, 
         RulesParser.DistrRule memory rule
@@ -307,6 +333,11 @@ library WaterfallsRepo {
 
     // ---- PrinFrontDistr ----
 
+    /// @notice Distribute principal-first by tiers.
+    /// @param repo Storage repo.
+    /// @param amt Amount to distribute.
+    /// @param _ros Register of shares.
+    /// @param rule Distribution rule.
     function prinFrontDistr(
         Repo storage repo, uint amt, IRegisterOfShares _ros, 
         RulesParser.DistrRule memory rule
@@ -392,6 +423,12 @@ library WaterfallsRepo {
 
     // ---- HurdleCarry ----
 
+    /// @notice Distribute with hurdle carry to fund manager.
+    /// @param repo Storage repo.
+    /// @param amt Amount to distribute.
+    /// @param _ros Register of shares.
+    /// @param rule Distribution rule.
+    /// @param fundManager Manager user number.
     function hurdleCarryDistr(
         Repo storage repo, uint amt, IRegisterOfShares _ros, 
         RulesParser.DistrRule memory rule, uint fundManager
@@ -627,6 +664,12 @@ library WaterfallsRepo {
 
     // ---- Drop ----
 
+    /// @notice Get a specific drop by path.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
+    /// @param member Member user number.
+    /// @param class Share class.
+    /// @param seqOfShare Share sequence.
     function getDrop(
         Repo storage repo, uint seqOfDistr, uint member, uint class, uint seqOfShare
     ) public view returns(Drop memory drop) {
@@ -635,12 +678,22 @@ library WaterfallsRepo {
 
     // ---- Flow ----
 
+    /// @notice Get flow summary info.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
+    /// @param member Member user number.
+    /// @param class Share class.
     function getFlowInfo(
         Repo storage repo, uint seqOfDistr, uint member, uint class
     ) public view returns(Drop memory info) {
         info = repo.streams[seqOfDistr].creeks[member].flows[class].drops[0];
     }
 
+    /// @notice Get drops in a flow.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
+    /// @param member Member user number.
+    /// @param class Share class.
     function getDropsOfFlow(
         Repo storage repo, uint seqOfDistr, uint member, uint class
     ) public view returns(Drop[] memory drops) {
@@ -656,12 +709,20 @@ library WaterfallsRepo {
 
     // ---- Creek ----
 
+    /// @notice Get creek summary info.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
+    /// @param member Member user number.
     function getCreekInfo(
         Repo storage repo, uint seqOfDistr, uint member
     ) public view returns(Drop memory info) {
         info = repo.streams[seqOfDistr].creeks[member].flows[0].drops[0];
     }
 
+    /// @notice Get all drops in a creek.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
+    /// @param member Member user number.
     function getDropsOfCreek(
         Repo storage repo, uint seqOfDistr, uint member
     ) public view returns(Drop[] memory list) {
@@ -688,12 +749,18 @@ library WaterfallsRepo {
 
     // ---- Stream ----
 
+    /// @notice Get stream summary info.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
     function getStreamInfo(
         Repo storage repo, uint seqOfDistr
     ) public view returns(Drop memory info) {
         info = repo.streams[seqOfDistr].creeks[0].flows[0].drops[0];
     }
 
+    /// @notice Get creeks in a stream.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
     function getCreeksOfStream(
         Repo storage repo, uint seqOfDistr
     ) public view returns(Drop[] memory list) {
@@ -710,6 +777,9 @@ library WaterfallsRepo {
         }
     }
 
+    /// @notice Get all drops in a stream.
+    /// @param repo Storage repo.
+    /// @param seqOfDistr Distribution sequence.
     function getDropsOfStream(
         Repo storage repo, uint seqOfDistr
     ) public view returns(Drop[] memory list) {
@@ -736,12 +806,19 @@ library WaterfallsRepo {
 
     // ==== Member ====
 
+    /// @notice Get pool info for member/class.
+    /// @param repo Storage repo.
+    /// @param member Member user number.
+    /// @param class Share class.
     function getPoolInfo(
         Repo storage repo, uint member, uint class
     ) public view returns(Drop memory info) {
         info = repo.streams[0].creeks[member].flows[class].drops[0];
     }
 
+    /// @notice Get lake info for member.
+    /// @param repo Storage repo.
+    /// @param member Member user number.
     function getLakeInfo(
         Repo storage repo, uint member
     ) public view returns(Drop memory info) {
@@ -750,36 +827,53 @@ library WaterfallsRepo {
 
     // ==== Class ====
 
+    /// @notice Get initial sea info for class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function getInitSeaInfo(
         Repo storage repo, uint class
     ) public view returns(Drop memory info) {
         info = repo.streams[0].creeks[TWO_TO_40].flows[class].drops[0];
     }
 
+    /// @notice Get sea info for class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function getSeaInfo(
         Repo storage repo, uint class
     ) public view returns(Drop memory info) {
         info = repo.streams[0].creeks[0].flows[class].drops[0];
     }
 
+    /// @notice Get gulf info for class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function getGulfInfo(
         Repo storage repo, uint class
     ) public view returns(Drop memory info) {
         info = repo.streams[0].creeks[1].flows[class].drops[0];
     }
 
+    /// @notice Get island info for class and distribution.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param seqOfDistr Distribution sequence.
     function getIslandInfo(
         Repo storage repo, uint class, uint seqOfDistr
     ) public view returns(Drop memory info) {
         info = repo.streams[seqOfDistr].creeks[0].flows[class].drops[0];
     }
 
+    /// @notice Get list of classes in sea.
+    /// @param repo Storage repo.
     function getListOfClasses(
         Repo storage repo
     ) public view returns(uint[] memory list) {
         list = repo.streams[0].creeks[0].classes;
     }
 
+    /// @notice Get sea info list for all classes.
+    /// @param repo Storage repo.
     function getAllSeasInfo(
         Repo storage repo
     ) public view returns(Drop[] memory list) {
@@ -797,6 +891,8 @@ library WaterfallsRepo {
 
     // ==== Sum ====
 
+    /// @notice Get ocean info summary.
+    /// @param repo Storage repo.
     function getOceanInfo(
         Repo storage repo
     ) public view returns(Drop memory info) {

@@ -20,13 +20,19 @@
 pragma solidity ^0.8.8;
 
 import "./IFilesFolder.sol";
-
 import "../access/AccessControl.sol";
+import "../../../lib/FilesRepo.sol";
 
 contract FilesFolder is IFilesFolder, AccessControl {
     using FilesRepo for FilesRepo.Repo;
 
+    /// @notice Internal repository of files managed by this folder.
     FilesRepo.Repo internal _repo;
+
+    // ==== UUPSUpgradeable ====
+
+    /// @dev Storage gap for upgrade safety.
+    uint[50] private __gap;
 
     //##################
     //##  Write I/O   ##
@@ -137,5 +143,4 @@ contract FilesFolder is IFilesFolder, AccessControl {
     {
         head = _repo.getHeadOfFile(body);
     }
-
 }

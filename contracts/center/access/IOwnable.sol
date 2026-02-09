@@ -37,14 +37,21 @@ interface IOwnable {
     /// @param owner New owner address.
     event SetNewOwner(address indexed owner);
 
-    // #################
-    // ##    Write    ##
-    // #################
-    
+    // ==== UUPS Upgradeability ====
+
+    /// @notice Initialize ownership and registry center for an upgradeable proxy.
+    /// @param owner_ Initial owner/admin address (non-zero expected).
+    /// @param regCenter_ Registry center contract address (non-zero expected).
+    function initialize(address owner_,address regCenter_) external;
+
     /// @notice Return current implementation address (UUPS compatibility check).
     /// @return Implementation address.
     function getImplementation() external view returns (address);
 
+    // #################
+    // ##    Write    ##
+    // #################
+    
     /// @notice Update owner address.
     /// @param acct New owner address (non-zero in implementations).
     function setNewOwner(address acct) external;

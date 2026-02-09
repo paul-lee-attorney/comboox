@@ -2,7 +2,7 @@
 
 /* *
  * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -26,7 +26,7 @@ import "../../comps/common/access/RoyaltyCharge.sol";
 
 contract ROAKeeper is IROAKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // #############################
     // ##   InvestmentAgreement   ##

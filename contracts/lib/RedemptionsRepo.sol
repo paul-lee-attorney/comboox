@@ -19,12 +19,15 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "../comps/books/rom/IRegisterOfMembers.sol";
 
+/// @title RedemptionsRepo
+/// @notice Repository for redemption requests grouped by class and pack.
 library RedemptionsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @notice Redemption request record.
     struct Request {
         uint16 class;
         uint32 seqOfShare;
@@ -36,18 +39,21 @@ library RedemptionsRepo {
     }
 
 
+    /// @notice Pack of requests grouped by day.
     struct Pack {
         Request info;
         mapping (uint => Request) requests;
         EnumerableSet.UintSet sharesList;        
     }
 
+    /// @notice Redemption data for a share class.
     struct Class {
         Request info;
         mapping (uint => Pack) packs;
         EnumerableSet.UintSet packsList;
     }
 
+    /// @notice Repository of redeemable classes.
     struct Repo {
         mapping(uint => Class) classes;
         EnumerableSet.UintSet classesList;
@@ -57,6 +63,9 @@ library RedemptionsRepo {
     //##    Modifier    ##
     //####################
 
+    /// @notice Ensure class is redeemable.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     modifier redeemableClass(
         Repo storage repo,
         uint class
@@ -66,6 +75,10 @@ library RedemptionsRepo {
         _;
     }
 
+    /// @notice Ensure pack exists under class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param seqOfPack Pack sequence.
     modifier redeemablePack(
         Repo storage repo,
         uint class, uint seqOfPack
@@ -79,6 +92,8 @@ library RedemptionsRepo {
     //##    Write    ##
     //#################
 
+    /// @notice Pack request info into bytes32.
+    /// @param request Request record.
     function codifyHead(Request memory request) public pure returns (bytes32 sn)
     {
         bytes memory _sn = 
@@ -100,18 +115,28 @@ library RedemptionsRepo {
 
     // ==== Config ====
 
+    /// @notice Add a redeemable share class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function addRedeemableClass(
         Repo storage repo, uint class
     ) public {
         repo.classesList.add(class);
     }
 
+    /// @notice Remove a redeemable share class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function removeRedeemableClass(
         Repo storage repo, uint class
     ) public redeemableClass(repo, class) {
         repo.classesList.remove(class);
     }
 
+    /// @notice Update NAV price for a class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param price NAV price.
     function updateNavPrice(
         Repo storage repo, uint class, uint price
     ) public redeemableClass(repo, class) {
@@ -120,6 +145,12 @@ library RedemptionsRepo {
 
     // ==== Reqeust ====
     
+    /// @notice Create a redemption request.
+    /// @param repo Storage repo.
+    /// @param caller Shareholder user number.
+    /// @param class Share class.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Paid amount of shares.
     function requestForRedemption(
         Repo storage repo, uint caller, uint class, uint seqOfShare, uint paid
     ) public redeemableClass(repo, class) returns(
@@ -153,6 +184,10 @@ library RedemptionsRepo {
 
     // ==== Redeem ====
 
+    /// @notice Redeem a pack and return request list.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param seqOfPack Pack sequence.
     function redeem(
         Repo storage repo, uint class, uint seqOfPack
     ) public redeemableClass(repo, class) redeemablePack(repo, class, seqOfPack) returns(
@@ -193,12 +228,17 @@ library RedemptionsRepo {
     //##    Read     ##
     //#################
 
+    /// @notice Check whether a class is redeemable.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function isRedeemable(
         Repo storage repo, uint class
     ) public view returns(bool){
         return repo.classesList.contains(class);
     }
 
+    /// @notice Get list of redeemable classes.
+    /// @param repo Storage repo.
     function getClassesList(
         Repo storage repo
     ) public view returns(uint[] memory list) {
@@ -207,6 +247,9 @@ library RedemptionsRepo {
 
     // ==== Class ====
 
+    /// @notice Get class redemption info.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function getInfoOfClass(
         Repo storage repo, uint class
     ) public redeemableClass(repo, class) view returns(
@@ -215,6 +258,9 @@ library RedemptionsRepo {
         info = repo.classes[class].info;
     }
 
+    /// @notice Get pack list under class.
+    /// @param repo Storage repo.
+    /// @param class Share class.
     function getPacksList(
         Repo storage repo, uint class
     ) public redeemableClass(repo, class) view returns(
@@ -225,6 +271,10 @@ library RedemptionsRepo {
 
     // ==== Pack ====
 
+    /// @notice Get pack summary info.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param seqOfPack Pack sequence.
     function getInfoOfPack(
         Repo storage repo, uint class, uint seqOfPack
     ) public redeemableClass(repo, class) redeemablePack(repo, class, seqOfPack) view returns(
@@ -233,6 +283,10 @@ library RedemptionsRepo {
         info = repo.classes[class].packs[seqOfPack].info;
     }
 
+    /// @notice Get share list in pack.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param seqOfPack Pack sequence.
     function getSharesList(
         Repo storage repo, uint class, uint seqOfPack
     ) public redeemableClass(repo, class) redeemablePack(repo, class, seqOfPack) view returns(
@@ -241,6 +295,11 @@ library RedemptionsRepo {
         list = repo.classes[class].packs[seqOfPack].sharesList.values();
     }
 
+    /// @notice Get request by share sequence.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param seqOfPack Pack sequence.
+    /// @param seqOfShare Share sequence.
     function getRequest(
         Repo storage repo, uint class, uint seqOfPack, uint seqOfShare
     ) public redeemableClass(repo, class) redeemablePack(repo, class, seqOfPack) view returns(
@@ -251,6 +310,10 @@ library RedemptionsRepo {
         request = repo.classes[class].packs[seqOfPack].requests[seqOfShare];
     }
 
+    /// @notice Get all requests in pack.
+    /// @param repo Storage repo.
+    /// @param class Share class.
+    /// @param seqOfPack Pack sequence.
     function getRequests(
         Repo storage repo, uint class, uint seqOfPack
     ) public redeemableClass(repo, class) redeemablePack(repo, class, seqOfPack) view returns(

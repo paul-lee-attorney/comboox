@@ -2,7 +2,7 @@
 
 /* *
  * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,7 +21,7 @@
 pragma solidity ^0.8.8;
 
 import "../../lib/RedemptionsRepo.sol";
-import "../../lib/BooksRepo.sol";
+import "../../lib/InterfacesHub.sol";
 import "../../lib/SharesRepo.sol";
 
 import "../books/ror/IRegisterOfRedemptions.sol";
@@ -30,18 +30,38 @@ import "../books/ros/IRegisterOfShares.sol";
 import "../books/cashier/ICashier.sol";
 
 
+/// @title IRORKeeper
+/// @notice Interface for redemption configuration and execution.
 interface IRORKeeper {
 
+    /// @notice Add a redeemable class.
+    /// @param class Share class id.
+    /// @param msgSender Caller address.
     function addRedeemableClass(uint class, address msgSender) external;
 
+    /// @notice Remove a redeemable class.
+    /// @param class Share class id.
+    /// @param msgSender Caller address.
     function removeRedeemableClass(uint class, address msgSender) external;
 
+    /// @notice Update NAV price for a class.
+    /// @param class Share class id.
+    /// @param price NAV price.
+    /// @param msgSender Caller address.
     function updateNavPrice(uint class, uint price, address msgSender) external;
 
+    /// @notice Request redemption for a share.
+    /// @param class Share class id.
+    /// @param paid Paid amount to redeem.
+    /// @param msgSender Caller address.
     function requestForRedemption(
         uint class, uint paid, address msgSender
     ) external;
 
+    /// @notice Redeem a pack for a class.
+    /// @param class Share class id.
+    /// @param seqOfPack Pack sequence.
+    /// @param msgSender Caller address.
     function redeem(uint class, uint seqOfPack, address msgSender) external;
 
 }

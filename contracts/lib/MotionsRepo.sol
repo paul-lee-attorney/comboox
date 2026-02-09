@@ -23,17 +23,20 @@ pragma solidity ^0.8.8;
 
 import "./BallotsBox.sol";
 import "./DelegateMap.sol";
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "./RulesParser.sol";
 
 import "../comps/books/roc/IShareholdersAgreement.sol";
 
+/// @title MotionsRepo
+/// @notice Repository for motions, voting, and delegate maps.
 library MotionsRepo {
     using BallotsBox for BallotsBox.Box;
     using DelegateMap for DelegateMap.Map;
     using EnumerableSet for EnumerableSet.UintSet;
     using RulesParser for bytes32;
 
+    /// @notice Motion types.
     enum TypeOfMotion {
         ZeroPoint,
         ElectOfficer,
@@ -45,6 +48,7 @@ library MotionsRepo {
         DeprecateGK
     }
 
+    /// @notice Motion lifecycle states.
     enum StateOfMotion {
         ZeroPoint,          // 0
         Created,            // 1
@@ -56,6 +60,7 @@ library MotionsRepo {
         Executed            // 7
     }
 
+    /// @notice Motion head fields.
     struct Head {
         uint16 typeOfMotion;
         uint64 seqOfMotion;
@@ -66,6 +71,7 @@ library MotionsRepo {
         uint32 data;
     }
 
+    /// @notice Motion body fields.
     struct Body {
         uint40 proposer;
         uint48 proposeDate;
@@ -76,6 +82,7 @@ library MotionsRepo {
         uint8 state;
     }
 
+    /// @notice Full motion record.
     struct Motion {
         Head head;
         Body body;
@@ -83,11 +90,13 @@ library MotionsRepo {
         uint contents;
     }
 
+    /// @notice Vote record: delegates and ballots.
     struct Record {
         DelegateMap.Map map;
         BallotsBox.Box box;
     }
 
+    /// @notice Vote calculation base inputs.
     struct VoteCalBase {
         uint32 totalHead;
         uint64 totalWeight;
@@ -100,6 +109,7 @@ library MotionsRepo {
         bool unaniConsent;
     }
 
+    /// @notice Repository of motions and vote records.
     struct Repo {
         mapping(uint256 => Motion) motions;
         mapping(uint256 => Record) records;
@@ -112,6 +122,8 @@ library MotionsRepo {
 
     // ==== snParser ====
 
+    /// @notice Parse motion head from bytes32.
+    /// @param sn Packed motion head.
     function snParser (bytes32 sn) public pure returns(Head memory head) {
         uint _sn = uint(sn);
 
@@ -126,6 +138,8 @@ library MotionsRepo {
         });
     }
 
+    /// @notice Pack motion head into bytes32.
+    /// @param head Motion head.
     function codifyHead(Head memory head) public pure returns(bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             head.typeOfMotion,
@@ -142,6 +156,10 @@ library MotionsRepo {
     
     // ==== addMotion ====
 
+    /// @notice Create or update a motion.
+    /// @param repo Storage repo.
+    /// @param head Motion head.
+    /// @param contents Motion contents.
     function addMotion(
         Repo storage repo,
         Head memory head,
@@ -174,6 +192,13 @@ library MotionsRepo {
 
     // ==== entrustDelegate ====
 
+    /// @notice Entrust delegate for a motion.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param delegate Delegate user number.
+    /// @param principal Principal user number.
+    /// @param _rom Register of members.
+    /// @param _rod Register of directors.
     function entrustDelegate(
         Repo storage repo,
         uint256 seqOfMotion,
@@ -200,6 +225,13 @@ library MotionsRepo {
 
     // ==== propose ====
 
+    /// @notice Propose motion to general meeting.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param _sha Shareholders agreement.
+    /// @param _rom Register of members.
+    /// @param _rod Register of directors.
+    /// @param caller Proposer user number.
     function proposeMotionToGeneralMeeting(
         Repo storage repo,
         uint256 seqOfMotion,
@@ -313,6 +345,12 @@ library MotionsRepo {
         return false;
     } 
 
+    /// @notice Propose motion to board meeting.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param _sha Shareholders agreement.
+    /// @param _rod Register of directors.
+    /// @param caller Proposer user number.
     function proposeMotionToBoard(
         Repo storage repo,
         uint256 seqOfMotion,
@@ -337,6 +375,13 @@ library MotionsRepo {
 
     // ==== vote ====
 
+    /// @notice Cast vote in general meeting.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param acct Voter user number.
+    /// @param attitude Vote attitude.
+    /// @param sigHash Signature hash.
+    /// @param _rom Register of members.
     function castVoteInGeneralMeeting(
         Repo storage repo,
         uint256 seqOfMotion,
@@ -357,6 +402,13 @@ library MotionsRepo {
         _castVote(repo, seqOfMotion, acct, attitude, voter.repHead + 1, voter.weight + voter.repWeight, sigHash);
     }
 
+    /// @notice Cast vote in board meeting.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param acct Voter user number.
+    /// @param attitude Vote attitude.
+    /// @param sigHash Signature hash.
+    /// @param _rod Register of directors.
     function castVoteInBoardMeeting(
         Repo storage repo,
         uint256 seqOfMotion,
@@ -401,6 +453,11 @@ library MotionsRepo {
 
     // ==== counting ====
 
+    /// @notice Count votes and update motion state.
+    /// @param repo Storage repo.
+    /// @param flag0 Pass base condition.
+    /// @param seqOfMotion Motion sequence.
+    /// @param base Vote calculation base.
     function voteCounting(
         Repo storage repo,
         bool flag0,
@@ -461,6 +518,11 @@ library MotionsRepo {
 
     // ==== ExecResolution ====
 
+    /// @notice Execute a passed resolution.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param contents Motion contents.
+    /// @param executor Executor user number.
     function execResolution(
         Repo storage repo,
         uint256 seqOfMotion,
@@ -483,12 +545,18 @@ library MotionsRepo {
 
     // ==== VoteState ====
 
+    /// @notice Check if motion is proposed.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
     function isProposed(Repo storage repo, uint256 seqOfMotion)
         public view returns (bool)
     {
         return repo.motions[seqOfMotion].body.state == uint8(StateOfMotion.Proposed);
     }
 
+    /// @notice Check if voting has started.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
     function voteStarted(Repo storage repo, uint256 seqOfMotion)
         public view returns (bool)
     {
@@ -496,6 +564,9 @@ library MotionsRepo {
             repo.motions[seqOfMotion].body.voteStartDate <= block.timestamp;
     }
 
+    /// @notice Check if voting has ended.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
     function voteEnded(Repo storage repo, uint256 seqOfMotion)
         public view returns (bool)
     {
@@ -505,12 +576,20 @@ library MotionsRepo {
 
     // ==== Delegate ====
 
+    /// @notice Get delegate map voter data.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param acct Voter user number.
     function getVoterOfDelegateMap(Repo storage repo, uint256 seqOfMotion, uint256 acct)
         public view returns (DelegateMap.Voter memory)
     {
         return repo.records[seqOfMotion].map.voters[acct];
     }
 
+    /// @notice Get delegate of an account.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param acct Voter user number.
     function getDelegateOf(Repo storage repo, uint256 seqOfMotion, uint acct)
         public view returns (uint)
     {
@@ -519,6 +598,9 @@ library MotionsRepo {
 
     // ==== motion ====
 
+    /// @notice Get motion by sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
     function getMotion(Repo storage repo, uint256 seqOfMotion)
         public view returns (Motion memory motion)
     {
@@ -527,12 +609,21 @@ library MotionsRepo {
 
     // ==== voting ====
 
+    /// @notice Check if account has voted.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param acct Voter user number.
     function isVoted(Repo storage repo, uint256 seqOfMotion, uint256 acct) 
         public view returns (bool) 
     {
         return repo.records[seqOfMotion].box.isVoted(acct);
     }
 
+    /// @notice Check if account voted for an attitude.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param acct Voter user number.
+    /// @param atti Attitude value.
     function isVotedFor(
         Repo storage repo,
         uint256 seqOfMotion,
@@ -542,24 +633,37 @@ library MotionsRepo {
         return repo.records[seqOfMotion].box.isVotedFor(acct, atti);
     }
 
+    /// @notice Get aggregate case for attitude.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param atti Attitude value.
     function getCaseOfAttitude(Repo storage repo, uint256 seqOfMotion, uint256 atti)
         public view returns (BallotsBox.Case memory )
     {
         return repo.records[seqOfMotion].box.getCaseOfAttitude(atti);
     }
 
+    /// @notice Get ballot for account.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
+    /// @param acct Voter user number.
     function getBallot(Repo storage repo, uint256 seqOfMotion, uint256 acct)
         public view returns (BallotsBox.Ballot memory)
     {
         return repo.records[seqOfMotion].box.getBallot(acct);
     }
 
+    /// @notice Check if motion passed.
+    /// @param repo Storage repo.
+    /// @param seqOfMotion Motion sequence.
     function isPassed(Repo storage repo, uint256 seqOfMotion) public view returns (bool) {
         return repo.motions[seqOfMotion].body.state == uint8(MotionsRepo.StateOfMotion.Passed);
     }
 
     // ==== snList ====
 
+    /// @notice Get motion sequence list.
+    /// @param repo Storage repo.
     function getSeqList(Repo storage repo) public view returns (uint[] memory) {
         return repo.seqList.values();
     }

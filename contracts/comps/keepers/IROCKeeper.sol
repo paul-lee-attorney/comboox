@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -32,16 +32,26 @@ import "../../lib/OfficersRepo.sol";
 import "../../lib/RulesParser.sol";
 import "../../lib/DocsRepo.sol";
 // import "../../lib/FilesRepo.sol";
-import "../../lib/BooksRepo.sol";
+import "../../lib/InterfacesHub.sol";
 
+/// @title IROCKeeper
+/// @notice Interface for shareholder agreement lifecycle actions.
 interface IROCKeeper {
 
     // ############
     // ##  SHA   ##
     // ############
 
+    /// @notice Create a shareholder agreement.
+    /// @param version Agreement version.
+    /// @param msgSender Caller address.
     function createSHA(uint version, address msgSender) external;
 
+    /// @notice Circulate SHA document for signature.
+    /// @param sha Shareholders agreement address.
+    /// @param docUrl Document URL hash.
+    /// @param docHash Document content hash.
+    /// @param msgSender Caller address.
     function circulateSHA(
         address sha,
         bytes32 docUrl,
@@ -49,13 +59,23 @@ interface IROCKeeper {
         address msgSender
     ) external;
 
+    /// @notice Sign SHA document.
+    /// @param sha Shareholders agreement address.
+    /// @param sigHash Signature hash.
+    /// @param msgSender Caller address.
     function signSHA(
         address sha,
         bytes32 sigHash,
         address msgSender
     ) external;
 
+    /// @notice Activate a SHA.
+    /// @param sha Shareholders agreement address.
+    /// @param msgSender Caller address.
     function activateSHA(address sha, address msgSender) external;
 
+    /// @notice Accept SHA with signature hash.
+    /// @param sigHash Signature hash.
+    /// @param msgSender Caller address.
     function acceptSHA(bytes32 sigHash, address msgSender) external;
 }

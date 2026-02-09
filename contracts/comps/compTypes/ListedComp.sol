@@ -23,9 +23,6 @@ pragma solidity ^0.8.8;
 
 
 import "../modules/CoreKeeper.sol";
-import "../modules/BMMKs.sol";
-import "../modules/ROPKs.sol";
 import "../modules/LOOKs.sol";
-import "../modules/ROIKs.sol";
 
-contract ListedComp is CoreKeeper, BMMKs, ROPKs, LOOKs, ROIKs {}
+contract ListedComp is CoreKeeper, LOOKs {}

@@ -3,7 +3,7 @@
 /* *
  * v0.2.5
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -22,19 +22,15 @@
 pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
-
 import "./IROOKs.sol";
+import "../../lib/InterfacesHub.sol";
 
 abstract contract ROOKs is IROOKs, AccessControl {
-    // using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // #################
     // ##  ROOKeeper  ##
     // #################
-
-    function _getROOKeeper() private view returns(IROOKeeper) {
-        return IROOKeeper(gk.getKeeper(7));
-    }
 
     function updateOracle(
         uint256 seqOfOpt,
@@ -42,11 +38,11 @@ abstract contract ROOKs is IROOKs, AccessControl {
         uint d2,
         uint d3
     ) external onlyDK {
-       _getROOKeeper().updateOracle(seqOfOpt, d1, d2, d3);
+       gk.getROOKeeper().updateOracle(seqOfOpt, d1, d2, d3);
     }
 
     function execOption(uint256 seqOfOpt) external{
-       _getROOKeeper().execOption(seqOfOpt, msg.sender);
+       gk.getROOKeeper().execOption(seqOfOpt, msg.sender);
     }
 
     function createSwap(
@@ -55,13 +51,13 @@ abstract contract ROOKs is IROOKs, AccessControl {
         uint paidOfTarget,
         uint seqOfPledge
     ) external{
-       _getROOKeeper().createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, msg.sender);
+       gk.getROOKeeper().createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, msg.sender);
     }
 
     function payOffSwap(
         ICashier.TransferAuth memory auth, uint256 seqOfOpt, uint256 seqOfSwap, address to
     ) external {
-       _getROOKeeper().payOffSwap(
+       gk.getROOKeeper().payOffSwap(
             auth, seqOfOpt, seqOfSwap, to, msg.sender
         );
     }
@@ -70,17 +66,17 @@ abstract contract ROOKs is IROOKs, AccessControl {
         uint256 seqOfOpt, 
         uint256 seqOfSwap
     ) external{
-       _getROOKeeper().terminateSwap(seqOfOpt, seqOfSwap, msg.sender);
+       gk.getROOKeeper().terminateSwap(seqOfOpt, seqOfSwap, msg.sender);
     }
 
     function requestToBuy(address ia, uint seqOfDeal, uint paidOfTarget, uint seqOfPledge) external{
-       _getROOKeeper().requestToBuy(ia, seqOfDeal, paidOfTarget, seqOfPledge, msg.sender);
+       gk.getROOKeeper().requestToBuy(ia, seqOfDeal, paidOfTarget, seqOfPledge, msg.sender);
     }
 
     function payOffRejectedDeal(
         ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, uint seqOfSwap, address to
     ) external {
-       _getROOKeeper().payOffRejectedDeal(
+       gk.getROOKeeper().payOffRejectedDeal(
             auth, ia, seqOfDeal, seqOfSwap, to, msg.sender
         );
     }
@@ -90,7 +86,7 @@ abstract contract ROOKs is IROOKs, AccessControl {
         uint seqOfDeal,
         uint seqOfSwap
     ) external {
-       _getROOKeeper().pickupPledgedShare(ia, seqOfDeal, seqOfSwap, msg.sender);        
+       gk.getROOKeeper().pickupPledgedShare(ia, seqOfDeal, seqOfSwap, msg.sender);        
     }
 
 }

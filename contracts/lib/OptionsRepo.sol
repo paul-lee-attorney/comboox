@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "./Checkpoints.sol";
 import "./CondsRepo.sol";
 import "./SharesRepo.sol";
@@ -27,6 +27,9 @@ import "./SwapsRepo.sol";
 
 import "../comps/books/ros/IRegisterOfShares.sol";
 
+/// @title OptionsRepo
+/// @notice Library for creating, executing, and settling option records.
+/// @dev Stores options, obligors, swaps, and oracle checkpoints.
 library OptionsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
     using Checkpoints for Checkpoints.History;
@@ -34,6 +37,7 @@ library OptionsRepo {
     using CondsRepo for bytes32;
     using SwapsRepo for SwapsRepo.Repo;
 
+    /// @notice Option types.
     enum TypeOfOpt {
         CallPrice,          
         PutPrice,           
@@ -45,6 +49,7 @@ library OptionsRepo {
         PutRoeWithCnds     
     }
 
+    /// @notice Option lifecycle states.
     enum StateOfOpt {
         Pending,    
         Issued,         
@@ -52,6 +57,7 @@ library OptionsRepo {
         Closed
     }
 
+    /// @notice Core option parameters encoded in snOfOpt.
     struct Head {
         uint32 seqOfOpt;
         uint8 typeOfOpt;
@@ -64,6 +70,7 @@ library OptionsRepo {
         uint40 obligor;      
     }
 
+    /// @notice Runtime fields of an option.
     struct Body {
         uint48 closingDeadline;
         uint40 rightholder;
@@ -74,18 +81,21 @@ library OptionsRepo {
         uint16 argu;
     }
 
+    /// @notice Full option record.
     struct Option {
         Head head;
         CondsRepo.Cond cond;
         Body body;
     }
 
+    /// @notice Per-option auxiliary data.
     struct Record {
         EnumerableSet.UintSet obligors;
         SwapsRepo.Repo swaps;
         Checkpoints.History oracles;
     }
 
+    /// @notice Repository storage for options.
     struct Repo {
         mapping(uint256 => Option) options;
         mapping(uint256 => Record) records;
@@ -97,11 +107,13 @@ library OptionsRepo {
     // ###############
 
 
+    /// @dev Reverts if the option does not exist.
     modifier optExist(Repo storage repo, uint seqOfOpt) {
         require (isOption(repo, seqOfOpt), "OR.optExist: not");
         _;
     }
 
+    /// @dev Reverts if caller is not the option rightholder.
     modifier onlyRightholder(Repo storage repo, uint seqOfOpt, uint caller) {
         require (isRightholder(repo, seqOfOpt, caller),
             "OR.mf.onlyRightholder: not");
@@ -114,6 +126,7 @@ library OptionsRepo {
 
     // ==== cofify / parser ====
 
+    /// @notice Parse an option serial number into its head.
     function snParser(bytes32 sn) public pure returns (Head memory head) {
         uint _sn = uint(sn);
 
@@ -130,6 +143,7 @@ library OptionsRepo {
         });
     }
 
+    /// @notice Encode a head into an option serial number.
     function codifyHead(Head memory head) public pure returns (bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             head.seqOfOpt,
@@ -148,6 +162,7 @@ library OptionsRepo {
 
     // ==== Option ====
 
+    /// @notice Create and register an option from encoded inputs.
     function createOption(
         Repo storage repo,
         bytes32 snOfOpt,
@@ -170,6 +185,7 @@ library OptionsRepo {
         head = regOption(repo, opt);
     }
 
+    /// @notice Mark an option as issued.
     function issueOption(
         Repo storage repo,
         Option memory opt
@@ -182,6 +198,7 @@ library OptionsRepo {
         return o.head.issueDate;
     }
 
+    /// @notice Register an option with validation and sequence assignment.
     function regOption(
         Repo storage repo,
         Option memory opt
@@ -208,6 +225,7 @@ library OptionsRepo {
         return opt.head;        
     }
 
+    /// @notice Remove a pending option.
     function removeOption(
         Repo storage repo,
         uint seqOfOpt
@@ -226,6 +244,7 @@ library OptionsRepo {
 
     // ==== Record ====
 
+    /// @notice Add an obligor to an option.
     function addObligorIntoOption(Repo storage repo, uint seqOfOpt, uint256 obligor)
         public returns(bool)
     {
@@ -233,6 +252,7 @@ library OptionsRepo {
         return repo.records[seqOfOpt].obligors.add(uint40(obligor));
     }
 
+    /// @notice Remove an obligor from an option.
     function removeObligorFromOption(Repo storage repo, uint seqOfOpt, uint256 obligor)
         public returns(bool)
     {
@@ -240,6 +260,7 @@ library OptionsRepo {
         return repo.records[seqOfOpt].obligors.remove(obligor);
     }
 
+    /// @notice Add multiple obligors to an option.
     function addObligorsIntoOption(Repo storage repo, uint seqOfOpt, uint256[] memory obligors)
         public
     {
@@ -254,6 +275,7 @@ library OptionsRepo {
 
     // ==== ExecOption ====
 
+    /// @notice Append an oracle checkpoint.
     function updateOracle(
         Repo storage repo,
         uint256 seqOfOpt,
@@ -264,6 +286,7 @@ library OptionsRepo {
         repo.records[seqOfOpt].oracles.push(100, d1, d2, d3);
     }
 
+    /// @notice Execute an issued option within its exercise window.
     function execOption(
         Repo storage repo,
         uint256 seqOfOpt,
@@ -307,6 +330,7 @@ library OptionsRepo {
 
     // ==== Brief ====
 
+    /// @notice Create a swap order for an executed option.
     function createSwap(
         Repo storage repo,
         uint256 seqOfOpt,
@@ -371,6 +395,7 @@ library OptionsRepo {
 
     }
 
+    /// @notice Pay off a swap order.
     function payOffSwap(
         Repo storage repo,
         uint seqOfOpt,
@@ -389,6 +414,7 @@ library OptionsRepo {
         return repo.records[seqOfOpt].swaps.payOffSwap(seqOfSwap);
     }
 
+    /// @notice Terminate an expired swap order.
     function terminateSwap(
         Repo storage repo,
         uint seqOfOpt,
@@ -407,6 +433,7 @@ library OptionsRepo {
 
     // ==== Counter ====
 
+    /// @dev Increment and return the option sequence counter.
     function _increaseCounter(Repo storage repo) private returns(uint32 seqOfOpt) {
         repo.options[0].head.seqOfOpt++;
         seqOfOpt = repo.options[0].head.seqOfOpt;
@@ -418,30 +445,35 @@ library OptionsRepo {
 
     // ==== Repo ====
 
+    /// @notice Get the option counter.
     function counterOfOptions(Repo storage repo)
         public view returns (uint32)
     {
         return repo.options[0].head.seqOfOpt;
     }
 
+    /// @notice Get number of options.
     function qtyOfOptions(Repo storage repo)
         public view returns (uint)
     {
         return repo.seqList.length();
     }
 
+    /// @notice Check whether an option exists.
     function isOption(Repo storage repo, uint256 seqOfOpt) 
         public view returns (bool) 
     {
         return repo.seqList.contains(seqOfOpt);
     }
 
+    /// @notice Get an option by sequence number.
     function getOption(Repo storage repo, uint256 seqOfOpt) public view 
         optExist(repo, seqOfOpt) returns (OptionsRepo.Option memory option)   
     {
         option = repo.options[seqOfOpt];
     }
 
+    /// @notice Get all options.
     function getAllOptions(Repo storage repo) 
         public view returns (Option[] memory) 
     {
@@ -456,60 +488,70 @@ library OptionsRepo {
         return output;
     }
 
+    /// @notice Check whether an account is the rightholder.
     function isRightholder(Repo storage repo, uint256 seqOfOpt, uint256 acct) 
         public view optExist(repo, seqOfOpt) returns (bool)
     {
         return repo.options[seqOfOpt].body.rightholder == acct;
     }
 
+    /// @notice Check whether an account is an obligor.
     function isObligor(Repo storage repo, uint256 seqOfOpt, uint256 acct) public 
         view optExist(repo, seqOfOpt) returns (bool) 
     {
         return repo.records[seqOfOpt].obligors.contains(acct);
     }
 
+    /// @notice Get obligors of an option.
     function getObligorsOfOption(Repo storage repo, uint256 seqOfOpt) public 
         view optExist(repo, seqOfOpt) returns (uint256[] memory)
     {
         return repo.records[seqOfOpt].obligors.values();
     }
 
+    /// @notice Get list of option sequence numbers.
     function getSeqList(Repo storage repo) public view returns(uint[] memory) {
         return repo.seqList.values();
     }
 
     // ==== Order ====
 
+    /// @notice Get swap counter for an option.
     function counterOfSwaps(Repo storage repo, uint256 seqOfOpt)
         public view returns (uint16)
     {
         return repo.records[seqOfOpt].swaps.counterOfSwaps();
     }
 
+    /// @notice Sum paid amount of targets for an option.
     function sumPaidOfTarget(Repo storage repo, uint256 seqOfOpt)
         public view returns (uint64)
     {
         return repo.records[seqOfOpt].swaps.sumPaidOfTarget();
     }
 
+    /// @notice Check whether a swap exists.
     function isSwap(Repo storage repo, uint256 seqOfOpt, uint256 seqOfOrder)
         public view returns (bool)
     {
         return repo.records[seqOfOpt].swaps.isSwap(seqOfOrder);
     }
 
+    /// @notice Get a swap by sequence number.
     function getSwap(Repo storage repo, uint256 seqOfOpt, uint256 seqOfSwap)
         public view returns (SwapsRepo.Swap memory)
     {
         return repo.records[seqOfOpt].swaps.getSwap(seqOfSwap);
     }
 
+    /// @notice Get all swaps of an option.
     function getAllSwapsOfOption(Repo storage repo, uint256 seqOfOpt)
         public view returns (SwapsRepo.Swap[] memory )
     {
         return repo.records[seqOfOpt].swaps.getAllSwaps();
     }
 
+    /// @notice Check whether all swaps are closed.
     function allSwapsClosed(Repo storage repo, uint256 seqOfOpt)
         public view returns (bool)
     {
@@ -518,6 +560,7 @@ library OptionsRepo {
 
     // ==== Oracles ====
 
+    /// @notice Get oracle checkpoint at a date.
     function getOracleAtDate(
         Repo storage repo, 
         uint256 seqOfOpt, 
@@ -528,6 +571,7 @@ library OptionsRepo {
         return repo.records[seqOfOpt].oracles.getAtDate(date);
     }
 
+    /// @notice Get latest oracle checkpoint.
     function getLatestOracle(Repo storage repo, uint256 seqOfOpt) 
         public view optExist(repo, seqOfOpt) 
         returns(Checkpoints.Checkpoint memory)
@@ -535,6 +579,7 @@ library OptionsRepo {
         return repo.records[seqOfOpt].oracles.latest();
     }
 
+    /// @notice Get all oracle checkpoints of an option.
     function getAllOraclesOfOption(Repo storage repo, uint256 seqOfOpt)
         public view optExist(repo, seqOfOpt)
         returns (Checkpoints.Checkpoint[] memory) 

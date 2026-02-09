@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -27,7 +27,11 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
     using PledgesRepo for PledgesRepo.Repo;
     using PledgesRepo for PledgesRepo.Pledge;
 
+    // Repository for pledges and their states.
     PledgesRepo.Repo private _repo;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //##################
     //##  Write I/O   ##

@@ -28,9 +28,13 @@ import "./IMeetingMinutes.sol";
 contract MeetingMinutes is IMeetingMinutes, AccessControl {
     using MotionsRepo for MotionsRepo.Repo;
     using RulesParser for bytes32;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for motions, their states, and their voting results.
     MotionsRepo.Repo private _repo;
+
+    // ==== UUPS Upgradeable ====
+    uint[50] private __gap;
 
     //##################
     //##    Write     ##
@@ -199,18 +203,18 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             );
     }
 
-    function createMotionToDeprecateGK(
-        address receiver,
-        uint proposer
-    ) external onlyKeeper returns(uint64) {
-        return _addMotion(
-            uint8(MotionsRepo.TypeOfMotion.DeprecateGK),
-            10,
-            proposer,
-            proposer,
-            uint(uint160(receiver))
-        );
-    }
+    // function createMotionToDeprecateGK(
+    //     address receiver,
+    //     uint proposer
+    // ) external onlyKeeper returns(uint64) {
+    //     return _addMotion(
+    //         uint8(MotionsRepo.TypeOfMotion.DeprecateGK),
+    //         10,
+    //         proposer,
+    //         proposer,
+    //         uint(uint160(receiver))
+    //     );
+    // }
 
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,

@@ -19,12 +19,16 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "./RulesParser.sol";
 
+/// @title FilesRepo
+/// @notice Library for managing document file lifecycle and metadata.
+/// @dev Stores file records keyed by document contract address.
 library FilesRepo {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @notice File lifecycle state.
     enum StateOfFile {
         ZeroPoint,  // 0
         Created,    // 1
@@ -36,6 +40,7 @@ library FilesRepo {
         Revoked     // 7
     }
 
+    /// @notice Core lifecycle fields and voting windows for a file.
     struct Head {
         uint48 circulateDate;
         uint8 signingDays;
@@ -53,19 +58,24 @@ library FilesRepo {
         uint8 state;
     }
 
+    /// @notice Off-chain reference metadata for a file.
     struct Ref {
         bytes32 docUrl;
         bytes32 docHash;
     }
 
+    /// @notice Full file record.
     struct File {
         bytes32 snOfDoc;
         Head head;
         Ref ref;
     }
 
+    /// @notice Repository storage for files.
     struct Repo {
+        // Keyed by document contract address.
         mapping(address => File) files;
+        // List of registered document contract addresses.
         EnumerableSet.AddressSet filesList;
     }
 
@@ -73,6 +83,7 @@ library FilesRepo {
     //##    modifier    ##
     //####################
 
+    /// @dev Reverts if the file is not registered.
     modifier onlyRegistered(Repo storage repo, address body) {
         require(repo.filesList.contains(body),
             "FR.md.OR: doc NOT registered");
@@ -83,9 +94,15 @@ library FilesRepo {
     //##  Write I/O   ##
     //##################
 
+    /// @notice Register a document file.
+    /// @param repo Repository storage.
+    /// @param snOfDoc Encoded document identifier.
+    /// @param body Document contract address.
+    /// @return flag True if the file is newly registered.
     function regFile(Repo storage repo, bytes32 snOfDoc, address body) 
         public returns (bool flag)
     {
+        require(body != address(0), "FR.regFile: zero address");
         if (repo.filesList.add(body)) {
 
             File storage file = repo.files[body];
@@ -96,11 +113,20 @@ library FilesRepo {
         }
     }
 
+    /// @notice Circulate a file for signing and voting.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
+    /// @param signingDays Signing window in days.
+    /// @param closingDays Total closing window in days.
+    /// @param vr Voting rule parameters.
+    /// @param docUrl Document URL hash.
+    /// @param docHash Document content hash.
+    /// @return head Updated head record.
     function circulateFile(
         Repo storage repo,
         address body,
-        uint16 signingDays,
-        uint16 closingDays,
+        uint signingDays,
+        uint closingDays,
         RulesParser.VotingRule memory vr,
         bytes32 docUrl,
         bytes32 docHash
@@ -147,6 +173,11 @@ library FilesRepo {
         return file.head;
     }
 
+    /// @notice Propose a circulated file for voting.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
+    /// @param seqOfMotion Motion sequence number.
+    /// @return Updated head record.
     function proposeFile(
         Repo storage repo,
         address body,
@@ -174,6 +205,10 @@ library FilesRepo {
         return file.head;
     }
 
+    /// @notice Record vote counting result for a proposed file.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
+    /// @param approved True if approved.
     function voteCountingForFile(
         Repo storage repo,
         address body,
@@ -183,17 +218,15 @@ library FilesRepo {
         require(repo.files[body].head.state == uint8(StateOfFile.Proposed),
             "FR.VCFF: Doc not proposed");
 
-        // uint48 timestamp = uint48(block.timestamp);
-
-        // require(timestamp >= votingDeadline(repo, body), 
-        //     "FR.voteCounting: still in votingPeriod");
-
         File storage file = repo.files[body];
 
         file.head.state = approved ? 
             uint8(StateOfFile.Approved) : uint8(StateOfFile.Rejected);
     }
 
+    /// @notice Execute an approved file.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function execFile(
         Repo storage repo,
         address body
@@ -212,6 +245,9 @@ library FilesRepo {
         file.head.state = uint8(StateOfFile.Closed);
     }
 
+    /// @notice Revoke a file.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function terminateFile(
         Repo storage repo,
         address body
@@ -225,6 +261,10 @@ library FilesRepo {
         file.head.state = uint8(StateOfFile.Revoked);
     }
 
+    /// @notice Force set file state.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
+    /// @param state New state value.
     function setStateOfFile(Repo storage repo, address body, uint state) 
         public onlyRegistered(repo, body)
     {
@@ -235,6 +275,9 @@ library FilesRepo {
     //##   read I/O   ##
     //##################
 
+    /// @notice Get signing deadline timestamp.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function signingDeadline(Repo storage repo, address body) 
         public view returns (uint48) {
         
@@ -243,6 +286,9 @@ library FilesRepo {
         return file.head.circulateDate + uint48(file.head.signingDays) * 86400;
     }
 
+    /// @notice Get closing deadline timestamp.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function closingDeadline(Repo storage repo, address body) 
         public view returns (uint48) {
         
@@ -251,6 +297,9 @@ library FilesRepo {
         return file.head.circulateDate + uint48(file.head.closingDays) * 86400;
     }
 
+    /// @notice Get first execution deadline timestamp.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function frExecDeadline(Repo storage repo, address body) 
         public view returns (uint48) {
         
@@ -260,6 +309,9 @@ library FilesRepo {
             file.head.frExecDays) * 86400;
     }
 
+    /// @notice Get second execution deadline timestamp.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function dtExecDeadline(Repo storage repo, address body) 
         public view returns (uint48) {
         
@@ -269,6 +321,9 @@ library FilesRepo {
             file.head.frExecDays + file.head.dtExecDays) * 86400;
     }
 
+    /// @notice Get termination start timestamp.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function terminateStartpoint(Repo storage repo, address body) 
         public view returns (uint48) {
         
@@ -278,6 +333,9 @@ library FilesRepo {
             file.head.frExecDays + file.head.dtExecDays + file.head.dtConfirmDays)) * 86400;
     }
 
+    /// @notice Get voting deadline timestamp.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function votingDeadline(Repo storage repo, address body) 
         public view returns (uint48) {
         
@@ -287,22 +345,35 @@ library FilesRepo {
             file.head.votePrepareDays + file.head.votingDays)) * 86400;
     }    
 
+    /// @notice Check if a file is registered.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function isRegistered(Repo storage repo, address body) public view returns (bool) {
         return repo.filesList.contains(body);
     }
 
+    /// @notice Get number of registered files.
+    /// @param repo Repository storage.
     function qtyOfFiles(Repo storage repo) public view returns (uint256) {
         return repo.filesList.length();
     }
 
+    /// @notice Get list of registered file addresses.
+    /// @param repo Repository storage.
     function getFilesList(Repo storage repo) public view returns (address[] memory) {
         return repo.filesList.values();
     }
 
+    /// @notice Get file record by address.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function getFile(Repo storage repo, address body) public view returns (File memory) {
         return repo.files[body];
     }
 
+    /// @notice Get file header by address.
+    /// @param repo Repository storage.
+    /// @param body Document contract address.
     function getHeadOfFile(Repo storage repo, address body)
         public view onlyRegistered(repo, body) returns (Head memory)
     {

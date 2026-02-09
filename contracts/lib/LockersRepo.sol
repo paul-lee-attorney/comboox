@@ -19,26 +19,32 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title LockersRepo
+/// @notice Hash-locked lockers for points/consideration.
 library LockersRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
+    /// @notice Locker header fields.
     struct Head {
         uint40 from;
         uint40 to;
         uint48 expireDate;
         uint128 value;
     }
+    /// @notice Locker payload fields.
     struct Body {
         address counterLocker;
         bytes payload;
     }
+    /// @notice Full locker record.
     struct Locker {
         Head head;
         Body body;
     }
 
+    /// @notice Repository of lockers by hashLock.
     struct Repo {
         // hashLock => locker
         mapping (bytes32 => Locker) lockers;
@@ -49,6 +55,8 @@ library LockersRepo {
     //##    Write    ##
     //#################
 
+    /// @notice Parse locker head from packed bytes32.
+    /// @param sn Packed head bytes32.
     function headSnParser(bytes32 sn) public pure returns (Head memory head) {
         uint _sn = uint(sn);
         
@@ -60,6 +68,8 @@ library LockersRepo {
         });
     }
 
+    /// @notice Pack locker head into bytes32.
+    /// @param head Locker head.
     function codifyHead(Head memory head) public pure returns (bytes32 headSn) {
         bytes memory _sn = abi.encodePacked(
                             head.from,
@@ -71,6 +81,10 @@ library LockersRepo {
         }
     }
 
+    /// @notice Lock points without payload.
+    /// @param repo Storage repo.
+    /// @param head Locker header.
+    /// @param hashLock Hash lock key.
     function lockPoints(
         Repo storage repo,
         Head memory head,
@@ -80,6 +94,11 @@ library LockersRepo {
         lockConsideration(repo, head, body, hashLock);        
     }
 
+    /// @notice Lock consideration with payload.
+    /// @param repo Storage repo.
+    /// @param head Locker header.
+    /// @param body Locker payload.
+    /// @param hashLock Hash lock key.
     function lockConsideration(
         Repo storage repo,
         Head memory head,
@@ -93,6 +112,11 @@ library LockersRepo {
         } else revert ("LR.lockConsideration: occupied");
     }
 
+    /// @notice Pickup locked points with preimage.
+    /// @param repo Storage repo.
+    /// @param hashLock Hash lock key.
+    /// @param hashKey Preimage string.
+    /// @param caller Caller user number.
     function pickupPoints(
         Repo storage repo,
         bytes32 hashLock,
@@ -130,6 +154,10 @@ library LockersRepo {
         }
     }
 
+    /// @notice Withdraw after locker expiry.
+    /// @param repo Storage repo.
+    /// @param hashLock Hash lock key.
+    /// @param caller Caller user number.
     function withdrawDeposit(
         Repo storage repo,
         bytes32 hashLock,
@@ -154,6 +182,9 @@ library LockersRepo {
     //##    Read     ##
     //#################
 
+    /// @notice Get locker head by hashLock.
+    /// @param repo Storage repo.
+    /// @param hashLock Hash lock key.
     function getHeadOfLocker(
         Repo storage repo,
         bytes32 hashLock
@@ -161,6 +192,9 @@ library LockersRepo {
         return repo.lockers[hashLock].head;
     }
 
+    /// @notice Get full locker by hashLock.
+    /// @param repo Storage repo.
+    /// @param hashLock Hash lock key.
     function getLocker(
         Repo storage repo,
         bytes32 hashLock
@@ -168,6 +202,8 @@ library LockersRepo {
         return repo.lockers[hashLock];
     }
 
+    /// @notice Get list of hashLocks.
+    /// @param repo Storage repo.
     function getSnList(
         Repo storage repo
     ) public view returns (bytes32[] memory ) {

@@ -19,8 +19,11 @@
 
 pragma solidity ^0.8.8;
 
+/// @title SwapsRepo
+/// @notice Repository of swap records for pledge/target exchanges.
 library SwapsRepo {
 
+    /// @notice Swap lifecycle state.
     enum StateOfSwap {
         Pending,    
         Issued,
@@ -28,6 +31,7 @@ library SwapsRepo {
         Terminated
     }
 
+    /// @notice Swap record.
     struct Swap {
         uint16 seqOfSwap;
         uint32 seqOfPledge;
@@ -39,6 +43,7 @@ library SwapsRepo {
         uint8 state;
     }
 
+    /// @notice Repository of swaps by sequence.
     struct Repo {
         // seqOfSwap => Swap
         mapping(uint256 => Swap) swaps;
@@ -48,6 +53,9 @@ library SwapsRepo {
     // ##  Modifier ##
     // ###############
 
+    /// @notice Ensure swap exists.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
     modifier swapExist(Repo storage repo, uint seqOfSwap) {
         require (isSwap(repo, seqOfSwap), "SR.swapExist: not");
         _;
@@ -59,6 +67,8 @@ library SwapsRepo {
 
     // ==== cofify / parser ====
 
+    /// @notice Pack swap into bytes32.
+    /// @param swap Swap record.
     function codifySwap(Swap memory swap) public pure returns (bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             swap.seqOfSwap,
@@ -74,6 +84,9 @@ library SwapsRepo {
         }
     }
 
+    /// @notice Register a new swap.
+    /// @param repo Storage repo.
+    /// @param swap Swap record.
     function regSwap(
         Repo storage repo,
         Swap memory swap
@@ -90,6 +103,9 @@ library SwapsRepo {
         return swap;
     }
 
+    /// @notice Mark a swap as paid off.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
     function payOffSwap(
         Repo storage repo,
         uint seqOfSwap
@@ -110,6 +126,9 @@ library SwapsRepo {
         return swap;
     }
 
+    /// @notice Terminate an issued swap.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
     function terminateSwap(
         Repo storage repo,
         uint seqOfSwap
@@ -136,24 +155,34 @@ library SwapsRepo {
     // ##  Read I/O  ##
     // ################
 
+    /// @notice Get total swap counter.
+    /// @param repo Storage repo.
     function counterOfSwaps(Repo storage repo)
         public view returns (uint16)
     {
         return repo.swaps[0].seqOfSwap;
     }
 
+    /// @notice Get sum of paid target amounts.
+    /// @param repo Storage repo.
     function sumPaidOfTarget(Repo storage repo)
         public view returns (uint64)
     {
         return repo.swaps[0].paidOfTarget;
     }
 
+    /// @notice Check whether a swap exists.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
     function isSwap(Repo storage repo, uint256 seqOfSwap)
         public view returns (bool)
     {
         return seqOfSwap <= counterOfSwaps(repo);
     }
 
+    /// @notice Get swap by sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
     function getSwap(Repo storage repo, uint256 seqOfSwap)
         public view swapExist(repo, seqOfSwap) returns (Swap memory)
     {
@@ -169,6 +198,8 @@ library SwapsRepo {
     //     return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
     // }
 
+    /// @notice Get all swaps.
+    /// @param repo Storage repo.
     function getAllSwaps(Repo storage repo)
         public view returns (Swap[] memory )
     {
@@ -182,6 +213,8 @@ library SwapsRepo {
         return swaps;
     }
 
+    /// @notice Check whether all swaps are closed.
+    /// @param repo Storage repo.
     function allSwapsClosed(Repo storage repo)
         public view returns (bool)
     {

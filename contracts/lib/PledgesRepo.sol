@@ -19,11 +19,14 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title PledgesRepo
+/// @notice Repository for share pledge records and lifecycle.
 library PledgesRepo {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
+    /// @notice Pledge lifecycle state.
     enum StateOfPld {
         Pending,
         Issued,
@@ -33,6 +36,7 @@ library PledgesRepo {
         Revoked
     }
 
+    /// @notice Pledge header fields.
     struct Head {
         uint32 seqOfShare;
         uint16 seqOfPld;
@@ -45,6 +49,7 @@ library PledgesRepo {
         uint8 state;
     }
 
+    /// @notice Pledge body fields.
     struct Body {
         uint64 paid;
         uint64 par;
@@ -55,12 +60,14 @@ library PledgesRepo {
         uint16 argu;
     }
 
+    /// @notice Full pledge record.
     struct Pledge {
         Head head;
         Body body;
         bytes32 hashLock;
     }
 
+    /// @notice Repository of pledges by share and sequence.
     struct Repo{
         // seqOfShare => seqOfPld => Pledge
         mapping(uint256 => mapping(uint256 => Pledge)) pledges;
@@ -71,6 +78,8 @@ library PledgesRepo {
     //##  Write I/O  ##
     //##################
 
+    /// @notice Parse pledge head from bytes32.
+    /// @param sn Packed pledge head.
     function snParser(bytes32 sn) public pure returns (Head memory head) {
         uint _sn = uint(sn);
         
@@ -87,6 +96,8 @@ library PledgesRepo {
         });
     } 
 
+    /// @notice Pack pledge head into bytes32.
+    /// @param head Pledge head.
     function codifyHead(Head memory head) public pure returns (bytes32 sn) {
         bytes memory _sn = abi.encodePacked(
                             head.seqOfShare,
@@ -104,7 +115,14 @@ library PledgesRepo {
 
     } 
 
-    function createPledge(
+        /// @notice Create and issue a pledge from packed head.
+        /// @param repo Storage repo.
+        /// @param snOfPld Packed pledge head.
+        /// @param paid Paid amount.
+        /// @param par Par amount.
+        /// @param guaranteedAmt Guaranteed amount.
+        /// @param execDays Execution days.
+        function createPledge(
             Repo storage repo, 
             bytes32 snOfPld, 
             uint paid,
@@ -117,6 +135,13 @@ library PledgesRepo {
         head = issuePledge(repo, head, paid, par, guaranteedAmt, execDays);
     }
 
+    /// @notice Issue a pledge with provided head/body.
+    /// @param repo Storage repo.
+    /// @param head Pledge head.
+    /// @param paid Paid amount.
+    /// @param par Par amount.
+    /// @param guaranteedAmt Guaranteed amount.
+    /// @param execDays Execution days.
     function issuePledge(
         Repo storage repo,
         Head memory head,
@@ -150,6 +175,9 @@ library PledgesRepo {
         regHead = regPledge(repo, pld);
     }
 
+    /// @notice Register pledge into storage.
+    /// @param repo Storage repo.
+    /// @param pld Pledge record.
     function regPledge(
         Repo storage repo,
         Pledge memory pld
@@ -167,6 +195,13 @@ library PledgesRepo {
 
     // ==== Update Pledge ====
 
+    /// @notice Split a pledge and optionally transfer to buyer.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
+    /// @param buyer Buyer user number.
+    /// @param amt Split amount.
+    /// @param caller Caller user number.
     function splitPledge(
         Repo storage repo,
         uint256 seqOfShare,
@@ -212,6 +247,10 @@ library PledgesRepo {
         }
     }
 
+    /// @notice Extend guarantee days.
+    /// @param pld Pledge record.
+    /// @param extDays Extra days.
+    /// @param caller Caller user number.
     function extendPledge(
         Pledge storage pld,
         uint extDays,
@@ -226,6 +265,10 @@ library PledgesRepo {
 
     // ==== Lock & Release ====
 
+    /// @notice Lock pledge with hash lock.
+    /// @param pld Pledge record.
+    /// @param hashLock Hash lock key.
+    /// @param caller Caller user number.
     function lockPledge(
         Pledge storage pld,
         bytes32 hashLock,
@@ -241,6 +284,9 @@ library PledgesRepo {
         } else revert ("PR.lockPld: wrong state");
     }
 
+    /// @notice Release pledge with hash key.
+    /// @param pld Pledge record.
+    /// @param hashKey Preimage string.
     function releasePledge(
         Pledge storage pld,
         string memory hashKey
@@ -251,6 +297,9 @@ library PledgesRepo {
         } else revert("PR.releasePld: wrong Key");
     }
 
+    /// @notice Execute a triggered pledge.
+    /// @param pld Pledge record.
+    /// @param caller Caller user number.
     function execPledge(Pledge storage pld, uint caller) public {
 
         require(caller == pld.head.creditor, "PR.execPld: not creditor");
@@ -264,6 +313,9 @@ library PledgesRepo {
         } else revert ("PR.execPld: wrong state");
     }
 
+    /// @notice Revoke an expired pledge.
+    /// @param pld Pledge record.
+    /// @param caller Caller user number.
     function revokePledge(Pledge storage pld, uint caller) public {
         require(caller == pld.head.pledgor, "PR.revokePld: not pledgor");
         require(isExpired(pld), "PR.revokePld: pledge not expired");
@@ -288,39 +340,59 @@ library PledgesRepo {
     //##    Read     ##
     //#################
 
+    /// @notice Check if pledge is triggered by maturity.
+    /// @param pld Pledge record.
     function isTriggerd(Pledge storage pld) public view returns(bool) {
         uint64 triggerDate = pld.head.createDate + uint48(pld.head.daysToMaturity) * 86400;
         return block.timestamp >= triggerDate;
     }
 
+    /// @notice Check if pledge is expired after guarantee days.
+    /// @param pld Pledge record.
     function isExpired(Pledge storage pld) public view returns(bool) {
         uint64 expireDate = pld.head.createDate + uint48(pld.head.daysToMaturity + pld.head.guaranteeDays) * 86400;
         return block.timestamp >= expireDate;
     }
 
+    /// @notice Get pledge counter for share.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
     function counterOfPld(Repo storage repo, uint256 seqOfShare) 
         public view returns (uint16) 
     {
         return repo.pledges[seqOfShare][0].head.seqOfPld;
     }
 
+    /// @notice Check if pledge exists.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPledge Pledge sequence.
     function isPledge(Repo storage repo, uint seqOfShare, uint seqOfPledge) 
         public view returns (bool)
     {
         return repo.pledges[seqOfShare][seqOfPledge].head.createDate > 0;
     }
 
+    /// @notice Get list of pledge head hashes.
+    /// @param repo Storage repo.
     function getSNList(Repo storage repo) public view returns (bytes32[] memory list)
     {
         list = repo.snList.values();
     }
 
+    /// @notice Get pledge by share and sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
+    /// @param seqOfPld Pledge sequence.
     function getPledge(Repo storage repo, uint256 seqOfShare, uint seqOfPld) 
         public view returns (Pledge memory)
     {
         return repo.pledges[seqOfShare][seqOfPld];
     } 
 
+    /// @notice Get all pledges for a share.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
     function getPledgesOfShare(Repo storage repo, uint256 seqOfShare) 
         public view returns (Pledge[] memory) 
     {
@@ -336,6 +408,8 @@ library PledgesRepo {
         return output;
     }
 
+    /// @notice Get all pledges across shares.
+    /// @param repo Storage repo.
     function getAllPledges(Repo storage repo) 
         public view returns (Pledge[] memory)
     {

@@ -24,9 +24,13 @@ import "../../common/access/AccessControl.sol";
 
 contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
     using OfficersRepo for OfficersRepo.Repo;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for directors, officers, their positions, and their titles.
     OfficersRepo.Repo private _repo;
+
+    // ==== UUPS Upgradeable ====
+    uint256[50] private __gap;
 
     //#################
     //##  Write I/O  ##

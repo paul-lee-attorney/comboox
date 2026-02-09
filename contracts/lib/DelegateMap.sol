@@ -22,13 +22,17 @@ pragma solidity ^0.8.8;
 import "../comps/books/rom/IRegisterOfMembers.sol";
 import "../comps/books/rod/IRegisterOfDirectors.sol";
 
+/// @title DelegateMap
+/// @notice Library for managing delegation relationships and derived voting weight.
 library DelegateMap {
 
+    /// @notice Aggregated info for delegated leaves.
     struct LeavesInfo {
         uint64 weight;
         uint32 emptyHead;
     }
 
+    /// @notice Voter delegation data.
     struct Voter {
         uint40 delegate;
         uint64 weight;
@@ -37,6 +41,7 @@ library DelegateMap {
         uint[] principals;
     }
 
+    /// @notice Delegate map storage.
     struct Map {
         mapping(uint256 => Voter) voters;
     }
@@ -45,6 +50,11 @@ library DelegateMap {
     // ##    Write    ##
     // #################
 
+    /// @notice Entrust a delegate for a principal.
+    /// @param map Storage map.
+    /// @param principal Principal account id (> 0).
+    /// @param delegate Delegate account id (> 0, != principal).
+    /// @param weight Voting weight of principal (>= 0).
     function entrustDelegate(
         Map storage map,
         uint principal,
@@ -74,6 +84,7 @@ library DelegateMap {
         }
     }
 
+    /// @dev Append principals list to delegate record.
     function _consolidatePrincipals(uint[] memory principals, Voter storage d) private {
         uint len = principals.length;
 
@@ -87,6 +98,9 @@ library DelegateMap {
     // ##    Read     ##
     // #################
 
+    /// @notice Resolve the final delegate of an account (walks delegation chain).
+    /// @param map Storage map.
+    /// @param acct Account id (> 0).
     function getDelegateOf(Map storage map, uint acct)
         public
         view
@@ -98,6 +112,11 @@ library DelegateMap {
         }
     }
 
+    /// @notice Update delegate weights based on member votes at a date.
+    /// @param map Storage map.
+    /// @param acct Account id (> 0).
+    /// @param baseDate Snapshot timestamp.
+    /// @param _rom Register of members.
     function updateLeavesWeightAtDate(Map storage map, uint256 acct, uint baseDate, IRegisterOfMembers _rom)
         public
     {
@@ -122,6 +141,10 @@ library DelegateMap {
         voter.repHead = uint32(leaves.length) - info.emptyHead;
     }
 
+    /// @notice Update delegate headcount based on director membership.
+    /// @param map Storage map.
+    /// @param acct Account id (> 0).
+    /// @param _rod Register of directors.
     function updateLeavesHeadcountOfDirectors(Map storage map, uint256 acct, IRegisterOfDirectors _rod) 
         public 
     {

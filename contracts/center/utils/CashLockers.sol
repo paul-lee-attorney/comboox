@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,16 +21,23 @@ pragma solidity ^0.8.8;
 
 import "./ICashLockers.sol";
 
+/// @title CashLockers
+/// @notice Escrow contract that locks USDC using EIP-3009 authorizations and releases by hash-lock or expiry.
+/// @dev Tracks per-user custody and total custody for locked balances.
 contract CashLockers is ICashLockers {
 
     using UsdLockersRepo for UsdLockersRepo.Repo;
 
+    /// @notice USDC token with transferWithAuthorization support.
     IUSDC immutable public usdc;
 
+    /// @notice Deploy with USDC token address.
+    /// @param _usdc USDC contract address.
     constructor(address _usdc) {
         usdc = IUSDC(_usdc);
     }
 
+    /// @notice Custody balances per address.
     mapping(address => uint256) private _coffers;
     UsdLockersRepo.Repo private _lockers;
 
@@ -38,6 +45,8 @@ contract CashLockers is ICashLockers {
     //##   Write   ##
     //###############
 
+    /// @notice Pull USDC using an EIP-3009 authorization.
+    /// @param auth Authorization data structure.
     function _transferWithAuthorization(TransferAuth memory auth) private {
         usdc.transferWithAuthorization(
             auth.from, 
@@ -52,6 +61,11 @@ contract CashLockers is ICashLockers {
         );
     }
 
+    /// @notice Lock USDC with a hash-lock until released or expired.
+    /// @param auth USDC authorization (EIP-3009 style).
+    /// @param to Payee address.
+    /// @param expireDate Unix timestamp when withdrawal is allowed.
+    /// @param lock Hash lock value (keccak256 of the secret key).
     function lockUsd(
         TransferAuth memory auth, address to, uint expireDate, bytes32 lock
     ) external {
@@ -68,6 +82,13 @@ contract CashLockers is ICashLockers {
         emit LockUsd(auth.from, to, auth.value, expireDate, lock);
     }
 
+    /// @notice Lock USDC with an external conditional release hook.
+    /// @param auth USDC authorization (EIP-3009 style).
+    /// @param to Payee address.
+    /// @param expireDate Unix timestamp when withdrawal is allowed.
+    /// @param target Counter-locker contract to call on release.
+    /// @param payload Calldata payload prefix for counter-locker.
+    /// @param hashLock Hash lock value (keccak256 of the secret key).
     function lockConsideration(
         TransferAuth memory auth, 
         address to, 
@@ -81,14 +102,20 @@ contract CashLockers is ICashLockers {
 
         _transferWithAuthorization(auth);
 
+        _coffers[auth.from] += auth.value;
+        _coffers[address(1)] += auth.value;
+
         _lockers.lockConsideration(
             auth.from, to, expireDate, auth.value, 
             target, payload, hashLock
         );
-        
+                
         emit LockConsideration(auth.from, to, auth.value, expireDate, hashLock);
     }
 
+    /// @notice Release a lock using the preimage string.
+    /// @param lock Hash lock value.
+    /// @param key Preimage string (must hash to `lock`).
     function unlockUsd(bytes32 lock, string memory key) external {
 
         UsdLockersRepo.Head memory head =
@@ -106,6 +133,8 @@ contract CashLockers is ICashLockers {
             "CashLocker.releaseUsd: transfer failed");
     }
 
+    /// @notice Withdraw a lock after expiry by the creator.
+    /// @param lock Hash lock value.
     function withdrawUsd(bytes32 lock) external {
 
         UsdLockersRepo.Head memory head =
@@ -127,30 +156,41 @@ contract CashLockers is ICashLockers {
     //##   Read I/O   ##
     //##################
 
+    /// @notice Check if a lock is currently locked.
+    /// @param lock Hash lock value.
     function isLocked(bytes32 lock) external view returns(bool) {
         return _lockers.isLocked(lock);
     }
 
+    /// @notice Get total number of lockers.
     function counterOfLockers() external view returns(uint) {
         return _lockers.counterOfLockers();
     }
 
+    /// @notice Get locker header by hash.
+    /// @param lock Hash lock value.
     function getHeadOfLocker(bytes32 lock) external view returns(UsdLockersRepo.Head memory) {
         return _lockers.getHeadOfLocker(lock);
     }
 
+    /// @notice Get full locker by hash.
+    /// @param lock Hash lock value.
     function getLocker(bytes32 lock) external view returns(UsdLockersRepo.Locker memory) {
         return _lockers.getLocker(lock);
     }
 
+    /// @notice Get list of all hash locks.
     function getLockersList() external view returns (bytes32[] memory) {
         return _lockers.getSnList();
     }
 
+    /// @notice Get custody balance for an address.
+    /// @param acct Address to query.
     function custodyOf(address acct) external view returns(uint) {
         return _coffers[acct];
     }
 
+    /// @notice Get total custody balance.
     function totalCustody() external view returns(uint) {
         return _coffers[address(1)];
     }

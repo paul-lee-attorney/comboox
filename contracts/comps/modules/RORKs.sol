@@ -2,7 +2,7 @@
 
 /* *
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,38 +21,34 @@
 pragma solidity ^0.8.8;
 
 import "../common/access/AccessControl.sol";
-
+import "../../lib/InterfacesHub.sol";
 import "./IRORKs.sol";
 
 abstract contract RORKs is IRORKs, AccessControl {
-    // using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // #################
     // ##  RORKeeper  ##
     // #################
 
-    function _getRORKeeper() private view returns(IRORKeeper) {
-        return IRORKeeper(gk.getKeeper(16));
-    }
-
     function addRedeemableClass(uint class) external {
-        _getRORKeeper().addRedeemableClass(class, msg.sender);
+        gk.getRORKeeper().addRedeemableClass(class, msg.sender);
     }
 
     function removeRedeemableClass(uint class) external {
-        _getRORKeeper().removeRedeemableClass(class, msg.sender);
+        gk.getRORKeeper().removeRedeemableClass(class, msg.sender);
     }
 
     function updateNavPrice(uint class, uint price) external {
-        _getRORKeeper().updateNavPrice(class, price, msg.sender);
+        gk.getRORKeeper().updateNavPrice(class, price, msg.sender);
     }
 
     function requestForRedemption(uint class, uint paid) external {
-        _getRORKeeper().requestForRedemption(class, paid, msg.sender);
+        gk.getRORKeeper().requestForRedemption(class, paid, msg.sender);
     }
 
     function redeem(uint class, uint seqOfPack) external {
-        _getRORKeeper().redeem(class, seqOfPack, msg.sender);
+        gk.getRORKeeper().redeem(class, seqOfPack, msg.sender);
     }
 
 

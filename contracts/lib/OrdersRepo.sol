@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -21,9 +21,12 @@ pragma solidity ^0.8.8;
 
 import "./GoldChain.sol";
 
+/// @title OrdersRepo
+/// @notice Order book utilities for matching offers and bids.
 library OrdersRepo {
     using GoldChain for GoldChain.Chain;
 
+    /// @notice Compact brief for on-chain encoding.
     struct Brief {
         uint16 classOfShare;
         uint32 seqOfShare;
@@ -35,6 +38,7 @@ library OrdersRepo {
         uint16 distrWeight;
     }
 
+    /// @notice Order/deal model used by matching engine.
     struct Deal {
         address from;
         uint40 buyer;
@@ -53,6 +57,7 @@ library OrdersRepo {
         uint128 consideration;
     }
 
+    /// @notice Two-sided order book storage.
     struct Repo {
         GoldChain.Chain offers;
         GoldChain.Chain bids;
@@ -64,6 +69,8 @@ library OrdersRepo {
 
     // ==== Codify & Parse ====
 
+    /// @notice Parse brief from packed bytes32.
+    /// @param sn Packed brief.
     function parseBrief(bytes32 sn) public pure returns(
         Brief memory brief
     ) {
@@ -79,6 +86,8 @@ library OrdersRepo {
         brief.distrWeight = uint16(_sn);
     }
 
+    /// @notice Pack deal fields into brief.
+    /// @param deal Deal data.
     function codifyBrief(
         Deal memory deal
     ) public pure returns(bytes32 sn) {
@@ -99,6 +108,10 @@ library OrdersRepo {
         }                        
     }
 
+    /// @notice Parse a deal from packed segments.
+    /// @param fromSn Packed from-part.
+    /// @param toSn Packed to-part.
+    /// @param qtySn Packed qty-part.
     function parseDeal(
         bytes32 fromSn, bytes32 toSn, bytes32 qtySn
     ) public pure returns(
@@ -129,6 +142,8 @@ library OrdersRepo {
         deal.consideration = uint128(_qtySn);
     }
 
+    /// @notice Pack a deal into 3 words.
+    /// @param deal Deal data.
     function codifyDeal(Deal memory deal) public pure returns(
         bytes32 fromSn, bytes32 toSn, bytes32 qtySn
     ) {
@@ -174,6 +189,8 @@ library OrdersRepo {
 
     // ==== Order ====
 
+    /// @notice Convert deal to GoldChain order data.
+    /// @param deal Deal data.
     function dealToData(Deal memory deal) public view 
         returns (GoldChain.Data memory data) {
         return GoldChain.Data({
@@ -190,6 +207,11 @@ library OrdersRepo {
         });
     }
 
+    /// @notice Match and/or place a sell offer.
+    /// @param repo Storage repo.
+    /// @param input Offer data.
+    /// @param execHours Expiration in hours.
+    /// @param centPriceInWei Cent price in wei.
     function placeSellOrder(
         Repo storage repo,
         Deal memory input,
@@ -232,12 +254,21 @@ library OrdersRepo {
         }
     }
 
+    /// @notice Compute consideration value in wei.
+    /// @param paid Paid amount.
+    /// @param price Price in cents.
+    /// @param centPrice Cent price in wei.
     function getDealValue(
         uint paid, uint price, uint centPrice
     ) public pure returns (uint128) {
         return uint128(paid * price * centPrice / 10 ** 6);
     }
 
+    /// @notice Match and/or place a buy bid.
+    /// @param repo Storage repo.
+    /// @param input Bid data.
+    /// @param execHours Expiration in hours.
+    /// @param centPriceInWei Cent price in wei.
     function placeBuyOrder(
         Repo storage repo,
         Deal memory input,
@@ -283,6 +314,10 @@ library OrdersRepo {
         }
     }
 
+    /// @notice Withdraw an order by sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfOrder Order sequence number.
+    /// @param isOffer True for offer book, false for bid book.
     function withdrawOrder(
         Repo storage repo,
         uint seqOfOrder,
@@ -551,6 +586,9 @@ library OrdersRepo {
     //##  Read I/O  ##
     //################
 
+    /// @notice Get order counter.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
     function counterOfOrders(
         Repo storage repo, bool isOffer
     ) public view returns (uint32) {
@@ -559,6 +597,9 @@ library OrdersRepo {
             : repo.bids.counter();
     }
 
+    /// @notice Get head node id.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
     function headOfList(
         Repo storage repo, bool isOffer
     ) public view returns (uint32) {
@@ -567,6 +608,9 @@ library OrdersRepo {
             : repo.bids.head();
     }
 
+    /// @notice Get tail node id.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
     function tailOfList(
         Repo storage repo, bool isOffer
     ) public view returns (uint32) {
@@ -575,6 +619,9 @@ library OrdersRepo {
             : repo.bids.tail();
     }
 
+    /// @notice Get list length.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
     function lengthOfList(
         Repo storage repo, bool isOffer
     ) public view returns (uint32) {
@@ -585,6 +632,10 @@ library OrdersRepo {
 
     // ==== Order ====
 
+    /// @notice Check whether an order exists.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
+    /// @param seqOfOrder Order sequence number.
     function isOrder(
         Repo storage repo,
         bool isOffer,
@@ -595,6 +646,10 @@ library OrdersRepo {
             : repo.bids.isNode(seqOfOrder);
     }
 
+    /// @notice Get order by sequence.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
+    /// @param seqOfOrder Order sequence number.
     function getOrder(
         Repo storage repo,
         bool isOffer,
@@ -605,6 +660,9 @@ library OrdersRepo {
             : repo.bids.getOrder(seqOfOrder);
     }
 
+    /// @notice Get order sequence list.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
     function getSeqList(
         Repo storage repo,
         bool isOffer
@@ -614,6 +672,9 @@ library OrdersRepo {
             : repo.bids.getSeqList();
     }
 
+    /// @notice Get full order chain.
+    /// @param repo Storage repo.
+    /// @param isOffer True for offer book, false for bid book.
     function getOrders(
         Repo storage repo,
         bool isOffer

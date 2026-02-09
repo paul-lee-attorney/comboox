@@ -29,7 +29,7 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     using FRClaims for FRClaims.Claims;
     using FilesRepo for FilesRepo.Repo;
     using TopChain for TopChain.Chain;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // ia => frClaims
     mapping(address => FRClaims.Claims) private _frClaims;
@@ -37,6 +37,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     mapping(address => DTClaims.Claims) private _dtClaims;
     // ia => mockResults
     mapping(address => TopChain.Chain) private _mockOfIA;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //#################
     //##  Write I/O  ##

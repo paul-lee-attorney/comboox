@@ -2,7 +2,7 @@
 
 /* *
  * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.8;
 
-import "../../lib/BooksRepo.sol";
+import "../../lib/InterfacesHub.sol";
 import "../../lib/SharesRepo.sol";
 import "../../lib/RulesParser.sol";
 import "../../lib/WaterfallsRepo.sol";
@@ -30,10 +30,20 @@ import "../books/cashier/ICashier.sol";
 import "../books/roi/IRegisterOfInvestors.sol";
 import "../books/ros/IRegisterOfShares.sol";
 
+/// @title IAccountant
+/// @notice Interface for class initialization, distributions, and fund transfers.
 interface IAccountant {
 
+    /// @notice Initialize waterfall class data.
+    /// @param class Share class id.
     function initClass(uint class) external;
 
+    /// @notice Distribute profits by distribution rule.
+    /// @param amt Amount to distribute.
+    /// @param expireDate Distribution expiry timestamp.
+    /// @param seqOfDR Distribution rule sequence.
+    /// @param seqOfMotion Motion sequence.
+    /// @param msgSender Caller address.
     function distrProfits(
         uint amt,
         uint expireDate,
@@ -42,6 +52,13 @@ interface IAccountant {
         address msgSender
     ) external;
 
+    /// @notice Distribute income to fund manager and recipients.
+    /// @param amt Amount to distribute.
+    /// @param expireDate Distribution expiry timestamp.
+    /// @param seqOfDR Distribution rule sequence.
+    /// @param fundManager Fund manager user number.
+    /// @param seqOfMotion Motion sequence.
+    /// @param msgSender Caller address.
     function distrIncome(
         uint amt,
         uint expireDate,
@@ -51,6 +68,14 @@ interface IAccountant {
         address msgSender
     ) external;
 
+    /// @notice Transfer funds from treasury to a recipient.
+    /// @param fromBMM True if triggered by BMM, false for GMM.
+    /// @param to Recipient address.
+    /// @param isCBP True if paid in CBP, false for USDC.
+    /// @param amt Amount to transfer.
+    /// @param expireDate Transfer expiry timestamp.
+    /// @param seqOfMotion Motion sequence.
+    /// @param msgSender Caller address.
     function transferFund(
         bool fromBMM,
         address to,

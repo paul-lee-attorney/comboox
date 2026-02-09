@@ -31,26 +31,31 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     using Address for address;
     using InterfacesHub for address;
 
+    /// @notice Company registry info stored in this keeper.
     CompInfo internal _info;
 
+    /// @notice Book registry (title => book address).
     mapping(uint256 => address) private _books;
+    /// @notice Keeper registry (title => keeper address).
     mapping(uint256 => address) internal _keepers;
+    /// @notice Reverse keeper registry (keeper address => title).
     mapping(address => uint256) private _titleOfKeeper;
 
+    // ==== UUPSUpgradable ====
+
+    /// @dev Storage gap for upgrade safety.
     uint[50] private __gap;
 
     // ---- Initialize ----
     function initialize(
         address owner,
-        address regCenter,
-        address dk,
-        address gk
+        address regCenter
     ) external override initializer {
         _init(owner, regCenter);
-        _initKeepers(dk, gk);
         _createCorpSeal();
     }
 
+    /// @notice Register this company in RegCenter and store registry metadata.
     function _createCorpSeal() private {
         rc.getRC().regUser();
         _info.regNum = rc.getRC().getMyUserNo();
@@ -116,20 +121,28 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
 
     // ---- Actions ----
     
+    /// @notice Execute a batch of calls with value.
+    /// @param targets Target addresses.
+    /// @param values ETH values to send.
+    /// @param params Calldata payloads.
     function _execute(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params
     ) internal {
-        // require(_titleOfKeeper[msg.sender] > 0, "BK: caller not keeper");
+        require(
+            targets.length == values.length && targets.length == params.length,
+            "GK._execute: length mismatch"
+        );
         for (uint256 i = 0; i < targets.length; i++) {
-            Address.functionCallWithValue(targets[i], params[i], values[i]);
+            targets[i].functionCallWithValue(params[i], values[i]);
         }
         emit ExecAction(keccak256(
             abi.encode(targets, values, params)
         ));
     }
 
+    /// @notice Accept ETH transfers.
     receive () external payable{
         emit ReceivedEth(msg.sender, msg.value);
     }

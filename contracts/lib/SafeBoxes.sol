@@ -19,11 +19,14 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title SafeBoxes
+/// @notice Library for hash-locked escrow boxes.
 library SafeBoxes {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
+  /// @notice Box header fields.
   struct Head {
     uint96 amtHead;
     address from;
@@ -32,16 +35,19 @@ library SafeBoxes {
     address to;
   }
 
+  /// @notice Box payload data.
   struct Body {
     address counterLocker;
     bytes payload;
   }
 
+  /// @notice Full box record.
   struct Box {
     Head head;
     Body body;
   }
 
+  /// @notice Repository of boxes by hashLock.
   struct Repo {
     // hashLock => Box
     mapping (bytes32 => Box) boxes;
@@ -52,6 +58,12 @@ library SafeBoxes {
   //##  Write I/O  ##
   //#################
 
+  /// @notice Create a box without payload.
+  /// @param repo Storage repo.
+  /// @param from Depositor address (non-zero).
+  /// @param to Recipient address (non-zero).
+  /// @param expireDate Expiration timestamp (> current time).
+  /// @param hashLock Hash lock key.
   function createBox(
     Repo storage repo,
     address from,
@@ -63,6 +75,13 @@ library SafeBoxes {
     createBox(repo, from, to, expireDate, body, hashLock);
   }
 
+  /// @notice Create a box with payload.
+  /// @param repo Storage repo.
+  /// @param from Depositor address (non-zero).
+  /// @param to Recipient address (non-zero).
+  /// @param expireDate Expiration timestamp (> current time).
+  /// @param body Payload body.
+  /// @param hashLock Hash lock key.
   function createBox(
     Repo storage repo,
     address from,
@@ -82,6 +101,10 @@ library SafeBoxes {
     } else revert ("SafeBox.lockConsideration: occupied");
   }
 
+  /// @notice Deposit funds into a box.
+  /// @param repo Storage repo.
+  /// @param hashLock Hash lock key.
+  /// @param amt Amount in wei (fits into 144 bits).
   function depositMoney(
     Repo storage repo,
     bytes32 hashLock,
@@ -102,6 +125,10 @@ library SafeBoxes {
 
   }
 
+  /// @notice Claim deposits with correct preimage.
+  /// @param repo Storage repo.
+  /// @param hashLock Hash lock key.
+  /// @param hashKey Preimage string.
   function pickupDeposits(
       Repo storage repo,
       bytes32 hashLock,
@@ -146,6 +173,10 @@ library SafeBoxes {
 
   }
 
+  /// @notice Withdraw deposits after expiry.
+  /// @param repo Storage repo.
+  /// @param hashLock Hash lock key.
+  /// @param msgSender Caller address.
   function withdrawDeposit(
     Repo storage repo,
     bytes32 hashLock,
@@ -170,6 +201,9 @@ library SafeBoxes {
     //##    Read     ##
     //#################
 
+    /// @notice Get box head by hashLock.
+    /// @param repo Storage repo.
+    /// @param hashLock Hash lock key.
     function getHeadOfBox(
         Repo storage repo,
         bytes32 hashLock
@@ -177,6 +211,9 @@ library SafeBoxes {
         return repo.boxes[hashLock].head;
     }
 
+    /// @notice Get full box by hashLock.
+    /// @param repo Storage repo.
+    /// @param hashLock Hash lock key.
     function getBox(
         Repo storage repo,
         bytes32 hashLock
@@ -184,6 +221,8 @@ library SafeBoxes {
         return repo.boxes[hashLock];
     }
 
+    /// @notice Get list of hashLocks.
+    /// @param repo Storage repo.
     function getSnList(
         Repo storage repo
     ) public view returns (bytes32[] memory ) {

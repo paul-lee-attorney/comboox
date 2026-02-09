@@ -2,7 +2,7 @@
 
 /* *
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -27,18 +27,25 @@ import "../../common/access/RoyaltyCharge.sol";
 contract Cashier is ICashier, RoyaltyCharge {
     using RulesParser for bytes32;
     using WaterfallsRepo for WaterfallsRepo.Repo;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Custody balances by external account address (escrowed USD).
     mapping(address => uint) private _coffers;
-    // userNo => balance
+    // Deposit balances by internal user number (pending pickups).
     mapping(uint => uint) private _lockers;
 
+    // Waterfall distribution repository and accounting state.
     WaterfallsRepo.Repo private _rivers;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //###############
     //##   Write   ##
     //###############
 
+    // Pull USD from `auth.from` into this contract using authorization data.
+    // `auth` carries the EIP-3009 style authorization parameters.
     function _transferWithAuthorization(TransferAuth memory auth) private {
         gk.getBank().transferWithAuthorization(
             auth.from, 
@@ -136,6 +143,8 @@ contract Cashier is ICashier, RoyaltyCharge {
         _distrUsd(mlist, bytes32("DistrProfits"));
     }
 
+    // Book each distribution drop as a deposit for the member.
+    // `mlist` is the list of drops to deposit; `remark` tags the ledger entry.
     function _distrUsd(WaterfallsRepo.Drop[] memory mlist, bytes32 remark) private {
         uint len = mlist.length;
         while (len > 0) {
@@ -180,6 +189,8 @@ contract Cashier is ICashier, RoyaltyCharge {
         _depositUsd(user, amt, remark);
     }
 
+    // Credit `amt` USD to the internal deposit locker of `payee`.
+    // `remark` is an accounting tag for the deposit event.
     function _depositUsd(uint payee, uint amt, bytes32 remark) private {
         require(payee > 0, "Cashier.depositUsd: zero user");
         

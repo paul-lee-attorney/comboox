@@ -22,52 +22,54 @@ pragma solidity ^0.8.8;
 import "../../../lib/UsdOrdersRepo.sol";
 import "../../../lib/GoldChain.sol";
 import "../../../lib/InvestorsRepo.sol";
-import "../../../lib/EnumerableSet.sol";
+import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title IListOfOrders
+/// @notice Order book interface for USD orders and matching results.
 interface IListOfOrders {
 
     //################
     //##   Events   ##
     //################
 
-    // event RegInvestor(uint indexed investor, uint indexed groupRep, bytes32 indexed idHash);
-
-    // event ApproveInvestor(uint indexed investor, uint indexed verifier);
-
-    // event RevokeInvestor(uint indexed investor, uint indexed verifier);
-
+    /// @notice Emitted when a new order is placed.
+    /// @param fromSn From-order serial number.
+    /// @param toSn To-order serial number.
+    /// @param qtySn Quantity serial number.
+    /// @param isOffer True for offer, false for bid.
     event OrderPlaced(bytes32 indexed fromSn, bytes32 indexed toSn, bytes32 indexed qtySn, bool isOffer);
 
+    /// @notice Emitted when an order is withdrawn.
+    /// @param head Order head serial number.
+    /// @param body Order body serial number.
+    /// @param isOffer True for offer, false for bid.
     event OrderWithdrawn(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
+    /// @notice Emitted when a deal is closed from matching orders.
+    /// @param fromSn From-order serial number.
+    /// @param toSn To-order serial number.
+    /// @param qtySn Quantity serial number.
+    /// @param consideration Deal consideration.
     event DealClosed(bytes32 indexed fromSn, bytes32 indexed toSn, bytes32 qtySn, uint indexed consideration);
 
+    /// @notice Emitted when an order expires.
+    /// @param head Order head serial number.
+    /// @param body Order body serial number.
+    /// @param isOffer True for offer, false for bid.
     event OrderExpired(bytes32 indexed head, bytes32 indexed body, bool indexed isOffer);
 
     //#################
     //##  Write I/O  ##
     //#################
 
-    // function regInvestor(
-    //     uint acct,
-    //     uint groupRep,
-    //     bytes32 idHash
-    // ) external;
-
-    // function approveInvestor(
-    //     uint userNo,
-    //     uint verifier
-    // ) external;
-
-    // function revokeInvestor(
-    //     uint userNo,
-    //     uint verifier
-    // ) external;
-
-    // function restoreInvestorsRepo(
-    //     InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
-    // ) external;
-
+    /// @notice Match and/or place a sell offer.
+    /// @param input Offer data.
+    /// @param execHours Expiration in hours.
+    /// @return deals Matched deals.
+    /// @return lenOfDeals Number of valid deals.
+    /// @return expired Expired orders.
+    /// @return lenOfExpired Number of expired orders.
+    /// @return offer Remaining offer.
     function placeSellOrder(
         UsdOrdersRepo.Deal memory input,
         uint execHours
@@ -79,6 +81,14 @@ interface IListOfOrders {
         UsdOrdersRepo.Deal memory offer
     );
 
+    /// @notice Match and/or place a buy bid.
+    /// @param input Bid data.
+    /// @param execHours Expiration in hours.
+    /// @return deals Matched deals.
+    /// @return lenOfDeals Number of valid deals.
+    /// @return expired Expired orders.
+    /// @return lenOfExpired Number of expired orders.
+    /// @return bid Remaining bid.
     function placeBuyOrder(
         UsdOrdersRepo.Deal memory input,
         uint execHours
@@ -90,6 +100,11 @@ interface IListOfOrders {
         UsdOrdersRepo.Deal memory bid
     );
 
+    /// @notice Withdraw an order.
+    /// @param classOfShare Share class id.
+    /// @param seqOfOrder Order sequence.
+    /// @param isOffer True for offer book.
+    /// @return order Removed order.
     function withdrawOrder(
         uint classOfShare,
         uint seqOfOrder,
@@ -100,63 +115,84 @@ interface IListOfOrders {
     //##  Read I/O ##
     //################
 
-    // // ==== Investor ====
-
-    // function isInvestor(
-    //     uint userNo
-    // ) external view returns(bool);
-
-    // function getInvestor(
-    //     uint userNo
-    // ) external view returns(InvestorsRepo.Investor memory);
-
-    // function getQtyOfInvestors() 
-    //     external view returns(uint);
-
-    // function investorList() 
-    //     external view returns(uint[] memory);
-
-    // function investorInfoList() 
-    //     external view returns(InvestorsRepo.Investor[] memory);
-
     // ==== Deals ====
 
+    /// @notice Get order counter.
+    /// @param classOfShare Share class id.
+    /// @param isOffer True for offer book.
+    /// @return Counter value.
     function counterOfOrders(
         uint classOfShare, bool isOffer
     ) external view returns (uint32);
 
+    /// @notice Get head order id.
+    /// @param classOfShare Share class id.
+    /// @param isOffer True for offer book.
+    /// @return Order id.
     function headOfList(
         uint classOfShare, bool isOffer
     ) external view returns (uint32);
 
+    /// @notice Get tail order id.
+    /// @param classOfShare Share class id.
+    /// @param isOffer True for offer book.
+    /// @return Order id.
     function tailOfList(
         uint classOfShare, bool isOffer
     ) external view returns (uint32);
 
+    /// @notice Get order list length.
+    /// @param classOfShare Share class id.
+    /// @param isOffer True for offer book.
+    /// @return Length.
     function lengthOfList(
         uint classOfShare, bool isOffer
     ) external view returns (uint);
 
+    /// @notice Get order sequence list.
+    /// @param classOfShare Share class id.
+    /// @param isOffer True for offer book.
+    /// @return Order ids.
     function getSeqList(
         uint classOfShare, bool isOffer
     ) external view returns (uint[] memory);
 
     // ==== Order ====
 
+    /// @notice Check whether an order exists.
+    /// @param classOfShare Share class id.
+    /// @param seqOfOrder Order sequence.
+    /// @param isOffer True for offer book.
+    /// @return True if exists.
     function isOrder(
         uint classOfShare, uint seqOfOrder, bool isOffer
     ) external view returns (bool);
     
+    /// @notice Get order by sequence.
+    /// @param classOfShare Share class id.
+    /// @param seqOfOrder Order sequence.
+    /// @param isOffer True for offer book.
+    /// @return Order record.
     function getOrder(
         uint classOfShare, uint seqOfOrder, bool isOffer
     ) external view returns (GoldChain.Order memory);
 
+    /// @notice Get all orders in a book.
+    /// @param classOfShare Share class id.
+    /// @param isOffer True for offer book.
+    /// @return Order list.
     function getOrders(
         uint classOfShare, bool isOffer
     ) external view returns (GoldChain.Order[] memory);
 
     // ==== Class ====
+
+    /// @notice Check whether a class exists in LOO.
+    /// @param classOfShare Share class id.
+    /// @return True if listed.
     function isClass(uint classOfShare) external view returns(bool);
 
+    /// @notice Get list of listed classes.
+    /// @return Class ids.
     function getClassesList() external view returns(uint[] memory);
 }

@@ -19,11 +19,14 @@
 
 pragma solidity ^0.8.8;
 
-import "./EnumerableSet.sol";
+import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
+/// @title SharesRepo
+/// @notice Repository for share classes and share records.
 library SharesRepo {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @notice Share header fields.
     struct Head {
         uint16 class; 
         uint32 seqOfShare; 
@@ -36,6 +39,7 @@ library SharesRepo {
         uint8 argu;
     }
 
+    /// @notice Share body fields.
     struct Body {
         uint48 payInDeadline; 
         uint64 paid;
@@ -44,16 +48,19 @@ library SharesRepo {
         uint16 distrWeight;
     }
 
+    /// @notice Full share record.
     struct Share {
         Head head;
         Body body;
     }
 
+    /// @notice Share class with info and share list.
     struct Class{
         Share info;
         EnumerableSet.UintSet seqList;
     }
 
+    /// @notice Repository of classes and shares.
     struct Repo {
         // seqOfClass => Class
         mapping(uint256 => Class) classes;
@@ -65,6 +72,9 @@ library SharesRepo {
     //##    Modifier    ##
     //####################
 
+    /// @notice Ensure share exists.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
     modifier shareExist(
         Repo storage repo,
         uint seqOfShare
@@ -78,6 +88,8 @@ library SharesRepo {
     //##    Write    ##
     //#################
 
+    /// @notice Parse share head from bytes32.
+    /// @param sn Packed share head.
     function snParser(bytes32 sn) public pure returns(Head memory head)
     {
         uint _sn = uint(sn);
@@ -95,6 +107,8 @@ library SharesRepo {
         });
     }
 
+    /// @notice Pack share head into bytes32.
+    /// @param head Share head.
     function codifyHead(Head memory head) public pure returns (bytes32 sn)
     {
         bytes memory _sn = 
@@ -118,6 +132,12 @@ library SharesRepo {
 
     // ==== issue/regist share ====
 
+    /// @notice Build a share from packed head and body values.
+    /// @param sharenumber Packed share head.
+    /// @param payInDeadline Pay-in deadline timestamp.
+    /// @param paid Paid amount.
+    /// @param par Par amount.
+    /// @param distrWeight Distribution weight.
     function createShare(
         bytes32 sharenumber, 
         uint payInDeadline, 
@@ -137,6 +157,8 @@ library SharesRepo {
         });
     }
 
+    /// @notice Decode premium snapshot to share body.
+    /// @param premium Encoded premium value.
     function codifyPremium(uint premium) public pure returns(Body memory body) {
         body = Body({
             payInDeadline: uint48(premium >> 208),
@@ -164,6 +186,9 @@ library SharesRepo {
 
     }
 
+    /// @notice Add a share and update class equity.
+    /// @param repo Storage repo.
+    /// @param share Share record.
     function addShare(Repo storage repo, Share memory share)
         public returns(Share memory newShare) 
     {
@@ -182,6 +207,9 @@ library SharesRepo {
             share.body.paid, share.body.par, 0);
     }
 
+    /// @notice Register share in storage.
+    /// @param repo Storage repo.
+    /// @param share Share record.
     function regShare(Repo storage repo, Share memory share)
         public returns(Share memory)
     {
@@ -240,6 +268,10 @@ library SharesRepo {
 
     // ==== amountChange ====
 
+    /// @notice Increase paid-in capital for a share.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
+    /// @param amt Paid amount.
     function payInCapital(
         Repo storage repo,
         uint seqOfShare,
@@ -266,6 +298,11 @@ library SharesRepo {
         increaseEquityOfClass(repo, true, share.head.class, deltaPaid, 0, 0);
     }
 
+    /// @notice Decrease share amounts or delete share.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Paid delta.
+    /// @param par Par delta.
     function subAmtFromShare(
         Repo storage repo,
         uint seqOfShare,
@@ -296,6 +333,11 @@ library SharesRepo {
         }
     }
 
+    /// @notice Adjust clean paid amount.
+    /// @param repo Storage repo.
+    /// @param isIncrease True to increase, false to decrease.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Delta amount.
     function increaseCleanPaid(
         Repo storage repo,
         bool isIncrease,
@@ -318,6 +360,13 @@ library SharesRepo {
 
     // ---- EquityOfClass ----
 
+    /// @notice Update equity totals for a class.
+    /// @param repo Storage repo.
+    /// @param isIncrease True to increase, false to decrease.
+    /// @param classOfShare Share class.
+    /// @param deltaPaid Paid delta.
+    /// @param deltaPar Par delta.
+    /// @param deltaCleanPaid Clean paid delta.
     function increaseEquityOfClass(
         Repo storage repo,
         bool isIncrease,
@@ -340,6 +389,10 @@ library SharesRepo {
         }
     }
 
+    /// @notice Update paid price for a share.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
+    /// @param newPrice New price.
     function updatePriceOfPaid(
         Repo storage repo,
         uint seqOfShare,
@@ -349,6 +402,10 @@ library SharesRepo {
         share.head.priceOfPaid = uint32(newPrice);
     }
 
+    /// @notice Update pay-in deadline for a share.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
+    /// @param deadline New deadline timestamp.
     function updatePayInDeadline(
         Repo storage repo,
         uint seqOfShare,
@@ -365,6 +422,10 @@ library SharesRepo {
         share.body.payInDeadline = newLine;
     }
 
+    /// @notice Restore repo from snapshots.
+    /// @param repo Storage repo.
+    /// @param shares Share list.
+    /// @param classInfos Class info list.
     function restoreRepo(
         Repo storage repo, 
         Share[] memory shares,
@@ -398,12 +459,16 @@ library SharesRepo {
 
     // ---- Counter ----
 
+    /// @notice Get share counter.
+    /// @param repo Storage repo.
     function counterOfShares(
         Repo storage repo
     ) public view returns(uint32) {
         return repo.shares[0].head.seqOfShare;
     }
 
+    /// @notice Get class counter.
+    /// @param repo Storage repo.
     function counterOfClasses(
         Repo storage repo
     ) public view returns(uint16) {
@@ -412,6 +477,9 @@ library SharesRepo {
 
     // ---- Share ----
 
+    /// @notice Check whether share exists.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
     function isShare(
         Repo storage repo, 
         uint seqOfShare
@@ -419,6 +487,9 @@ library SharesRepo {
         return repo.shares[seqOfShare].head.issueDate > 0;
     }
 
+    /// @notice Get share by sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfShare Share sequence.
     function getShare(
         Repo storage repo, 
         uint seqOfShare
@@ -428,18 +499,24 @@ library SharesRepo {
         return repo.shares[seqOfShare];
     }
 
+    /// @notice Get total share count.
+    /// @param repo Storage repo.
     function getQtyOfShares(
         Repo storage repo
     ) public view returns(uint) {
         return repo.classes[0].seqList.length();
     }
 
+    /// @notice Get share sequence list.
+    /// @param repo Storage repo.
     function getSeqListOfShares(
         Repo storage repo
     ) public view returns(uint[] memory) {
         return repo.classes[0].seqList.values();
     }
 
+    /// @notice Get list of all shares.
+    /// @param repo Storage repo.
     function getSharesList(
         Repo storage repo
     ) public view returns(Share[] memory) {
@@ -447,6 +524,8 @@ library SharesRepo {
         return _getShares(repo, seqList);
     }
 
+    /// @notice Get zero share record.
+    /// @param repo Storage repo.
     function getShareZero(Repo storage repo) 
         public view returns(Share memory share) {
             share = repo.shares[0];
@@ -454,6 +533,9 @@ library SharesRepo {
 
     // ---- Class ----    
 
+    /// @notice Get share count in class.
+    /// @param repo Storage repo.
+    /// @param classOfShare Share class.
     function getQtyOfSharesInClass(
         Repo storage repo, 
         uint classOfShare
@@ -461,6 +543,9 @@ library SharesRepo {
         return repo.classes[classOfShare].seqList.length();
     }
 
+    /// @notice Get share sequence list in class.
+    /// @param repo Storage repo.
+    /// @param classOfShare Share class.
     function getSeqListOfClass(
         Repo storage repo, 
         uint classOfShare
@@ -468,6 +553,9 @@ library SharesRepo {
         return repo.classes[classOfShare].seqList.values();
     }
 
+    /// @notice Get class info share.
+    /// @param repo Storage repo.
+    /// @param classOfShare Share class.
     function getInfoOfClass(
         Repo storage repo,
         uint classOfShare
@@ -475,6 +563,9 @@ library SharesRepo {
         return repo.classes[classOfShare].info;
     }
 
+    /// @notice Get shares of a class.
+    /// @param repo Storage repo.
+    /// @param classOfShare Share class.
     function getSharesOfClass(
         Repo storage repo, 
         uint classOfShare
@@ -498,6 +589,8 @@ library SharesRepo {
         }
     }
 
+    /// @notice Get encoded premium snapshot.
+    /// @param repo Storage repo.
     function getPremium(Repo storage repo) public view returns(uint premium) {
         Body memory body = repo.shares[0].body;
 
