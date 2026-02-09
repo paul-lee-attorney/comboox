@@ -107,8 +107,6 @@ contract CreateNewComp is ICreateNewComp, Ownable {
         _initDocs4FundKeeper();
         _initDocs4Book();
         _initDKMapping();
-
-        rc.getRC().regUser();
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override {

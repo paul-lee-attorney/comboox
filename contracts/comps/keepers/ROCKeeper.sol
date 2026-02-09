@@ -22,6 +22,7 @@ pragma solidity ^0.8.8;
 import "../common/access/RoyaltyCharge.sol";
 
 import "./IROCKeeper.sol";
+import * as docTypes from "../../center/books/TypesList.json";
 
 contract ROCKeeper is IROCKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
@@ -41,19 +42,20 @@ contract ROCKeeper is IROCKeeper, RoyaltyCharge {
 
         require(gk.getROM().isMember(caller), "not MEMBER");
 
-        bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 224) +
-            uint224(version << 192)); 
-
-        DocsRepo.Doc memory doc = rc.createDoc(snOfDoc, msgSender);
+        DocsRepo.Doc memory doc = rc.getRC().cloneDoc(
+            uint(docTypes.ShareholdersAgreement),
+            version            
+        );
 
         IAccessControl(doc.body).initKeepers(
-            address(this),
-            address(gk)
+            address(this),gk
         );
 
         IShareholdersAgreement(doc.body).initDefaultRules();
 
         gk.getROC().regFile(DocsRepo.codifyHead(doc.head), doc.body);
+
+        IOwnable(doc.body).setNewOwner(msgSender);
     }
 
     function circulateSHA(

@@ -21,12 +21,14 @@ pragma solidity ^0.8.8;
 
 import "./IBookOfDocs.sol";
 import "./BookOfUsers.sol";
+import "../../openzeppelin/utils/Address.sol";
 // import "../access/Ownable.sol";
 // import "../../comps/common/access/AccessControl.sol";
 
 contract BookOfDocs is IBookOfDocs, BookOfUsers {
     using DocsRepo for DocsRepo.Repo;
     using DocsRepo for DocsRepo.Head;
+    using Address for address;
     
     DocsRepo.Repo private _docs;
 
@@ -85,19 +87,28 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
         emit TransferIPR(typeOfDoc, version, transferee);
     }
 
+    function _getCreator(address msgSender) private view returns(uint creator) {
+        if (msgSender.isContract()) {
+            require(_docs.docExist(msgSender),
+                "BOD.getCreator: msgSender not registered");
+            creator = _docs.getHeadByBody(msgSender).creator;
+        } else {
+            creator = _getUserNo(msgSender);
+        }
+    }
+
     function cloneDoc(
         uint typeOfDoc,
         uint version
     ) external returns(
         DocsRepo.Doc memory doc
     ) {
-        address owner = msg.sender;
         doc = _docs.cloneDoc(
             typeOfDoc, 
             version, 
-            _getUserNo(owner)
+            _getCreator(msg.sender)
         );
-        IOwnable(doc.body).initialize(owner, address(this));
+        IOwnable(doc.body).initialize(msg.sender, address(this));
         emit CloneDoc(doc.head.codifyHead(), doc.body);
     }
 
@@ -110,7 +121,7 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
         doc = _docs.proxyDoc(
             typeOfDoc, 
             version,
-            _getUserNo(msg.sender)
+            _getCreator(msg.sender)
         );
         emit ProxyDoc(doc.head.codifyHead(), doc.body);
     }

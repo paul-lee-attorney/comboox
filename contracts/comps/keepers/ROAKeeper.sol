@@ -22,7 +22,8 @@ pragma solidity ^0.8.8;
 
 import "./IROAKeeper.sol";
 
-import "../../comps/common/access/RoyaltyCharge.sol";
+import "../common/access/RoyaltyCharge.sol";
+import * as docTypes from "../../center/books/TypesList.json";
 
 contract ROAKeeper is IROAKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
@@ -37,21 +38,19 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         uint caller = _msgSender(msgSender, 58000);
 
         require(gk.getROM().isMember(caller), "not MEMBER");
-        
-        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
-            uint224(version << 192)); 
 
-        DocsRepo.Doc memory doc = rc.createDoc(
-            snOfDoc,
-            msgSender
+        DocsRepo.Doc memory doc = rc.getRC().cloneDoc(
+            uint(docTypes.InvestmentAgreement),
+            version
         );
 
         IAccessControl(doc.body).initKeepers(
-            address(this),
-            address(gk)
+            address(this), gk
         );
 
         gk.getROA().regFile(DocsRepo.codifyHead(doc.head), doc.body);
+
+        IOwnable(doc.body).setNewOwner(msgSender);
     }
 
     // ======== Circulate IA ========

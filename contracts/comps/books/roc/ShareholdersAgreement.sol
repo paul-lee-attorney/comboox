@@ -58,17 +58,12 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     {
         address gc = msg.sender;
 
-        // uint typeOfDoc = title > 3 ? 21 + title : 22 + title;
-
-        // bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(version << 192));
-
         DocsRepo.Doc memory doc = rc.getRC().cloneDoc(
             typeOfDoc,
-            version,
-            address(this), // owner
-            address(this), // dk
-            gk
+            version
         );
+
+        IAccessControl(doc.body).initKeepers(address(this), gk);
 
         IDraftControl(doc.body).setRoleAdmin(
             keccak256(bytes("Attorneys")), 
