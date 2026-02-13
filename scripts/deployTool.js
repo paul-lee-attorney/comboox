@@ -5,9 +5,10 @@
  * All Rights Reserved.
  * */
 
-import {network} from"hardhat";
+import {network} from "hardhat";
 import path from "path";
 import fs from "fs";
+import {keccak256, toUtf8Bytes}from "ethers";
 
 const __dirname = import.meta.dirname;
 
@@ -62,3 +63,8 @@ export function saveGKAddr(seqOfDoc, targetAddr) {
     JSON.stringify(objContractAddrList, undefined, 2)
   );
 };
+
+export function getTypeByName(docName) {
+  const hash = keccak256(toUtf8Bytes(docName));
+  return parseInt(hash.slice(-8), 16);
+}

@@ -1,7 +1,7 @@
 // scripts/deploy-uups.ts
 import hre from "hardhat";
 
-async function main() {
+export async function main() {
   const publicClient = await hre.viem.getPublicClient();
   const [deployer] = await hre.viem.getWalletClients();
   console.log("deployer:", deployer.account.address);

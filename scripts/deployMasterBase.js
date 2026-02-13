@@ -8,6 +8,7 @@
 import {network} from "hardhat";
 import { deployTool } from "./deployTool";
 import { readTool } from "./readTool";
+import Types from "./TypesList.json";
 
 async function main() {
 
@@ -40,12 +41,18 @@ async function main() {
 	const libAddress = await deployTool(signers[0], "Address", libraries, params);
 	const libInvestorsRepo = await deployTool(signers[0], "InvestorsRepo", libraries, params);
 	const libWaterfallsRepo = await deployTool(signers[0], "WaterfallsRepo", libraries, params);
-	const libBooksRepo = await deployTool(signers[0], "BooksRepo", libraries, params);
+	const libInterfacesHub = await deployTool(signers[0], "InterfacesHub", libraries, params);
+	const libTypesList = await deployTool(signers[0], "TypesList", libraries, params);
+
+	libraries = {
+		"Address": libAddress,
+	};
+	const libKeepersRouter = await deployTool(signers[0], "KeepersRouter", libraries, params);
 
 	libraries = {
 		"GoldChain": libGoldChain,
 	};
-	// const libOrdersRepo = await deployTool(signers[0], "OrdersRepo", libraries, params);
+	const libOrdersRepo = await deployTool(signers[0], "OrdersRepo", libraries, params);
 	const libUsdOrdersRepo = await deployTool(signers[0], "UsdOrdersRepo", libraries, params);
 
 	libraries = {
@@ -61,7 +68,7 @@ async function main() {
 	const libSharesRepo = await deployTool(signers[0], "SharesRepo", libraries, params);
 	const libTeamsRepo = await deployTool(signers[0], "TeamsRepo", libraries, params);
 	const libRedemptionsRepo = await deployTool(signers[0], "RedemptionsRepo", libraries, params);
-	// const libUsdLockersRepo = await deployTool(signers[0], "UsdLockersRepo", libraries, params);
+	const libUsdLockersRepo = await deployTool(signers[0], "UsdLockersRepo", libraries, params);
 
 	libraries = {
 		"Checkpoints": libCheckpoints,
@@ -103,28 +110,190 @@ async function main() {
 	};
 	const libLinksRepo = await deployTool(signers[0], "LinksRepo", libraries, params);
 
+	libraries = {
+		"RulesParser": libRulesParser,
+		"ArrayUtils": libArrayUtils,
+		"InterfacesHub": libInterfacesHub
+	};
+	const libOfROCK = await deployTool(signers[0], "LibOfROCK", libraries, params);	
+
+	libraries = {
+		"RulesParser": libRulesParser,
+		"ArrayUtils": libArrayUtils,
+		"InterfacesHub": libInterfacesHub,
+		"Address": libAddress
+	};
+	const libOfBMMK = await deployTool(signers[0], "LibOfBMMK", libraries, params);	
+	const libOfGMMK = await deployTool(signers[0], "LibOfGMMK", libraries, params);	
+
+	libraries = {
+		"RulesParser": libRulesParser,
+		"InterfacesHub": libInterfacesHub
+	};
+	const libOfROAK = await deployTool(signers[0], "LibOfROAK", libraries, params);	
+
+	libraries = {
+		"RulesParser": libRulesParser,
+		"InterfacesHub": libInterfacesHub,
+		"DTClaims": libDTClaims
+	};
+	const libOfSHAK = await deployTool(signers[0], "LibOfSHAK", libraries, params);	
+
+	libraries = {
+		"InterfacesHub": libInterfacesHub
+	};
+	const libOfLOOK = await deployTool(signers[0], "LibOfLOOK", libraries, params);
+	
 	// ==== Deploy RegCenter ====
 	
 	libraries = {
 		"DocsRepo": libDocsRepo,
 		"UsersRepo": libUsersRepo,
-		"LockersRepo": libLockersRepo
+		"LockersRepo": libLockersRepo,
+		"Address": libAddress
 	};
 
-	params = [signers[1]];
+	params = [];
 
 	let addrRC = await deployTool(signers[0], "RegCenter", libraries, params);
-	let rc = await readTool("RegCenter", addrRC);
+
+	let addrRCProxy = await proxyRC(signers[0], addrRC, await signers[1].getAddress());
+
+	let rc = await readTool("RegCenter", addrRCProxy);
+
 	console.log("deployed RC with owner: ", await rc.getOwner(), "\n");
 	console.log("Bookeeper of RC: ", await rc.getBookeeper(), "\n");
+
+	// ==== Get User_1 and User_2 ====
+
+	const acct_0 = await rc.getMyUserNo();
+	console.log("Account 0 userNo:", acct_0);
+
+	const acct_1 = await rc.connect(signers[1]).getMyUserNo();
+	console.log("Account 1 userNo:", acct_1);
+
+	// ==== Reg Libraries ====
+
+	await rc.connect(signers[1]).setTemplate( Types.ArrayUtils, libArrayUtils, acct_0);
+	console.log("set template for 'ArrayUtils' at address: ", libArrayUtils, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.InterfacesHub, libInterfacesHub, acct_0);
+	console.log("set template for 'InterfacesHub' at address: ", libInterfacesHub, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.RolesRepo, libRolesRepo, acct_0);
+	console.log("set template for 'RolesRepo' at address: ", libRolesRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.UsdLockersRepo, libUsdLockersRepo, acct_0);
+	console.log("set template for 'UsdLockersRepo' at address: ", libUsdLockersRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.TypesList_, libTypesList, acct_0);
+	console.log("set template for 'TypesList' at address: ", libTypesList, "\n");
+	
+	await rc.connect(signers[1]).setTemplate( Types.FilesRepo, libFilesRepo, acct_0);
+	console.log("set template for 'FilesRepo' at address: ", libFilesRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.RulesParser, libRulesParser, acct_0);
+	console.log("set template for 'RulesParser' at address: ", libRulesParser, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.RulesParser, libRulesParser, acct_0);
+	console.log("set template for 'RulesParser' at address: ", libRulesParser, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.SigsRepo, libSigsRepo, acct_0);
+	console.log("set template for 'SigsRepo' at address: ", libSigsRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.OfficersRepo, libOfficersRepo, acct_0);
+	console.log("set template for 'OfficersRepo' at address: ", libOfficersRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.Checkpoints, libCheckpoints, acct_0);
+	console.log("set template for 'Checkpoints' at address: ", libCheckpoints, "\n");
+	
+	await rc.connect(signers[1]).setTemplate( Types.MembersRepo, libMembersRepo, acct_0);
+	console.log("set template for 'MembersRepo' at address: ", libMembersRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.TopChain, libTopChain, acct_0);
+	console.log("set template for 'TopChain' at address: ", libTopChain, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.BallotsBox, libBallotsBox, acct_0);
+	console.log("set template for 'BallotsBox' at address: ", libBallotsBox, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.DelegateMap, libDelegateMap, acct_0);
+	console.log("set template for 'DelegateMap' at address: ", libDelegateMap, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.MotionsRepo, libMotionsRepo, acct_0);
+	console.log("set template for 'MotionsRepo' at address: ", libMotionsRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.DealsRepo, libDealsRepo, acct_0);
+	console.log("set template for 'DealsRepo' at address: ", libDealsRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.DTClaims, libDTClaims, acct_0);
+	console.log("set template for 'DTClaims' at address: ", libDTClaims, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.FRClaims, libFRClaims, acct_0);
+	console.log("set template for 'FRClaims' at address: ", libFRClaims, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.LinksRepo, libLinksRepo, acct_0);
+	console.log("set template for 'LinksRepo' at address: ", libLinksRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.FRClaims, libFRClaims, acct_0);
+	console.log("set template for 'FRClaims' at address: ", libFRClaims, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.CondsRepo, libCondsRepo, acct_0);
+	console.log("set template for 'CondsRepo' at address: ", libCondsRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.OptionsRepo, libOptionsRepo, acct_0);
+	console.log("set template for 'OptionsRepo' at address: ", libOptionsRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.SwapsRepo, libSwapsRepo, acct_0);
+	console.log("set template for 'SwapsRepo' at address: ", libSwapsRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.PledgesRepo, libPledgesRepo, acct_0);
+	console.log("set template for 'PledgesRepo' at address: ", libPledgesRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.LockersRepo, libLockersRepo, acct_0);
+	console.log("set template for 'LockersRepo' at address: ", libLockersRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.SharesRepo, libSharesRepo, acct_0);
+	console.log("set template for 'SharesRepo' at address: ", libSharesRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.GoldChain, libGoldChain, acct_0);
+	console.log("set template for 'GoldChain' at address: ", libGoldChain, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.OrdersRepo, libOrdersRepo, acct_0);
+	console.log("set template for 'OrdersRepo' at address: ", libOrdersRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.UsdOrdersRepo, libUsdOrdersRepo, acct_0);
+	console.log("set template for 'UsdOrdersRepo' at address: ", libUsdOrdersRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.UsdOrdersRepo, libUsdOrdersRepo, acct_0);
+	console.log("set template for 'UsdOrdersRepo' at address: ", libUsdOrdersRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.InvestorsRepo, libInvestorsRepo, acct_0);
+	console.log("set template for 'InvestorsRepo' at address: ", libInvestorsRepo, "\n");
+
+	await rc.connect(signers[1]).setTemplate( Types.UsersRepo, libUsersRepo, acct_0);
+	console.log("set template for 'UsersRepo' at address: ", libUsersRepo, "\n");
+
+
+	
+
+
+	// ==== Deploy RegCenter Tools ====
 
 	libraries = {};
 	params=[];
 
 	let addrUSDC = await deployTool(signers[0], "MockUSDC", libraries, params);
 	let usdc = await readTool("MockUSDC", addrUSDC);
-	await usdc.init(signers[0], addrRC);
+	await usdc.init(signers[0], addrRCProxy);
 	console.log("deployed USDC with owner: ", await usdc.getOwner(), "\n");
+
+	
+
+	
+
+
+
+
 
 	params=[addrUSDC];
 	let addrCNC = await deployTool(signers[0], "CreateNewComp", libraries, params);
