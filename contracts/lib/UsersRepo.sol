@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title UsersRepo
 /// @notice User registry and platform rules repository for ownership, keeper, and user key management.

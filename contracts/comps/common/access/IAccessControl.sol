@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title IAccessControl
 /// @notice Access control interface for keeper-based upgrade and key management.
@@ -38,17 +38,17 @@ interface IAccessControl {
 
     // ==== UUPS Upgradeability ====
     
-    /// @notice Initialize owner, registry center, and keeper addresses.
-    /// @param owner Owner address.
-    /// @param regCenter Registry center address.
-    /// @param directKeeper Direct keeper address.
-    /// @param generalKeeper General keeper address.
-    function initialize(
-        address owner, 
-        address regCenter, 
-        address directKeeper, 
-        address generalKeeper
-    ) external;
+    // /// @notice Initialize owner, registry center, and keeper addresses.
+    // /// @param owner Owner address.
+    // /// @param regCenter Registry center address.
+    // /// @param directKeeper Direct keeper address.
+    // /// @param generalKeeper General keeper address.
+    // function initialize(
+    //     address owner, 
+    //     address regCenter, 
+    //     address directKeeper, 
+    //     address generalKeeper
+    // ) external;
 
     function initKeepers(
         address directKeeper, 

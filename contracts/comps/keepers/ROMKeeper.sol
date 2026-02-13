@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../common/access/RoyaltyCharge.sol";
 
@@ -30,39 +30,38 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
     // ##   ROMKeeper   ##
     // ###################
 
-    function setMaxQtyOfMembers(uint max) external onlyDK {
+    function setMaxQtyOfMembers(uint max) external onlyDK  onlyGKProxy {
         gk.getROM().setMaxQtyOfMembers(max);
     }
 
     function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) 
-    external onlyDK {
+    external onlyDK  onlyGKProxy {
         gk.getROS().setPayInAmt(seqOfShare, amt, expireDate, hashLock);
     }
 
     function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
-    external onlyDK {
+    external  onlyGKProxy {
         gk.getROS().requestPaidInCapital(hashLock, hashKey);
     }
 
-    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
+    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK  onlyGKProxy {
         gk.getROS().withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function payInCapital(
         ICashier.TransferAuth memory auth,
         uint seqOfShare, 
-        uint paid, 
-        address msgSender
-    ) external onlyDK {
+        uint paid
+    ) external  onlyGKProxy {
         
-        uint caller = _msgSender(msgSender, 36000);
+        uint caller = _msgSender(msg.sender, 36000);
         IRegisterOfShares _ros = gk.getROS();
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
         
         require(share.head.shareholder == caller,
             "UsdROMK.payInCap: not shareholder");
 
-        auth.from = msgSender;
+        auth.from = msg.sender;
         auth.value = share.head.priceOfPaid * paid / 100;
 
         gk.getCashier().collectUsd(auth, bytes32("PayInCapital"));
@@ -77,7 +76,7 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
         uint paid,
         uint par,
         uint amt
-    ) external onlyDK {
+    ) external onlyDK  onlyGKProxy {
         IRegisterOfShares _ros=gk.getROS();
         _ros.decreaseCapital(seqOfShare, paid, par);
         uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
@@ -87,7 +86,7 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
     function updatePaidInDeadline(
         uint256 seqOfShare, 
         uint line
-    ) external onlyDK {
+    ) external onlyDK  onlyGKProxy {
         gk.getROS().updatePaidInDeadline(seqOfShare, line);
     }
 

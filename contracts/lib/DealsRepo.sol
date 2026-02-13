@@ -17,11 +17,10 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../openzeppelin/utils/structs/EnumerableSet.sol";
 import "./MotionsRepo.sol";
-import "./SwapsRepo.sol";
 import "./SharesRepo.sol";
 
 import "../comps/common/components/IMeetingMinutes.sol";
@@ -32,7 +31,6 @@ import "../comps/books/ros/IRegisterOfShares.sol";
 /// @notice Repository for investment agreements and deal lifecycle.
 library DealsRepo {
     using EnumerableSet for EnumerableSet.UintSet;
-    using SwapsRepo for SwapsRepo.Repo;
 
     // _deals[0].head {
     //     seqOfDeal: counterOfClosedDeal;
@@ -109,8 +107,8 @@ library DealsRepo {
 
     /// @notice Repository of deals and swaps.
     struct Repo {
+        // seqOfDeal => Deal
         mapping(uint256 => Deal) deals;
-        mapping(uint256 => SwapsRepo.Repo) swaps;
         //seqOfDeal => seqOfShare => bool
         mapping(uint => mapping(uint => bool)) priceDiffRequested;
         EnumerableSet.UintSet seqList;
@@ -426,120 +424,6 @@ library DealsRepo {
                 : sum;
     }
 
-    // ==== Swap ====
-
-    /// @notice Create a swap for a terminated deal.
-    /// @param repo Storage repo.
-    /// @param seqOfMotion Motion sequence.
-    /// @param seqOfDeal Deal sequence.
-    /// @param paidOfTarget Paid target amount.
-    /// @param seqOfPledge Pledge share sequence.
-    /// @param caller Caller user number.
-    /// @param _ros Register of shares.
-    /// @param _gmm Meeting minutes.
-    function createSwap(
-        Repo storage repo,
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint paidOfTarget,
-        uint seqOfPledge,
-        uint caller,
-        IRegisterOfShares _ros,
-        IMeetingMinutes _gmm
-    ) public returns(SwapsRepo.Swap memory swap) {
-        Deal storage deal = repo.deals[seqOfDeal];
-
-        require(caller == deal.head.seller, 
-            "DR.createSwap: not seller");
-
-        require(deal.body.state == uint8(StateOfDeal.Terminated),
-            "DR.createSwap: wrong state");
-
-        MotionsRepo.Motion memory motion = 
-            _gmm.getMotion(seqOfMotion);
-
-        require(
-            motion.body.state == uint8(MotionsRepo.StateOfMotion.Rejected_ToBuy),
-            "DR.createSwap: NO need to buy"
-        );
-
-        require(block.timestamp < motion.body.voteEndDate + 
-            uint48(motion.votingRule.execDaysForPutOpt) * 86400, 
-            "DR.createSwap: missed deadline");
-
-
-        swap = SwapsRepo.Swap({
-            seqOfSwap: 0,
-            seqOfPledge: uint32(seqOfPledge),
-            paidOfPledge: 0,
-            seqOfTarget: deal.head.seqOfShare,
-            paidOfTarget: uint64(paidOfTarget),
-            priceOfDeal: deal.head.priceOfPaid,
-            isPutOpt: true,
-            state: uint8(SwapsRepo.StateOfSwap.Issued)
-        });
-
-        SharesRepo.Head memory headOfPledge = _ros.getShare(swap.seqOfPledge).head;
-
-        require(_gmm.getBallot(seqOfMotion, _gmm.getDelegateOf(seqOfMotion, 
-            headOfPledge.shareholder)).attitude == 2,
-            "DR.createSwap: not vetoer");
-
-        require (deal.body.paid >= repo.swaps[seqOfDeal].sumPaidOfTarget() +
-            swap.paidOfTarget, "DR.createSwap: paidOfTarget overflow");
-
-        swap.paidOfPledge = (swap.priceOfDeal - _ros.getShare(swap.seqOfTarget).head.priceOfPaid) * 
-            swap.paidOfTarget / headOfPledge.priceOfPaid;
-
-        return repo.swaps[seqOfDeal].regSwap(swap);
-    }
-
-    /// @notice Pay off a swap.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    function payOffSwap(
-        Repo storage repo,
-        // uint seqOfMotion,
-        uint seqOfDeal,
-        uint seqOfSwap
-        // uint msgValue,
-        // uint centPrice,
-        // IMeetingMinutes _gmm
-    ) public returns(SwapsRepo.Swap memory){
-
-        // MotionsRepo.Motion memory motion = _gmm.getMotion(seqOfMotion);
-
-        // require(block.timestamp < motion.body.voteEndDate + 
-        //     uint48(motion.votingRule.execDaysForPutOpt) * 86400, 
-        //     "DR.payOffSwap: missed deadline");
- 
-        return repo.swaps[seqOfDeal].payOffSwap(seqOfSwap);
-    }
-
-    /// @notice Terminate a swap after exec period.
-    /// @param repo Storage repo.
-    /// @param seqOfMotion Motion sequence.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    /// @param _gmm Meeting minutes.
-    function terminateSwap(
-        Repo storage repo,
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint seqOfSwap,
-        IMeetingMinutes _gmm
-    ) public returns (SwapsRepo.Swap memory){
-
-        MotionsRepo.Motion memory motion = _gmm.getMotion(seqOfMotion);
-
-        require(block.timestamp >= motion.body.voteEndDate + 
-            uint48(motion.votingRule.execDaysForPutOpt) * 86400, 
-            "DR.terminateSwap: still in exec period");
-
-        return repo.swaps[seqOfDeal].terminateSwap(seqOfSwap);
-    }
-
     /// @notice Close an approved deal by buyer payment.
     /// @param repo Storage repo.
     /// @param seqOfDeal Deal sequence.
@@ -585,7 +469,6 @@ library DealsRepo {
             "DR.requestPriceDiff: already requested");
         repo.priceDiffRequested[seqOfDeal][seqOfShare] = true;      
     }
-
 
     //  ##########################
     //  ##       Read I/O       ##
@@ -635,96 +518,5 @@ library DealsRepo {
     /// @param repo Storage repo.
     function getSeqList(Repo storage repo) external view returns (uint[] memory) {
         return repo.seqList.values();
-    }
-    
-    // ==== Swap ====
-
-    /// @notice Get swap counter for deal.
-    /// @notice Get swap counter for a deal.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    function counterOfSwaps(Repo storage repo, uint seqOfDeal)
-        public view returns (uint16)
-    {
-        return repo.swaps[seqOfDeal].counterOfSwaps();
-    }
-
-    /// @notice Get sum of swap paid target.
-    /// @notice Get total paid target amount for a deal.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    function sumPaidOfTarget(Repo storage repo, uint seqOfDeal)
-        public view returns (uint64)
-    {
-        return repo.swaps[seqOfDeal].sumPaidOfTarget();
-    }
-
-    /// @notice Check whether swap exists.
-    /// @notice Check whether a swap exists.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    function isSwap(Repo storage repo, uint seqOfDeal, uint256 seqOfSwap)
-        public view returns (bool)
-    {
-        return repo.swaps[seqOfDeal].isSwap(seqOfSwap);
-    }
-
-    /// @notice Get swap by sequence.
-    /// @notice Get swap by sequence.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    function getSwap(Repo storage repo, uint seqOfDeal, uint256 seqOfSwap)
-        public view returns (SwapsRepo.Swap memory)
-    {
-        return repo.swaps[seqOfDeal].getSwap(seqOfSwap);
-    }
-
-    /// @notice Get all swaps for a deal.
-    /// @notice Get all swaps for a deal.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    function getAllSwaps(Repo storage repo, uint seqOfDeal)
-        public view returns (SwapsRepo.Swap[] memory )
-    {
-        return repo.swaps[seqOfDeal].getAllSwaps();
-    }
-
-    /// @notice Check whether all swaps are closed.
-    /// @notice Check whether all swaps are closed for a deal.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    function allSwapsClosed(Repo storage repo, uint seqOfDeal)
-        public view returns (bool)
-    {
-        return repo.swaps[seqOfDeal].allSwapsClosed();
-    }
-
-    // ==== Value Calculation ==== 
-
-    // function checkValueOfSwap(
-    //     Repo storage repo,
-    //     uint seqOfDeal,
-    //     uint seqOfSwap,
-    //     uint centPrice
-    // ) public view dealExist(repo, seqOfDeal) returns (uint) {
-    //     return repo.swaps[seqOfDeal].checkValueOfSwap(seqOfSwap, centPrice);
-    // }
-
-    /// @notice Calculate deal value at cent price.
-    /// @notice Calculate deal value in wei.
-    /// @param repo Storage repo.
-    /// @param seqOfDeal Deal sequence.
-    /// @param centPrice Cent price in wei.
-    function checkValueOfDeal(
-        Repo storage repo, 
-        uint seqOfDeal, 
-        uint centPrice
-    ) public view returns (uint) {
-        Deal memory deal = repo.deals[seqOfDeal];
-
-        return centPrice * (deal.body.paid * deal.head.priceOfPaid + 
-            (deal.body.par - deal.body.paid) * deal.head.priceOfPar) / 10 ** 6;
-    }    
+    } 
 }

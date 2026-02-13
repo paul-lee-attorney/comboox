@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -18,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../common/access/RoyaltyCharge.sol";
 
@@ -34,29 +33,29 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     // ==== Pause LOO ====
 
-    function _checkVerifierLicense(uint seqOfLR, uint caller) private {
+    function _checkVerifierLicense(uint seqOfLR, uint caller) private view {
         RulesParser.ListingRule memory lr = 
             gk.getSHA().getRule(seqOfLR).listingRuleParser();
         require(gk.getROD().hasTitle(caller, lr.titleOfVerifier),
             "ROIK.checkVerifierLicense: no rights");
     }
 
-    function _checkEnforcerLicense(uint seqOfLR, uint caller) private {
+    function _checkEnforcerLicense(uint seqOfLR, uint caller) private view {
         RulesParser.ListingRule memory lr = 
             gk.getSHA().getRule(seqOfLR).listingRuleParser();
         require(gk.getROD().hasTitle(caller, lr.para),
             "ROIK.checkEnforcerLicense: no rights");
     }
 
-    function pause(uint seqOfLR, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+    function pause(uint seqOfLR) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _checkEnforcerLicense(seqOfLR, caller);
 
         gk.getROI().pause(caller);
     }
 
-    function unPause(uint seqOfLR, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+    function unPause(uint seqOfLR) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _checkEnforcerLicense(seqOfLR, caller);
 
         gk.getROI().unPause(caller);
@@ -66,9 +65,9 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function freezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+        bytes32 hashOrder
+    ) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 36000);
         _checkEnforcerLicense(seqOfLR, caller);
 
         IRegisterOfShares _ros = gk.getROS();
@@ -79,9 +78,9 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function unfreezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+        bytes32 hashOrder
+    ) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 36000);
         _checkEnforcerLicense(seqOfLR, caller);
 
         IRegisterOfShares _ros = gk.getROS();
@@ -92,9 +91,9 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function forceTransfer(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address addrTo, address msgSender, bytes32 hashOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        address addrTo, bytes32 hashOrder
+    ) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _checkEnforcerLicense(seqOfLR, caller);
         
         IRegisterOfInvestors _roi = gk.getROI();
@@ -112,24 +111,24 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
     // ==== Investor ====
 
     function regInvestor(
-        address msgSender, address bKey, uint groupRep, bytes32 idHash
-    ) external onlyDK {
+        address bKey, uint groupRep, bytes32 idHash
+    ) external  onlyGKProxy {
 
-        uint caller = _msgSender(msgSender, 18000);
+        uint caller = _msgSender(msg.sender, 18000);
 
-        require(msgSender != bKey, 
+        require(msg.sender != bKey, 
             "ROIK.regInvestor: same key");
 
         require(caller == _msgSender(bKey, 18000), 
             "ROIK.regInvestor: wrong backupKey");
 
-        if (_isContract(msgSender)) {
-            require(rc.getHeadByBody(msgSender).typeOfDoc == 20,
+        if (_isContract(msg.sender)) {
+            require(rc.getRC().getHeadByBody(msg.sender).typeOfDoc == 20,
                 "ROIK.RegInvestor: COA applicant not GK");
         }
 
         if (_isContract(bKey)) {
-            require(rc.getHeadByBody(bKey).typeOfDoc == 20,
+            require(rc.getRC().getHeadByBody(bKey).typeOfDoc == 20,
                 "ROIK.RegInvestor: COA backupKey not GK");
         }
 
@@ -146,10 +145,9 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function approveInvestor(
         uint userNo,
-        address msgSender,
         uint seqOfLR
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+    ) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _checkVerifierLicense(seqOfLR, caller);
 
         IRegisterOfInvestors _roi = gk.getROI();
@@ -166,10 +164,9 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function revokeInvestor(
         uint userNo,
-        address msgSender,
         uint seqOfLR
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+    ) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _checkVerifierLicense(seqOfLR, caller);
 
         gk.getROI().revokeInvestor(userNo, caller);

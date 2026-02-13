@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../access/Ownable.sol";
 import "../../openzeppelin/utils/Address.sol";
@@ -41,15 +41,6 @@ contract UsdFuelTank is Ownable {
   // ==== UUPSUpgradable ====
 
   uint[50] private __gap;
-
-  /// @notice Initialize owner/regCenter and set initial rate.
-  /// @param rc_ RegCenter address (non-zero in implementation).
-  /// @param rate_ USDC-per-1e18-CBP rate (must be > 0).
-  function initialize(address rc_, uint rate_) external initializer {
-    _init(msg.sender, rc_);
-    require(rate_ > 0, 'zero rate');
-    rate = rate_;
-  }
 
   /// @notice Upgrade implementation via UUPS and register the upgrade in RegCenter.
   /// @param newImplementation New implementation address.

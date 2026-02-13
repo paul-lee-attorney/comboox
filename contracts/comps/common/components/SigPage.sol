@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./ISigPage.sol";
 
@@ -45,21 +45,21 @@ contract SigPage is ISigPage, DraftControl {
     }
 
     function setTiming(bool initPage, uint signingDays, uint closingDays) 
-        external attorneyOrKeeper
+        external attorneyOrGK
     {
         initPage ? _sigPages[0].setTiming(signingDays, closingDays) :
             _sigPages[1].setTiming(signingDays, closingDays);
     }
 
     function addBlank(bool initPage, bool beBuyer, uint256 seqOfDeal, uint256 acct)
-        external attorneyOrKeeper
+        external attorneyOrGK
     {
         initPage ? _sigPages[0].addBlank(beBuyer, seqOfDeal, acct) :
             _sigPages[1].addBlank(beBuyer, seqOfDeal, acct);
     }
 
     function removeBlank(bool initPage, uint256 seqOfDeal, uint256 acct)
-        external attorneyOrKeeper
+        external attorneyOrGK
     {
         initPage ? _sigPages[0].removeBlank(seqOfDeal, acct) :
             _sigPages[1].removeBlank(seqOfDeal, acct);

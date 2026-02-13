@@ -17,11 +17,12 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../comps/common/access/RoyaltyCharge.sol";
 
 import "../../comps/keepers/IROCKeeper.sol";
+import "../../lib/TypesList.sol";
 
 contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
@@ -33,18 +34,17 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
     // #############
 
     function createSHA(
-        uint version, 
-        address msgSender
-    ) external onlyDK {
+        uint version
+    ) external onlyDK  onlyGKProxy {
 
-        uint caller = _msgSender(msgSender, 18000);
+        uint caller = _msgSender(msg.sender, 18000);
 
         require(gk.getROM().isClassMember(caller, 1), "not GP");
 
-        bytes32 snOfDoc = bytes32((uint256(uint8(IRegCenter.TypeOfDoc.SHA)) << 224) +
-            uint224(version << 192)); 
-
-        DocsRepo.Doc memory doc = rc.createDoc(snOfDoc, msgSender);
+        DocsRepo.Doc memory doc = rc.getRC().cloneDoc(
+            TypesList.ShareholdersAgreement, 
+            version
+        );
 
         IAccessControl(doc.body).initKeepers(
             address(this),
@@ -54,15 +54,16 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
         IShareholdersAgreement(doc.body).initDefaultRules();
 
         gk.getROC().regFile(DocsRepo.codifyHead(doc.head), doc.body);
+
+        IOwnable(doc.body).setNewOwner(msg.sender);
     }
 
     function circulateSHA(
         address sha,
         bytes32 docUrl,
-        bytes32 docHash,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        bytes32 docHash
+    ) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
 
         require(gk.getROM().isClassMember(caller, 1), "not GP");
 
@@ -87,10 +88,9 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
 
     function signSHA(
         address sha,
-        bytes32 sigHash,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        bytes32 sigHash
+    ) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
 
         require(ISigPage(sha).isParty(caller), "NOT Party of Doc");
 
@@ -116,8 +116,8 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
         return members.fullyCoveredBy(parties);
     }
 
-    function activateSHA(address sha, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
+    function activateSHA(address sha) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 58000);
 
         require(ISigPage(sha).isParty(caller), "NOT Party of Doc");
         
@@ -227,8 +227,8 @@ contract FundROCKeeper is IROCKeeper, RoyaltyCharge {
         }        
     }
 
-    function acceptSHA(bytes32 sigHash, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+    function acceptSHA(bytes32 sigHash) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 36000);
 
         IShareholdersAgreement _sha = gk.getSHA();
         _sha.addBlank(false, true, 1, caller);

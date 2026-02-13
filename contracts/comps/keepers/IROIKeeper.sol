@@ -18,7 +18,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../books/roi/IRegisterOfInvestors.sol";
 import "../books/ros/IRegisterOfShares.sol";
@@ -38,13 +38,11 @@ interface IROIKeeper {
 
     /// @notice Pause LOO operations.
     /// @param seqOfLR Listing rule sequence.
-    /// @param msgSender Caller address.
-    function pause(uint seqOfLR, address msgSender) external;
+    function pause(uint seqOfLR) external;
 
     /// @notice Unpause LOO operations.
     /// @param seqOfLR Listing rule sequence.
-    /// @param msgSender Caller address.
-    function unPause(uint seqOfLR, address msgSender) external;
+    function unPause(uint seqOfLR) external;
 
     // ==== Freeze Share ====
 
@@ -52,22 +50,20 @@ interface IROIKeeper {
     /// @param seqOfLR Listing rule sequence.
     /// @param seqOfShare Share sequence.
     /// @param paid Paid amount.
-    /// @param msgSender Caller address.
     /// @param hashOrder Related order hash.
     function freezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
+        bytes32 hashOrder
     ) external;
 
     /// @notice Unfreeze a share.
     /// @param seqOfLR Listing rule sequence.
     /// @param seqOfShare Share sequence.
     /// @param paid Paid amount.
-    /// @param msgSender Caller address.
     /// @param hashOrder Related order hash.
     function unfreezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
+        bytes32 hashOrder
     ) external;
 
     /// @notice Force transfer a frozen share.
@@ -75,32 +71,28 @@ interface IROIKeeper {
     /// @param seqOfShare Share sequence.
     /// @param paid Paid amount.
     /// @param addrTo Recipient address.
-    /// @param msgSender Caller address.
     /// @param hashOrder Related order hash.
     function forceTransfer(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address addrTo, address msgSender, bytes32 hashOrder
+        address addrTo, bytes32 hashOrder
     ) external;
 
     // ==== Investor ====
 
     /// @notice Register an investor.
-    /// @param msgSender Caller address.
     /// @param bKey Investor key address.
     /// @param groupRep Group representative user number.
     /// @param idHash Investor id hash.
-    function regInvestor(address msgSender, address bKey, uint groupRep, bytes32 idHash) external;
+    function regInvestor(address bKey, uint groupRep, bytes32 idHash) external;
 
     /// @notice Approve an investor.
     /// @param userNo Investor user number.
-    /// @param msgSender Caller address.
     /// @param seqOfLR Listing rule sequence.
-    function approveInvestor(uint userNo, address msgSender,uint seqOfLR) external;
+    function approveInvestor(uint userNo, uint seqOfLR) external;
 
     /// @notice Revoke an investor approval.
     /// @param userNo Investor user number.
-    /// @param msgSender Caller address.
     /// @param seqOfLR Listing rule sequence.
-    function revokeInvestor(uint userNo,address msgSender,uint seqOfLR) external;
+    function revokeInvestor(uint userNo, uint seqOfLR) external;
 
 }

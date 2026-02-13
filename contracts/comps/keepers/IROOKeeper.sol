@@ -18,7 +18,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../books/cashier/ICashier.sol";
 import "../books/roa/IInvestmentAgreement.sol";
@@ -74,21 +74,18 @@ interface IROOKeeper {
 
     /// @notice Execute an option.
     /// @param seqOfOpt Option sequence.
-    /// @param msgSender Caller address.
-    function execOption(uint256 seqOfOpt, address msgSender)external;
+    function execOption(uint256 seqOfOpt)external;
 
     /// @notice Create a swap for an option.
     /// @param seqOfOpt Option sequence.
     /// @param seqOfTarget Target share sequence.
     /// @param paidOfTarget Paid target amount.
     /// @param seqOfPledge Pledge share sequence.
-    /// @param msgSender Caller address.
     function createSwap(
         uint256 seqOfOpt,
         uint seqOfTarget,
         uint paidOfTarget,
-        uint seqOfPledge,
-        address msgSender
+        uint seqOfPledge
     ) external;
 
     /// @notice Pay off an option swap.
@@ -96,59 +93,51 @@ interface IROOKeeper {
     /// @param seqOfOpt Option sequence.
     /// @param seqOfSwap Swap sequence.
     /// @param to Recipient address.
-    /// @param msgSender Caller address.
     function payOffSwap(
-        ICashier.TransferAuth memory auth, uint256 seqOfOpt, uint256 seqOfSwap, address to, address msgSender
+        ICashier.TransferAuth memory auth, uint256 seqOfOpt, uint256 seqOfSwap, address to
     ) external;
 
     /// @notice Terminate an option swap.
     /// @param seqOfOpt Option sequence.
     /// @param seqOfSwap Swap sequence.
-    /// @param msgSender Caller address.
     function terminateSwap(
         uint256 seqOfOpt, 
-        uint256 seqOfSwap,
-        address msgSender
+        uint256 seqOfSwap
     ) external;
 
     // ==== Swap ====
 
-    /// @notice Request to buy a target share via swap.
-    /// @param ia Investment agreement address.
-    /// @param seqOfDeal Deal sequence.
-    /// @param paidOfTarget Paid target amount.
-    /// @param seqOfPledge Pledge share sequence.
-    /// @param msgSender Caller address.
-    function requestToBuy(
-        address ia,
-        uint seqOfDeal,
-        uint paidOfTarget,
-        uint seqOfPledge,
-        address msgSender
-    ) external;
+    // /// @notice Request to buy a target share via swap.
+    // /// @param ia Investment agreement address.
+    // /// @param seqOfDeal Deal sequence.
+    // /// @param paidOfTarget Paid target amount.
+    // /// @param seqOfPledge Pledge share sequence.
+    // function requestToBuy(
+    //     address ia,
+    //     uint seqOfDeal,
+    //     uint paidOfTarget,
+    //     uint seqOfPledge
+    // ) external;
 
-    /// @notice Pay off a rejected deal swap.
-    /// @param auth Transfer authorization.
-    /// @param ia Investment agreement address.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    /// @param to Recipient address.
-    /// @param msgSender Caller address.
-    function payOffRejectedDeal(
-        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, 
-        uint seqOfSwap, address to, address msgSender
-    ) external;
+    // /// @notice Pay off a rejected deal swap.
+    // /// @param auth Transfer authorization.
+    // /// @param ia Investment agreement address.
+    // /// @param seqOfDeal Deal sequence.
+    // /// @param seqOfSwap Swap sequence.
+    // /// @param to Recipient address.
+    // function payOffRejectedDeal(
+    //     ICashier.TransferAuth memory auth, address ia, uint seqOfDeal, 
+    //     uint seqOfSwap, address to
+    // ) external;
 
-    /// @notice Pick up pledged share for a rejected deal.
-    /// @param ia Investment agreement address.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    /// @param msgSender Caller address.
-    function pickupPledgedShare(
-        address ia,
-        uint seqOfDeal,
-        uint seqOfSwap,
-        address msgSender
-    ) external;
+    // /// @notice Pick up pledged share for a rejected deal.
+    // /// @param ia Investment agreement address.
+    // /// @param seqOfDeal Deal sequence.
+    // /// @param seqOfSwap Swap sequence.
+    // function pickupPledgedShare(
+    //     address ia,
+    //     uint seqOfDeal,
+    //     uint seqOfSwap
+    // ) external;
 
 }

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -19,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../../lib/RolesRepo.sol";
 
@@ -28,9 +26,21 @@ import "../../../lib/RolesRepo.sol";
 /// @dev Manages role administration and irreversible content locking.
 interface IDraftControl {
 
-    // ##################
-    // ##   Event      ##
-    // ##################
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
+
+    /// @notice Emitted when a non-GC attempts a GC-only action.
+    error DC_NotGC();
+
+    /// @notice Emitted when a non-attorney attempts an attorney-only action.
+    error DC_NotAttorney();
+
+    /// @notice Emitted when a non-attorney and non-GK attempts an attorney or GK-only action.
+    error DC_NotAttorneyOrGK();
+
+    /// @notice Emitted when an attempt to lock contents is made in the wrong state.
+    error DC_LockContents_WrongState();
 
     /// @notice Emitted when a role admin is updated.
     /// @param role Role identifier.

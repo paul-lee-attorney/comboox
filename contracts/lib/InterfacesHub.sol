@@ -17,11 +17,11 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../center/IRegCenter.sol";
 
-import "../comps/modules/IGeneralKeeper.sol";
+import "../comps/IGeneralKeeper.sol";
 
 import "../comps/books/roa/IRegisterOfAgreements.sol";
 import "../comps/books/roc/IRegisterOfConstitution.sol";
@@ -38,6 +38,15 @@ import "../center/utils/MockUSDC/IUSDC.sol";
 import "../comps/books/cashier/ICashier.sol";
 import "../comps/books/ror/IRegisterOfRedemptions.sol";
 
+import "../comps/books/roc/IShareholdersAgreement.sol";
+import "../comps/books/roc/terms/IAntiDilution.sol";
+import "../comps/books/roc/terms/IAlongs.sol";
+
+import "../comps/books/roa/IInvestmentAgreement.sol";
+
+import "../comps/common/components/IFilesFolder.sol";
+import "../comps/common/components/ISigPage.sol";
+
 import "../comps/keepers/IROCKeeper.sol";
 import "../comps/keepers/IRODKeeper.sol";
 import "../comps/keepers/IBMMKeeper.sol";
@@ -51,6 +60,10 @@ import "../comps/keepers/ILOOKeeper.sol";
 import "../comps/keepers/IROIKeeper.sol";
 import "../comps/keepers/IAccountant.sol";
 import "../comps/keepers/IRORKeeper.sol";
+
+import "../comps/common/access/IDraftControl.sol";
+import "../comps/common/access/IAccessControl.sol";
+import "../center/access/IOwnable.sol";
 
 library InterfacesHub {
 

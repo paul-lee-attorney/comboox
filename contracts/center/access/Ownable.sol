@@ -17,11 +17,11 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IOwnable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../../openzeppelin/proxy/utils/UUPSUpgradeable.sol";
+import "../../openzeppelin/proxy/utils/Initializable.sol";
 
 contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
 

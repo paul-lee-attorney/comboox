@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../lib/InterfacesHub.sol";
 import "../../lib/DocsRepo.sol";
@@ -49,28 +49,23 @@ interface IROAKeeper {
 
     /// @notice Create a new investment agreement.
     /// @param version Agreement version.
-    /// @param msgSender Caller address.
-    function createIA(uint256 version, address msgSender) external;
+    function createIA(uint256 version) external;
 
     /// @notice Circulate an IA document for signature.
     /// @param ia Investment agreement address.
     /// @param docUrl Document URL hash.
     /// @param docHash Document content hash.
-    /// @param msgSender Caller address.
     function circulateIA(
         address ia,
         bytes32 docUrl,
-        bytes32 docHash,
-        address msgSender
+        bytes32 docHash
     ) external;
 
     /// @notice Sign an IA document.
     /// @param ia Investment agreement address.
-    /// @param msgSender Caller address.
     /// @param sigHash Signature hash.
     function signIA(
         address ia,
-        address msgSender,
         bytes32 sigHash
     ) external;
 
@@ -81,13 +76,11 @@ interface IROAKeeper {
     /// @param seqOfDeal Deal sequence.
     /// @param hashLock Hash lock for closing.
     /// @param closingDeadline Closing deadline timestamp.
-    /// @param msgSender Caller address.
     function pushToCoffer(
         address ia,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint closingDeadline,
-        address msgSender
+        uint closingDeadline
     ) external;
 
     /// @notice Close a deal using hash key.
@@ -103,27 +96,22 @@ interface IROAKeeper {
     /// @notice Transfer target share per deal terms.
     /// @param ia Investment agreement address.
     /// @param seqOfDeal Deal sequence.
-    /// @param msgSender Caller address.
     function transferTargetShare(
         address ia,
-        uint256 seqOfDeal,
-        address msgSender
+        uint256 seqOfDeal
     ) external;
 
     /// @notice Issue new share for a deal.
     /// @param ia Investment agreement address.
     /// @param seqOfDeal Deal sequence.
-    /// @param msgSender Caller address.
-    function issueNewShare(address ia, uint256 seqOfDeal, address msgSender) external;
+    function issueNewShare(address ia, uint256 seqOfDeal) external;
 
     /// @notice Terminate a deal.
     /// @param ia Investment agreement address.
     /// @param seqOfDeal Deal sequence.
-    /// @param msgSender Caller address.
     function terminateDeal(
         address ia,
-        uint256 seqOfDeal,
-        address msgSender
+        uint256 seqOfDeal
     ) external;
 
     /// @notice Pay off an approved deal with transfer authorization.
@@ -131,10 +119,9 @@ interface IROAKeeper {
     /// @param ia Investment agreement address.
     /// @param seqOfDeal Deal sequence.
     /// @param to Recipient address.
-    /// @param msgSender Caller address.
     function payOffApprovedDeal(
         ICashier.TransferAuth memory auth, address ia, uint seqOfDeal,
-        address to, address msgSender
+        address to
     ) external;
 
 }

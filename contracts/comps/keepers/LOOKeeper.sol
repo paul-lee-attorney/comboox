@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -18,19 +17,20 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../common/access/RoyaltyCharge.sol";
 
 import "./ILOOKeeper.sol";
+import "../../lib/LibOfLOOK.sol";
 
 contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     using RulesParser for bytes32;
     using InterfacesHub for address;
 
     modifier whenNotPaused() {
-        require(!gk.getROI().isPaused(),
-            "LOOK: LOO is paused");
+        if (gk.getROI().isPaused())
+            revert LOOK_IsPaused();
         _;
     }
 
@@ -41,31 +41,32 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     // ==== Offers ====
 
     function placeInitialOffer(
-        address msgSender, uint classOfShare, uint execHours, 
+        uint classOfShare, uint execHours, 
         uint paid, uint price, uint seqOfLR
-    ) external onlyDK whenNotPaused {
-        uint caller = _msgSender(msgSender, 18000);
+    ) external whenNotPaused onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
 
         IRegisterOfShares _ros = gk.getROS();
         
         RulesParser.ListingRule memory lr = 
             gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
-        require(gk.getROD().hasTitle(caller, lr.titleOfIssuer),
-            "LOOK.placeIO: not entitled");
+        if (!gk.getROD().hasTitle(caller, lr.titleOfIssuer))
+            revert LOOK_NotEntitled(caller);
 
-        require(lr.classOfShare == classOfShare,
-            "LOOK.placeIO: wrong class");
-        
-        require(uint32(price) >= lr.floorPrice,
-            "LOOK.placeIO: lower than floor");
+        if (lr.classOfShare != classOfShare)
+            revert LOOK_WrongClass(lr.classOfShare, classOfShare);
 
-        require(lr.ceilingPrice == 0 ||
-            uint32(price) <= lr.ceilingPrice,
-            "LOOK.placeIO: higher than ceiling");
+        if (uint32(price) < lr.floorPrice)
+            revert LOOK_LowerThanFloor(lr.floorPrice, uint32(price));
 
-        require (_ros.getInfoOfClass(classOfShare).body.cleanPaid +
-            paid <= uint64(lr.maxTotalPar) * 10000, "LOOK.placeIO: paid overflow");
+        if (lr.ceilingPrice > 0 && uint32(price) > lr.ceilingPrice)
+            revert LOOK_HigherThanCeiling(lr.ceilingPrice, uint32(price));
+
+        if (_ros.getInfoOfClass(classOfShare).body.cleanPaid + paid > 
+            uint64(lr.maxTotalPar) * 10000
+        ) revert LOOK_PaidOverflow(uint64(lr.maxTotalPar) * 10000, 
+                _ros.getInfoOfClass(classOfShare).body.cleanPaid + paid);
 
         _ros.increaseEquityOfClass(true, classOfShare, 0, 0, paid);
 
@@ -79,202 +80,55 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         input.seller = uint40(caller);
         input.isOffer = true;
 
-        _placeSellOrder(input,execHours);
-    }
-
-    function _placeSellOrder(
-        UsdOrdersRepo.Deal memory input, uint execHours
-    ) private {
-
-        (UsdOrdersRepo.Deal[] memory deals,
-         uint lenOfDeals, 
-         GoldChain.Order[] memory expired, 
-         uint lenOfExpired,
-         UsdOrdersRepo.Deal memory offer) = 
-            gk.getLOO().placeSellOrder(input, execHours);
-
-        if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, true);
-        if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
-        if (offer.price == 0 && offer.paid > 0) {
-            GoldChain.Order memory balance;
-            balance.data.classOfShare = offer.classOfShare;
-            balance.data.seqOfShare = offer.seqOfShare;
-            balance.data.pubKey = offer.to;
-            balance.node.paid = offer.paid;
-            _restoreOrder(balance);
-        }
-    }
-
-    function _eightToSix(uint amt) private pure returns(uint) {
-        return amt / 100;
-    }
-
-    function _closeDeals(UsdOrdersRepo.Deal[] memory deals, uint len, bool isOffer) private {
-
-        ICashier _cashier = gk.getCashier();
-
-        IRegisterOfShares _ros = gk.getROS();
-        IRegisterOfMembers _rom = gk.getROM();
-
-        while (len > 0) {
-
-            UsdOrdersRepo.Deal memory deal = deals[len - 1];
-            len--;
-
-            if (deal.seqOfShare > 0) {
-
-                if (!_ros.notLocked(deal.seqOfShare, block.timestamp)) {
-                    continue;
-                }
-
-                if (isOffer) {
-                    _cashier.releaseUsd(
-                        deal.from, deal.to, 
-                        _eightToSix(deal.consideration), 
-                        bytes32("CloseOfferAgainstBid")
-                    );
-                } else {                                        
-                    _cashier.releaseUsd(
-                        deal.from, deal.to, 
-                        _eightToSix(deal.consideration), 
-                        bytes32("CloseBidAgainstOffer")
-                    );
-                }
-
-                _ros.increaseCleanPaid(deal.seqOfShare, deal.paid);
-                _ros.transferShare(
-                    deal.seqOfShare,
-                    deal.paid,
-                    deal.paid,
-                    deal.buyer,
-                    deal.price,
-                    0
-                );
-
-            } else {
-
-                if (isOffer) {
-                    _cashier.releaseUsd(
-                        deal.from, 
-                        address(_cashier),
-                        _eightToSix(deal.consideration),
-                        bytes32("CloseInitOfferAgainstBid")
-                    );
-                } else {
-                    _cashier.releaseUsd(
-                        deal.from, 
-                        address(_cashier),
-                        _eightToSix(deal.consideration),
-                        bytes32("CloseBidAgainstInitOffer")
-                    );
-                }
-
-                SharesRepo.Share memory share;
-                
-                share.head = SharesRepo.Head({
-                    class: deal.classOfShare,
-                    seqOfShare: 0,
-                    preSeq: 0,
-                    issueDate: 0,
-                    shareholder: deal.buyer,
-                    priceOfPaid: deal.price,
-                    priceOfPar: 0,
-                    votingWeight: deal.votingWeight,
-                    argu: 0
-                });
-
-                share.body = SharesRepo.Body({
-                    payInDeadline: uint48(block.timestamp + 86400),
-                    paid: deal.paid,
-                    par: deal.paid,
-                    cleanPaid: deal.paid,
-                    distrWeight: deal.distrWeight
-                });
-
-                _ros.addShare(share);
-            }
-
-            if (deal.groupRep != deal.buyer && 
-                deal.groupRep != _rom.groupRep(deal.buyer)) {
-                    _rom.addMemberToGroup(deal.buyer, deal.groupRep);
-            }
-        }
-
-    }
-
-    function _restoreOrder(GoldChain.Order memory order) private {
-
-        if (order.node.isOffer) {
-            IRegisterOfShares _ros = gk.getROS();
-            if (order.data.seqOfShare > 0) {
-                _ros.increaseCleanPaid(order.data.seqOfShare, order.node.paid);
-            } else {
-                _ros.increaseEquityOfClass(false, order.data.classOfShare, 0, 0, order.node.paid);
-            }
-        } else {
-            gk.getCashier().releaseUsd(
-                order.data.pubKey,
-                order.data.pubKey, 
-                _eightToSix(order.data.margin),
-                bytes32("RefundValueOfBidOrder")
-            );
-        }
-    }
-
-    function _restoreExpiredOrders(GoldChain.Order[] memory orders, uint len) private {
-        while (len > 0) {
-            _restoreOrder(orders[len-1]);
-            len--;
-        }
+        LibOfLOOK.placeSellOrder(input, execHours);
     }    
 
     function withdrawInitialOffer(
-        address msgSender,
         uint classOfShare,
         uint seqOfOrder,
         uint seqOfLR
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+    ) external onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
 
         IListOfOrders _loo = gk.getLOO();
 
         GoldChain.Order memory order = 
             _loo.getOrder(classOfShare, seqOfOrder, true);
 
-        require(order.data.seqOfShare == 0,
-            "LOOK.withdrawInitOrder: not initOrder");
+        if (order.data.seqOfShare > 0)
+            revert LOOK_NotInitOrder(order.data.seqOfShare);
 
         RulesParser.ListingRule memory lr =
             gk.getSHA().getRule(seqOfLR).listingRuleParser();
-        
-        require(gk.getROD().hasTitle(caller, lr.titleOfIssuer),
-            "LOOK.withdrawInitOrder: has no title");
+
+        if (!gk.getROD().hasTitle(caller, lr.titleOfIssuer))
+            revert LOOK_NotEntitled(caller);
 
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, true);
 
-        _restoreOrder(order);
+        LibOfLOOK.restoreOrder(order);
     }
 
     function placeSellOrder(
-        address msgSender, uint seqOfClass, uint execHours,
+        uint seqOfClass, uint execHours,
         uint paid, uint price, uint seqOfLR
-    ) external onlyDK whenNotPaused {
-        uint caller = _msgSender(msgSender, 58000);
+    ) external whenNotPaused onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 58000);
 
-        require (gk.getROI().getInvestor(caller).state == 
-            uint8(InvestorsRepo.StateOfInvestor.Approved),
-                "LOOK.placeSellOrder: wrong stateOfInvestor");
+        if(gk.getROI().getInvestor(caller).state != 
+            uint8(InvestorsRepo.StateOfInvestor.Approved))
+            revert LOOK_NotQualifiedInvestor(caller);
 
         IRegisterOfShares _ros = gk.getROS();
 
         RulesParser.ListingRule memory lr = 
             gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
-        require(seqOfClass == lr.classOfShare,
-            "LOOK.placePut: wrong class");
+        if (seqOfClass != lr.classOfShare)
+            revert LOOK_WrongClass(lr.classOfShare, seqOfClass);
 
-        require(uint32(price) >= lr.offPrice,
-            "LOOK.placePut: lower than offPrice");
+        if (uint32(price) < lr.offPrice)
+            revert LOOK_LowerThanFloor(lr.offPrice, uint32(price));
 
         uint[] memory sharesInhand = 
             gk.getROM().sharesInClass(caller, lr.classOfShare);
@@ -299,7 +153,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
                     
                     UsdOrdersRepo.Deal memory input;
 
-                    input.to = msgSender;
+                    input.to = msg.sender;
                     input.seller = share.head.shareholder;
                     input.classOfShare = share.head.class;
                     input.seqOfShare = share.head.seqOfShare;
@@ -312,11 +166,11 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
                         input.paid = uint64(share.body.cleanPaid);
                         paid -=input.paid;
                         _ros.decreaseCleanPaid(share.head.seqOfShare, input.paid);
-                        _placeSellOrder(input, execHours);
+                        LibOfLOOK.placeSellOrder(input, execHours);
                     } else {
                         input.paid = uint64(paid);
                         _ros.decreaseCleanPaid(share.head.seqOfShare, input.paid);
-                        _placeSellOrder(input, execHours);
+                        LibOfLOOK.placeSellOrder(input, execHours);
                         break;
                     }
 
@@ -326,11 +180,10 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
     }
 
     function withdrawSellOrder(
-        address msgSender,
         uint classOfShare,
         uint seqOfOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 88000);
+    ) external onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 88000);
 
         IListOfOrders _loo = gk.getLOO();
         IRegisterOfShares _ros = gk.getROS();
@@ -349,16 +202,16 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, true);
 
-        _restoreOrder(order);
+        LibOfLOOK.restoreOrder(order);
     }
 
     // ==== Bid ====
 
     function placeBuyOrder(
-        ICashier.TransferAuth memory auth, address msgSender, 
+        ICashier.TransferAuth memory auth, 
         uint classOfShare, uint paid, uint price, uint execHours
-    ) external onlyDK whenNotPaused {
-        uint caller = _msgSender(msgSender, 88000);
+    ) external whenNotPaused onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 88000);
 
         InvestorsRepo.Investor memory investor = 
             gk.getROI().getInvestor(caller);
@@ -374,7 +227,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
 
         UsdOrdersRepo.Deal memory input;
 
-        input.from = msgSender;
+        input.from = msg.sender;
         input.buyer = uint40(caller);
         input.groupRep = investor.groupRep;
         input.classOfShare = uint16(classOfShare);
@@ -384,14 +237,14 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
 
         auth.from = input.from;
         auth.value = input.consideration / 100;
-        _placeBuyOrder(auth, input, execHours);
+        LibOfLOOK.placeBuyOrder(auth, input, execHours);
     }
 
     function placeMarketBuyOrder(
-        ICashier.TransferAuth memory auth, address msgSender, 
+        ICashier.TransferAuth memory auth, 
         uint classOfShare, uint paid, uint execHours
-    ) external onlyDK whenNotPaused {
-        uint caller = _msgSender(msgSender, 88000);
+    ) external whenNotPaused onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 88000);
 
         InvestorsRepo.Investor memory investor = 
             gk.getROI().getInvestor(caller);
@@ -407,7 +260,7 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
 
         UsdOrdersRepo.Deal memory input;
 
-        input.from = msgSender;
+        input.from = msg.sender;
         input.buyer = uint40(caller);
         input.groupRep = investor.groupRep;
         input.classOfShare = uint16(classOfShare);
@@ -415,45 +268,14 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         input.consideration = uint128(auth.value * 100);
 
         auth.from = input.from;
-        _placeBuyOrder(auth, input, execHours);
-    }
-
-    function _placeBuyOrder(
-        ICashier.TransferAuth memory auth, UsdOrdersRepo.Deal memory input, uint execHours
-    ) private {
-
-        ICashier _cashier = gk.getCashier();
-
-        _cashier.custodyUsd(
-            auth, 
-            bytes32("CustodyValueOfBid")
-        );
-
-        (UsdOrdersRepo.Deal[] memory deals,
-         uint lenOfDeals,
-         GoldChain.Order[] memory expired,
-         uint lenOfExpired,
-         UsdOrdersRepo.Deal memory bid) = 
-            gk.getLOO().placeBuyOrder(input, execHours);
-
-        if (lenOfDeals > 0) _closeDeals(deals, lenOfDeals, false);
-        if (lenOfExpired > 0) _restoreExpiredOrders(expired, lenOfExpired);
-        if (bid.paid == 0 && bid.consideration > 0) {
-            _cashier.releaseUsd(
-                bid.from, 
-                bid.from,
-                _eightToSix(bid.consideration), 
-                bytes32("RefundBalanceOfBidOrder")
-            );
-        }
+        LibOfLOOK.placeBuyOrder(auth, input, execHours);
     }
 
     function withdrawBuyOrder(
-        address msgSender,
         uint classOfShare,
         uint seqOfOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 88000);
+    ) external onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 88000);
 
         IListOfOrders _loo = gk.getLOO();
 
@@ -465,6 +287,6 @@ contract LOOKeeper is ILOOKeeper, RoyaltyCharge {
         
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, false);
 
-        _restoreOrder(order);
+        LibOfLOOK.restoreOrder(order);
     }
 }

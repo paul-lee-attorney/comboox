@@ -17,9 +17,8 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../../../lib/SwapsRepo.sol";
 import "../../../lib/DealsRepo.sol";
 import "../../../lib/InterfacesHub.sol";
 
@@ -56,21 +55,6 @@ interface IInvestmentAgreement is ISigPage {
     /// @param seq Deal sequence.
     event TerminateDeal(uint256 indexed seq);
     
-    /// @notice Emitted when a swap is created for a deal.
-    /// @param seqOfDeal Deal sequence.
-    /// @param snOfSwap Swap serial number.
-    event CreateSwap(uint seqOfDeal, bytes32 snOfSwap);
-
-    /// @notice Emitted when a swap is paid off.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    event PayOffSwap(uint seqOfDeal, uint seqOfSwap);
-
-    /// @notice Emitted when a swap is terminated.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    event TerminateSwap(uint seqOfDeal, uint seqOfSwap);
-
     /// @notice Emitted when an approved deal is paid off.
     /// @param seqOfDeal Deal sequence.
     /// @param msgValue Payment value.
@@ -148,43 +132,6 @@ interface IInvestmentAgreement is ISigPage {
     /// @notice Finalize the investment agreement.
     function finalizeIA() external;
 
-    // ==== Swap ====
-
-    /// @notice Create a swap for terminated deal.
-    /// @param seqOfMotion Motion sequence.
-    /// @param seqOfDeal Deal sequence.
-    /// @param paidOfTarget Paid target amount.
-    /// @param seqOfPledge Pledge share sequence.
-    /// @param caller Caller user number.
-    /// @return swap Swap record.
-    function createSwap (
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint paidOfTarget,
-        uint seqOfPledge,
-        uint caller
-    ) external returns(SwapsRepo.Swap memory swap);
-
-    /// @notice Pay off a swap.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    /// @return swap Swap record.
-    function payOffSwap(
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external returns(SwapsRepo.Swap memory swap);
-
-    /// @notice Terminate a swap after exec period.
-    /// @param seqOfMotion Motion sequence.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    /// @return swap Swap record.
-    function terminateSwap(
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external returns (SwapsRepo.Swap memory swap);
-
     /// @notice Pay off an approved deal.
     /// @param seqOfDeal Deal sequence.
     /// @param msgValue Paid value.
@@ -221,26 +168,4 @@ interface IInvestmentAgreement is ISigPage {
     /// @notice Get deal sequence list.
     /// @return Deal ids.
     function getSeqList() external view returns (uint[] memory);
-
-    // ==== Swap ====
-
-    /// @notice Get swap by sequence.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfSwap Swap sequence.
-    /// @return Swap record.
-    function getSwap(uint seqOfDeal, uint256 seqOfSwap)
-        external view returns (SwapsRepo.Swap memory);
-
-    /// @notice Get all swaps for a deal.
-    /// @param seqOfDeal Deal sequence.
-    /// @return Swap list.
-    function getAllSwaps(uint seqOfDeal)
-        external view returns (SwapsRepo.Swap[] memory);
-
-    /// @notice Check whether all swaps are closed.
-    /// @param seqOfDeal Deal sequence.
-    /// @return True if all closed.
-    function allSwapsClosed(uint seqOfDeal)
-        external view returns (bool);
-
 }

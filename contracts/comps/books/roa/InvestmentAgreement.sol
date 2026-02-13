@@ -17,8 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
-
+pragma solidity ^0.8.24;
 
 import "../../common/components/SigPage.sol";
 
@@ -44,11 +43,10 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint distrWeight
     ) external onlyAttorney() {
         _repo.addDeal(sn, buyer, groupOfBuyer, paid, par, distrWeight);
-        // emit AddDeal(seqOfDeal);
     }
 
     function regDeal(DealsRepo.Deal memory deal) 
-        external attorneyOrKeeper returns(uint16 seqOfDeal) 
+        external attorneyOrGK returns(uint16 seqOfDeal) 
     {
         seqOfDeal = _repo.regDeal(deal);
 
@@ -131,41 +129,6 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         lockContents();
     }
 
-    // ==== Swap ====
-
-    function createSwap (
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint paidOfTarget,
-        uint seqOfPledge,
-        uint caller
-    ) external onlyKeeper returns(SwapsRepo.Swap memory swap) {
-        
-
-        swap = _repo.createSwap(seqOfMotion, seqOfDeal, paidOfTarget, 
-            seqOfPledge, caller, gk.getROS(), gk.getGMM());
-
-        emit CreateSwap(seqOfDeal, SwapsRepo.codifySwap(swap));
-    }
-
-    function payOffSwap(
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external onlyKeeper returns(SwapsRepo.Swap memory swap){
-        swap = _repo.payOffSwap(seqOfDeal, seqOfSwap);
-        emit PayOffSwap(seqOfDeal, seqOfSwap);
-    }
-
-    function terminateSwap(
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external onlyKeeper returns (SwapsRepo.Swap memory swap){
-        swap = _repo.terminateSwap(seqOfMotion, seqOfDeal, 
-            seqOfSwap, gk.getGMM());
-        emit TerminateSwap(seqOfDeal, seqOfSwap);        
-    }
-
     function payOffApprovedDeal(
         uint seqOfDeal,
         uint msgValue,
@@ -198,25 +161,5 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function getSeqList() external view returns (uint[] memory) {
         return _repo.getSeqList();
     }
-
-    // ==== Swap ====
-
-    function getSwap(uint seqOfDeal, uint256 seqOfSwap)
-        external view returns (SwapsRepo.Swap memory)
-    {
-        return _repo.getSwap(seqOfDeal, seqOfSwap);
-    }
-
-    function getAllSwaps(uint seqOfDeal)
-        external view returns (SwapsRepo.Swap[] memory )
-    {
-        return _repo.getAllSwaps(seqOfDeal);
-    }
-
-    function allSwapsClosed(uint seqOfDeal)
-        external view returns (bool)
-    {
-        return _repo.allSwapsClosed(seqOfDeal);
-    } 
 
 }

@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IAccessControl.sol";
 import "../../../center/access/Ownable.sol";
@@ -76,16 +76,6 @@ contract AccessControl is IAccessControl, Ownable {
     /// @dev Storage gap for upgrade safety.
     uint[50] private __gap;
 
-    // function initialize(
-    //     address owner, 
-    //     address regCenter,
-    //     address directKeeper, 
-    //     address generalKeeper
-    // ) external virtual initializer {
-    //     _init(owner, regCenter);
-    //     _initKeepers(directKeeper, generalKeeper);
-    // }
-
     function initKeepers(
         address directKeeper, 
         address generalKeeper
@@ -100,6 +90,8 @@ contract AccessControl is IAccessControl, Ownable {
             msg.sender == dk.addr,
             "AC._authorizeUpgrade: NOT GK or DK"
         );
+        require(rc.getRC().tempExist(newImplementation),
+            "AC.authUpgrade: temp NOT exist");
     }
 
     function upgradeDocTo(address newImplementation) external virtual {
@@ -120,16 +112,21 @@ contract AccessControl is IAccessControl, Ownable {
 
     /// @notice Restrict to general keeper or direct keeper.
     modifier onlyKeeper virtual {
-        require(gk.getGK().isKeeper(msg.sender) || 
+        require(gk == msg.sender || 
             dk.addr == msg.sender, 
             "AC.onlyKeeper: NOT");
+        _;
+    }
+
+    /// @notice Restrict to delegatecall context on GeneralKeeper.
+    modifier onlyGKProxy {
+        require(address(this) == gk, "AC.onlyGKProxy: NOT");
         _;
     }
 
     // #################
     // ##    Write    ##
     // #################
-
 
     /// @notice Initialize keeper addresses (one-time).
     /// @param directKeeper Direct keeper address.

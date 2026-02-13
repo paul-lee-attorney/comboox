@@ -18,7 +18,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../common/access/RoyaltyCharge.sol";
 
@@ -28,7 +28,7 @@ import "./IAccountant.sol";
 contract Accountant is IAccountant, RoyaltyCharge {
     using InterfacesHub for address;
 
-    function initClass(uint class) external onlyDK {
+    function initClass(uint class) external onlyDK  onlyGKProxy {
         uint sum = gk.getROS().getInfoOfClass(class).body.paid;
         gk.getCashier().initClass(class, sum);
     }
@@ -37,10 +37,9 @@ contract Accountant is IAccountant, RoyaltyCharge {
         uint amt,
         uint expireDate,
         uint seqOfDR,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        uint seqOfMotion
+    ) external onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
 
         gk.getGMM().distributeUsd(
             amt,
@@ -59,11 +58,9 @@ contract Accountant is IAccountant, RoyaltyCharge {
         uint expireDate,
         uint seqOfDR,
         uint fundManager,
-        uint seqOfMotion,
-        address msgSender        
-    ) external onlyDK {
-
-        uint caller = _msgSender(msgSender, 18000);
+        uint seqOfMotion
+    ) external onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
 
         IRegisterOfShares _ros = gk.getROS();
         ICashier _cashier = gk.getCashier();
@@ -101,10 +98,9 @@ contract Accountant is IAccountant, RoyaltyCharge {
         bool isCBP,
         uint amt,
         uint expireDate,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 76000);
+        uint seqOfMotion
+    ) external onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 76000);
 
         if (fromBMM) {
             gk.getBMM().transferFund(
@@ -128,6 +124,8 @@ contract Accountant is IAccountant, RoyaltyCharge {
 
         if (!isCBP) {
             gk.getCashier().transferUsd(to, amt, bytes32(seqOfMotion));
+        } else {
+            rc.getRC().transfer(to, amt);
         }
     }
 }

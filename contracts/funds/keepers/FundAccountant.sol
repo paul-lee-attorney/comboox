@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -18,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../comps/common/access/RoyaltyCharge.sol";
 
@@ -28,7 +27,7 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
     using RulesParser for bytes32;
     using InterfacesHub for address;
 
-    function initClass(uint class) external onlyDK {
+    function initClass(uint class) external onlyDK  onlyGKProxy {
         uint sum = gk.getROS().getInfoOfClass(class).body.paid;
         gk.getCashier().initClass(class, sum);
     }
@@ -37,10 +36,9 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
         uint amt,
         uint expireDate,
         uint seqOfDR,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        uint seqOfMotion
+    ) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
 
         require(gk.getROM().isClassMember(caller, 1), 
             "Accountant: not GP");
@@ -62,11 +60,10 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
         uint expireDate,
         uint seqOfDR,
         uint fundManager,
-        uint seqOfMotion,
-        address msgSender        
-    ) external onlyDK {
+        uint seqOfMotion        
+    ) external onlyDK  onlyGKProxy {
 
-        uint caller = _msgSender(msgSender, 18000);
+        uint caller = _msgSender(msg.sender, 18000);
 
         require(gk.getROM().isClassMember(caller, 1), 
             "Accountant: not GP");
@@ -131,10 +128,9 @@ contract FundAccountant is IAccountant, RoyaltyCharge {
         bool isCBP,
         uint amt,
         uint expireDate,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 76000);
+        uint seqOfMotion
+    ) external onlyDK onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 76000);
 
         require(gk.getROM().isClassMember(caller, 1) ||
             gk.getROD().isDirector(caller), 

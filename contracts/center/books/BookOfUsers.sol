@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IBookOfUsers.sol";
 import "../access/Ownable.sol";
@@ -31,13 +31,6 @@ contract BookOfUsers is IBookOfUsers, Ownable {
     // ==== UUPSUpgradable ====
 
     uint[50] private __gap;
-
-    function initialize(
-        address keeper
-    ) external initializer {
-        _init(msg.sender, address(this));
-        _initUsers(keeper);
-    }
 
     function _initUsers(address keeper) internal {
         require(keeper != address(0), "BOU: zero keeper");

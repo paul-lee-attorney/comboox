@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../common/components/IFilesFolder.sol";
 import "./IInvestmentAgreement.sol";
@@ -86,21 +86,23 @@ interface IRegisterOfAgreements is IFilesFolder {
 
     /// @notice Execute drag/tag along right claim.
     /// @param ia Investment agreement address.
-    /// @param dragAlong True for drag-along.
-    /// @param seqOfDeal Deal sequence.
-    /// @param seqOfShare Share sequence.
-    /// @param paid Paid amount.
-    /// @param par Par amount.
-    /// @param caller Claimer user number.
+    /// @param snOfClaim Encoded claim head.
+    // / @param dragAlong True for drag-along.
+    // / @param seqOfDeal Deal sequence.
+    // / @param seqOfShare Share sequence.
+    // / @param paid Paid amount.
+    // / @param par Par amount.
+    // / @param caller Claimer user number.
     /// @param sigHash Signature hash.
     function execAlongRight(
         address ia,
-        bool dragAlong,
-        uint256 seqOfDeal,
-        uint256 seqOfShare,
-        uint paid,
-        uint par,
-        uint256 caller,
+        bytes32 snOfClaim,
+        // bool dragAlong,
+        // uint256 seqOfDeal,
+        // uint256 seqOfShare,
+        // uint paid,
+        // uint par,
+        // uint256 caller,
         bytes32 sigHash
     ) external;
 

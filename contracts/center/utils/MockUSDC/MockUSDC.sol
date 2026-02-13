@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -18,11 +17,11 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IUSDC.sol";
-import "../../openzeppelin/token/ERC20/ERC20.sol";
-import "../access/Ownable.sol";
+import "../../../openzeppelin/token/ERC20/ERC20.sol";
+import "../../access/Ownable.sol";
 
 contract MockUSDC is IUSDC, ERC20("USD Coin", "USDC"), Ownable {
 

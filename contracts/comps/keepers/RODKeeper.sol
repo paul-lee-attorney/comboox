@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../common/access/RoyaltyCharge.sol";
 
@@ -32,12 +32,8 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
 
     // ==== Directors ====
 
-    function takeSeat(
-        uint256 seqOfMotion,
-        uint256 seqOfPos,
-        address msgSender 
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+    function takeSeat(uint256 seqOfMotion, uint256 seqOfPos) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 36000);
 
         IMeetingMinutes _gmm = gk.getGMM();
         
@@ -49,12 +45,8 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
         gk.getROD().takePosition(seqOfPos, caller);
     }
 
-    function removeDirector (
-        uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
+    function removeDirector (uint256 seqOfMotion, uint256 seqOfPos) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 58000);
 
         IMeetingMinutes _gmm = gk.getGMM();
 
@@ -68,12 +60,8 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
 
     // ==== Officers ====
 
-    function takePosition(
-        uint256 seqOfMotion,
-        uint256 seqOfPos,
-        address msgSender 
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+    function takePosition(uint256 seqOfMotion, uint256 seqOfPos) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 36000);
 
         IMeetingMinutes _bmm = gk.getBMM();
     
@@ -85,12 +73,8 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
         gk.getROD().takePosition(seqOfPos, caller);
     }
 
-    function removeOfficer (
-        uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
+    function removeOfficer (uint256 seqOfMotion, uint256 seqOfPos) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 58000);
 
         IMeetingMinutes _bmm = gk.getBMM();
 
@@ -104,10 +88,8 @@ contract RODKeeper is IRODKeeper, RoyaltyCharge {
 
     // ==== Quit ====
 
-    function quitPosition(uint256 seqOfPos, address msgSender)
-        external onlyDK 
-    {
-        uint caller = _msgSender(msgSender, 18000);
+    function quitPosition(uint256 seqOfPos) external  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         gk.getROD().quitPosition(seqOfPos, caller);
     }
 

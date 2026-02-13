@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../books/roc/terms/ILockUp.sol";
 import "../books/roc/IShareholdersAgreement.sol";
@@ -44,38 +44,31 @@ interface IROCKeeper {
 
     /// @notice Create a shareholder agreement.
     /// @param version Agreement version.
-    /// @param msgSender Caller address.
-    function createSHA(uint version, address msgSender) external;
+    function createSHA(uint version) external;
 
     /// @notice Circulate SHA document for signature.
     /// @param sha Shareholders agreement address.
     /// @param docUrl Document URL hash.
     /// @param docHash Document content hash.
-    /// @param msgSender Caller address.
     function circulateSHA(
         address sha,
         bytes32 docUrl,
-        bytes32 docHash,
-        address msgSender
+        bytes32 docHash
     ) external;
 
     /// @notice Sign SHA document.
     /// @param sha Shareholders agreement address.
     /// @param sigHash Signature hash.
-    /// @param msgSender Caller address.
     function signSHA(
         address sha,
-        bytes32 sigHash,
-        address msgSender
+        bytes32 sigHash
     ) external;
 
     /// @notice Activate a SHA.
     /// @param sha Shareholders agreement address.
-    /// @param msgSender Caller address.
-    function activateSHA(address sha, address msgSender) external;
+    function activateSHA(address sha) external;
 
     /// @notice Accept SHA with signature hash.
     /// @param sigHash Signature hash.
-    /// @param msgSender Caller address.
-    function acceptSHA(bytes32 sigHash, address msgSender) external;
+    function acceptSHA(bytes32 sigHash) external;
 }

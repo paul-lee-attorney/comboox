@@ -22,7 +22,7 @@ import "../../../lib/OptionsRepo.sol";
 import "../../../lib/SwapsRepo.sol";
 import "../../../lib/InterfacesHub.sol";
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title IRegisterOfOptions
 /// @notice Interface for options registry, execution, and swaps.

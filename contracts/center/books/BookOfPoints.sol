@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IBookOfPoints.sol";
 import "../../openzeppelin/token/ERC20/ERC20Upgradeable.sol";

@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IBookOfDocs.sol";
 import "./BookOfUsers.sol";
@@ -40,6 +40,26 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
         upgradeTo(newImplementation);
         DocsRepo.Doc memory doc = _docs.upgradeDoc(newImplementation, address(this));
         emit UpgradeDoc(doc.head.codifyHead(), doc.body);
+    }
+
+    // ########################
+    // ##    Error & Event   ##
+    // ########################
+
+    error BOD_NotProxyable();
+
+    error BOD_MsgSenderNotRegistered();
+
+    modifier proxyable(uint typeOfDoc) {
+        if (
+            (typeOfDoc == DocsRepo.getTypeByName("RegCenter") ||
+            typeOfDoc == DocsRepo.getTypeByName("CreateNewComp") ||
+            typeOfDoc == DocsRepo.getTypeByName("UsdFuelTank") || 
+            typeOfDoc == DocsRepo.getTypeByName("CashLockers") ||
+            typeOfDoc == DocsRepo.getTypeByName("MockUSDC")) &&
+            msg.sender != getBookeeper()
+        ) revert BOD_NotProxyable();
+        _;
     }
 
     // ###############
@@ -89,8 +109,8 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
 
     function _getCreator(address msgSender) private view returns(uint creator) {
         if (msgSender.isContract()) {
-            require(_docs.docExist(msgSender),
-                "BOD.getCreator: msgSender not registered");
+            if (!_docs.docExist(msgSender)) 
+                revert BOD_MsgSenderNotRegistered();
             creator = _docs.getHeadByBody(msgSender).creator;
         } else {
             creator = _getUserNo(msgSender);
@@ -100,7 +120,7 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
     function cloneDoc(
         uint typeOfDoc,
         uint version
-    ) external returns(
+    ) external proxyable(typeOfDoc) returns(
         DocsRepo.Doc memory doc
     ) {
         doc = _docs.cloneDoc(
@@ -115,7 +135,7 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
     function proxyDoc(
         uint typeOfDoc,
         uint version
-    ) external returns(
+    ) external proxyable(typeOfDoc) returns(
         DocsRepo.Doc memory doc
     ) {
         doc = _docs.proxyDoc(
@@ -185,7 +205,7 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
 
     // ---- Docs ----
 
-    function docExist(address body) external view returns(bool) {
+    function docExist(address body) public view returns(bool) {
         return _docs.docExist(body);
     }
 

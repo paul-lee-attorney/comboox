@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../common/components/IMeetingMinutes.sol";
 
@@ -33,21 +33,17 @@ interface IRODKeeper {
     /// @notice Take a director seat after motion approval.
     /// @param seqOfMotion Motion sequence.
     /// @param seqOfPos Position sequence.
-    /// @param msgSender Caller address.
     function takeSeat(
         uint256 seqOfMotion,
-        uint256 seqOfPos,
-        address msgSender 
+        uint256 seqOfPos
     ) external;
 
     /// @notice Remove a director after motion approval.
     /// @param seqOfMotion Motion sequence.
     /// @param seqOfPos Position sequence.
-    /// @param msgSender Caller address.
     function removeDirector (
         uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        address msgSender
+        uint256 seqOfPos
     ) external;
 
     // ==== Officers ====
@@ -55,28 +51,23 @@ interface IRODKeeper {
     /// @notice Take an officer position after motion approval.
     /// @param seqOfMotion Motion sequence.
     /// @param seqOfPos Position sequence.
-    /// @param msgSender Caller address.
     function takePosition(
         uint256 seqOfMotion,
-        uint256 seqOfPos,
-        address msgSender 
+        uint256 seqOfPos
     ) external;
 
     /// @notice Remove an officer after motion approval.
     /// @param seqOfMotion Motion sequence.
     /// @param seqOfPos Position sequence.
-    /// @param msgSender Caller address.
     function removeOfficer (
         uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        address msgSender
+        uint256 seqOfPos
     ) external;
 
     // ==== Quit ====
 
     /// @notice Quit an officer position.
     /// @param seqOfPos Position sequence.
-    /// @param msgSender Caller address.
-    function quitPosition(uint256 seqOfPos, address msgSender) external;
+    function quitPosition(uint256 seqOfPos) external;
 
 }

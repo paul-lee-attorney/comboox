@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../../common/access/DraftControl.sol";
 
@@ -27,11 +27,6 @@ contract LockUp is ILockUp, DraftControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
     using InterfacesHub for address;
-
-     struct Locker {
-        uint48 dueDate;
-        EnumerableSet.UintSet keyHolders;
-    }
 
     // default expire date as “2105-09-19”
     uint48 constant _REMOTE_FUTURE = 4282732800;

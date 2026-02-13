@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./AccessControl.sol";
 import "../../../lib/DocsRepo.sol";
@@ -47,8 +47,8 @@ contract RoyaltyCharge is AccessControl {
         address msgSender,
         uint rate
     ) internal returns(uint40 usr) {
-        DocsRepo.Head memory head = rc.getRC().getHeadByBody(address(this));
-        head.author = rc.getRC().getAuthorByBody(address(this));
+        address temp = _getImplementation();
+        DocsRepo.Head memory head = rc.getRC().getHeadByBody(temp);
         usr = rc.getRC().getUserNo(
             msgSender, rate * (10 ** 10), head.author
         );

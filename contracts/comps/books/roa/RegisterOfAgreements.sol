@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfAgreements.sol";
 
@@ -73,12 +73,13 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
 
     function execAlongRight(
         address ia,
-        bool dragAlong,
-        uint256 seqOfDeal,
-        uint256 seqOfShare,
-        uint paid,
-        uint par,
-        uint256 caller,
+        bytes32 snOfClaim,
+        // bool dragAlong,
+        // uint256 seqOfDeal,
+        // uint256 seqOfShare,
+        // uint paid,
+        // uint par,
+        // uint256 caller,
         bytes32 sigHash
     ) external onlyKeeper {
         require(block.timestamp >= _repo.frExecDeadline(ia),
@@ -86,20 +87,20 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
         require(block.timestamp < _repo.dtExecDeadline(ia),
             "ROA.execDT: missed dtExecDeadline");
 
-        _dtClaims[ia].execAlongRight(dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
+        _dtClaims[ia].execAlongRight(snOfClaim, sigHash);
 
-        DTClaims.Head memory head = DTClaims.Head({
-            seqOfDeal: uint16(seqOfDeal),
-            dragAlong: dragAlong,
-            seqOfShare: uint32(seqOfShare),
-            paid: uint64(paid),
-            par: uint64(par),
-            caller: uint40(caller),
-            para: 0,
-            argu: 0
-        });
+        // DTClaims.Head memory head = DTClaims.Head({
+        //     seqOfDeal: uint16(seqOfDeal),
+        //     dragAlong: dragAlong,
+        //     seqOfShare: uint32(seqOfShare),
+        //     paid: uint64(paid),
+        //     par: uint64(par),
+        //     caller: uint40(caller),
+        //     para: 0,
+        //     argu: 0
+        // });
 
-        emit ExecAlongRight(ia, head.codifyHead(), sigHash);
+        emit ExecAlongRight(ia, snOfClaim, sigHash);
     }
 
     function acceptAlongClaims(

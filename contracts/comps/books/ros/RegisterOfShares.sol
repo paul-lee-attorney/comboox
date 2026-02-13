@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfShares.sol";
 import "../../common/access/AccessControl.sol";
@@ -244,7 +244,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     ) external {
 
         require(msg.sender == address(gk.getROP()) ||
-            gk.isKeeper(msg.sender), 
+            gk.getGK().isKeeper(msg.sender), 
             "ROS.decrClean: access denied");
 
         _repo.increaseCleanPaid(
@@ -262,7 +262,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     ) external {
 
         require(msg.sender == address(gk.getROP()) ||
-            gk.isKeeper(msg.sender), 
+            gk.getGK().isKeeper(msg.sender), 
             "ROS.DCA: neither keeper nor ROP");
 
         _repo.increaseCleanPaid(

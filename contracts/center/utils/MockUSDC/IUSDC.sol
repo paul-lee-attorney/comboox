@@ -17,9 +17,9 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../../openzeppelin/token/ERC20/IERC20.sol";
+import "../../../openzeppelin/token/ERC20/IERC20.sol";
 
 // Decimal = 6 
 interface IUSDC is IERC20{

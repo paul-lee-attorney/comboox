@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -18,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../lib/InterfacesHub.sol";
 import "../../lib/SharesRepo.sol";
@@ -43,13 +42,11 @@ interface IAccountant {
     /// @param expireDate Distribution expiry timestamp.
     /// @param seqOfDR Distribution rule sequence.
     /// @param seqOfMotion Motion sequence.
-    /// @param msgSender Caller address.
     function distrProfits(
         uint amt,
         uint expireDate,
         uint seqOfDR,
-        uint seqOfMotion,
-        address msgSender
+        uint seqOfMotion
     ) external;
 
     /// @notice Distribute income to fund manager and recipients.
@@ -58,14 +55,12 @@ interface IAccountant {
     /// @param seqOfDR Distribution rule sequence.
     /// @param fundManager Fund manager user number.
     /// @param seqOfMotion Motion sequence.
-    /// @param msgSender Caller address.
     function distrIncome(
         uint amt,
         uint expireDate,
         uint seqOfDR,
         uint fundManager,
-        uint seqOfMotion,
-        address msgSender
+        uint seqOfMotion
     ) external;
 
     /// @notice Transfer funds from treasury to a recipient.
@@ -75,15 +70,13 @@ interface IAccountant {
     /// @param amt Amount to transfer.
     /// @param expireDate Transfer expiry timestamp.
     /// @param seqOfMotion Motion sequence.
-    /// @param msgSender Caller address.
     function transferFund(
         bool fromBMM,
         address to,
         bool isCBP,
         uint amt,
         uint expireDate,
-        uint seqOfMotion,
-        address msgSender
+        uint seqOfMotion
     ) external;
 
 }

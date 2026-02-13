@@ -18,7 +18,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../comps/common/access/RoyaltyCharge.sol";
 
@@ -33,29 +33,29 @@ contract FundRORKeeper is IRORKeeper, RoyaltyCharge {
             "FundRORK: not GP or Manager");
     }
 
-    function addRedeemableClass(uint class, address msgSender) external onlyDK{
-        uint caller = _msgSender(msgSender, 18000);
+    function addRedeemableClass(uint class) external onlyDK onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _gpOrManager(caller);
         gk.getROR().addRedeemableClass(class);
     }
 
-    function removeRedeemableClass(uint class, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+    function removeRedeemableClass(uint class) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _gpOrManager(caller);
         gk.getROR().removeRedeemableClass(class);
     }
 
-    function updateNavPrice(uint class, uint price, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+    function updateNavPrice(uint class, uint price) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 18000);
         _gpOrManager(caller);
         require(price > 0, "FundRORK: zero navPrice");
         gk.getROR().updateNavPrice(class, price); 
     }
 
     function requestForRedemption(
-        uint class, uint paid, address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 88000);
+        uint class, uint paid
+    ) external onlyDK  onlyGKProxy {
+        uint caller = _msgSender(msg.sender, 88000);
 
         IRegisterOfMembers _rom = gk.getROM();
         IRegisterOfShares _ros = gk.getROS();
@@ -99,9 +99,9 @@ contract FundRORKeeper is IRORKeeper, RoyaltyCharge {
 
     }
 
-    function redeem(uint class, uint seqOfPack, address msgSender) external onlyDK {
+    function redeem(uint class, uint seqOfPack) external onlyDK  onlyGKProxy {
         
-        uint caller = _msgSender(msgSender, 18000);
+        uint caller = _msgSender(msg.sender, 18000);
         _gpOrManager(caller);
 
         (RedemptionsRepo.Request[] memory list, RedemptionsRepo.Request memory info) = 

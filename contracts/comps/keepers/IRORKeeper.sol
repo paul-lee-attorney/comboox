@@ -18,7 +18,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../lib/RedemptionsRepo.sol";
 import "../../lib/InterfacesHub.sol";
@@ -36,32 +36,27 @@ interface IRORKeeper {
 
     /// @notice Add a redeemable class.
     /// @param class Share class id.
-    /// @param msgSender Caller address.
-    function addRedeemableClass(uint class, address msgSender) external;
+    function addRedeemableClass(uint class) external;
 
     /// @notice Remove a redeemable class.
     /// @param class Share class id.
-    /// @param msgSender Caller address.
-    function removeRedeemableClass(uint class, address msgSender) external;
+    function removeRedeemableClass(uint class) external;
 
     /// @notice Update NAV price for a class.
     /// @param class Share class id.
     /// @param price NAV price.
-    /// @param msgSender Caller address.
-    function updateNavPrice(uint class, uint price, address msgSender) external;
+    function updateNavPrice(uint class, uint price) external;
 
     /// @notice Request redemption for a share.
     /// @param class Share class id.
     /// @param paid Paid amount to redeem.
-    /// @param msgSender Caller address.
     function requestForRedemption(
-        uint class, uint paid, address msgSender
+        uint class, uint paid
     ) external;
 
     /// @notice Redeem a pack for a class.
     /// @param class Share class id.
     /// @param seqOfPack Pack sequence.
-    /// @param msgSender Caller address.
-    function redeem(uint class, uint seqOfPack, address msgSender) external;
+    function redeem(uint class, uint seqOfPack) external;
 
 }

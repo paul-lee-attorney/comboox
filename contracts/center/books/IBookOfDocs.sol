@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title IBookOfDocs
 /// @notice Document registry interface for templates, proxies, and clones.

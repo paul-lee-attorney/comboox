@@ -25,7 +25,7 @@
 ///      (24~32) Interface variants: e.g. GeneralKeeper -> PrivateComp, ListedComp, ListedOpenComp, ...
 /// @dev For proxy upgrades, the top 24 bits (0~23) must match; only interface variants may differ.
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title DocsRepo - TypeOfDoc: 0x01010201 (Domain: RegCenter, Category: Libraries, Feature: DocsRepo, Interface: v1)
 /// @notice In-memory indexed repository of document templates, proxies, and clones.
@@ -76,15 +76,33 @@ library DocsRepo {
         EnumerableSet.UintSet typesList;
     }
 
-    modifier proxyable(uint typeOfDoc) {
-        uint32 typeOfDoc32 = uint32(typeOfDoc);
-        require(
-            (typeOfDoc32 & 0xFFFF0000 != 0x020e0000) && // not regCenter
-            (typeOfDoc32 & 0xFFFF0000 != 0x060e0000), // not regCenter utils
-            "DR.proxyable: NOT"
-        );
-        _;
-    }
+    //#####################
+    //##  Error & Event  ##
+    //#####################
+
+    error DocsRepo_ZeroType();
+
+    error DocsRepo_ZeroAuthor();
+
+    error DocsRepo_ZeroCreator();
+
+    error DocsRepo_ZeroBody();
+
+    error DocsRepo_NotProxyable();
+
+    error DocsRepo_AlreadyRegistered();
+
+    error DocsRepo_TempNotExist();
+
+    error DocsRepo_ProxyNotExist();
+
+    error DocsRepo_ZeroProxy();
+
+    error DocsRepo_WrongTemplate();
+
+    error DocsRepo_WrongVersion();
+
+    error DocsRepo_WrongAuthor();
 
     //##################
     //##  Write I/O   ##
@@ -118,6 +136,11 @@ library DocsRepo {
         }
     }
 
+    function getTypeByName(bytes memory name) public pure returns(uint typeOfDoc) {
+        if (name.length == 0) revert DocsRepo_ZeroType();
+        typeOfDoc = uint32(uint(keccak256(name)));
+    }
+
     /// @notice Register a template contract for a document type.
     /// @dev Creates version=1..n and seqOfDoc=0 for templates.
     /// @param repo Repository storage.
@@ -137,14 +160,20 @@ library DocsRepo {
         head.author = uint40(author);
         head.creator = uint40(caller);
 
-        require(body != address(0),
-            "DR.setTemp: zero body");
-        require(repo.heads[body].typeOfDoc == 0, 
-            "DR.setTemp: temp already exists");
+        if (body == address(0)) 
+            revert DocsRepo_ZeroBody();
+
+        if (repo.heads[body].typeOfDoc != 0) 
+            revert DocsRepo_AlreadyRegistered();
         
-        require(head.typeOfDoc > 0, "DR.setTemp: zero typeOfDoc");
-        require(head.author > 0, "DR.setTemp: zero author");
-        require(head.creator > 0, "DR.setTemp: zero creator");
+        if (head.typeOfDoc == 0) 
+            revert DocsRepo_ZeroType();
+
+        if (head.author == 0) 
+            revert DocsRepo_ZeroAuthor();
+
+        if (head.creator == 0) 
+            revert DocsRepo_ZeroCreator();
 
         repo.typesList.add(head.typeOfDoc);
 
@@ -191,16 +220,16 @@ library DocsRepo {
         address proxy,
         uint caller
     ) public returns (Doc memory doc) {
-        require(caller != 0, 
-            "DR.regProxy: zero caller");
-        require(tempExist(repo, temp), 
-            "DR.regProxy: temp not exist");
-        require(proxy != address(0), 
-            "DR.regProxy: zero proxy");            
-        require(!docExist(repo, proxy), 
-            "DR.regProxy: already reged");
-        require(_isProxy(temp, proxy),
-            "DR.regProxy: wrong template");
+        if (caller == 0) 
+            revert DocsRepo_ZeroCreator();
+        if (!tempExist(repo, temp)) 
+            revert DocsRepo_TempNotExist();
+        if (proxy == address(0)) 
+            revert DocsRepo_ZeroProxy();
+        if (docExist(repo, proxy)) 
+            revert DocsRepo_AlreadyRegistered();
+        if (!_isProxy(temp, proxy)) 
+            revert DocsRepo_WrongTemplate();
 
         doc.head = repo.heads[temp];
         doc.head.creator = uint40(caller);
@@ -221,14 +250,18 @@ library DocsRepo {
         uint typeOfDoc,
         uint version,
         uint creator
-    ) public proxyable(typeOfDoc) returns (Doc memory doc)
+    ) public returns (Doc memory doc)
     {
         doc = getTemp(repo, typeOfDoc, version);
         doc.head.creator = uint40(creator);
-        require(doc.head.creator > 0, "DR.cloneDoc: zero creator");
+
+        if (doc.head.creator == 0) 
+            revert DocsRepo_ZeroCreator();
 
         doc.body = _createClone(doc.body);
-        require(doc.body != address(0), "DR.cloneDoc: clone failed");
+
+        if (doc.body == address(0)) 
+            revert DocsRepo_ZeroProxy();
 
         _regDoc(repo, doc);
     }
@@ -244,10 +277,11 @@ library DocsRepo {
         uint typeOfDoc,
         uint version,
         uint creator
-    ) public proxyable(typeOfDoc) returns (Doc memory doc) {
+    ) public returns (Doc memory doc) {
         doc = getTemp(repo, typeOfDoc, version);
         doc.head.creator = uint40(creator);
-        require(doc.head.creator > 0, "DR.proxyDoc: zero creator");
+        if (doc.head.creator == 0) 
+            revert DocsRepo_ZeroCreator();
         
         bytes memory data = abi.encodeWithSignature(
                     "initialize(address,address)",
@@ -270,24 +304,25 @@ library DocsRepo {
         address temp,
         address proxy
     ) public returns (Doc memory doc) {
-        require(tempExist(repo, temp),
-            "DR.upgradeDoc: temp not exist");
-        require(docExist(repo, proxy),
-            "DR.upgradeDoc: proxy not exist");
+        if (!tempExist(repo, temp)) 
+            revert DocsRepo_TempNotExist();
+
+        if (!docExist(repo, proxy)) 
+            revert DocsRepo_ProxyNotExist();
 
         doc.head = repo.heads[temp];
         doc.body = proxy;
 
         Head memory oldHead = repo.heads[proxy];
     
-        require(
-            (oldHead.typeOfDoc & 0xFFFFFF00) == (doc.head.typeOfDoc & 0xFFFFFF00),
-            "DR.upgradeDoc: wrong typeOfDoc");
+        if (oldHead.typeOfDoc != doc.head.typeOfDoc) 
+            revert DocsRepo_WrongTemplate();
 
-        require(oldHead.version != doc.head.version,
-            "DR.upgradeDoc: wrong version");
-        require(_isProxy(temp, proxy),
-            "DR.upgradeDoc: wrong template");
+        if (oldHead.version == doc.head.version) 
+            revert DocsRepo_WrongVersion();
+
+        if (!_isProxy(temp, proxy)) 
+            revert DocsRepo_WrongTemplate();
 
         _regDoc(repo, doc);
 
@@ -312,8 +347,9 @@ library DocsRepo {
         uint transferee,
         uint caller 
     ) public {
-        require (caller == getAuthor(repo, typeOfDoc, version),
-            "DR.transferIPR: not author");
+        if (caller != getAuthor(repo, typeOfDoc, version)) 
+            revert DocsRepo_WrongAuthor();
+
         repo.heads[repo.bodies[typeOfDoc][version][0].addr].author = uint40(transferee);
     }
 
@@ -490,7 +526,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         uint version
     ) public view returns(uint40) {
         address temp = repo.bodies[typeOfDoc][version][0].addr;
-        require(temp != address(0), "getAuthor: temp not exist");
+
+        if (temp == address(0)) 
+            revert DocsRepo_TempNotExist();
 
         return repo.heads[temp].author;
     }
@@ -535,8 +573,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     ) public view returns(Doc memory doc) {
         doc.body = repo.bodies[uint32(typeOfDoc)][uint32(version)][0].addr;
         doc.head = repo.heads[doc.body];
-        require(tempExist(repo, doc.body),
-            "DR.getTemp: temp not exist");
+        
+        if (!tempExist(repo, doc.body)) 
+            revert DocsRepo_TempNotExist();
     }
 
     /// @notice Get all templates for a document type.

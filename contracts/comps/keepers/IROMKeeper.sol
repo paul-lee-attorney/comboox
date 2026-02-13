@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../books/ros/IRegisterOfShares.sol";
 import "../books/cashier/ICashier.sol";
@@ -66,12 +66,10 @@ interface IROMKeeper {
     /// @param auth Transfer authorization.
     /// @param seqOfShare Share sequence.
     /// @param paid Paid amount.
-    /// @param msgSender Caller address.
     function payInCapital(
         ICashier.TransferAuth memory auth,
         uint seqOfShare, 
-        uint paid,
-        address msgSender
+        uint paid
     ) external;
 
     /// @notice Decrease capital for a share.

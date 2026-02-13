@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title IRegCenter
 /// @notice Registry center interface combining docs, users, points, and ERC20 operations.
@@ -30,7 +30,7 @@ import "./books/IBookOfPoints.sol";
 import "./books/IBookOfUsers.sol";
 import "../openzeppelin/token/ERC20/IERC20.sol";
 
-interface IRegCenter is IBookOfPoints, IERC20, IBookOfDocs, IBookOfUsers{
+interface IRegCenter is IBookOfPoints, IBookOfDocs, IBookOfUsers, IERC20{
 
     /// @notice Register caller as a user and mint initial gift points if configured.
     function regUser() external;

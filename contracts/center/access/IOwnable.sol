@@ -18,7 +18,7 @@
  * */
 
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title IOwnable
 /// @notice Minimal ownership interface used by upgradeable components.

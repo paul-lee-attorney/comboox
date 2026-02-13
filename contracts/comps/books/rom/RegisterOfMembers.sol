@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfMembers.sol";
 import "../../common/access/AccessControl.sol";
@@ -56,14 +56,14 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     }
 
     function setMinVoteRatioOnChain(uint min) external {
-        require(msg.sender == gk.getKeeper(1),
+        require(msg.sender == gk.getGK().getKeeper(1),
             "ROM.OnlyROCKeeper: not");
         _repo.chain.setMinVoteRatioOnChain(min);
         emit SetMinVoteRatioOnChain(min);
     }
 
     function setVoteBase(bool _basedOnPar) external {
-        require(msg.sender == gk.getKeeper(1),
+        require(msg.sender == gk.getGK().getKeeper(1),
             "ROM.OnlyROCKeeper: not");
 
         IRegisterOfShares _ros = gk.getROS();

@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../openzeppelin/utils/structs/EnumerableSet.sol";
 
@@ -112,48 +112,52 @@ library DTClaims {
 
     /// @notice Register a drag-along or tag-along claim.
     /// @param cls Storage claims.
-    /// @param dragAlong True for drag-along, false for tag-along.
-    /// @param seqOfDeal Deal sequence number (> 0).
-    /// @param seqOfShare Share sequence number (> 0).
-    /// @param paid Paid amount (uint64 range).
-    /// @param par Par amount (uint64 range).
-    /// @param claimer Claimer account id (> 0).
+    // / @param dragAlong True for drag-along, false for tag-along.
+    // / @param seqOfDeal Deal sequence number (> 0).
+    // / @param seqOfShare Share sequence number (> 0).
+    // / @param paid Paid amount (uint64 range).
+    // / @param par Par amount (uint64 range).
+    /// @param snOfClaim Encoded claim head.
+    // / @param claimer Claimer account id (> 0).
     /// @param sigHash Signature hash.
     function execAlongRight(
         Claims storage cls,
-        bool dragAlong,
-        uint256 seqOfDeal,
-        uint256 seqOfShare,
-        uint paid,
-        uint par,
-        uint256 claimer,
+        // bool dragAlong,
+        // uint256 seqOfDeal,
+        // uint256 seqOfShare,
+        // uint paid,
+        // uint par,
+        bytes32 snOfClaim,
+        // uint256 claimer,
         bytes32 sigHash
     ) public {
 
-        uint16 intSeqOfDeal = uint16(seqOfDeal);
-        require(intSeqOfDeal > 0, "DTClaims.exec: zero seqOfDeal");
+        Head memory head = snParser(snOfClaim);
 
+        // uint16 intSeqOfDeal = uint16(seqOfDeal);
+        require(head.seqOfDeal > 0, "DTClaims.exec: zero seqOfDeal");
+    
         Claim memory newClaim = Claim({
-            typeOfClaim: dragAlong ? 0 : 1,
-            seqOfShare: uint32(seqOfShare),
-            paid: uint64(paid),
-            par: uint64(par),
-            claimer: uint40(claimer),
+            typeOfClaim: head.dragAlong ? 0 : 1,
+            seqOfShare: head.seqOfShare,
+            paid: head.paid,
+            par: head.par,
+            claimer: head.caller,
             sigDate: uint48(block.timestamp),
             sigHash: sigHash
         }); 
 
         require(newClaim.seqOfShare > 0, "DTClaims.exec: zero seqOfShare");
 
-        Pack storage p = cls.packs[intSeqOfDeal][newClaim.typeOfClaim];
+        Pack storage p = cls.packs[head.seqOfDeal][newClaim.typeOfClaim];
 
         if (p.shares.add(newClaim.seqOfShare)){
 
             p.claims[newClaim.seqOfShare] = newClaim;
 
-            cls.deals.add(intSeqOfDeal);
+            cls.deals.add(head.seqOfDeal);
 
-            _consolidateClaimsOfShare(cls, intSeqOfDeal, newClaim);
+            _consolidateClaimsOfShare(cls, head.seqOfDeal, newClaim);
         }
     }
 

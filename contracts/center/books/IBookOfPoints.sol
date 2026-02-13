@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 /// @title IBookOfPoints
 /// @notice ERC20-like points mint/burn interface used by the registry.

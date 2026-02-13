@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.5
- *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -19,58 +17,50 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IGeneralKeeper.sol";
-import "../common/access/AccessControl.sol";
-import "../../openzeppelin/utils/Address.sol";
-import "../../lib/UsersRepo.sol";
-import "../../lib/InterfacesHub.sol";
+import "./common/access/AccessControl.sol";
+import "../openzeppelin/utils/Address.sol";
+import "../lib/UsersRepo.sol";
+import "../lib/InterfacesHub.sol";
+import "../lib/KeepersRouter.sol";
 
 contract GeneralKeeper is IGeneralKeeper, AccessControl {
     using Address for address;
     using InterfacesHub for address;
+    using KeepersRouter for KeepersRouter.Repo;
 
     /// @notice Company registry info stored in this keeper.
     CompInfo internal _info;
 
     /// @notice Book registry (title => book address).
     mapping(uint256 => address) private _books;
-    /// @notice Keeper registry (title => keeper address).
-    mapping(uint256 => address) internal _keepers;
-    /// @notice Reverse keeper registry (keeper address => title).
-    mapping(address => uint256) private _titleOfKeeper;
+    /// @notice Keeper registry.
+    KeepersRouter.Repo private _keepers;
 
     // ==== UUPSUpgradable ====
 
     /// @dev Storage gap for upgrade safety.
     uint[50] private __gap;
 
-    // ---- Initialize ----
-    function initialize(
-        address owner,
-        address regCenter
-    ) external override initializer {
-        _init(owner, regCenter);
-        _createCorpSeal();
-    }
-
     /// @notice Register this company in RegCenter and store registry metadata.
-    function _createCorpSeal() private {
+    function createCorpSeal(
+        uint _typeOfEntity
+    ) external reinitializer(3) onlyOwner{
         rc.getRC().regUser();
         _info.regNum = rc.getRC().getMyUserNo();
         _info.regDate = uint48(block.timestamp);
+        _info.typeOfEntity = uint8(_typeOfEntity);
     }
     
     // ---- Entity ----
 
     function setCompInfo (
-        uint8 _typeOfEntity,
         uint8 _currency,
         bytes18 _symbol,
         string memory _name
     ) external onlyDK {
-        _info.typeOfEntity = _typeOfEntity;
         _info.currency = _currency;
         _info.symbol = _symbol;
         _info.name = _name;
@@ -81,7 +71,7 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function getCompUser() external view onlyOwner returns (UsersRepo.User memory) {
-        return rc.getRC().getUser();
+        return rc.getRC().getMyUser();
     }
 
     // ---- Keepers ----
@@ -90,22 +80,20 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         uint256 title, 
         address keeper
     ) external onlyDK {
-        _titleOfKeeper[_keepers[title]] = 0;
-        _keepers[title] = keeper;
-        _titleOfKeeper[keeper] = title;
+        _keepers.regKeeper(title, keeper);
         emit RegKeeper(title, keeper, msg.sender);
     }
 
-    function isKeeper(address caller) external view returns (bool) {   
-        return _titleOfKeeper[caller] > 0;
+    function isKeeper(address target) external view returns (bool) {   
+        return _keepers.isKeeper(target);
     }
 
     function getKeeper(uint256 title) external view returns (address) {
-        return _keepers[title];
+        return _keepers.getKeeper(title);
     }
 
     function getTitleOfKeeper(address keeper) external view returns (uint) {
-        return _titleOfKeeper[keeper];
+        return _keepers.getTitleOfKeeper(keeper);
     }
 
     // ---- Books ----
@@ -119,27 +107,29 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
         return _books[title];
     }
 
-    // ---- Actions ----
-    
-    /// @notice Execute a batch of calls with value.
-    /// @param targets Target addresses.
-    /// @param values ETH values to send.
-    /// @param params Calldata payloads.
-    function _execute(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory params
-    ) internal {
-        require(
-            targets.length == values.length && targets.length == params.length,
-            "GK._execute: length mismatch"
-        );
-        for (uint256 i = 0; i < targets.length; i++) {
-            targets[i].functionCallWithValue(params[i], values[i]);
+    /// @notice Fallback router for keeper calls.
+    /// @dev Looks up `msg.sig` in keeper registry and delegates the call to the
+    ///      corresponding keeper. Uses `delegatecall`, so storage writes affect
+    ///      this contract and `msg.sender` remains the original caller.
+    ///      Reverts if the selector is not registered, and bubbles up revert data.
+    fallback() external payable {
+        address keeper = _keepers.getKeeperBySig(msg.sig);
+        if (keeper == address(0)) {
+            revert GK_fallbackFuncNotReg(msg.sig);
         }
-        emit ExecAction(keccak256(
-            abi.encode(targets, values, params)
-        ));
+        
+        (bool success, ) = keeper.delegatecall(msg.data);
+
+        if (success) {
+            emit ForwardedCall(keeper, msg.sender, msg.sig);
+        } else {
+            // Bubble up revert reason from delegatecall
+            assembly {
+                let returndata_size := returndatasize()
+                returndatacopy(0, 0, returndata_size)
+                revert(0, returndata_size)
+            }
+        }
     }
 
     /// @notice Accept ETH transfers.

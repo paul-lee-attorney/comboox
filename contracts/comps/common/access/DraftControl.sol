@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.4
- *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -19,10 +17,11 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IDraftControl.sol";
 import "./AccessControl.sol";
+// import "../../../lib/InterfacesHub.sol";
 
 contract DraftControl is IDraftControl, AccessControl {
     using RolesRepo for RolesRepo.Repo;
@@ -35,21 +34,21 @@ contract DraftControl is IDraftControl, AccessControl {
     // ################
 
     modifier onlyGC {
-        require(_roles.getRoleAdmin(_ATTORNEYS) == 
-            msg.sender,"AC.onlyGC: NOT");
+        if (_roles.getRoleAdmin(_ATTORNEYS) != msg.sender)
+            revert DC_NotGC();
         _;
     }
 
     modifier onlyAttorney {
-        require(_roles.hasRole(_ATTORNEYS, msg.sender),
-            "AC.onlyAttorney: NOT");
+        if (!_roles.hasRole(_ATTORNEYS, msg.sender))
+            revert DC_NotAttorney();
         _;
     }
 
-    modifier attorneyOrKeeper {
-        require(_roles.hasRole(_ATTORNEYS, msg.sender) ||
-            gk.isKeeper(msg.sender),
-            "AC.md.attorneyOrKeeper: NOT");
+    modifier attorneyOrGK {
+        if (!_roles.hasRole(_ATTORNEYS, msg.sender) &&
+            msg.sender != gk
+        ) revert DC_NotAttorneyOrGK();
         _;
     }
 
@@ -79,12 +78,12 @@ contract DraftControl is IDraftControl, AccessControl {
     }
 
     function lockContents() public onlyOwner {
-        require(_dk.state == 1, 
-            "AC.lockContents: wrong state");
+        if(dk.state != 1) 
+            revert DC_LockContents_WrongState();
 
         _roles.abandonRole(_ATTORNEYS);
         setNewOwner(address(0));
-        _dk.state = 2;
+        dk.state = 2;
 
         emit LockContents();
     }
@@ -94,7 +93,7 @@ contract DraftControl is IDraftControl, AccessControl {
     // ##############
 
     function isFinalized() public view returns (bool) {
-        return _dk.state == 2;
+        return dk.state == 2;
     }
 
     function getRoleAdmin(bytes32 role) public view returns (address) {

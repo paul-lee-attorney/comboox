@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../access/Ownable.sol";
 
@@ -56,7 +56,7 @@ contract CreateNewComp is ICreateNewComp, Ownable {
         Accountant,
         Blank_1,
         Blank_2,
-        Blank_3, // 15
+        GK, // 15
         RORK
     }
 
@@ -81,39 +81,31 @@ contract CreateNewComp is ICreateNewComp, Ownable {
     }
 
     address public bank;
-    uint[20] private _docs4GK;
+    // uint[20] private _docs4GK;
     uint[20] private _docs4FundKeeper;
     uint[20] private _docs4Keeper;
     uint[20] private _docs4Book;
-    uint[20] private _dkMapping;
+    // uint[20] private _dkMapping;
 
     // ==== UUPSUpgradable ====
 
     uint[50] private __gap;
 
-    function initialize(
-        address _usdc,
-        address regCenter
-    ) external override initializer {
-        _init(address(0), regCenter);
-        _initTypeSetting(_usdc);
-    }
-
     function _initTypeSetting(address _usdc) private {
         bank = _usdc;
 
-        _initDocs4GK();
+        // _initDocs4GK();
         _initDocs4Keeper();
         _initDocs4FundKeeper();
         _initDocs4Book();
-        _initDKMapping();
+        // _initDKMapping();
     }
 
     function _authorizeUpgrade(address newImplementation) internal virtual override {
-        require(
-            rc.getRC().getBookeeper() == msg.sender,
-            "CNC._authorizeUpgrade: NOT"
-        );
+        if (rc.getRC().getBookeeper() != msg.sender) 
+            revert CNC_NotKeeper();
+        if (!rc.getRC().tempExist(newImplementation))
+            revert CNC_TempNotExist();
     }
 
     function upgradeDocTo(address newImplementation) external virtual {
@@ -121,94 +113,162 @@ contract CreateNewComp is ICreateNewComp, Ownable {
         rc.getRC().upgradeDoc(newImplementation);
     }
 
-    // ==== Modifier ====
+    //######################
+    //##  Error & Event   ##
+    //######################
+
+    error CNC_NotKeeper();
+
+    error CNC_ZeroType();
+
+    error CNC_TempNotExist();
+
+
+    //##################
+    //##  Modifiers   ##
+    //##################
 
     modifier onlyKeeper {
-        require(
-            rc.getRC().getBookeeper() == msg.sender,
-            "CNC.onlyKeeper: NOT"
-        );
+        if (rc.getRC().getBookeeper() != msg.sender) 
+            revert CNC_NotKeeper();
         _;
     }
 
     // ==== Type Setting ====
 
-    function _initDocs4GK() private {
-        _docs4GK[uint8(GKs.PrivateComp)]        = 0x030e0101;
-        _docs4GK[uint8(GKs.GrowingComp)]        = 0x030e0102;
-        _docs4GK[uint8(GKs.ListedComp)]         = 0x030e0103;
-        _docs4GK[uint8(GKs.GeneralComp)]        = 0x030e0104;
-        _docs4GK[uint8(GKs.CloseFund)]          = 0x030e0201;
-        _docs4GK[uint8(GKs.ListedCloseFund)]    = 0x030e0202;
-        _docs4GK[uint8(GKs.OpenFund)]           = 0x030e0203;
-        _docs4GK[uint8(GKs.ListedOpenFund)]     = 0x030e0204;
-        _docs4GK[uint8(GKs.GeneralFund)]        = 0x030e0205;
+    function getTypeByName(bytes memory name) public pure returns(uint typeOfDoc) {
+        if (name.length == 0) revert CNC_ZeroType();
+        typeOfDoc = uint32(uint(keccak256(name)));
     }
+
+
+    // function _initDocs4GK() private {
+    //     _docs4GK[uint8(GKs.PrivateComp)]        = 0x030e0101;
+    //     _docs4GK[uint8(GKs.GrowingComp)]        = 0x030e0102;
+    //     _docs4GK[uint8(GKs.ListedComp)]         = 0x030e0103;
+    //     _docs4GK[uint8(GKs.GeneralComp)]        = 0x030e0104;
+    //     _docs4GK[uint8(GKs.CloseFund)]          = 0x030e0201;
+    //     _docs4GK[uint8(GKs.ListedCloseFund)]    = 0x030e0202;
+    //     _docs4GK[uint8(GKs.OpenFund)]           = 0x030e0203;
+    //     _docs4GK[uint8(GKs.ListedOpenFund)]     = 0x030e0204;
+    //     _docs4GK[uint8(GKs.GeneralFund)]        = 0x030e0205;
+    // }
+
+    uint constant public GK = 0x030e0101;
+
+    // function _initDocs4Keeper() private {
+    //     _docs4Keeper[uint8(Keepers.ROCK)]       = 0x03010101;
+    //     _docs4Keeper[uint8(Keepers.RODK)]       = 0x03020101;
+    //     _docs4Keeper[uint8(Keepers.BMMK)]       = 0x03030101;
+    //     _docs4Keeper[uint8(Keepers.ROMK)]       = 0x03040101;
+    //     _docs4Keeper[uint8(Keepers.GMMK)]       = 0x03050101;
+    //     _docs4Keeper[uint8(Keepers.ROAK)]       = 0x03060101;
+    //     _docs4Keeper[uint8(Keepers.ROOK)]       = 0x03070101;
+    //     _docs4Keeper[uint8(Keepers.ROPK)]       = 0x03080101;
+    //     _docs4Keeper[uint8(Keepers.SHAK)]       = 0x03090101;
+    //     _docs4Keeper[uint8(Keepers.LOOK)]       = 0x030a0101;
+    //     _docs4Keeper[uint8(Keepers.ROIK)]       = 0x030b0101;
+    //     _docs4Keeper[uint8(Keepers.Accountant)] = 0x030c0101;
+    //     _docs4Keeper[uint8(Keepers.RORK)]       = 0x03100201;
+    // }
 
     function _initDocs4Keeper() private {
-        _docs4Keeper[uint8(Keepers.ROCK)]       = 0x03010101;
-        _docs4Keeper[uint8(Keepers.RODK)]       = 0x03020101;
-        _docs4Keeper[uint8(Keepers.BMMK)]       = 0x03030101;
-        _docs4Keeper[uint8(Keepers.ROMK)]       = 0x03040101;
-        _docs4Keeper[uint8(Keepers.GMMK)]       = 0x03050101;
-        _docs4Keeper[uint8(Keepers.ROAK)]       = 0x03060101;
-        _docs4Keeper[uint8(Keepers.ROOK)]       = 0x03070101;
-        _docs4Keeper[uint8(Keepers.ROPK)]       = 0x03080101;
-        _docs4Keeper[uint8(Keepers.SHAK)]       = 0x03090101;
-        _docs4Keeper[uint8(Keepers.LOOK)]       = 0x030a0101;
-        _docs4Keeper[uint8(Keepers.ROIK)]       = 0x030b0101;
-        _docs4Keeper[uint8(Keepers.Accountant)] = 0x030c0101;
-        _docs4Keeper[uint8(Keepers.RORK)]       = 0x03100201;
+        _docs4Keeper[uint8(Keepers.ROCK)]       = getTypeByName("ROCKeeper");
+        _docs4Keeper[uint8(Keepers.RODK)]       = getTypeByName("RODKeeper");
+        _docs4Keeper[uint8(Keepers.BMMK)]       = getTypeByName("BMMKeeper");
+        _docs4Keeper[uint8(Keepers.ROMK)]       = getTypeByName("ROMKeeper");
+        _docs4Keeper[uint8(Keepers.GMMK)]       = getTypeByName("GMMKeeper");
+        _docs4Keeper[uint8(Keepers.ROAK)]       = getTypeByName("ROAKeeper");
+        _docs4Keeper[uint8(Keepers.ROOK)]       = getTypeByName("ROOKeeper");
+        _docs4Keeper[uint8(Keepers.ROPK)]       = getTypeByName("ROPKeeper");
+        _docs4Keeper[uint8(Keepers.SHAK)]       = getTypeByName("SHAKeeper");
+        _docs4Keeper[uint8(Keepers.LOOK)]       = getTypeByName("LOOKeeper");
+        _docs4Keeper[uint8(Keepers.ROIK)]       = getTypeByName("ROIKeeper");
+        _docs4Keeper[uint8(Keepers.Accountant)] = getTypeByName("Accountant");
+        _docs4Keeper[uint8(Keepers.RORK)]       = getTypeByName("RORKeeper");
     }
+
+    // function _initDocs4FundKeeper() private {
+    //     _docs4FundKeeper[uint8(Keepers.ROCK)]       = 0x03010201;
+    //     _docs4FundKeeper[uint8(Keepers.RODK)]       = 0x03020101;
+    //     _docs4FundKeeper[uint8(Keepers.BMMK)]       = 0x03030101;
+    //     _docs4FundKeeper[uint8(Keepers.ROMK)]       = 0x03040101;
+    //     _docs4FundKeeper[uint8(Keepers.GMMK)]       = 0x03050201;
+    //     _docs4FundKeeper[uint8(Keepers.ROAK)]       = 0x03060101;
+    //     _docs4FundKeeper[uint8(Keepers.ROOK)]       = 0x03070101;
+    //     _docs4FundKeeper[uint8(Keepers.ROPK)]       = 0x03080101;
+    //     _docs4FundKeeper[uint8(Keepers.SHAK)]       = 0x03090101;
+    //     _docs4FundKeeper[uint8(Keepers.LOOK)]       = 0x030a0201;
+    //     _docs4FundKeeper[uint8(Keepers.ROIK)]       = 0x030b0201;
+    //     _docs4FundKeeper[uint8(Keepers.Accountant)] = 0x030c0201;
+    //     _docs4FundKeeper[uint8(Keepers.RORK)]       = 0x03100201;
+    // }
 
     function _initDocs4FundKeeper() private {
-        _docs4FundKeeper[uint8(Keepers.ROCK)]       = 0x03010201;
-        _docs4FundKeeper[uint8(Keepers.RODK)]       = 0x03020101;
-        _docs4FundKeeper[uint8(Keepers.BMMK)]       = 0x03030101;
-        _docs4FundKeeper[uint8(Keepers.ROMK)]       = 0x03040101;
-        _docs4FundKeeper[uint8(Keepers.GMMK)]       = 0x03050201;
-        _docs4FundKeeper[uint8(Keepers.ROAK)]       = 0x03060101;
-        _docs4FundKeeper[uint8(Keepers.ROOK)]       = 0x03070101;
-        _docs4FundKeeper[uint8(Keepers.ROPK)]       = 0x03080101;
-        _docs4FundKeeper[uint8(Keepers.SHAK)]       = 0x03090101;
-        _docs4FundKeeper[uint8(Keepers.LOOK)]       = 0x030a0201;
-        _docs4FundKeeper[uint8(Keepers.ROIK)]       = 0x030b0201;
-        _docs4FundKeeper[uint8(Keepers.Accountant)] = 0x030c0201;
-        _docs4FundKeeper[uint8(Keepers.RORK)]       = 0x03100201;
+        _docs4FundKeeper[uint8(Keepers.ROCK)]       = getTypeByName("FundROCKeeper");
+        _docs4FundKeeper[uint8(Keepers.RODK)]       = getTypeByName("RODKeeper");
+        _docs4FundKeeper[uint8(Keepers.BMMK)]       = getTypeByName("BMMKeeper");
+        _docs4FundKeeper[uint8(Keepers.ROMK)]       = getTypeByName("ROMKeeper");
+        _docs4FundKeeper[uint8(Keepers.GMMK)]       = getTypeByName("FundGMMKeeper");
+        _docs4FundKeeper[uint8(Keepers.ROAK)]       = getTypeByName("ROAKeeper");
+        _docs4FundKeeper[uint8(Keepers.ROOK)]       = getTypeByName("ROOKeeper");
+        _docs4FundKeeper[uint8(Keepers.ROPK)]       = getTypeByName("ROPKeeper");
+        _docs4FundKeeper[uint8(Keepers.SHAK)]       = getTypeByName("SHAKeeper");
+        _docs4FundKeeper[uint8(Keepers.LOOK)]       = getTypeByName("FundLOOKeeper");
+        _docs4FundKeeper[uint8(Keepers.ROIK)]       = getTypeByName("FundROIKeeper");
+        _docs4FundKeeper[uint8(Keepers.Accountant)] = getTypeByName("FundAccountant");
+        _docs4FundKeeper[uint8(Keepers.RORK)]       = getTypeByName("FundRORKeeper");
     }
+
+
+    // function _initDocs4Book() private {
+    //     _docs4Book[uint8(Books.ROC)]        = 0x02010101;
+    //     _docs4Book[uint8(Books.ROD)]        = 0x02020101;
+    //     _docs4Book[uint8(Books.BMM)]        = 0x02050101;
+    //     _docs4Book[uint8(Books.ROM)]        = 0x02040101;
+    //     _docs4Book[uint8(Books.GMM)]        = 0x02050101;
+    //     _docs4Book[uint8(Books.ROA)]        = 0x02060101;
+    //     _docs4Book[uint8(Books.ROO)]        = 0x02070101;
+    //     _docs4Book[uint8(Books.ROP)]        = 0x02080101;
+    //     _docs4Book[uint8(Books.ROS)]        = 0x02090101;
+    //     _docs4Book[uint8(Books.LOO)]        = 0x020a0101;
+    //     _docs4Book[uint8(Books.ROI)]        = 0x020b0101;
+    //     _docs4Book[uint8(Books.Cashier)]    = 0x020f0101;
+    //     _docs4Book[uint8(Books.ROR)]        = 0x02100201;
+    // }
 
     function _initDocs4Book() private {
-        _docs4Book[uint8(Books.ROC)]        = 0x02010101;
-        _docs4Book[uint8(Books.ROD)]        = 0x02020101;
-        _docs4Book[uint8(Books.BMM)]        = 0x02050101;
-        _docs4Book[uint8(Books.ROM)]        = 0x02040101;
-        _docs4Book[uint8(Books.GMM)]        = 0x02050101;
-        _docs4Book[uint8(Books.ROA)]        = 0x02060101;
-        _docs4Book[uint8(Books.ROO)]        = 0x02070101;
-        _docs4Book[uint8(Books.ROP)]        = 0x02080101;
-        _docs4Book[uint8(Books.ROS)]        = 0x02090101;
-        _docs4Book[uint8(Books.LOO)]        = 0x020a0101;
-        _docs4Book[uint8(Books.ROI)]        = 0x020b0101;
-        _docs4Book[uint8(Books.Cashier)]    = 0x020f0101;
-        _docs4Book[uint8(Books.ROR)]        = 0x02100201;
+        _docs4Book[uint8(Books.ROC)]        = getTypeByName("RegisterOfConstitution");
+        _docs4Book[uint8(Books.ROD)]        = getTypeByName("RegisterOfDirectors");
+        _docs4Book[uint8(Books.BMM)]        = getTypeByName("MeetingMinutes");
+        _docs4Book[uint8(Books.ROM)]        = getTypeByName("RegisterOfMembers");
+        _docs4Book[uint8(Books.GMM)]        = getTypeByName("MeetingMinutes");
+        _docs4Book[uint8(Books.ROA)]        = getTypeByName("RegisterOfAgreements");
+        _docs4Book[uint8(Books.ROO)]        = getTypeByName("RegisterOfOptions");
+        _docs4Book[uint8(Books.ROP)]        = getTypeByName("RegisterOfPledges");
+        _docs4Book[uint8(Books.ROS)]        = getTypeByName("RegisterOfShares");
+        _docs4Book[uint8(Books.LOO)]        = getTypeByName("ListOfOrders");
+        _docs4Book[uint8(Books.ROI)]        = getTypeByName("RegisterOfInvestors");
+        _docs4Book[uint8(Books.Cashier)]    = getTypeByName("Cashier");
+        _docs4Book[uint8(Books.ROR)]        = getTypeByName("RegisterOfRedemptions");
     }
 
-    function _initDKMapping() private {
-        _dkMapping[uint8(Books.ROC)] = uint8(Keepers.ROCK);
-        _dkMapping[uint8(Books.ROD)] = uint8(Keepers.RODK);
-        _dkMapping[uint8(Books.BMM)] = uint8(Keepers.BMMK);
-        _dkMapping[uint8(Books.ROM)] = uint8(Keepers.ZeroPoint);
-        _dkMapping[uint8(Books.GMM)] = uint8(Keepers.GMMK);
-        _dkMapping[uint8(Books.ROA)] = uint8(Keepers.ROAK);
-        _dkMapping[uint8(Books.ROO)] = uint8(Keepers.ROOK);
-        _dkMapping[uint8(Books.ROP)] = uint8(Keepers.ROPK);
-        _dkMapping[uint8(Books.ROS)] = uint8(Keepers.ZeroPoint);
-        _dkMapping[uint8(Books.LOO)] = uint8(Keepers.LOOK); // 10
-        _dkMapping[uint8(Books.ROI)] = uint8(Keepers.ROIK);
-        _dkMapping[uint8(Books.Bank)] = uint8(Keepers.ZeroPoint);
-        _dkMapping[uint8(Books.Cashier)] = uint8(Keepers.Accountant);
-        _dkMapping[uint8(Books.ROR)] = uint8(Keepers.RORK);
-    }
+    // function _initDKMapping() private {
+    //     _dkMapping[uint8(Books.ROC)] = uint8(Keepers.ROCK);
+    //     _dkMapping[uint8(Books.ROD)] = uint8(Keepers.RODK);
+    //     _dkMapping[uint8(Books.BMM)] = uint8(Keepers.BMMK);
+    //     _dkMapping[uint8(Books.ROM)] = uint8(Keepers.ZeroPoint);
+    //     _dkMapping[uint8(Books.GMM)] = uint8(Keepers.GMMK);
+    //     _dkMapping[uint8(Books.ROA)] = uint8(Keepers.ROAK);
+    //     _dkMapping[uint8(Books.ROO)] = uint8(Keepers.ROOK);
+    //     _dkMapping[uint8(Books.ROP)] = uint8(Keepers.ROPK);
+    //     _dkMapping[uint8(Books.ROS)] = uint8(Keepers.ZeroPoint);
+    //     _dkMapping[uint8(Books.LOO)] = uint8(Keepers.LOOK); // 10
+    //     _dkMapping[uint8(Books.ROI)] = uint8(Keepers.ROIK);
+    //     _dkMapping[uint8(Books.Bank)] = uint8(Keepers.ZeroPoint);
+    //     _dkMapping[uint8(Books.Cashier)] = uint8(Keepers.Accountant);
+    //     _dkMapping[uint8(Books.ROR)] = uint8(Keepers.RORK);
+    // }
 
     // ==== configuration ====
 
@@ -217,14 +277,14 @@ contract CreateNewComp is ICreateNewComp, Ownable {
         emit UpdateBank(_bank, msg.sender);
     }
 
-    function updateDocs4GK(uint typeOfEntity, uint typeOfDoc) external onlyKeeper {
-        _docs4GK[typeOfEntity] = typeOfDoc;
-        emit UpdateDocs4GK(typeOfEntity, typeOfDoc);
-    }
+    // function updateDocs4GK(uint typeOfEntity, uint typeOfDoc) external onlyKeeper {
+    //     _docs4GK[typeOfEntity] = typeOfDoc;
+    //     emit UpdateDocs4GK(typeOfEntity, typeOfDoc);
+    // }
 
-    function getSeqOfDoc4GK(uint typeOfEntity) external view returns(uint) {
-        return _docs4GK[typeOfEntity];
-    }
+    // function getSeqOfDoc4GK(uint typeOfEntity) external view returns(uint) {
+    //     return _docs4GK[typeOfEntity];
+    // }
 
     function updateDocs4Keeper(uint titleOfKeeper, uint typeOfDoc) external onlyKeeper {
         _docs4Keeper[titleOfKeeper] = typeOfDoc;
@@ -254,25 +314,23 @@ contract CreateNewComp is ICreateNewComp, Ownable {
     }
 
     // ==== Create Comp ====
-
     function createComp(uint typeOfEntity, address dk) external 
     {     
-        require(dk != address(0),
-            "CNC.createComp: zero dk");
-        require(typeOfEntity > 0 && typeOfEntity < 10,
-            "CNC.createComp: invalid typeOfEntity");
+        if (dk == address(0)) revert CNC_ZeroDK();
 
-        address gk = _createProxyAtLatestVersion(
-            _docs4GK[typeOfEntity]
-        );
+        if (typeOfEntity == 0 || typeOfEntity > 9) 
+            revert CNC_InvalidTypeOfEntity(typeOfEntity);      
+
+        address gk = _createProxyAtLatestVersion(GK);
         IAccessControl(gk).initKeepers(address(this), gk);
+        gk.getGK().createCorpSeal(uint8(typeOfEntity));
 
-        address[18] memory keepers = 
-            _deployKeepers(typeOfEntity, dk, gk);
+        _deployKeepers(typeOfEntity, dk, gk);
 
-        _deployBooks(typeOfEntity, keepers, gk);
+        _deployBooks(typeOfEntity, gk);
     
         IAccessControl(gk).setDirectKeeper(dk);
+        IOwnable(gk).setNewOwner(msg.sender);
     }
 
     function _createProxyAtLatestVersion(uint256 typeOfDoc) private
@@ -292,7 +350,7 @@ contract CreateNewComp is ICreateNewComp, Ownable {
 
             if (i == uint8(Keepers.Blank_1) || 
                 i == uint8(Keepers.Blank_2) || 
-                i == uint8(Keepers.Blank_3)
+                i == uint8(Keepers.GK)
             ) { i++; continue; }
 
             if (typeOfEntity < 5 && (
@@ -344,7 +402,6 @@ contract CreateNewComp is ICreateNewComp, Ownable {
 
     function _deployBooks(
         uint typeOfEntity,
-        address[18] memory keepers,
         address gk
     ) private {
 
@@ -397,7 +454,7 @@ contract CreateNewComp is ICreateNewComp, Ownable {
             )) { i++; continue; }
 
             books[i] = _createProxyAtLatestVersion(_docs4Book[i]);
-            IAccessControl(books[i]).initKeepers(keepers[_dkMapping[i]], gk);
+            IAccessControl(books[i]).initKeepers(gk, gk);
             gk.getGK().regBook(i, books[i]);
             i++;
         }

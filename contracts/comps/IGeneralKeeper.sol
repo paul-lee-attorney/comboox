@@ -18,10 +18,10 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../../lib/UsersRepo.sol";
-import "../../openzeppelin/utils/Address.sol";
+import "../lib/UsersRepo.sol";
+import "../openzeppelin/utils/Address.sol";
 
 /// @title IGeneralKeeper
 /// @notice General keeper interface for corporate registry configuration and role management.
@@ -54,13 +54,17 @@ interface IGeneralKeeper {
         GeneralFund
     }
 
+    error GK_fallbackFuncNotReg(bytes4 sig);
+
     // ###############
     // ##   Event   ##
     // ###############
-    /// @notice Emitted when ETH is received.
-    /// @param sender ETH sender.
-    /// @param amount ETH amount.
-    event ReceivedEth(address indexed sender, uint amount);
+
+    // /// @notice Emitted when a function's selector is registered.
+    // /// @param selector Function selector (bytes4).
+    // /// @param title keeper's title (uint8, meaning depends on context).
+    // /// @param dk Direct keeper address (zero if not set).
+    // event RegSelector(bytes4 indexed selector, uint indexed title, address indexed dk);
 
     /// @notice Emitted when a keeper is registered.
     /// @param title Keeper title.
@@ -78,19 +82,33 @@ interface IGeneralKeeper {
     /// @param actionHash Hash of the action batch.
     event ExecAction(bytes32 indexed actionHash);
 
+
+    /// @notice Emitted when a call is forwarded to a keeper or book.
+    /// @param target Target contract address.
+    /// @param msgSender Original caller address.
+    /// @param sig Function signature of the forwarded call.
+    event ForwardedCall(address indexed target, address indexed msgSender, bytes4 indexed sig);
+
+    /// @notice Emitted when ETH is received.
+    /// @param sender ETH sender.
+    /// @param amount ETH amount.
+    event ReceivedEth(address indexed sender, uint amount);
+
     // ######################
     // ##   Configuration  ##
     // ######################
 
     // ---- Config ----
 
+    /// @notice Create the corporate seal and register the entity in RegCenter.
+    /// @param _typeOfEntity Entity type code (see {TypeOfEntity}).
+    function createCorpSeal(uint _typeOfEntity) external;
+
     /// @notice Set company information.
-    /// @param _typeOfEntity Entity type (see {TypeOfEntity}, uint8 range).
     /// @param _currency Currency code (uint8, implementation-defined range).
     /// @param _symbol Fixed-length symbol (bytes18).
     /// @param _name Company name (non-empty string expected).
     function setCompInfo (
-        uint8 _typeOfEntity,
         uint8 _currency,
         bytes18 _symbol,
         string memory _name
