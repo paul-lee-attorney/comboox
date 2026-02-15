@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/RedemptionsRepo.sol";
+import "../../../lib/books/RedemptionsRepo.sol";
 
 /// @title IRegisterOfRedemptions
 /// @notice Interface for redemption requests, NAV price, and class packs.

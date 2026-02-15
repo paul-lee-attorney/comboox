@@ -22,9 +22,9 @@ pragma solidity ^0.8.24;
 import "./IGeneralKeeper.sol";
 import "./common/access/AccessControl.sol";
 import "../openzeppelin/utils/Address.sol";
-import "../lib/UsersRepo.sol";
+import "../lib/books/UsersRepo.sol";
 import "../lib/InterfacesHub.sol";
-import "../lib/KeepersRouter.sol";
+import "../lib/keepers/KeepersRouter.sol";
 
 contract GeneralKeeper is IGeneralKeeper, AccessControl {
     using Address for address;
@@ -48,8 +48,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     function createCorpSeal(
         uint _typeOfEntity
     ) external reinitializer(3) onlyOwner{
-        rc.getRC().regUser();
-        _info.regNum = rc.getRC().getMyUserNo();
+        _rc.getRC().regUser();
+        _info.regNum = _rc.getRC().getMyUserNo();
         _info.regDate = uint48(block.timestamp);
         _info.typeOfEntity = uint8(_typeOfEntity);
     }
@@ -71,17 +71,19 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     }
 
     function getCompUser() external view onlyOwner returns (UsersRepo.User memory) {
-        return rc.getRC().getMyUser();
+        return _rc.getRC().getMyUser();
     }
 
     // ---- Keepers ----
 
-    function regKeeper(
-        uint256 title, 
-        address keeper
-    ) external onlyDK {
+    function regKeeper(uint256 title, address keeper) external onlyDK {
         _keepers.regKeeper(title, keeper);
         emit RegKeeper(title, keeper, msg.sender);
+    }
+
+    function regSigToTitle(bytes4 sig, uint256 title) external onlyDK {
+        _keepers.regSigToTitle(sig, title);
+        emit RegSigToTitle(sig, title, msg.sender);
     }
 
     function isKeeper(address target) external view returns (bool) {   
@@ -114,9 +116,6 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     ///      Reverts if the selector is not registered, and bubbles up revert data.
     fallback() external payable {
         address keeper = _keepers.getKeeperBySig(msg.sig);
-        if (keeper == address(0)) {
-            revert GK_fallbackFuncNotReg(msg.sig);
-        }
         
         (bool success, ) = keeper.delegatecall(msg.data);
 

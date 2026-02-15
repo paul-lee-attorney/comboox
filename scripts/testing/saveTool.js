@@ -10,6 +10,8 @@ import { readFileSync, writeFileSync } from "fs";
 
 const __dirname = import.meta.dirname;
 
+// ==== Boox Address ====
+
 export function saveBooxAddr(targetName, addr) {
 
     const booxList = join(__dirname, "boox.json");
@@ -114,17 +116,4 @@ function minusEthFromUser(amt, userNo) {
 
   setUserDepo(userNo, bala);
 };
-
-// export default {
-//     minusEthFromUser,
-//     addEthToUser,
-//     getUserDepo,
-//     setUserDepo,
-//     transferCBP,
-//     setUserCBP,
-//     getUserCBP,
-//     addCBPToUser,
-//     minusCBPFromUser,
-//     saveBooxAddr,
-// };
   

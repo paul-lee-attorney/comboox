@@ -33,7 +33,7 @@ contract Alongs is IAlongs, DraftControl {
     // ###############
 
     function addDragger(bytes32 rule, uint256 dragger) external onlyAttorney {
-        _repo.addDragger(rule, dragger, gk.getROM());
+        _repo.addDragger(rule, dragger, _gk.getROM());
     }
 
     function removeDragger(uint256 dragger) external onlyAttorney {
@@ -53,17 +53,17 @@ contract Alongs is IAlongs, DraftControl {
     // ################
 
     function isDragger(uint256 dragger) external view returns (bool) {
-        return _repo.isDragger(dragger, gk.getROM());
+        return _repo.isDragger(dragger, _gk.getROM());
     }
 
     function getLinkRule(uint256 dragger) external view returns (RulesParser.LinkRule memory) {
-        return _repo.getLinkRule(dragger, gk.getROM());
+        return _repo.getLinkRule(dragger, _gk.getROM());
     }
 
     function isFollower(uint256 dragger, uint256 follower)
         external view returns (bool)
     {
-        return _repo.isFollower(dragger, follower, gk.getROM());
+        return _repo.isFollower(dragger, follower, _gk.getROM());
     }
 
     function getDraggers() external view returns (uint256[] memory) {
@@ -71,13 +71,13 @@ contract Alongs is IAlongs, DraftControl {
     }
 
     function getFollowers(uint256 dragger) external view returns (uint256[] memory) {
-        return _repo.getFollowers(dragger, gk.getROM());
+        return _repo.getFollowers(dragger, _gk.getROM());
     }
 
     function priceCheck(
         DealsRepo.Deal memory deal
     ) public view returns (bool) {
-        return _repo.priceCheck(deal, gk.getROS(), gk.getROM());
+        return _repo.priceCheck(deal, _gk.getROS(), _gk.getROM());
     }
 
     // #############
@@ -86,8 +86,8 @@ contract Alongs is IAlongs, DraftControl {
 
     function isTriggered(address ia, DealsRepo.Deal memory deal) public view returns (bool) {
         
-        IRegisterOfMembers _rom = gk.getROM();
-        IRegisterOfAgreements _roa = gk.getROA();
+        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfAgreements _roa = _gk.getROA();
         
         if (_roa.getHeadOfFile(ia).state != uint8(FilesRepo.StateOfFile.Circulated))
             return false;

@@ -30,12 +30,10 @@ contract BookOfPoints is IBookOfPoints, ERC20Upgradeable, BookOfDocs {
     uint256[50] private __gap;
 
     function initialize(
-        address regCenter_,
         address keeper
-    ) external virtual override initializer {
+    ) external initializer {
         __ERC20_init("ComBooxPoints", "CBP");
         _initUsers(keeper);
-        _init(msg.sender, regCenter_);
     }
     
     // ##################

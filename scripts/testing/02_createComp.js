@@ -100,7 +100,7 @@ import { codifyHeadOfShare, printShares } from './ros';
 import { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC, getROC } from "./boox";
 import { now, increaseTime } from "./utils";
 import { parseCompInfo } from "./gk";
-import { cbpOfUsers } from "./rc";
+import { cbpOfUsers, getAllUsers } from "./rc";
 
 async function main() {
 
@@ -115,64 +115,68 @@ async function main() {
     const {ethers} = await network.connect();
 
 	  const signers = await ethers.getSigners();
-    const cnc = await getCNC();
     const rc = await getRC();
+    const users = await getAllUsers(rc);
+    const cnc = await getCNC();
+    console.log("obtained CNC at address:", cnc.target);
 
     // ==== Create Company ====
 
     let tx = await cnc.createComp(4, signers[1].address);
     let receipt = await tx.wait();
 
-    await expect(tx).to.emit(rc, "CreateDoc");
-    console.log(" \u2714 Passed Event Test for rc.CreateDoc(). \n");
+    await expect(tx).to.emit(rc, "ProxyDoc");
+    console.log(" \u2714 Passed Event Test for rc.ProxyDoc(). \n");
 
     const GK = getAddress(`0x${receipt.logs[0].topics[2].substring(26)}`);
-    saveBooxAddr("GK", GK);
 
+    const userGK = await gk.getCompInfo()[0];
+
+    saveBooxAddr("GK", GK);
     const gk = await getGK(GK);
     
     await expect(tx).to.emit(gk, "SetDirectKeeper").withArgs(signers[1].address);
     console.log(" \u2714 Passed Event Test for gk.SetDirectKeeper(). \n");
 
-    setUserCBP("8", 0n); // No rewards will be granted for CA User;
+    setUserCBP(userGK, 0n); // No rewards will be granted for CA User;
 
-    const ROC = await gk.getROC();
+    const ROC = await gk.getBook(1);
     saveBooxAddr("ROC", ROC);
 
-    const ROD = await gk.getROD();
+    const ROD = await gk.getBook(2);
     saveBooxAddr("ROD", ROD);
 
-    const BMM = await gk.getBMM();
+    const BMM = await gk.getBook(3);
     saveBooxAddr("BMM", BMM);
 
-    const ROM = await gk.getROM();
+    const ROM = await gk.getBook(4);
     saveBooxAddr("ROM", ROM);
 
-    const GMM = await gk.getGMM();
+    const GMM = await gk.getBook(5);
     saveBooxAddr("GMM", GMM);
 
-    const ROA = await gk.getROA();
+    const ROA = await gk.getBook(6);
     saveBooxAddr("ROA", ROA);
 
-    const ROO = await gk.getROO();
+    const ROO = await gk.getBook(7);
     saveBooxAddr("ROO", ROO);
 
-    const ROP = await gk.getROP();
+    const ROP = await gk.getBook(8);
     saveBooxAddr("ROP", ROP);
 
-    const ROS = await gk.getROS();
+    const ROS = await gk.getBook(9);
     saveBooxAddr("ROS", ROS);
 
-    const LOO = await gk.getLOO();
+    const LOO = await gk.getBook(10);
     saveBooxAddr("LOO", LOO);
 
-    const ROI = await gk.getROI();
+    const ROI = await gk.getBook(11);
     saveBooxAddr("ROI", ROI);
 
-    const Cashier = await gk.getCashier();
+    const Cashier = await gk.getBook(15);
     saveBooxAddr("Cashier", Cashier);
 
-    const USDC = await gk.getBank();
+    const USDC = await gk.getBook(12);
     saveBooxAddr("USDC", USDC);
 
     // const UsdLOO = await gk.getBook(13);
@@ -214,20 +218,8 @@ async function main() {
     const Accountant = await gk.getKeeper(12);
     saveBooxAddr("Accountant", Accountant);
 
-    // const UsdROMKeeper = await gk.getKeeper(11);
-    // saveBooxAddr("UsdROMKeeper", UsdROMKeeper);
-
-    // const UsdROAKeeper = await gk.getKeeper(12);
-    // saveBooxAddr("UsdROAKeeper", UsdROAKeeper);
-
-    // const UsdLOOKeeper = await gk.getKeeper(13);
-    // saveBooxAddr("UsdLOOKeeper", UsdLOOKeeper);
-
-    // const UsdROOKeeper = await gk.getKeeper(14);
-    // saveBooxAddr("UsdROOKeeper", UsdROOKeeper);
-
-    // const UsdKeeper = await gk.getKeeper(15);
-    // saveBooxAddr("UsdKeeper", UsdKeeper);
+    const RORKeeper = await gk.getKeeper(16);
+    saveBooxAddr("RORKeeper", RORKeeper);
 
     refreshBoox();
 

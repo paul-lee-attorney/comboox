@@ -19,11 +19,17 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/PledgesRepo.sol";
+import "../../../lib/books/PledgesRepo.sol";
 
 /// @title IRegisterOfPledges
 /// @notice Interface for creating, transferring, and enforcing share pledges.
 interface IRegisterOfPledges {
+
+    //##################
+    //##    Error     ##
+    //##################
+
+    error ROP_WrongInput(bytes32 reason);
 
     //##################
     //##    Event     ##

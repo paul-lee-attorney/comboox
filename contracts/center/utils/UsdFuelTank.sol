@@ -19,7 +19,10 @@
 
 pragma solidity ^0.8.24;
 
-import "../access/Ownable.sol";
+// import "../access/Ownable.sol";
+import "../../openzeppelin/proxy/utils/Initializable.sol";
+import "../../openzeppelin/proxy/utils/UUPSUpgradeable.sol";
+
 import "../../openzeppelin/utils/Address.sol";
 import "../../comps/books/cashier/ICashier.sol";
 import "../../lib/InterfacesHub.sol";
@@ -27,10 +30,12 @@ import "../../lib/InterfacesHub.sol";
 /// @title UsdFuelTank
 /// @notice Accepts USDC authorization via Cashier and dispenses CBP at a fixed rate.
 /// @dev `rate` is the USDC smallest-unit amount per 1e18 CBP.
-contract UsdFuelTank is Ownable {
+contract UsdFuelTank is Initializable, UUPSUpgradeable {
   using InterfacesHub for address;
   using Address for address;
 
+  /// @notice RegCenter address for access control and bookkeeping.
+  address public rc;
   /// @notice Cashier contract that pulls USDC using off-chain authorization.
   address public cashier;
   /// @notice USDC-per-1e18-CBP exchange rate (USDC in smallest units).
@@ -42,12 +47,58 @@ contract UsdFuelTank is Ownable {
 
   uint[50] private __gap;
 
+  function initialize(
+    address cashier_, address rc_
+  ) external initializer {
+    if (rc_ == address(0))
+      revert UFT_WrongInput(bytes32("UFT_ZeroRC"));
+
+    cashier = cashier_;
+    rc = rc_;
+  }
+
+  function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+  function getImplementation() external view returns (address) {
+      return _getImplementation();
+  }
+
   /// @notice Upgrade implementation via UUPS and register the upgrade in RegCenter.
   /// @param newImplementation New implementation address.
-  function upgradeCenterTo(address newImplementation) external {
+  function upgradeTankTo(address newImplementation) external onlyProxy onlyKeeper {
     upgradeTo(newImplementation);
     rc.getRC().upgradeDoc(newImplementation);
   }
+
+  // #########################
+  // ##  Modifier & Errors  ##
+  // ######################### 
+
+  error UFT_WrongInput(bytes32 reason);
+
+  error UFT_WrongParty(bytes32 reason);
+
+  modifier onlyOwner {
+    if (msg.sender != rc.getRC().getOwner()) {
+      revert UFT_WrongParty(bytes32("UFT_NotOwner"));
+    }
+    _;
+  }
+
+  modifier onlyKeeper {
+    if (msg.sender != rc.getRC().getBookeeper()) {
+      revert UFT_WrongParty(bytes32("UFT_NotKeeper"));
+    }
+    _;
+  }
+
+  // ##############
+  // ##  Events  ##
+  // ############## 
+
+  /// @notice Emitted when RegCenter address is updated.
+  /// @param newCenter New RegCenter address.
+  event SetRegCenter(address indexed newCenter);
 
   /// @notice Emitted when Cashier address is updated.
   /// @param newCashier New Cashier address.
@@ -72,18 +123,32 @@ contract UsdFuelTank is Ownable {
   // ##  Write I/O   ##
   // ##################
 
+  /// @notice Set RegCenter contract.
+  /// @param newCenter RegCenter address (non-zero, must be a contract).
+  function setRegCenter(address newCenter) external onlyKeeper {
+    if (newCenter == address(0)) 
+       revert UFT_WrongInput(bytes32("UFT_ZeroRC"));
+    if (!newCenter.isContract()) 
+        revert UFT_WrongInput(bytes32("UFT_RCNotContract"));
+
+    rc = newCenter;
+
+    emit SetRegCenter(newCenter);
+  }
+
+
   /// @notice Set Cashier contract.
   /// @param newCashier Cashier address (non-zero, must be a contract).
-  function setCashier(address newCashier) external onlyOwner {
-    require(newCashier != address(0), "zero cashier");
-    require(newCashier.isContract(), "cashier not contract");
+  function setCashier(address newCashier) external onlyKeeper {
+    if (newCashier == address(0)) revert UFT_WrongInput(bytes32("UFT_ZeroCashier"));
+    if (!newCashier.isContract()) revert UFT_WrongInput(bytes32("UFT_CashierNotContract"));
     cashier = newCashier;
     emit SetCashier(newCashier);
   }
 
   /// @notice Set USDC-per-1e18-CBP rate.
   /// @param newRate New rate (must be > 0).
-  function setRate(uint newRate) external onlyOwner {
+  function setRate(uint newRate) external onlyKeeper {
     require(newRate > 0, "zero rate");
     rate = newRate;
     emit SetRate(newRate);

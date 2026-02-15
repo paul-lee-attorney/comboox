@@ -20,12 +20,6 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/roi/IRegisterOfInvestors.sol";
-import "../books/ros/IRegisterOfShares.sol";
-
-import "../../lib/RulesParser.sol";
-import "../../lib/InterfacesHub.sol";
-
 /// @title IROIKeeper
 /// @notice Interface for investor compliance actions and LOO pause.
 interface IROIKeeper {

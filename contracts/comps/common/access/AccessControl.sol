@@ -20,7 +20,7 @@
 pragma solidity ^0.8.24;
 
 import "./IAccessControl.sol";
-import "../../../center/access/Ownable.sol";
+import "./Ownable.sol";
 import "../../../lib/InterfacesHub.sol";
 
 contract AccessControl is IAccessControl, Ownable {
@@ -67,9 +67,9 @@ contract AccessControl is IAccessControl, Ownable {
     }
 
     /// @notice Direct keeper admin record.
-    Admin public dk;
+    Admin internal _dk;
     /// @notice General keeper address.
-    address public gk;
+    address internal _gk;
 
     // ==== UUPSUpgradable ====
 
@@ -86,17 +86,17 @@ contract AccessControl is IAccessControl, Ownable {
     /// @dev Authorize UUPS upgrades. Caller must be GK or DK.
     function _authorizeUpgrade(address newImplementation) internal virtual override {
         require(
-            msg.sender == gk ||
-            msg.sender == dk.addr,
+            msg.sender == _gk ||
+            msg.sender == _dk.addr,
             "AC._authorizeUpgrade: NOT GK or DK"
         );
-        require(rc.getRC().tempExist(newImplementation),
+        require(_rc.getRC().tempExist(newImplementation),
             "AC.authUpgrade: temp NOT exist");
     }
 
     function upgradeDocTo(address newImplementation) external virtual {
         upgradeTo(newImplementation);
-        rc.getRC().upgradeDoc(newImplementation);
+        _rc.getRC().upgradeDoc(newImplementation);
     }
 
     // ################
@@ -105,22 +105,25 @@ contract AccessControl is IAccessControl, Ownable {
 
     /// @notice Restrict to direct keeper.
     modifier onlyDK {
-        require(dk.addr == msg.sender,
-            "AC.onlyDK: not");
+        if (_dk.addr != msg.sender) {
+            revert AC_WrongAccess("AC_NotDK");
+        }
+        _;
+    }
+
+    /// @notice Restrict to general keeper.
+    modifier onlyGK {
+        if (_gk != msg.sender) {
+            revert AC_WrongAccess("AC_NotGK");
+        }
         _;
     }
 
     /// @notice Restrict to general keeper or direct keeper.
     modifier onlyKeeper virtual {
-        require(gk == msg.sender || 
-            dk.addr == msg.sender, 
-            "AC.onlyKeeper: NOT");
-        _;
-    }
-
-    /// @notice Restrict to delegatecall context on GeneralKeeper.
-    modifier onlyGKProxy {
-        require(address(this) == gk, "AC.onlyGKProxy: NOT");
+        if (_gk != msg.sender && _dk.addr != msg.sender) {
+            revert AC_WrongAccess("AC_NotKeeper");
+        }
         _;
     }
 
@@ -132,24 +135,33 @@ contract AccessControl is IAccessControl, Ownable {
     /// @param directKeeper Direct keeper address.
     /// @param generalKeeper General keeper address.
     function _initKeepers(address directKeeper,address generalKeeper) internal {
-        require(dk.state == 0, 
-            "AC.initKeepers: already inited");
-        dk.addr = directKeeper;
-        gk = generalKeeper;
-        dk.state = 1;
+        if (_dk.state != 0) {
+            revert AC_WrongState("AC_AlreadyInited");
+        }
+        _dk.addr = directKeeper;
+        _gk = generalKeeper;
+        _dk.state = 1;
     }
 
-    /// @notice Update direct keeper address.
-    /// @param acct New direct keeper address.
     function setDirectKeeper(address acct) external onlyDK {
-        dk.addr = acct;
+        _dk.addr = acct;
         emit SetDirectKeeper(acct);
     }
 
-    /// @notice Reclaim keeper control from a subordinate contract.
-    /// @param target Target contract address.
     function takeBackKeys (address target) external onlyDK {
         IAccessControl(target).setDirectKeeper(msg.sender);
+    }
+
+    // #################
+    // ##    Read     ##
+    // #################
+
+    function getDK() external view returns (address) {
+        return _dk.addr;
+    }
+
+    function getGK() external view returns (address) {
+        return _gk;
     }
 
 }

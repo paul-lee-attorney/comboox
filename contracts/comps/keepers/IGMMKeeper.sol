@@ -19,24 +19,30 @@
 
 pragma solidity ^0.8.24;
 
-// import "../../lib/ArrayUtils.sol";
-// import "../../lib/BallotsBox.sol";
-import "../../lib/InterfacesHub.sol";
-// import "../../lib/MotionsRepo.sol";
-// import "../../lib/OfficersRepo.sol";
-// import "../../lib/SharesRepo.sol";
-// import "../../lib/WaterfallsRepo.sol";
-// import "../../lib/RulesParser.sol";
-
-// import "../common/components/IMeetingMinutes.sol";
-// import "../common/components/ISigPage.sol";
-
-// import "../books/rod/IRegisterOfDirectors.sol";
-// import "../books/rom/IRegisterOfMembers.sol";
-
 /// @title IGMMKeeper
 /// @notice Interface for general meeting motions and executions.
 interface IGMMKeeper {
+
+    // ################
+    // ##   Error    ##
+    // ################
+
+    error GMMK_HasNoNominationRight(uint caller);
+
+    error GMMK_NotMember(uint caller);
+
+    error GMMK_NotClassMember(uint caller, uint class);
+
+    error GMMK_NotSignerOfDoc(uint caller, address doc);
+
+    error GMMK_DocNotEstablished(address doc);
+
+    error GMMK_HasOutstandingClaims(address doc);
+
+    error GMMK_NoRight(uint caller);
+
+    error GMMK_IsRelatedParty(uint caller);
+
 
     // ################
     // ##   Motion   ##

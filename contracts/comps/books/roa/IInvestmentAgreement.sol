@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/DealsRepo.sol";
+import "../../../lib/books/DealsRepo.sol";
 import "../../../lib/InterfacesHub.sol";
 
 import "../../common/components/ISigPage.sol";

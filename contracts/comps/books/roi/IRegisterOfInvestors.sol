@@ -19,12 +19,24 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/InvestorsRepo.sol";
+import "../../../lib/books/InvestorsRepo.sol";
 import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
 
 /// @title IRegisterOfInvestors
 /// @notice Interface for investor registry and compliance controls.
 interface IRegisterOfInvestors {
+
+     // ################
+     // ##    Error   ##
+     // ################
+
+    error ROI_WrongState(bytes32 reason);
+
+    error ROI_Overflow(bytes32 reason);
+
+     // ################
+     // ##  Event(s)  ##
+     // ################
 
     /// @notice Emitted when LOO operations are paused.
     /// @param agent Operator user number.

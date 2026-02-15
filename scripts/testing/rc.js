@@ -11,11 +11,15 @@ import { formatUnits, parseUnits, Interface } from "ethers";
 import { parseHexToBigInt, AddrZero, longDataParser } from './utils';
 import { getUserCBP } from "./saveTool";
 
+// This section includes the testing functions for the registration of new users in
+// ComBoox. Each new user may obtain a sum of awards for its registration, rate
+// of which is defined in Platform Rule. And, the Platform Rule can only be set
+// and revised by the owner of the Platform.
 export async function cbpOfUsers(rc, addrOfGK) {
   const {ethers} = await network.connect();
   const signers = await ethers.getSigners();
   for (let i=0; i<7; i++) {
-    const userNo = await rc.connect(signers[i]).getMyUserNo();
+    const userNo = await getUserNo(rc, signers[i]);
     const bala = await rc.balanceOf(signers[i].address);
 
     const balaExpected = getUserCBP(userNo.toString());
@@ -129,13 +133,22 @@ export async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
   return addr;
 }
 
-// export default {
-//     cbpOfUsers,
-//     parseSnOfPFR,
-//     pfrParser,
-//     pfrCodifier,
-//     royaltyTest,
-//     userParser,
-// };
+export async function getUserNo(rc, signer) {
+  const userNo = await rc.connect(signer).getMyUserNo();
+  return userNo;
+}
 
+export async function getAllUsers(rc) {
+  const { ethers } = await network.connect();
+  const signers = await ethers.getSigners();
+
+  let users = [];
+
+  for (let i = 0; i < 7; i++) {
+    const signer = signers[i];
+    const userNo = await rc.connect(signer).getMyUserNo();
+    users.push(userNo);
+  }
+  return users;
+}
   

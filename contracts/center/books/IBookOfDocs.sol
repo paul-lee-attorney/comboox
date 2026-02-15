@@ -23,7 +23,7 @@ pragma solidity ^0.8.24;
 /// @notice Document registry interface for templates, proxies, and clones.
 /// @dev Exposes write operations for registration/upgrade and read operations for queries.
 
-import "../../lib/DocsRepo.sol";
+import "../../lib/books/DocsRepo.sol";
 
 interface IBookOfDocs {
 

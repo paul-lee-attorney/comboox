@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../lib/UsersRepo.sol";
+import "../lib/books/UsersRepo.sol";
 import "../openzeppelin/utils/Address.sol";
 
 /// @title IGeneralKeeper
@@ -54,23 +54,23 @@ interface IGeneralKeeper {
         GeneralFund
     }
 
-    error GK_fallbackFuncNotReg(bytes4 sig);
+    // error GK_FallbackFuncNotReg(bytes4 sig);
 
     // ###############
     // ##   Event   ##
     // ###############
-
-    // /// @notice Emitted when a function's selector is registered.
-    // /// @param selector Function selector (bytes4).
-    // /// @param title keeper's title (uint8, meaning depends on context).
-    // /// @param dk Direct keeper address (zero if not set).
-    // event RegSelector(bytes4 indexed selector, uint indexed title, address indexed dk);
 
     /// @notice Emitted when a keeper is registered.
     /// @param title Keeper title.
     /// @param keeper Keeper address.
     /// @param dk Direct keeper address.
     event RegKeeper(uint indexed title, address indexed keeper, address indexed dk);
+
+    /// @notice Emitted when a keeper's function selector is registered.
+    /// @param sig Function selector (bytes4).
+    /// @param title Keeper title.
+    /// @param dk Direct keeper address.
+    event RegSigToTitle(bytes4 indexed sig, uint indexed title, address indexed dk);
 
     /// @notice Emitted when a book is registered.
     /// @param title Book title.
@@ -130,6 +130,11 @@ interface IGeneralKeeper {
     /// @param title Keeper title (uint, expected > 0).
     /// @param keeper Keeper address (non-zero).
     function regKeeper(uint256 title, address keeper) external;
+
+    /// @notice Register a function selector to a keeper title.
+    /// @param sig Function selector (bytes4).
+    /// @param title Keeper title (uint, expected > 0).
+    function regSigToTitle(bytes4 sig,uint256 title) external;
 
     /// @notice Check if an address is a registered keeper.
     /// @param caller Address to check.

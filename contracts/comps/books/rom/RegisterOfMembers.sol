@@ -39,8 +39,9 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     //##################
 
     modifier onlyROS() {
-        require(msg.sender == address(gk.getROS()),
-            "ROM.onlyROS: not");
+        if (msg.sender != address(_gk.getROS())) {
+            revert ROM_WrongAccess("ROM_NotROS");
+        }
         _;
     }
 
@@ -55,19 +56,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         emit SetMaxQtyOfMembers(max);
     }
 
-    function setMinVoteRatioOnChain(uint min) external {
-        require(msg.sender == gk.getGK().getKeeper(1),
-            "ROM.OnlyROCKeeper: not");
+    function setMinVoteRatioOnChain(uint min) external onlyGK {
         _repo.chain.setMinVoteRatioOnChain(min);
         emit SetMinVoteRatioOnChain(min);
     }
 
-    function setVoteBase(bool _basedOnPar) external {
-        require(msg.sender == gk.getGK().getKeeper(1),
-            "ROM.OnlyROCKeeper: not");
-
-        IRegisterOfShares _ros = gk.getROS();
-
+    function setVoteBase(bool _basedOnPar) external onlyGK {
+        IRegisterOfShares _ros = _gk.getROS();
         if (_repo.setVoteBase(_ros, _basedOnPar)) 
             emit SetVoteBase(_basedOnPar);
     }
@@ -276,7 +271,9 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         view
         returns (uint64)
     {
-        require(_repo.isMember(acct), "ROM.votesInHand: not member");
+        if (!_repo.isMember(acct)) {
+            revert ROM_WrongInput("ROM_NotMember");
+        }
         return _repo.chain.nodes[acct].amt;
     }
 

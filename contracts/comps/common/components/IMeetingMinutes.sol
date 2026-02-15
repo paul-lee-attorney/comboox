@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -21,16 +19,23 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/BallotsBox.sol";
-import "../../../lib/MotionsRepo.sol";
-import "../../../lib/RulesParser.sol";
-import "../../../lib/DelegateMap.sol";
+import "../../../lib/books/BallotsBox.sol";
+import "../../../lib/books/MotionsRepo.sol";
+import "../../../lib/books/RulesParser.sol";
+import "../../../lib/books/DelegateMap.sol";
 
 import "../../books/roc/IShareholdersAgreement.sol";
 
 /// @title IMeetingMinutes
 /// @notice Interface for creating motions, voting, and executing resolutions.
 interface IMeetingMinutes {
+
+    //##################
+    //##    error    ##
+    //##################
+
+
+
 
     //##################
     //##    events    ##
@@ -173,7 +178,19 @@ interface IMeetingMinutes {
         uint proposer
     ) external returns(uint64);
 
-    // function createMotionToDeprecateGK(address receiver,uint proposer) external returns(uint64);
+    /// @notice Create a motion to decrease capital.
+    /// @param seqOfVR Voting rule sequence number (> 0).
+    /// @param seqOfShare Share class sequence number (> 0).
+    /// @param paid Total paid-in capital amount (>= 0, in smallest unit).
+    /// @param par Par value per share (>= 0, in smallest unit).
+    /// @param amt Amount to decrease (>= 0, in smallest unit).
+    /// @param executor Executor account id (> 0).
+    /// @param proposer Proposer account id (> 0).
+    function createMotionToDecreaseCapital(
+        uint seqOfVR, uint seqOfShare, 
+        uint paid, uint par, uint amt, 
+        uint executor, uint proposer
+    ) external returns (uint64);
 
     /// @notice Propose a motion to the general meeting.
     /// @param seqOfMotion Motion sequence number (> 0).
@@ -295,16 +312,23 @@ interface IMeetingMinutes {
         uint caller
     ) external returns(uint contents);
 
-    /// @notice Deprecate the general keeper and set a receiver.
-    /// @param receiver Receiver address (non-zero).
+    /// @notice Execute a capital decrease motion.
+    /// @param seqOfVR Voting rule sequence number (> 0).
+    /// @param seqOfShare Share class sequence number (> 0).
+    /// @param paid Total paid-in capital amount (>= 0, in smallest unit).
+    /// @param par Par value per share (>= 0, in smallest unit).
+    /// @param amt Amount to decrease (>= 0, in smallest unit).
     /// @param seqOfMotion Motion sequence number (> 0).
-    /// @param executor Executor account id (> 0).
-    function deprecateGK(address receiver, uint seqOfMotion, uint executor) external;
+    /// @param caller Executor account id (> 0).
+    function decreaseCapital(
+        uint seqOfVR, uint seqOfShare,
+        uint paid, uint par, uint amt,
+        uint seqOfMotion, uint caller
+    ) external;
 
     //################
     //##    Read    ##
     //################
-
 
     // ==== Motions ====
 

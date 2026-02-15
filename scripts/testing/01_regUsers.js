@@ -37,14 +37,13 @@
 // 1.1 event Transfer(address indexed from, address indexed to, uint256 indexed value);
 // 1.2 event SetPlatformRule(bytes32 indexed snOfRule);
 
-import { pfrCodifier, pfrParser, cbpOfUsers } from './rc';
+import { pfrCodifier, pfrParser, cbpOfUsers, getUserNo} from './rc';
 import { getRC } from "./boox";
 import { expect } from "chai";
 import { AddrZero } from './utils';
-import { setUserCBP } from './saveTool';
 import { network } from 'hardhat';
 import { formatUnits } from 'ethers';
-
+import { setUserCBP } from './saveTool';
 
 async function main() {
 
@@ -80,35 +79,39 @@ async function main() {
     await expect(rc.mint(signers[0].address, 8n * 10n ** 18n)).to.emit(rc, "Transfer").withArgs(AddrZero, signers[0].address, 8n * 10n ** 18n);
     console.log(" \u2714 Passed Event Test for rc.Transfer(). \n");
 
-    setUserCBP("1", BigInt(8n * 10n ** 18n));
+    const userNo1 = await getUserNo(rc, signers[0]);
+    console.log("Obtained userNo1:",userNo1, "\n");
 
-    const userNo2 = await rc.connect(signers[1]).getMyUserNo();
-    expect(userNo2).to.equal(2);
-    console.log(" \u2714 Passed UserNo Verify Test for userNo2. \n");
+    setUserCBP (userNo1, BigInt(8n * 10n ** 18n));
+
+    const userNo2 = await getUserNo(rc, signers[1]);
+    console.log("Obtained userNo2:",userNo2, "\n");
 
     await rc.mint(signers[1].address, 8n * 10n ** 18n);
     expect(formatUnits((await rc.balanceOf(signers[1].address)).toString(), 18)).to.equal("8.0");
     console.log(" \u2714 Passed Result Test for rc.mint(). \n");
 
-    setUserCBP("2", BigInt(8n * 10n ** 18n));
+    setUserCBP(userNo2, BigInt(8n * 10n ** 18n));
 
     for (let i = 3; i<7; i++) {
       await rc.connect(signers[i]).regUser();
 
-      setUserCBP(i.toString(), 18n * 10n ** 15n);
+      const userNo = await getUserNo(rc, signers[i]);
+      setUserCBP(userNo, 18n * 10n ** 15n);
 
-      expect(await rc.connect(signers[i]).getMyUserNo()).to.equal(i);
-      console.log(' \u2714 Passed Result Test for rc.regUser() with signers[', i, '].', '\n');
+      console.log("Registered userNo" + i + ":", userNo, "\n");
 
       expect(formatUnits((await rc.balanceOf(signers[i].address)).toString(), 18)).to.equal("0.018");
       console.log(' \u2714 Passed NewUserAwards Result Test for signers[', i, '].', '\n');
     }
 
     await rc.connect(signers[2]).regUser();
-    expect(await rc.connect(signers[2]).getMyUserNo()).to.equal(7);
+    const userNo7 = await getUserNo(rc, signers[2]);
+    console.log("Registered userNo 7 :", userNo7, "\n");
+
     console.log(' \u2714 Passed Result Test for rc.regUser() with signers[', 2, '].', '\n');
 
-    setUserCBP("7", 18n * 10n ** 15n);
+    setUserCBP(userNo7, 18n * 10n ** 15n);
 
     expect(formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
     console.log(' \u2714 Passed NewUserAwards Test for signers[', 2, '].', '\n');

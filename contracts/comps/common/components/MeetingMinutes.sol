@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -203,27 +201,45 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             );
     }
 
-    // function createMotionToDeprecateGK(
-    //     address receiver,
-    //     uint proposer
-    // ) external onlyKeeper returns(uint64) {
-    //     return _addMotion(
-    //         uint8(MotionsRepo.TypeOfMotion.DeprecateGK),
-    //         10,
-    //         proposer,
-    //         proposer,
-    //         uint(uint160(receiver))
-    //     );
-    // }
+    function createMotionToDecreaseCapital(
+        uint seqOfVR, uint seqOfShare, 
+        uint paid, uint par, uint amt, 
+        uint executor, uint proposer
+    ) external onlyKeeper returns (uint64) {
+        uint contents = _hashDecreaseCapital(
+            seqOfVR, seqOfShare, paid, par, amt
+        );
+        return _addMotion(
+            uint8(MotionsRepo.TypeOfMotion.DecreaseCapital),
+            seqOfVR,
+            proposer,
+            executor,
+            contents
+        );
+    }
+
+    function _hashDecreaseCapital(
+        uint seqOfVR, uint seqOfShare, 
+        uint paid, uint par, uint amt
+    ) private pure returns (uint) {
+        return 
+            uint256(
+                keccak256(
+                    abi.encode(seqOfVR, seqOfShare, paid, par, amt)
+                )
+            );
+    }
+
+    // ==== ProposeMotion ====
 
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
         uint proposer
     ) external onlyKeeper {
         
-        IShareholdersAgreement _sha = gk.getSHA();
+        IShareholdersAgreement _sha = _gk.getSHA();
 
-        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _sha, gk.getROM(), gk.getROD(), proposer);
+        _repo.proposeMotionToGeneralMeeting(seqOfMotion, _sha, _gk.getROM(), _gk.getROD(), proposer);
         emit ProposeMotionToGeneralMeeting(seqOfMotion, proposer);
     }
 
@@ -232,9 +248,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller
     ) external onlyDK {
         
-        IShareholdersAgreement _sha = gk.getSHA();
+        IShareholdersAgreement _sha = _gk.getSHA();
 
-        _repo.proposeMotionToBoard(seqOfMotion, _sha, gk.getROD(), caller);
+        _repo.proposeMotionToBoard(seqOfMotion, _sha, _gk.getROD(), caller);
         emit ProposeMotionToBoard(seqOfMotion, caller);
     }
 
@@ -249,8 +265,8 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             seqOfMotion,
             delegate,
             principal,
-            gk.getROM(),
-            gk.getROD()
+            _gk.getROM(),
+            _gk.getROD()
         ))
         emit EntrustDelegate(seqOfMotion, delegate, principal);
     }
@@ -263,7 +279,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, gk.getROM());
+        _repo.castVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROM());
         emit CastVoteInGeneralMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -273,7 +289,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         bytes32 sigHash,
         uint256 caller
     ) external onlyDK {
-        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, gk.getROD());
+        _repo.castVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash, _gk.getROD());
         emit CastVoteInBoardMeeting(seqOfMotion, caller, attitude, sigHash);
     }
 
@@ -283,7 +299,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         external onlyDK returns(uint8 result)
     {            
         result = _repo.voteCounting(flag0, seqOfMotion, base);
-        emit VoteCounting(seqOfMotion, result);            
+        emit VoteCounting(seqOfMotion, result);
     }
 
     // ==== ExecResolution ====
@@ -315,7 +331,6 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
 
         execResolution(seqOfMotion, contents, caller);
     }
-
 
     function transferFund(
         address to,
@@ -366,14 +381,18 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         execResolution(seqOfMotion, contents, caller);
     }
 
-    function deprecateGK(address receiver, uint seqOfMotion, uint executor) external onlyDK{
+    function decreaseCapital(
+        uint seqOfVR, uint seqOfShare,
+        uint paid, uint par, uint amt,
+        uint seqOfMotion, uint caller
+    ) external onlyKeeper {
         require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.DeprecateGK), 
-            "MM.DeprecateGK: wrong typeOfMotion");
+            uint8(MotionsRepo.TypeOfMotion.DecreaseCapital), 
+            "MM.DC: wrong typeOfMotion");
         
-        uint contents = uint(uint160(receiver));
+        uint contents = _hashDecreaseCapital(seqOfVR, seqOfShare, paid, par, amt);
 
-        execResolution(seqOfMotion, contents, executor);
+        execResolution(seqOfMotion, contents, caller);
     }
 
     //################

@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../../lib/UsdLockersRepo.sol";
+import "../../lib/books/UsdLockersRepo.sol";
 import "../utils/MockUSDC/IUSDC.sol";
 
 interface ICashLockers {

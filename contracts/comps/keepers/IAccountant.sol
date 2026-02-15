@@ -19,16 +19,6 @@
 
 pragma solidity ^0.8.24;
 
-import "../../lib/InterfacesHub.sol";
-import "../../lib/SharesRepo.sol";
-import "../../lib/RulesParser.sol";
-import "../../lib/WaterfallsRepo.sol";
-
-
-import "../books/cashier/ICashier.sol";
-import "../books/roi/IRegisterOfInvestors.sol";
-import "../books/ros/IRegisterOfShares.sol";
-
 /// @title IAccountant
 /// @notice Interface for class initialization, distributions, and fund transfers.
 interface IAccountant {

@@ -110,7 +110,9 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
         uint caller
     ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
     {
-        require(buyer > 0, "ROP.transferPld: zero buyer");
+        if (buyer == 0) {
+            revert ROP_WrongInput("ROP_ZeroBuyer");
+        }
 
         newPld = _repo.splitPledge(seqOfShare, seqOfPld, buyer, amt, caller);
 

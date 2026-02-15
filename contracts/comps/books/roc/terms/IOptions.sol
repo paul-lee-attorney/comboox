@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../../lib/OptionsRepo.sol";
+import "../../../../lib/books/OptionsRepo.sol";
 import "../../../../openzeppelin/utils/structs/EnumerableSet.sol";
 
 /// @title IOptions

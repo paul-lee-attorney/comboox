@@ -20,16 +20,6 @@
 
 pragma solidity ^0.8.24;
 
-import "../../lib/RedemptionsRepo.sol";
-import "../../lib/InterfacesHub.sol";
-import "../../lib/SharesRepo.sol";
-
-import "../books/ror/IRegisterOfRedemptions.sol";
-import "../books/rom/IRegisterOfMembers.sol";
-import "../books/ros/IRegisterOfShares.sol";
-import "../books/cashier/ICashier.sol";
-
-
 /// @title IRORKeeper
 /// @notice Interface for redemption configuration and execution.
 interface IRORKeeper {

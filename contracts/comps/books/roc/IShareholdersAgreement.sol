@@ -21,7 +21,7 @@ pragma solidity ^0.8.24;
 
 import "../../common/components/ISigPage.sol";
 import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
-import "../../../lib/DocsRepo.sol";
+import "../../../lib/books/DocsRepo.sol";
 
 /// @notice Design notes:
 /// - The implementation is created via BookOfDocs/DocsRepo `cloneDoc()` and is not upgradeable.
@@ -97,6 +97,13 @@ interface IShareholdersAgreement is ISigPage {
         mapping(uint256 => bytes32) rules;
         EnumerableSet.UintSet seqList;
     }
+
+    // ################
+    // ##    Error   ##
+    // ################
+
+    error SHA_WrongInput(bytes32 reason);
+
 
     //##################
     //##     Write    ##

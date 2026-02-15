@@ -1,13 +1,21 @@
 import "dotenv/config";
 import { defineConfig } from "hardhat/config";
-// import "@nomicfoundation/hardhat-chai-matchers";
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 import hardhatVerify from "@nomicfoundation/hardhat-verify";
+import hardhatTypechain from "@nomicfoundation/hardhat-typechain";
+import hardhatMocha from "@nomicfoundation/hardhat-mocha";
+import hardhatEthersChaiMatchers from "@nomicfoundation/hardhat-ethers-chai-matchers";
+import hardhatNetworkHelpers from "@nomicfoundation/hardhat-network-helpers";
+
 
 export default defineConfig({
   plugins: [
     hardhatEthers,
-    hardhatVerify
+    hardhatVerify,
+    hardhatTypechain,
+    hardhatMocha,
+    hardhatEthersChaiMatchers,
+    hardhatNetworkHelpers,
   ],
   solidity: {
     version: "0.8.24",
@@ -20,7 +28,12 @@ export default defineConfig({
   },
   defaultNetwork: "hardhat",
   networks: {
+    localhost:{
+        url: "http://127.0.0.1:8545",
+    },
     hardhat: {
+      // gas: 100_000_000,
+      // blockGasLimit: 100_000_000,
       type: "edr-simulated",
       chainId: 31337,
       initialDate: "2025-01-01T00:00:00Z",

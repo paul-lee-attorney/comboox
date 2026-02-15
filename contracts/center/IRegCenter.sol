@@ -23,8 +23,8 @@ pragma solidity ^0.8.24;
 /// @notice Registry center interface combining docs, users, points, and ERC20 operations.
 /// @dev Extends IBookOfPoints, IBookOfDocs, IBookOfUsers, and IERC20.
 
-import "../lib/UsersRepo.sol";
-import "../lib/DocsRepo.sol";
+import "../lib/books/UsersRepo.sol";
+import "../lib/books/DocsRepo.sol";
 import "./books/IBookOfDocs.sol";
 import "./books/IBookOfPoints.sol";
 import "./books/IBookOfUsers.sol";

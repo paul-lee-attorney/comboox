@@ -47,7 +47,7 @@ contract DraftControl is IDraftControl, AccessControl {
 
     modifier attorneyOrGK {
         if (!_roles.hasRole(_ATTORNEYS, msg.sender) &&
-            msg.sender != gk
+            msg.sender != _gk
         ) revert DC_NotAttorneyOrGK();
         _;
     }
@@ -78,12 +78,12 @@ contract DraftControl is IDraftControl, AccessControl {
     }
 
     function lockContents() public onlyOwner {
-        if(dk.state != 1) 
+        if(_dk.state != 1) 
             revert DC_LockContents_WrongState();
 
         _roles.abandonRole(_ATTORNEYS);
         setNewOwner(address(0));
-        dk.state = 2;
+        _dk.state = 2;
 
         emit LockContents();
     }
@@ -93,7 +93,7 @@ contract DraftControl is IDraftControl, AccessControl {
     // ##############
 
     function isFinalized() public view returns (bool) {
-        return dk.state == 2;
+        return _dk.state == 2;
     }
 
     function getRoleAdmin(bytes32 role) public view returns (address) {

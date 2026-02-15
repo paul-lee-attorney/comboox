@@ -21,13 +21,6 @@
 pragma solidity ^0.8.24;
 
 import "../books/cashier/ICashier.sol";
-import "../books/roa/IInvestmentAgreement.sol";
-import "../books/roo/IRegisterOfOptions.sol";
-import "../books/ros/IRegisterOfShares.sol";
-
-import "../../lib/InterfacesHub.sol";
-import "../../lib/MotionsRepo.sol";
-import "../../lib/SwapsRepo.sol";
 
 /// @title IROOKeeper
 /// @notice Interface for option swaps and related transfers.

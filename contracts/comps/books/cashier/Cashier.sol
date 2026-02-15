@@ -22,12 +22,14 @@ pragma solidity ^0.8.24;
 
 import "./ICashier.sol";
 
-import "../../common/access/RoyaltyCharge.sol";
+import "../../../lib/utils/RoyaltyCharge.sol";
+import "../../common/access/AccessControl.sol";
 
-contract Cashier is ICashier, RoyaltyCharge {
+contract Cashier is ICashier, AccessControl {
     using RulesParser for bytes32;
     using WaterfallsRepo for WaterfallsRepo.Repo;
     using InterfacesHub for address;
+    using RoyaltyCharge for address;
 
     // Custody balances by external account address (escrowed USD).
     mapping(address => uint) private _coffers;
@@ -40,6 +42,7 @@ contract Cashier is ICashier, RoyaltyCharge {
     // ==== UUPSUpgradable ====
     uint256[50] private __gap;
 
+
     //###############
     //##   Write   ##
     //###############
@@ -47,7 +50,7 @@ contract Cashier is ICashier, RoyaltyCharge {
     // Pull USD from `auth.from` into this contract using authorization data.
     // `auth` carries the EIP-3009 style authorization parameters.
     function _transferWithAuthorization(TransferAuth memory auth) private {
-        gk.getBank().transferWithAuthorization(
+        _gk.getBank().transferWithAuthorization(
             auth.from, 
             address(this), 
             auth.value,
@@ -80,8 +83,9 @@ contract Cashier is ICashier, RoyaltyCharge {
         _transferWithAuthorization(auth);
         emit ForwardUsd(auth.from, to, auth.value, remark);
 
-        require(gk.getBank().transfer(to, auth.value),
-            "Cashier.forwardUsd: transfer failed");
+        if (!_gk.getBank().transfer(to, auth.value)) {
+            revert Cashier_TransferFailed(bytes32("Cashier_TransferFailed"));
+        }
     }
 
     function custodyUsd(TransferAuth memory auth, bytes32 remark) external onlyKeeper {
@@ -93,27 +97,31 @@ contract Cashier is ICashier, RoyaltyCharge {
     }
 
     function releaseUsd(address from, address to, uint amt, bytes32 remark) external onlyKeeper {
-        require(_coffers[from] >= amt,
-            "Cashier.ReleaseUsd: insufficient amt");
+        if(_coffers[from] < amt) {
+            revert Cashier_Overflow("Cashier_InsufficientAmt");
+        }
 
         _coffers[from] -= amt;
         _coffers[address(0)] -= amt;
 
         emit ReleaseUsd(from, to, amt, remark);
 
-        require(gk.getBank().transfer(to, amt),
-            "Cashier.releaseUsd: transfer failed");
+        if (!_gk.getBank().transfer(to, amt)) {
+            revert Cashier_TransferFailed(bytes32("Cashier_TransferFailed"));
+        }
     }
 
     function transferUsd(address to, uint amt, bytes32 remark) external onlyKeeper {
 
-        require(balanceOfComp() >= amt,
-            "Cashier.transferUsd: insufficient amt");
+        if (balanceOfComp() < amt) {
+            revert Cashier_Overflow(bytes32("Cashier_InsufficientAmt"));
+        }
         
         emit TransferUsd(to, amt, remark);
 
-        require(gk.getBank().transfer(to, amt),
-            "Cashier.transferUsd: transfer failed");        
+        if (!_gk.getBank().transfer(to, amt)) {
+            revert Cashier_TransferFailed(bytes32("Cashier_TransferFailed"));
+        }
     }
 
     // ==== Distribution ====
@@ -122,22 +130,23 @@ contract Cashier is ICashier, RoyaltyCharge {
         WaterfallsRepo.Drop[] memory mlist
     ){
     
-        require(balanceOfComp() >= amt,
-            "Cashier.DistrUsd: insufficient amt");
+        if (balanceOfComp() < amt) {
+            revert Cashier_Overflow(bytes32("Cashier_InsufficientAmt"));
+        }
 
         RulesParser.DistrRule memory rule =
-            gk.getSHA().getRule(seqOfDR).DistrRuleParser();
+            _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
 
-        IRegisterOfMembers _rom = gk.getROM();
+        IRegisterOfMembers _rom = _gk.getROM();
 
-        IRegisterOfShares _ros = gk.getROS();
+        IRegisterOfShares _ros = _gk.getROS();
         WaterfallsRepo.Drop memory drop;
 
         if ( rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.ProRata)) {
             (drop, mlist, ) = _rivers.proRataDistr(amt, _rom, _ros, false);
         } else if (rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.IntFront)) {
             (drop, mlist, ) = _rivers.intFrontDistr(amt, _ros, rule);
-        } else revert("Cashier: wrong type of distribution");
+        } else revert Cashier_WrongState(bytes32("Cashier_WrongTypeOfDistr"));
 
         emit DistrProfits(amt, seqOfDR, drop.seqOfDistr);
         _distrUsd(mlist, bytes32("DistrProfits"));
@@ -157,14 +166,15 @@ contract Cashier is ICashier, RoyaltyCharge {
     function distrIncome(uint amt, uint seqOfDR, uint fundManager) external onlyKeeper 
         returns(WaterfallsRepo.Drop[] memory mlist, WaterfallsRepo.Drop[] memory slist){
 
-        require(balanceOfComp() >= amt,
-            "Cashier.DistrUsd: insufficient amt");
+        if (balanceOfComp() < amt) {
+            revert Cashier_Overflow(bytes32("Cashier_ShortOfAmt"));
+        }
 
         RulesParser.DistrRule memory rule = 
-            gk.getSHA().getRule(seqOfDR).DistrRuleParser();
+            _gk.getSHA().getRule(seqOfDR).DistrRuleParser();
 
-        IRegisterOfMembers _rom = gk.getROM();
-        IRegisterOfShares _ros = gk.getROS();
+        IRegisterOfMembers _rom = _gk.getROM();
+        IRegisterOfShares _ros = _gk.getROS();
         WaterfallsRepo.Drop memory drop;
 
         if ( rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.ProRata)) {
@@ -175,7 +185,7 @@ contract Cashier is ICashier, RoyaltyCharge {
             (drop, mlist, slist) = _rivers.prinFrontDistr(amt, _ros, rule);
         } else if (rule.typeOfDistr == uint8(RulesParser.TypeOfDistr.HuddleCarry)) {
             (drop, mlist, slist) = _rivers.hurdleCarryDistr(amt, _ros, rule, fundManager);
-        } else revert("Cashier: wrong type of distribution");
+        } else revert Cashier_WrongState(bytes32("Cashier_WrongTypeOfDistr"));
 
         emit DistrIncome(amt, seqOfDR, fundManager, drop.seqOfDistr);
 
@@ -183,8 +193,9 @@ contract Cashier is ICashier, RoyaltyCharge {
     }
 
     function depositUsd(uint amt, uint user, bytes32 remark) external onlyKeeper{
-        require(balanceOfComp() >= amt,
-            "Cashier.depositUsd: insufficient amt");
+        if (balanceOfComp() < amt) {
+            revert Cashier_Overflow(bytes32("Cashier_ShortOfAmt"));
+        }
 
         _depositUsd(user, amt, remark);
     }
@@ -192,7 +203,9 @@ contract Cashier is ICashier, RoyaltyCharge {
     // Credit `amt` USD to the internal deposit locker of `payee`.
     // `remark` is an accounting tag for the deposit event.
     function _depositUsd(uint payee, uint amt, bytes32 remark) private {
-        require(payee > 0, "Cashier.depositUsd: zero user");
+        if (payee == 0) {
+            revert Cashier_WrongParty(bytes32("Cashier_ZeroPayee"));
+        }
         
         emit DepositUsd(amt, payee, remark);
 
@@ -204,7 +217,7 @@ contract Cashier is ICashier, RoyaltyCharge {
 
     function pickupUsd() external {
         
-        uint caller = _msgSender(msg.sender, 18000);
+        uint caller = msg.sender.msgSender(0xa019f9ef, 1, 18000);
         uint value = _lockers[caller];
 
         if (value > 0) {
@@ -214,10 +227,11 @@ contract Cashier is ICashier, RoyaltyCharge {
 
             emit PickupUsd(msg.sender, caller, value);
 
-            require(gk.getBank().transfer(msg.sender, value),
-                "Cashier.PickupUsd: transfer failed");
+            if (!_gk.getBank().transfer(msg.sender, value)) {
+                revert Cashier_TransferFailed(bytes32("Cashier_TransferFailed"));
+            }
 
-        } else revert("Cashier.pickupDeposit: no balance");
+        } else revert Cashier_Overflow(bytes32("Cashier_NoBalance"));
     }
 
     //##################
@@ -241,7 +255,7 @@ contract Cashier is ICashier, RoyaltyCharge {
     }
 
     function balanceOfComp() public view returns(uint) {
-        uint amt = gk.getBank().balanceOf(address(this));        
+        uint amt = _gk.getBank().balanceOf(address(this));        
         return amt - _coffers[address(0)] - _lockers[0];
     }
 

@@ -21,7 +21,7 @@ pragma solidity ^0.8.24;
 
 import "./IFilesFolder.sol";
 import "../access/AccessControl.sol";
-import "../../../lib/FilesRepo.sol";
+import "../../../lib/books/FilesRepo.sol";
 
 contract FilesFolder is IFilesFolder, AccessControl {
     using FilesRepo for FilesRepo.Repo;

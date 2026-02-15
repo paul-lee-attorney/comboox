@@ -23,8 +23,8 @@ pragma solidity ^0.8.24;
 
 import "../../../center/utils/MockUSDC/IUSDC.sol";
 
-import "../../../lib/RulesParser.sol";
-import "../../../lib/WaterfallsRepo.sol";
+import "../../../lib/books/RulesParser.sol";
+import "../../../lib/books/WaterfallsRepo.sol";
 import "../../../lib/InterfacesHub.sol";
 
 /// @title ICashier
@@ -42,6 +42,18 @@ interface ICashier {
         bytes32 r;
         bytes32 s;
     }
+
+    //######################
+    //##   Error & Event  ##
+    //######################
+
+    error Cashier_WrongParty(bytes32 reason);
+
+    error Cashier_WrongState(bytes32 reason);
+
+    error Cashier_Overflow(bytes32 reason);
+
+    error Cashier_TransferFailed(bytes32 reason);
 
     /// @notice Emitted when USDC is received into the contract.
     /// @param from Sender address.

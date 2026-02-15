@@ -19,9 +19,9 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../../lib/ArrayUtils.sol";
-import "../../../../lib/BallotsBox.sol";
-import "../../../../lib/DealsRepo.sol";
+import "../../../../lib/utils/ArrayUtils.sol";
+import "../../../../lib/books/BallotsBox.sol";
+import "../../../../lib/books/DealsRepo.sol";
 import "../../../../openzeppelin/utils/structs/EnumerableSet.sol";
 import "../../../../lib/InterfacesHub.sol";
 
@@ -36,6 +36,12 @@ interface ILockUp {
         uint48 dueDate;
         EnumerableSet.UintSet keyHolders;
     }
+
+    // ################
+    // ##   Error    ##
+    // ################
+
+    error LU_ZeroValue(bytes32 reason);
 
     // ################
     // ##   Write    ##

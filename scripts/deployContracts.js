@@ -53,14 +53,11 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate(getTypeByName("CreateNewComp"), addrCNC, acct_0);
 
 	await rc.connect(signers[1]).proxyDoc(getTypeByName("CreateNewComp"), 1);
-
 	const cnc = await readTool("CreateNewComp", (await rc.getDoc(getTypeByName("CreateNewComp"), 1, 1))[1]);
 
-	await cnc.connect(signers[1]).setNewOwner(await signers[0].getAddress());
-	console.log("deployed CreateNewComp:", cnc.target, "with owner: ", (await cnc.owner())[0], "\n");
-
-	await cnc.connect(signers[1]).updateBank(usdc.target);
-	console.log("updated bank for CreateNewComp to: ", usdc.target, "\n");
+	await cnc.connect(signers[1]).updateBank(usdc.target); 
+	console.log("updated Bank for CreateNewComp as:", (await cnc.bank())[0], "\n");
+	console.log("deployed CreateNewComp:", cnc.target, "\n");
 
 	// ---- CashLockers ----
 
@@ -87,11 +84,148 @@ async function main() {
 	console.log("Proxy deployed for UsdFuelTank \n");
 
 	const ft = await readTool("UsdFuelTank", (await rc.getDoc(getTypeByName("UsdFuelTank"), 1, 1))[1]);
-	await ft.connect(signers[1]).setNewOwner(await signers[0].getAddress());
-	console.log("transfer ownership of UsdFuelTank to: ", (await ft.owner())[0], "\n");
-
-	await ft.setRate(2600 * 10 ** 6);
+ 
+	await ft.connect(signers[1]).setRate(2600 * 10 ** 6);
 	console.log("set rate for UsdFuelTank to: ", 2600 * 10 ** 6, "\n");
+
+	// ==== Keepers ====
+
+	libraries = {
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"KeepersRouter": (await rc.getTemp(getTypeByName("KeepersRouter"), 1))[1],
+	}
+	const addrGK = await deployTool(signers[0], "GeneralKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("GeneralKeeper"), addrGK, acct_0);
+	console.log("set template for GeneralKeeper at address:", addrGK, "\n");
+	
+	libraries = {
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
+	}
+	const addrROOKeeper = await deployTool(signers[0], "ROOKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("ROOKeeper"), addrROOKeeper, acct_0);
+	console.log("set template for ROOKeeper at address: ", addrROOKeeper, "\n");
+
+	const addrROMKeeper = await deployTool(signers[0], "ROMKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("ROMKeeper"), addrROMKeeper, acct_0);
+	console.log("set template for ROMKeeper at address: ", addrROMKeeper, "\n");
+
+	const addrRODKeeper = await deployTool(signers[0], "RODKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("RODKeeper"), addrRODKeeper, acct_0);
+	console.log("set template for RODKeeper at address: ", addrRODKeeper, "\n");
+
+	const addrFundRORKeeper = await deployTool(signers[0], "FundRORKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("FundRORKeeper"), addrFundRORKeeper, acct_0);
+	console.log("set template for FundRORKeeper at address: ", addrFundRORKeeper, "\n");
+
+	const addrAccountant = await deployTool(signers[0], "Accountant", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("Accountant"), addrAccountant, acct_0);
+	console.log("set template for Accountant at address: ", addrAccountant, "\n");
+
+	libraries = {
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1],
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"DTClaims": (await rc.getTemp(getTypeByName("DTClaims"), 1))[1]
+	}
+	const addrSHAKeeper = await deployTool(signers[0], "SHAKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("SHAKeeper"), addrSHAKeeper, acct_0);
+	console.log("set template for SHAKeeper at address: ", addrSHAKeeper, "\n");
+
+	libraries = {
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
+	}
+	const addrLOOKeeper = await deployTool(signers[0], "LOOKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("LOOKeeper"), addrLOOKeeper, acct_0);
+	console.log("set template for LOOKeeper at address: ", addrLOOKeeper, "\n");
+
+	const addrFundLOOKeeper = await deployTool(signers[0], "FundLOOKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("FundLOOKeeper"), addrFundLOOKeeper, acct_0);
+	console.log("set template for FundLOOKeeper at address: ", addrFundLOOKeeper, "\n");
+	
+	libraries = {
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
+	}
+	const addrROIKeeper = await deployTool(signers[0], "ROIKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("ROIKeeper"), addrROIKeeper, acct_0);
+	console.log("set template for ROIKeeper at address: ", addrROIKeeper, "\n");
+
+	const addrFundROIKeeper = await deployTool(signers[0], "FundROIKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("FundROIKeeper"), addrFundROIKeeper, acct_0);
+	console.log("set template for FundROIKeeper at address: ", addrFundROIKeeper, "\n");
+	
+	const addrFundAccountant = await deployTool(signers[0], "FundAccountant", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("FundAccountant"), addrFundAccountant, acct_0);
+	console.log("set template for FundAccountant at address: ", addrFundAccountant, "\n");
+
+	libraries = {
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1],
+		"ArrayUtils": (await rc.getTemp(getTypeByName("ArrayUtils"), 1))[1]
+	}
+	const addrGMMKeeper = await deployTool(signers[0], "GMMKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("GMMKeeper"), addrGMMKeeper, acct_0);
+	console.log("set template for GMMKeeper at address: ", addrGMMKeeper, "\n");
+
+	const addrFundGMMKeeper = await deployTool(signers[0], "FundGMMKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("FundGMMKeeper"), addrFundGMMKeeper, acct_0);
+	console.log("set template for FundGMMKeeper at address: ", addrFundGMMKeeper, "\n");
+
+	libraries = {
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"ArrayUtils": (await rc.getTemp(getTypeByName("ArrayUtils"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
+	}
+	const addrBMMKeeper = await deployTool(signers[0], "BMMKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("BMMKeeper"), addrBMMKeeper, acct_0);
+	console.log("set template for BMMKeeper at address: ", addrBMMKeeper, "\n");
+
+	libraries = {
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"DocsRepo": (await rc.getTemp(getTypeByName("DocsRepo"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
+	}
+	const addrROAKeeper = await deployTool(signers[0], "ROAKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("ROAKeeper"), addrROAKeeper, acct_0);
+	console.log("set template for ROAKeeper at address: ", addrROAKeeper, "\n");
+
+	libraries = {
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"DocsRepo": (await rc.getTemp(getTypeByName("DocsRepo"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1],
+		"ArrayUtils": (await rc.getTemp(getTypeByName("ArrayUtils"), 1))[1]
+	}
+	const addrROCKeeper = await deployTool(signers[0], "ROCKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("ROCKeeper"), addrROCKeeper, acct_0);
+	console.log("set template for ROCKeeper at address: ", addrROCKeeper, "\n");
+
+	libraries = {
+		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
+		"ArrayUtils": (await rc.getTemp(getTypeByName("ArrayUtils"), 1))[1],
+		"DocsRepo": (await rc.getTemp(getTypeByName("DocsRepo"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
+	}
+	const addrFundROCKeeper = await deployTool(signers[0], "FundROCKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("FundROCKeeper"), addrFundROCKeeper, acct_0);
+	console.log("set template for FundROCKeeper at address: ", addrFundROCKeeper, "\n");
+
+	libraries = {
+		"PledgesRepo": (await rc.getTemp(getTypeByName("PledgesRepo"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
+	}
+	const addrROPKeeper = await deployTool(signers[0], "ROPKeeper", libraries, params);
+	await rc.connect(signers[1]).setTemplate( getTypeByName("ROPKeeper"), addrROPKeeper, acct_0);
+	console.log("set template for ROPKeeper at address: ", addrROPKeeper, "\n");
 
 	// ==== Deploy Templates ====
 
@@ -156,133 +290,6 @@ async function main() {
 	const addrOP = await deployTool(signers[0], "Options", libraries, params);
 	await rc.connect(signers[1]).setTemplate(getTypeByName("Options"), addrOP, acct_0);
 	console.log("Reg the Options:", addrOP, "in BookOfDocs \n");
-
-	// ==== Keepers ====
-
-	libraries = {
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
-		"KeepersRouter": (await rc.getTemp(getTypeByName("KeepersRouter"), 1))[1],
-	}
-	const addrGK = await deployTool(signers[0], "GeneralKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("GeneralKeeper"), addrGK, acct_0);
-	console.log("set template for GeneralKeeper at address:", addrGK, "\n");
-	
-	libraries = {
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrROOKeeper = await deployTool(signers[0], "ROOKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("ROOKeeper"), addrROOKeeper, acct_0);
-	console.log("set template for ROOKeeper at address: ", addrROOKeeper, "\n");
-
-	const addrROMKeeper = await deployTool(signers[0], "ROMKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("ROMKeeper"), addrROMKeeper, acct_0);
-	console.log("set template for ROMKeeper at address: ", addrROMKeeper, "\n");
-
-	const addrRODKeeper = await deployTool(signers[0], "RODKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("RODKeeper"), addrRODKeeper, acct_0);
-	console.log("set template for RODKeeper at address: ", addrRODKeeper, "\n");
-
-	const addrFundRORKeeper = await deployTool(signers[0], "FundRORKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("FundRORKeeper"), addrFundRORKeeper, acct_0);
-	console.log("set template for FundRORKeeper at address: ", addrFundRORKeeper, "\n");
-
-	const addrAccountant = await deployTool(signers[0], "Accountant", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("Accountant"), addrAccountant, acct_0);
-	console.log("set template for Accountant at address: ", addrAccountant, "\n");
-
-	libraries = {
-		"LibOfSHAK": (await rc.getTemp(getTypeByName("LibOfSHAK"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrSHAKeeper = await deployTool(signers[0], "SHAKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("SHAKeeper"), addrSHAKeeper, acct_0);
-	console.log("set template for SHAKeeper at address: ", addrSHAKeeper, "\n");
-
-	libraries = {
-		"LibOfLOOK": (await rc.getTemp(getTypeByName("LibOfLOOK"), 1))[1],
-		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrLOOKeeper = await deployTool(signers[0], "LOOKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("LOOKeeper"), addrLOOKeeper, acct_0);
-	console.log("set template for LOOKeeper at address: ", addrLOOKeeper, "\n");
-
-	const addrFundLOOKeeper = await deployTool(signers[0], "FundLOOKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("FundLOOKeeper"), addrFundLOOKeeper, acct_0);
-	console.log("set template for FundLOOKeeper at address: ", addrFundLOOKeeper, "\n");
-	
-	libraries = {
-		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrROIKeeper = await deployTool(signers[0], "ROIKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("ROIKeeper"), addrROIKeeper, acct_0);
-	console.log("set template for ROIKeeper at address: ", addrROIKeeper, "\n");
-
-	const addrFundROIKeeper = await deployTool(signers[0], "FundROIKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("FundROIKeeper"), addrFundROIKeeper, acct_0);
-	console.log("set template for FundROIKeeper at address: ", addrFundROIKeeper, "\n");
-	
-	const addrFundAccountant = await deployTool(signers[0], "FundAccountant", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("FundAccountant"), addrFundAccountant, acct_0);
-	console.log("set template for FundAccountant at address: ", addrFundAccountant, "\n");
-
-	libraries = {
-		"LibOfGMMK": (await rc.getTemp(getTypeByName("LibOfGMMK"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrGMMKeeper = await deployTool(signers[0], "GMMKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("GMMKeeper"), addrGMMKeeper, acct_0);
-	console.log("set template for GMMKeeper at address: ", addrGMMKeeper, "\n");
-
-	const addrFundGMMKeeper = await deployTool(signers[0], "FundGMMKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("FundGMMKeeper"), addrFundGMMKeeper, acct_0);
-	console.log("set template for FundGMMKeeper at address: ", addrFundGMMKeeper, "\n");
-
-	libraries = {
-		"LibOfBMMK": (await rc.getTemp(getTypeByName("LibOfBMMK"), 1))[1],
-		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrBMMKeeper = await deployTool(signers[0], "BMMKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("BMMKeeper"), addrBMMKeeper, acct_0);
-	console.log("set template for BMMKeeper at address: ", addrBMMKeeper, "\n");
-
-	libraries = {
-		"LibOfROAK": (await rc.getTemp(getTypeByName("LibOfROAK"), 1))[1],
-		"DocsRepo": (await rc.getTemp(getTypeByName("DocsRepo"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrROAKeeper = await deployTool(signers[0], "ROAKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("ROAKeeper"), addrROAKeeper, acct_0);
-	console.log("set template for ROAKeeper at address: ", addrROAKeeper, "\n");
-
-	libraries = {
-		"LibOfROCK": (await rc.getTemp(getTypeByName("LibOfROCK"), 1))[1],
-		"DocsRepo": (await rc.getTemp(getTypeByName("DocsRepo"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrROCKeeper = await deployTool(signers[0], "ROCKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("ROCKeeper"), addrROCKeeper, acct_0);
-	console.log("set template for ROCKeeper at address: ", addrROCKeeper, "\n");
-
-	libraries = {
-		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
-		"ArrayUtils": (await rc.getTemp(getTypeByName("ArrayUtils"), 1))[1],
-		"DocsRepo": (await rc.getTemp(getTypeByName("DocsRepo"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrFundROCKeeper = await deployTool(signers[0], "FundROCKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("FundROCKeeper"), addrFundROCKeeper, acct_0);
-	console.log("set template for FundROCKeeper at address: ", addrFundROCKeeper, "\n");
-
-	libraries = {
-		"PledgesRepo": (await rc.getTemp(getTypeByName("PledgesRepo"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
-	}
-	const addrROPKeeper = await deployTool(signers[0], "ROPKeeper", libraries, params);
-	await rc.connect(signers[1]).setTemplate( getTypeByName("ROPKeeper"), addrROPKeeper, acct_0);
-	console.log("set template for ROPKeeper at address: ", addrROPKeeper, "\n");
 
 	// ==== Books ====
 
@@ -379,7 +386,8 @@ async function main() {
 	libraries = {
 		"RulesParser": (await rc.getTemp(getTypeByName("RulesParser"), 1))[1],
 		"WaterfallsRepo": (await rc.getTemp(getTypeByName("WaterfallsRepo"), 1))[1],
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
+		"RoyaltyCharge": (await rc.getTemp(getTypeByName("RoyaltyCharge"), 1))[1]
 	}
 	const addrCashier = await deployTool(signers[0], "Cashier", libraries, params);
 	await rc.connect(signers[1]).setTemplate(getTypeByName("Cashier"), addrCashier, acct_0);

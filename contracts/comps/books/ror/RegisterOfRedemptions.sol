@@ -23,10 +23,13 @@ pragma solidity ^0.8.24;
 import "./IRegisterOfRedemptions.sol";
 
 import "../../common/access/AccessControl.sol";
+import "../../../lib/books/RedemptionsRepo.sol";
+import "../../../lib/InterfacesHub.sol";
 
 
 contract RegisterOfRedemptions is IRegisterOfRedemptions, AccessControl {
     using RedemptionsRepo for RedemptionsRepo.Repo;
+    using InterfacesHub for address;
 
     // Repository for redemption classes, packs, and requests.
     RedemptionsRepo.Repo private _list;

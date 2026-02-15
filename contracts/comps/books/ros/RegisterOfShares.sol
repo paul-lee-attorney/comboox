@@ -65,7 +65,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         SharesRepo.Share memory share
     ) public onlyKeeper {
 
-        IRegisterOfMembers _rom = gk.getROM();
+        IRegisterOfMembers _rom = _gk.getROM();
 
         share = _repo.addShare(share);
 
@@ -161,12 +161,13 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint priceOfPar
     ) external onlyKeeper {
 
-        IRegisterOfMembers _rom = gk.getROM();
+        IRegisterOfMembers _rom = _gk.getROM();
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
-        require(share.head.shareholder != to,
-            "ROS.transferShare: self deal");
+        if (share.head.shareholder == to) {
+            revert ROS_WrongInput("ROS_SelfDeal");
+        }
 
         SharesRepo.Share memory newShare;
 
@@ -225,7 +226,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
             0
         );
 
-        gk.getROM().capIncrease(
+        _gk.getROM().capIncrease(
             share.head.votingWeight,            
             share.body.distrWeight,
             paid, 
@@ -241,12 +242,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function decreaseCleanPaid(
         uint256 seqOfShare, 
         uint paid
-    ) external {
-
-        require(msg.sender == address(gk.getROP()) ||
-            gk.getGK().isKeeper(msg.sender), 
-            "ROS.decrClean: access denied");
-
+    ) external onlyKeeper {
         _repo.increaseCleanPaid(
             false,
             seqOfShare,
@@ -259,12 +255,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function increaseCleanPaid(
         uint256 seqOfShare, 
         uint paid
-    ) external {
-
-        require(msg.sender == address(gk.getROP()) ||
-            gk.getGK().isKeeper(msg.sender), 
-            "ROS.DCA: neither keeper nor ROP");
-
+    ) external onlyKeeper {
         _repo.increaseCleanPaid(
             true,
             seqOfShare,
@@ -288,7 +279,6 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint256 seqOfShare, 
         uint deadline
     ) external onlyDK {
-
         _repo.updatePayInDeadline(seqOfShare, deadline);
         emit UpdatePaidInDeadline(seqOfShare, deadline);
     }
@@ -322,7 +312,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint amount
     ) private {
 
-        IRegisterOfMembers _rom = gk.getROM();
+        IRegisterOfMembers _rom = _gk.getROM();
 
         _repo.payInCapital(share.head.seqOfShare, amount);
 
@@ -352,7 +342,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint par
     ) private {
 
-        IRegisterOfMembers _rom = gk.getROM();
+        IRegisterOfMembers _rom = _gk.getROM();
 
         if (par == share.body.par) {
 
@@ -475,7 +465,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint seqOfShare,
         uint closingDate
     ) external view returns(bool) {
-        IShareholdersAgreement _sha = gk.getSHA();
+        IShareholdersAgreement _sha = _gk.getSHA();
 
         if (!_sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.LockUp))){
             return true;

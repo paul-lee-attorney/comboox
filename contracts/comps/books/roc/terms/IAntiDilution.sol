@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../../lib/SharesRepo.sol";
-import "../../../../lib/DealsRepo.sol";
+import "../../../../lib/books/SharesRepo.sol";
+import "../../../../lib/books/DealsRepo.sol";
 import "../../../../lib/InterfacesHub.sol";
 import "../../roa/IInvestmentAgreement.sol";
 import "../../../../openzeppelin/utils/structs/EnumerableSet.sol";
@@ -43,6 +43,19 @@ interface IAntiDilution {
         // Set of benchmarked classes
         EnumerableSet.UintSet classes;        
     }
+
+    // ################
+    // ##   Error    ##
+    // ################
+
+    error AD_Overflow(bytes32 reason);
+
+    error AD_WrongInput(bytes32 reason);
+
+    error AD_WrongState(bytes32 reason);
+
+    error AD_ZeroValue(bytes32 reason);
+
 
     // ################
     // ##   Write    ##

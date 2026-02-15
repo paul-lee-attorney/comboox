@@ -53,8 +53,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
         uint256 caller,
         bytes32 sigHash
     ) external onlyKeeper {
-        require(block.timestamp < _repo.frExecDeadline(ia),
-            "ROA.claimFR: missed frExecDeadline");
+        if (block.timestamp >= _repo.frExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_MissedDeadline");
+        }
         _frClaims[ia].claimFirstRefusal(seqOfDeal, caller, sigHash);
         emit ClaimFirstRefusal(ia, seqOfDeal, caller);
     }
@@ -63,9 +64,10 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
         address ia,
         uint256 seqOfDeal
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {
-        require(block.timestamp >= _repo.frExecDeadline(ia),
-            "ROA.computeFR: not reached frExecDeadline");
-        output = _frClaims[ia].computeFirstRefusal(seqOfDeal, gk.getROM());
+        if (block.timestamp < _repo.frExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_NotReachedFRDeadline");
+        }
+        output = _frClaims[ia].computeFirstRefusal(seqOfDeal, _gk.getROM());
         emit ComputeFirstRefusal(ia, seqOfDeal);
     }
 
@@ -74,31 +76,16 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     function execAlongRight(
         address ia,
         bytes32 snOfClaim,
-        // bool dragAlong,
-        // uint256 seqOfDeal,
-        // uint256 seqOfShare,
-        // uint paid,
-        // uint par,
-        // uint256 caller,
         bytes32 sigHash
     ) external onlyKeeper {
-        require(block.timestamp >= _repo.frExecDeadline(ia),
-            "ROA.execDT: not reached frExecDeadline");
-        require(block.timestamp < _repo.dtExecDeadline(ia),
-            "ROA.execDT: missed dtExecDeadline");
+        if (block.timestamp < _repo.frExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_NotReachedFRDeadline");
+        }
+        if (block.timestamp >= _repo.dtExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_MissedDTDeadline");
+        }
 
         _dtClaims[ia].execAlongRight(snOfClaim, sigHash);
-
-        // DTClaims.Head memory head = DTClaims.Head({
-        //     seqOfDeal: uint16(seqOfDeal),
-        //     dragAlong: dragAlong,
-        //     seqOfShare: uint32(seqOfShare),
-        //     paid: uint64(paid),
-        //     par: uint64(par),
-        //     caller: uint40(caller),
-        //     para: 0,
-        //     argu: 0
-        // });
 
         emit ExecAlongRight(ia, snOfClaim, sigHash);
     }
@@ -107,8 +94,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
         address ia, 
         uint seqOfDeal
     ) external onlyKeeper returns(DTClaims.Claim[] memory) {
-        require(block.timestamp >= _repo.dtExecDeadline(ia),
-            "ROA.execDT: not reached frExecDeadline");
+        if (block.timestamp < _repo.dtExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_NotReachedDTDeadline");
+        }
         
         emit AcceptAlongClaims(ia, seqOfDeal);
         return _dtClaims[ia].acceptAlongClaims(seqOfDeal);
@@ -119,9 +107,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     function createMockOfIA(address ia) external onlyKeeper {
         if (_mockOfIA[ia].qtyOfMembers() == 0) {
             (TopChain.Node[] memory list, TopChain.Para memory para) = 
-                gk.getROM().getSnapshot();
+                _gk.getROM().getSnapshot();
             _mockOfIA[ia].restoreChain(list, para);
-            _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia), gk.getROS());
+            _mockOfIA[ia].mockDealsOfIA(IInvestmentAgreement(ia), _gk.getROS());
         }
     }
     

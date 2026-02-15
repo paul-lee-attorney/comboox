@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../../lib/LinksRepo.sol";
+import "../../../../lib/books/LinksRepo.sol";
 import "../../roa/IRegisterOfAgreements.sol";
 
 /// @title IAlongs

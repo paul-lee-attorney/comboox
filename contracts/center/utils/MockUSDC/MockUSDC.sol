@@ -21,7 +21,7 @@ pragma solidity ^0.8.24;
 
 import "./IUSDC.sol";
 import "../../../openzeppelin/token/ERC20/ERC20.sol";
-import "../../access/Ownable.sol";
+import "../../../comps/common/access/Ownable.sol";
 
 contract MockUSDC is IUSDC, ERC20("USD Coin", "USDC"), Ownable {
 

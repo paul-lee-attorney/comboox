@@ -2,7 +2,7 @@ import { network } from "hardhat";
 import { saveTempAddr } from "./deployTool";
 import { readTool } from "./readTool";
 
-export async function proxyRC(signer, addrRC, bookeeper) {
+export async function proxySC(signer, scName, addrRC) {
 
     let options = {signer: signer};
 
@@ -17,13 +17,9 @@ export async function proxyRC(signer, addrRC, bookeeper) {
 
     const proxyAddress = await proxy.getAddress();
 
-    const rc = await readTool("RegCenter", proxyAddress);
+    console.log("Deployed Smart Contract at:", proxyAddress, "\n");
 
-    await rc.initialize(proxyAddress, bookeeper);
-
-    console.log("Deployed Proxy RegCenter at:", proxyAddress);
-
-    saveTempAddr("RegCenter_Proxy", proxyAddress);
+    saveTempAddr(scName + "_Proxy", proxyAddress);
 
     return proxyAddress;
 }

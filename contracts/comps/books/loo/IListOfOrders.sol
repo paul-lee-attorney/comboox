@@ -19,9 +19,9 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/UsdOrdersRepo.sol";
-import "../../../lib/GoldChain.sol";
-import "../../../lib/InvestorsRepo.sol";
+import "../../../lib/books/UsdOrdersRepo.sol";
+import "../../../lib/books/GoldChain.sol";
+import "../../../lib/books/InvestorsRepo.sol";
 import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
 
 /// @title IListOfOrders

@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/FilesRepo.sol";
-import "../../../lib/RulesParser.sol";
+import "../../../lib/books/FilesRepo.sol";
+import "../../../lib/books/RulesParser.sol";
 
 /// @title FilesFolder
 /// @notice Base contract for managing document file lifecycle and metadata.

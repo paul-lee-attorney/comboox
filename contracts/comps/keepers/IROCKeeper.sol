@@ -19,21 +19,6 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/roc/terms/ILockUp.sol";
-import "../books/roc/IShareholdersAgreement.sol";
-import "../books/roc/IRegisterOfConstitution.sol";
-import "../books/rod/IRegisterOfDirectors.sol";
-import "../books/rom/IRegisterOfMembers.sol";
-
-import "../common/components/ISigPage.sol";
-import "../common/access/IDraftControl.sol";
-
-import "../../lib/OfficersRepo.sol";
-import "../../lib/RulesParser.sol";
-import "../../lib/DocsRepo.sol";
-// import "../../lib/FilesRepo.sol";
-import "../../lib/InterfacesHub.sol";
-
 /// @title IROCKeeper
 /// @notice Interface for shareholder agreement lifecycle actions.
 interface IROCKeeper {

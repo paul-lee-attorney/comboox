@@ -19,15 +19,6 @@
 
 pragma solidity ^0.8.24;
 
-import "../../lib/PledgesRepo.sol";
-import "../../lib/DealsRepo.sol";
-import "../../lib/InvestorsRepo.sol";
-import "../../lib/InterfacesHub.sol";
-
-import "../books/rop/IRegisterOfPledges.sol";
-import "../books/ros/IRegisterOfShares.sol";
-import "../books/rom/IRegisterOfMembers.sol";
-
 /// @title IROPKeeper
 /// @notice Interface for pledge operations via keeper.
 interface IROPKeeper {

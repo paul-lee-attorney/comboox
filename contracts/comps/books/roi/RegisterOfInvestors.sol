@@ -47,13 +47,17 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     // ==== Pause LOO ====
 
     function pause(uint caller) external onlyDK {
-        require(_paused == false, "already paused");
+        if (_paused == true) {
+            revert ROI_WrongState("ROI_AlreadyPaused");
+        }
         _paused = true;
         emit Paused(caller);
     }
 
     function unPause(uint caller) external onlyDK {
-        require(_paused == true, "not paused");
+        if (_paused == false) {
+            revert ROI_WrongState("ROI_AlreadyUnpaused");
+        }
         _paused = false;
         emit UnPaused(caller);
     }
@@ -80,8 +84,9 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function _unfreezeShare(
         uint userNo, uint seqOfShare, uint paid
     ) private {
-        require(_frozenPaid[seqOfShare] >= paid,
-            "LOO.unfreezeShare: insufficient fronzen paid");
+        if (_frozenPaid[seqOfShare] < paid) {
+            revert ROI_Overflow("ROI_ShotOfFrozenPaid");
+        }
         _frozenPaid[seqOfShare] -= paid;
         if (_frozenPaid[seqOfShare] == 0 )
             _frozenShares[userNo].remove(seqOfShare);

@@ -22,8 +22,6 @@ pragma solidity ^0.8.24;
 import "./IBookOfDocs.sol";
 import "./BookOfUsers.sol";
 import "../../openzeppelin/utils/Address.sol";
-// import "../access/Ownable.sol";
-// import "../../comps/common/access/AccessControl.sol";
 
 contract BookOfDocs is IBookOfDocs, BookOfUsers {
     using DocsRepo for DocsRepo.Repo;
@@ -36,10 +34,14 @@ contract BookOfDocs is IBookOfDocs, BookOfUsers {
 
     uint[50] private __gap;
 
-    function upgradeCenterTo(address newImplementation) external {
+    function upgradeCenterTo(address newImplementation) external onlyProxy {
         upgradeTo(newImplementation);
         DocsRepo.Doc memory doc = _docs.upgradeDoc(newImplementation, address(this));
         emit UpgradeDoc(doc.head.codifyHead(), doc.body);
+    }
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     // ########################

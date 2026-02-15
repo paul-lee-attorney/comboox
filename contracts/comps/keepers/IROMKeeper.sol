@@ -19,11 +19,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/ros/IRegisterOfShares.sol";
 import "../books/cashier/ICashier.sol";
-
-import "../../lib/InterfacesHub.sol";
-import "../../lib/SharesRepo.sol";
 
 /// @title IROMKeeper
 /// @notice Interface for member/pay-in related actions.

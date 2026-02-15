@@ -19,9 +19,9 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/SharesRepo.sol";
-import "../../../lib/LockersRepo.sol";
-import "../../../lib/DealsRepo.sol";
+import "../../../lib/books/SharesRepo.sol";
+import "../../../lib/books/LockersRepo.sol";
+import "../../../lib/books/DealsRepo.sol";
 import "../../../lib/InterfacesHub.sol";
 
 import "../rom/IRegisterOfMembers.sol";
@@ -29,6 +29,14 @@ import "../roc/IShareholdersAgreement.sol";
 import "../roc/terms/ILockUp.sol";
 
 interface IRegisterOfShares {
+
+    //##################
+    //##    Error     ##
+    //##################
+
+    error ROS_WrongInput(bytes32 reason);
+
+    error ROS_WrongAccess(bytes32 reason);
 
     //##################
     //##    Event     ##

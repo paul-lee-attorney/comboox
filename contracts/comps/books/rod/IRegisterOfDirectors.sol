@@ -21,7 +21,7 @@ pragma solidity ^0.8.24;
 
 import "../../common/components/IMeetingMinutes.sol";
 
-import "../../../lib/OfficersRepo.sol";
+import "../../../lib/books/OfficersRepo.sol";
 import "../../../lib/InterfacesHub.sol";
 
 

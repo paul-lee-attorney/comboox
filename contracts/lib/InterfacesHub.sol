@@ -63,7 +63,7 @@ import "../comps/keepers/IRORKeeper.sol";
 
 import "../comps/common/access/IDraftControl.sol";
 import "../comps/common/access/IAccessControl.sol";
-import "../center/access/IOwnable.sol";
+import "../comps/common/access/IOwnable.sol";
 
 library InterfacesHub {
 
@@ -123,6 +123,12 @@ library InterfacesHub {
     /// @param gk GeneralKeeper address (non-zero).
     function getGK(address gk) public pure returns (IGeneralKeeper) {
         return IGeneralKeeper(gk);
+    }
+
+    /// @notice Cast address to GeneralKeeper interface.
+    /// @param gk GeneralKeeper address (non-zero).
+    function getRCByGK(address gk) public view returns (IRegCenter) {
+        return IRegCenter(IOwnable(gk).getRegCenter());
     }
 
     // ==== Books ====

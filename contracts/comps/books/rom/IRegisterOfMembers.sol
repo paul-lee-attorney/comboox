@@ -19,15 +19,24 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/Checkpoints.sol";
-import "../../../lib/MembersRepo.sol";
-import "../../../lib/SharesRepo.sol";
-import "../../../lib/TopChain.sol";
+import "../../../lib/books/Checkpoints.sol";
+import "../../../lib/books/MembersRepo.sol";
+import "../../../lib/books/SharesRepo.sol";
+import "../../../lib/books/TopChain.sol";
 import "../../../lib/InterfacesHub.sol";
 
 /// @title IRegisterOfMembers
 /// @notice Interface for member registry, votes, and grouping.
 interface IRegisterOfMembers {
+    
+    //##################
+    //##    Error     ##
+    //##################
+
+    error ROM_WrongInput(bytes32 reason);
+    
+    error ROM_WrongAccess(bytes32 reason);
+
     //##################
     //##    Event     ##
     //##################

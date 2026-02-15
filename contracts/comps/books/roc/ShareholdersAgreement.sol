@@ -41,10 +41,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     /// @dev Reverts if the term title does not exist.
     modifier titleExist(uint256 title) {
-        require(
-            hasTitle(title),
-            "SHA.mf.TE: title not exist"
-        );
+        if (!hasTitle(title)) 
+            revert SHA_WrongInput(bytes32("SHA_TitleNotExist"));
         _;
     }
 
@@ -58,12 +56,12 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     {
         address gc = msg.sender;
 
-        DocsRepo.Doc memory doc = rc.getRC().cloneDoc(
+        DocsRepo.Doc memory doc = _rc.getRC().cloneDoc(
             typeOfDoc,
             version
         );
 
-        IAccessControl(doc.body).initKeepers(address(this), gk);
+        IAccessControl(doc.body).initKeepers(address(this), _gk);
 
         IDraftControl(doc.body).setRoleAdmin(
             keccak256(bytes("Attorneys")), 

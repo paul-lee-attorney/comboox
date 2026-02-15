@@ -23,9 +23,7 @@ import "../../comps/common/access/IAccessControl.sol";
 
 interface ICreateNewComp {
 
-    error CNC_ZeroDK();
-
-    error CNC_InvalidTypeOfEntity(uint typeOfEntity);
+    event UpdateRC(address indexed newRC, address indexed updater);
 
     event UpdateBank(address indexed bank, address indexed owner);
 
@@ -37,11 +35,9 @@ interface ICreateNewComp {
     
     event UpdateDocs4Book(uint indexed titleOfBook, uint indexed typeOfDoc);
 
+    function updateRC(address _rc) external;
+
     function updateBank(address _bank) external;
-
-    // function updateDocs4GK(uint typeOfEntity, uint typeOfDoc) external;
-
-    // function getSeqOfDoc4GK(uint typeOfEntity) external view returns(uint);
 
     function updateDocs4FundKeeper(uint titleOfKeeper, uint typeOfDoc) external;
     

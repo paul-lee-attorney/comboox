@@ -19,9 +19,9 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/ArrayUtils.sol";
+import "../../../lib/utils/ArrayUtils.sol";
 import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
-import "../../../lib/SigsRepo.sol";
+import "../../../lib/books/SigsRepo.sol";
 
 /// @title ISigPage
 /// @notice Interface for managing signature pages and signing status.

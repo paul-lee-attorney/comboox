@@ -23,7 +23,7 @@ pragma solidity ^0.8.24;
 /// @notice User registry interface for platform ownership, keeper control, and user key management.
 /// @dev Exposes read/write operations for user registration, platform rules, and royalty settings.
 
-import "../../lib/UsersRepo.sol";
+import "../../lib/books/UsersRepo.sol";
 
 interface IBookOfUsers {
 

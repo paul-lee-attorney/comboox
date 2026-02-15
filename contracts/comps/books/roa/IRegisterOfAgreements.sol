@@ -22,14 +22,20 @@ pragma solidity ^0.8.24;
 import "../../common/components/IFilesFolder.sol";
 import "./IInvestmentAgreement.sol";
 
-import "../../../lib/DTClaims.sol";
-import "../../../lib/FRClaims.sol";
-import "../../../lib/TopChain.sol";
+import "../../../lib/books/DTClaims.sol";
+import "../../../lib/books/FRClaims.sol";
+import "../../../lib/books/TopChain.sol";
 import "../../../lib/InterfacesHub.sol";
 
 /// @title IRegisterOfAgreements
 /// @notice Interface for claims handling and IA result mocking.
 interface IRegisterOfAgreements is IFilesFolder {
+
+    //#################
+    //##    Error    ##
+    //#################
+
+    error ROA_WrongState(bytes32 reason);
 
     //#################
     //##    Event    ##

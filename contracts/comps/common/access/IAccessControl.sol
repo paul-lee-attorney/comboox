@@ -25,6 +25,14 @@ pragma solidity ^0.8.24;
 interface IAccessControl {
 
     // ##################
+    // ##   Error      ##
+    // ##################
+
+    error AC_WrongAccess(bytes32 reason);
+
+    error AC_WrongState(bytes32 reason);
+
+    // ##################
     // ##   Event      ##
     // ##################
 
@@ -60,8 +68,7 @@ interface IAccessControl {
     function upgradeDocTo(address newImplementation) external;
 
     // ==== Keeper Control ====
-
-
+    
     /// @notice Set direct keeper address.
     /// @param keeper New direct keeper address.
     function setDirectKeeper(address keeper) external;
@@ -69,4 +76,13 @@ interface IAccessControl {
     /// @notice Reclaim keeper control from a subordinate contract.
     /// @param target Target contract address.
     function takeBackKeys(address target) external;
+
+    /// @notice Get current direct keeper address.
+    /// @return Direct keeper address.
+    function getDK() external view returns (address);
+
+    /// @notice Get current general keeper address.
+    /// @return General keeper address.
+    function getGK() external view returns (address);
+
 }

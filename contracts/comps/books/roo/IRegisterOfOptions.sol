@@ -18,8 +18,8 @@
  * */
 
 import "../roc/terms/IOptions.sol";
-import "../../../lib/OptionsRepo.sol";
-import "../../../lib/SwapsRepo.sol";
+import "../../../lib/books/OptionsRepo.sol";
+import "../../../lib/books/SwapsRepo.sol";
 import "../../../lib/InterfacesHub.sol";
 
 pragma solidity ^0.8.24;

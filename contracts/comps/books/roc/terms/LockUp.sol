@@ -29,7 +29,7 @@ contract LockUp is ILockUp, DraftControl {
     using InterfacesHub for address;
 
     // default expire date as “2105-09-19”
-    uint48 constant _REMOTE_FUTURE = 4282732800;
+    uint48 internal constant _REMOTE_FUTURE = 4282732800;
 
     // lockers[0].keyHolders: ssnList;
     // seqOfShare => Locker
@@ -51,12 +51,14 @@ contract LockUp is ILockUp, DraftControl {
     }
 
     function addKeyholder(uint256 seqOfShare, uint256 keyholder) external onlyAttorney {
-        require(seqOfShare != 0, "LU.addKeyholder: zero seqOfShare");
+        if(seqOfShare == 0) 
+            revert LU_ZeroValue(bytes32("LU_ZeroSeqOfShare"));
         _lockers[seqOfShare].keyHolders.add(keyholder);
     }
 
     function removeKeyholder(uint256 seqOfShare, uint256 keyholder) external onlyAttorney {
-        require(seqOfShare != 0, "LU.removeKeyholder: zero seqOfShare");
+        if(seqOfShare == 0) 
+            revert LU_ZeroValue(bytes32("LU_ZeroSeqOfShare"));
         _lockers[seqOfShare].keyHolders.remove(keyholder);
     }
 
@@ -65,7 +67,9 @@ contract LockUp is ILockUp, DraftControl {
     // ################
 
     function isLocked(uint256 seqOfShare) public view returns (bool) {
-        return _lockers[0].keyHolders.contains(seqOfShare);
+        if(seqOfShare == 0) 
+            revert LU_ZeroValue(bytes32("LU_ZeroSeqOfShare"));
+        return _lockers[seqOfShare].dueDate > block.timestamp;
     }
 
     function getLocker(uint256 seqOfShare)
@@ -117,11 +121,11 @@ contract LockUp is ILockUp, DraftControl {
 
     function isExempted(address ia, DealsRepo.Deal memory deal) external view returns (bool) {
         
-        uint seqOfMotion = gk.getROA().getHeadOfFile(ia).seqOfMotion;
+        uint seqOfMotion = _gk.getROA().getHeadOfFile(ia).seqOfMotion;
                
         uint256[] memory parties = ISigPage(ia).getParties();
 
-        BallotsBox.Case memory consentCase = gk.getGMM().getCaseOfAttitude(seqOfMotion, 1);
+        BallotsBox.Case memory consentCase = _gk.getGMM().getCaseOfAttitude(seqOfMotion, 1);
 
         uint256[] memory supporters = 
             consentCase.voters.combine(consentCase.principals).merge(parties);

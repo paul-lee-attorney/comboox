@@ -20,12 +20,14 @@
 pragma solidity ^0.8.24;
 
 import "./IBookOfUsers.sol";
-import "../access/Ownable.sol";
+// import "../access/Ownable.sol";
+import "../../openzeppelin/proxy/utils/Initializable.sol";
+import "../../openzeppelin/proxy/utils/UUPSUpgradeable.sol";
 
-contract BookOfUsers is IBookOfUsers, Ownable {
+contract BookOfUsers is IBookOfUsers, Initializable, UUPSUpgradeable {
     using UsersRepo for UsersRepo.Repo;
     using UsersRepo for uint256;
-    
+
     UsersRepo.Repo private _users;
 
     // ==== UUPSUpgradable ====
@@ -46,7 +48,7 @@ contract BookOfUsers is IBookOfUsers, Ownable {
     // ##    Modifiers    ##
     // #####################
 
-    modifier onlyOwner() override {
+    modifier onlyOwner() {
         require(msg.sender == _users.getOwner(),
             "BOU: not owner");
         _;

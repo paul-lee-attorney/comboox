@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../../../lib/RolesRepo.sol";
+import "../../../lib/utils/RolesRepo.sol";
 
 /// @title IDraftControl
 /// @notice Draft-stage access control and finalization interface.

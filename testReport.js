@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -46,25 +46,27 @@ const runScript = (command, args) => {
 
 (async () => {
   try {
-    await runScript('npx', ['hardhat', 'run', './scripts/deployMasterBase.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/01_regUsers.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/02_createComp.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/03_configComBoox.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/04_signSHA.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/05_electOfficers.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/06_approveInvestors.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/07_motions.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/08_capitalIncrease.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/09_externalTransfer.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/10_internalTransfer.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/11_antiDilution.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/12_alongs.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/13_firstRefusal.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/14_pledge.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/15_options.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/17_listing.js', '--network', 'localhost']);
-    await runScript('npx', ['hardhat', 'run', './scripts/testing/18_deposits.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/deployLibraries.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/deployContracts.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/createNewComp.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/01_regUsers.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/02_createComp.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/03_configComBoox.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/04_signSHA.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/05_electOfficers.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/06_approveInvestors.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/07_motions.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/08_capitalIncrease.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/09_externalTransfer.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/10_internalTransfer.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/11_antiDilution.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/12_alongs.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/13_firstRefusal.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/14_pledge.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/15_options.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/17_listing.js', '--network', 'localhost']);
+    // await runScript('npx', ['hardhat', 'run', './scripts/testing/18_deposits.js', '--network', 'localhost']);
 
     console.log('All tests are passed successfully !\n');
   } catch (err) {
