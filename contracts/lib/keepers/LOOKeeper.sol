@@ -23,7 +23,7 @@ import "../books/RulesParser.sol";
 import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 
-library LOOKeeper {
+contract LOOKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;

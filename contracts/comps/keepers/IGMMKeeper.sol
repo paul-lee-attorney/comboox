@@ -91,7 +91,7 @@ interface IGMMKeeper {
     /// @param expireDate Motion expiry timestamp.
     /// @param seqOfVR Voting rule sequence.
     /// @param executor Executor user number.
-    function proposeToTransferFund(
+    function proposeToTransferFundWithGM(
         address to,
         bool isCBP,
         uint amt,
@@ -134,4 +134,25 @@ interface IGMMKeeper {
         uint attitude,
         bytes32 sigHash
     ) external;
+
+    /// @notice Count votes for a motion.
+    /// @param seqOfMotion Motion sequence.
+    function voteCountingOfGM(uint256 seqOfMotion) external;
+
+    /// @notice Execute an action motion.
+    /// @param typeOfAction Action type.
+    /// @param targets Target contract list.
+    /// @param values ETH values list.
+    /// @param params Encoded params list.
+    /// @param desHash Description hash.
+    /// @param seqOfMotion Motion sequence.   
+    function execActionOfGM(
+        uint typeOfAction,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint256 seqOfMotion
+    ) external;
+
 }

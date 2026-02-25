@@ -79,7 +79,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function createMotionToRemoveOfficer(
         uint256 seqOfPos,
         uint seqOfVR,
-        uint nominator    
+        uint nominator
     ) external onlyDK returns(uint64) {
 
         return _addMotion(

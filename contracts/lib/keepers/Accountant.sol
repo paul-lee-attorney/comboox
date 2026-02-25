@@ -23,7 +23,7 @@ import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 import "../books/WaterfallsRepo.sol";
 
-library Accountant {
+contract Accountant {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 

@@ -87,14 +87,16 @@ interface IShareholdersAgreement is ISigPage {
 */
 
     struct TermsRepo {
-        // typeOfDoc => body
+        // titleOfTerm => body
         mapping(uint256 => address) terms;
+        // Tracking existing term titles for enumeration.
         EnumerableSet.UintSet seqList;
     }
 
     struct RulesRepo {
         // seq => rule
         mapping(uint256 => bytes32) rules;
+        // Tracking existing rule sequences for enumeration.
         EnumerableSet.UintSet seqList;
     }
 
@@ -110,22 +112,22 @@ interface IShareholdersAgreement is ISigPage {
     //##################
 
     /**
-     * @dev Create a clone contract as per the template type number (`typeOfDoc`) 
+     * @dev Create a clone contract as per the template type number (`titleOfTerm`) 
      * and its version number (`version`).
-     * Note `typeOfDoc` and `version` shall be bigger than zero.
+     * Note `titleOfTerm` and `version` shall be bigger than zero.
      */
     /// @notice Create a term clone by type and version.
-    /// @param typeOfDoc Term type identifier (> 0).
+    /// @param titleOfTerm Term type identifier (> 0).
     /// @param version Template version (> 0).
-    function createTerm(uint typeOfDoc, uint version) external;
+    function createTerm(uint titleOfTerm, uint version) external;
 
     /**
      * @dev Remove tracking of a clone contract from mapping as per its template 
-     * type number (`typeOfDoc`). 
+     * type number (`titleOfTerm`). 
      */
     /// @notice Remove a term by type.
-    /// @param typeOfDoc Term type identifier.
-    function removeTerm(uint typeOfDoc) external;
+    /// @param titleOfTerm Term type identifier.
+    function removeTerm(uint titleOfTerm) external;
 
     /**
      * @dev Add a pre-defined `rule` into the Rules Mapping (seqNumber => rule)
@@ -167,13 +169,13 @@ interface IShareholdersAgreement is ISigPage {
     // ==== Terms ====
  
     /**
-     * @dev Returns whether a specific Term numbered as `typeOfDoc` exist  
+     * @dev Returns whether a specific Term numbered as `titleOfTerm` exist  
      * in the current Shareholders Agreemnt.
      */
     /// @notice Check if a term exists.
-    /// @param typeOfDoc Term type identifier.
+    /// @param titleOfTerm Term type identifier.
     /// @return True if exists.
-    function hasTitle(uint256 typeOfDoc) external view returns (bool);
+    function hasTitle(uint256 titleOfTerm) external view returns (bool);
 
     /**
      * @dev Returns total quantities of Terms in the current 
@@ -193,12 +195,12 @@ interface IShareholdersAgreement is ISigPage {
 
     /**
      * @dev Returns the contract address of the specific Term  
-     * numbered as `typeOfDoc` from the Terms Mapping of the Shareholders Agreemnt.
+     * numbered as `titleOfTerm` from the Terms Mapping of the Shareholders Agreemnt.
      */
     /// @notice Get term contract address.
-    /// @param typeOfDoc Term type identifier.
+    /// @param titleOfTerm Term type identifier.
     /// @return Term contract address.
-    function getTerm(uint256 typeOfDoc) external view returns (address);
+    function getTerm(uint256 titleOfTerm) external view returns (address);
 
     // ==== Rules ====
 

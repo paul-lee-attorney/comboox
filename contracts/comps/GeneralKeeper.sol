@@ -24,20 +24,23 @@ import "./common/access/AccessControl.sol";
 import "../openzeppelin/utils/Address.sol";
 import "../lib/books/UsersRepo.sol";
 import "../lib/InterfacesHub.sol";
-import "../lib/keepers/KeepersRouter.sol";
+
 
 contract GeneralKeeper is IGeneralKeeper, AccessControl {
     using Address for address;
     using InterfacesHub for address;
-    using KeepersRouter for KeepersRouter.Repo;
 
     /// @notice Company registry info stored in this keeper.
     CompInfo internal _info;
 
     /// @notice Book registry (title => book address).
     mapping(uint256 => address) private _books;
-    /// @notice Keeper registry.
-    KeepersRouter.Repo private _keepers;
+    /// @notice Keeper registry (title => keeper address).
+    mapping(uint256 => address) private _keepers;
+    /// @notice Reverse lookup for keeper registry (keeper address => title).
+    mapping(address => uint) private _titleOfKeeper;
+    /// @notice Reference to RegCenter for user registration and queries.
+    address private _router;
 
     // ==== UUPSUpgradable ====
 
@@ -77,35 +80,75 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     // ---- Keepers ----
 
     function regKeeper(uint256 title, address keeper) external onlyDK {
-        _keepers.regKeeper(title, keeper);
+        if (title == 0) {
+            revert GK_WrongInput(bytes32("GK_ZeroTitle"));
+        }
+        if (_titleOfKeeper[keeper] != 0) {
+            revert GK_WrongInput(bytes32("GK_KeeperAlreadyReg"));
+        }
+        _keepers[title] = keeper;
+        _titleOfKeeper[keeper] = title;
         emit RegKeeper(title, keeper, msg.sender);
     }
 
-    function regSigToTitle(bytes4 sig, uint256 title) external onlyDK {
-        _keepers.regSigToTitle(sig, title);
-        emit RegSigToTitle(sig, title, msg.sender);
-    }
-
     function isKeeper(address target) external view returns (bool) {   
-        return _keepers.isKeeper(target);
+        return _titleOfKeeper[target] != 0;
     }
 
-    function getKeeper(uint256 title) external view returns (address) {
-        return _keepers.getKeeper(title);
+    function getKeeper(uint256 title) public view returns (address) {
+        if (title == 0) {
+            revert GK_WrongInput(bytes32("GK_ZeroTitle"));
+        }
+        if (_keepers[title] == address(0)) {
+            revert GK_WrongInput(bytes32("GK_TitleNotReg"));
+        }
+        return _keepers[title];
     }
 
     function getTitleOfKeeper(address keeper) external view returns (uint) {
-        return _keepers.getTitleOfKeeper(keeper);
+        if (keeper == address(0)) {
+            revert GK_WrongInput(bytes32("GK_ZeroKeeper"));
+        }
+        if (_titleOfKeeper[keeper] == 0) {
+            revert GK_WrongInput(bytes32("GK_KeeperNotReg"));
+        }
+        return _titleOfKeeper[keeper];
+    }
+
+    // ---- Router ----
+
+    function setRouter(address router) external onlyDK {
+        if (router == address(0)) {
+            revert GK_WrongInput(bytes32("GK_ZeroRouter"));
+        }
+        _router = router;
+        emit SetRouter(router, msg.sender);
+    }
+
+    function getRouter() external view returns (address) {
+        if (_router == address(0)) {
+            revert GK_WrongInput(bytes32("GK_RouterNotSet"));
+        }
+        return _router;
     }
 
     // ---- Books ----
 
     function regBook(uint256 title, address book) external onlyDK {
+        if (title == 0) {
+            revert GK_WrongInput(bytes32("GK_ZeroTitle"));
+        }
         _books[title] = book;
         emit RegBook(title, book, msg.sender);
     } 
 
     function getBook(uint256 title) external view returns (address) {
+        if (title == 0) {
+            revert GK_WrongInput(bytes32("GK_ZeroTitle"));
+        }
+        if (_books[title] == address(0)) {
+            revert GK_WrongInput(bytes32("GK_BookNotReg"));
+        }
         return _books[title];
     }
 
@@ -115,8 +158,8 @@ contract GeneralKeeper is IGeneralKeeper, AccessControl {
     ///      this contract and `msg.sender` remains the original caller.
     ///      Reverts if the selector is not registered, and bubbles up revert data.
     fallback() external payable {
-        address keeper = _keepers.getKeeperBySig(msg.sig);
-        
+        uint title = _router.getRouter().getTitleBySelector(msg.sig);
+        address keeper = getKeeper(title);
         (bool success, ) = keeper.delegatecall(msg.data);
 
         if (success) {

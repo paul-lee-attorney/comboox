@@ -24,7 +24,7 @@ import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 
 
-library FundLOOKeeper {
+contract FundLOOKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;

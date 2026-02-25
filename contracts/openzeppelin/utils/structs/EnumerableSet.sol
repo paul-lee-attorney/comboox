@@ -2,7 +2,7 @@
 // OpenZeppelin Contracts (last updated v4.9.0) (utils/structs/EnumerableSet.sol)
 // This file was procedurally generated from scripts/generate/templates/EnumerableSet.js.
 
-/// @notice for saving bytes codes, some internal funcs are revised into public
+/// @notice for saving bytes codes, some private funcs are revised into public
 /// so as to be called by other libraries or contracts by using link.
 
 pragma solidity ^0.8.24;

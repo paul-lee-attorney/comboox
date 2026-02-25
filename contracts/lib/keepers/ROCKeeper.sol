@@ -25,7 +25,7 @@ import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 import "../books/OfficersRepo.sol";
 import "../books/DocsRepo.sol";
-library ROCKeeper {
+contract ROCKeeper {
     using RulesParser for bytes32;
     using DocsRepo for DocsRepo.Head;
     using ArrayUtils for uint[];

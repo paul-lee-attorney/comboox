@@ -24,7 +24,7 @@ import "../utils/RoyaltyCharge.sol";
 import "../books/RulesParser.sol";
 import "../books/DTClaims.sol";
 
-library SHAKeeper {
+contract SHAKeeper {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
     using RulesParser for bytes32;
@@ -256,7 +256,7 @@ library SHAKeeper {
     ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(
-            TYPE_OF_DOC, VERSION,88000
+            TYPE_OF_DOC, VERSION, 88000
         );
 
         IRegisterOfShares _ros = _gk.getROS();

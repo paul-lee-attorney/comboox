@@ -25,7 +25,7 @@ import "../books/RulesParser.sol";
 import "../InterfacesHub.sol";
 import "../books/OfficersRepo.sol";
 
-library FundROCKeeper {
+contract FundROCKeeper {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
     using InterfacesHub for address;

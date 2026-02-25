@@ -24,7 +24,7 @@ import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 import "../books/PledgesRepo.sol";
 
-library ROPKeeper {
+contract ROPKeeper {
     using PledgesRepo for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;

@@ -85,13 +85,12 @@ contract AccessControl is IAccessControl, Ownable {
 
     /// @dev Authorize UUPS upgrades. Caller must be GK or DK.
     function _authorizeUpgrade(address newImplementation) internal virtual override {
-        require(
-            msg.sender == _gk ||
-            msg.sender == _dk.addr,
-            "AC._authorizeUpgrade: NOT GK or DK"
-        );
-        require(_rc.getRC().tempExist(newImplementation),
-            "AC.authUpgrade: temp NOT exist");
+        if (msg.sender != _gk && msg.sender != _dk.addr) {
+            revert AC_WrongAccess(bytes32("AC_NotGKorDK"));
+        }
+        if (!_rc.getRC().tempExist(newImplementation)) {
+            revert AC_WrongState(bytes32("AC_TempNotExist"));
+        }
     }
 
     function upgradeDocTo(address newImplementation) external virtual {
@@ -106,7 +105,7 @@ contract AccessControl is IAccessControl, Ownable {
     /// @notice Restrict to direct keeper.
     modifier onlyDK {
         if (_dk.addr != msg.sender) {
-            revert AC_WrongAccess("AC_NotDK");
+            revert AC_WrongAccess(bytes32("AC_NotDK"));
         }
         _;
     }
@@ -114,15 +113,18 @@ contract AccessControl is IAccessControl, Ownable {
     /// @notice Restrict to general keeper.
     modifier onlyGK {
         if (_gk != msg.sender) {
-            revert AC_WrongAccess("AC_NotGK");
+            revert AC_WrongAccess(bytes32("AC_NotGK"));
         }
         _;
     }
 
     /// @notice Restrict to general keeper or direct keeper.
     modifier onlyKeeper virtual {
-        if (_gk != msg.sender && _dk.addr != msg.sender) {
-            revert AC_WrongAccess("AC_NotKeeper");
+        if (_gk != msg.sender && 
+            _dk.addr != msg.sender &&
+            !_gk.getGK().isKeeper(msg.sender)
+        ) {
+            revert AC_WrongAccess(bytes32("AC_NotKeeper"));
         }
         _;
     }
@@ -136,7 +138,7 @@ contract AccessControl is IAccessControl, Ownable {
     /// @param generalKeeper General keeper address.
     function _initKeepers(address directKeeper,address generalKeeper) internal {
         if (_dk.state != 0) {
-            revert AC_WrongState("AC_AlreadyInited");
+            revert AC_WrongState(bytes32("AC_AlreadyInited"));
         }
         _dk.addr = directKeeper;
         _gk = generalKeeper;

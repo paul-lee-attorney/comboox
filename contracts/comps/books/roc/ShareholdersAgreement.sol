@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4 
- *
  * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
@@ -35,6 +33,16 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     /// @notice Repository of voting and governance rules.
     RulesRepo private _rules;
 
+    function docTypeOfTerm(uint256 i) public pure returns (uint32) {
+        if (i == 0) return 0;               // ZeroPoint
+        else if (i == 1) return 0xe5707158; // uint32(uint(keccak256("AntiDilution")))
+        else if (i == 2) return 0x19f096ac; // uint32(uint(keccak256("LockUp")))
+        else if (i == 3) return 0x4511939f; // uint32(uint(keccak256("Alongs")))
+        else if (i == 4) return 0x4511939f; // uint32(uint(keccak256("Alongs")))
+        else if (i == 5) return 0x755d04a0; // uint32(uint(keccak256("Options")))
+        else revert SHA_WrongInput(bytes32("SHA_InvalidTitle"));
+    }
+
     //####################
     //##    modifier    ##
     //####################
@@ -50,14 +58,14 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     //##  Write I/O   ##
     //##################
 
-    function createTerm(uint typeOfDoc, uint version)
+    function createTerm(uint titleOfTerm, uint version)
         external
         onlyGC
     {
         address gc = msg.sender;
 
         DocsRepo.Doc memory doc = _rc.getRC().cloneDoc(
-            typeOfDoc,
+            docTypeOfTerm(titleOfTerm),
             version
         );
 
@@ -68,13 +76,13 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
             gc
         );
 
-        _terms.terms[typeOfDoc] = doc.body;
-        _terms.seqList.add(typeOfDoc);
+        _terms.terms[titleOfTerm] = doc.body;
+        _terms.seqList.add(titleOfTerm);
     }
 
-    function removeTerm(uint typeOfDoc) external onlyAttorney {
-        if (_terms.seqList.remove(typeOfDoc)) {
-            delete _terms.terms[typeOfDoc];
+    function removeTerm(uint titleOfTerm) external onlyAttorney {
+        if (_terms.seqList.remove(titleOfTerm)) {
+            delete _terms.terms[titleOfTerm];
         }
     }
 
@@ -86,8 +94,6 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     /// @dev Insert or overwrite a rule and track its sequence number.
     function _addRule(uint seqOfRule, bytes32 rule) private {
-        // uint seqOfRule = uint16(uint(rule) >> 240);
-
         _rules.rules[seqOfRule] = rule;
         _rules.seqList.add(seqOfRule);
     }
@@ -156,8 +162,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     // ==== Terms ====
 
-    function hasTitle(uint256 typeOfDoc) public view returns (bool) {
-        return _terms.seqList.contains(typeOfDoc);
+    function hasTitle(uint256 titleOfTerm) public view returns (bool) {
+        return _terms.seqList.contains(titleOfTerm);
     }
 
     function qtyOfTerms() external view returns (uint256) {
@@ -168,8 +174,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         return _terms.seqList.values();
     }
 
-    function getTerm(uint256 typeOfDoc) external view titleExist(typeOfDoc) returns (address) {
-        return _terms.terms[typeOfDoc];
+    function getTerm(uint256 titleOfTerm) external view titleExist(titleOfTerm) returns (address) {
+        return _terms.terms[titleOfTerm];
     }
 
     // ==== Rules ====

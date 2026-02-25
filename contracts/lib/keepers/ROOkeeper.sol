@@ -22,7 +22,7 @@ pragma solidity ^0.8.24;
 import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 
-library ROOKeeper {
+contract ROOKeeper {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 

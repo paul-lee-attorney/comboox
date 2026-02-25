@@ -21,7 +21,7 @@ pragma solidity ^0.8.24;
 
 import "../utils/RoyaltyCharge.sol";
 
-library RODKeeper {    
+contract RODKeeper {    
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 

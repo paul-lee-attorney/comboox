@@ -22,7 +22,7 @@ pragma solidity ^0.8.24;
 import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 
-library ROMKeeper {
+contract ROMKeeper {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 
@@ -34,15 +34,15 @@ library ROMKeeper {
     // ##   Error & Event  ##
     // ######################
 
-    error ROMK_NotDK(bytes32 reason);
+    error ROMK_WrongAccess(bytes32 reason);
 
-    error ROMK_NotShareholder(bytes32 reason);
+    error ROMK_WrongParty(bytes32 reason);
 
     event PayInCapital(uint seqOfShare, uint paid, uint amt);
 
     modifier onlyDK() {
         if(msg.sender != IAccessControl(address(this)).getDK())
-            revert ROMK_NotDK(bytes32("ROMK_NotDK"));
+            revert ROMK_WrongAccess(bytes32("ROMK_NotDK"));
         _;
     }
 
@@ -92,7 +92,7 @@ library ROMKeeper {
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
         
         if(share.head.shareholder != caller)
-            revert ROMK_NotShareholder(bytes32("ROMK_NotShareholder"));
+            revert ROMK_WrongParty(bytes32("ROMK_NotShareholder"));
 
         auth.from = msg.sender;
         auth.value = share.head.priceOfPaid * paid / 100;

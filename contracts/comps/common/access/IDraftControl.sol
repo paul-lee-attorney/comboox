@@ -30,17 +30,11 @@ interface IDraftControl {
     // ##  Error & Event  ##
     // #####################
 
-    /// @notice Emitted when a non-GC attempts a GC-only action.
-    error DC_NotGC();
+    /// @notice Emitted when a wrong party attempts a limited action.
+    error DC_WrongParty(bytes32 reason);
 
-    /// @notice Emitted when a non-attorney attempts an attorney-only action.
-    error DC_NotAttorney();
-
-    /// @notice Emitted when a non-attorney and non-GK attempts an attorney or GK-only action.
-    error DC_NotAttorneyOrGK();
-
-    /// @notice Emitted when an attempt to lock contents is made in the wrong state.
-    error DC_LockContents_WrongState();
+    /// @notice Emitted when an action is attempted in an invalid state.
+    error DC_WrongState(bytes32 reason);
 
     /// @notice Emitted when a role admin is updated.
     /// @param role Role identifier.

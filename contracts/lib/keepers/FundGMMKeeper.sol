@@ -25,7 +25,7 @@ import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 import "../../openzeppelin/utils/Address.sol";
 
-library FundGMMKeeper {
+contract FundGMMKeeper {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
     using InterfacesHub for address;

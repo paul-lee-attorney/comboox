@@ -54,7 +54,7 @@ interface IGeneralKeeper {
         GeneralFund
     }
 
-    // error GK_FallbackFuncNotReg(bytes4 sig);
+    error GK_WrongInput(bytes32 reason);
 
     // ###############
     // ##   Event   ##
@@ -66,22 +66,11 @@ interface IGeneralKeeper {
     /// @param dk Direct keeper address.
     event RegKeeper(uint indexed title, address indexed keeper, address indexed dk);
 
-    /// @notice Emitted when a keeper's function selector is registered.
-    /// @param sig Function selector (bytes4).
-    /// @param title Keeper title.
-    /// @param dk Direct keeper address.
-    event RegSigToTitle(bytes4 indexed sig, uint indexed title, address indexed dk);
-
     /// @notice Emitted when a book is registered.
     /// @param title Book title.
     /// @param book Book address.
     /// @param dk Direct keeper address.
     event RegBook(uint indexed title, address indexed book, address indexed dk);
-
-    /// @notice Emitted when an action batch is executed.
-    /// @param actionHash Hash of the action batch.
-    event ExecAction(bytes32 indexed actionHash);
-
 
     /// @notice Emitted when a call is forwarded to a keeper or book.
     /// @param target Target contract address.
@@ -93,6 +82,11 @@ interface IGeneralKeeper {
     /// @param sender ETH sender.
     /// @param amount ETH amount.
     event ReceivedEth(address indexed sender, uint amount);
+
+    /// @notice Emitted when the keepers router is set.
+    /// @param router Router address.
+    /// @param dk Direct keeper address.
+    event SetRouter(address indexed router, address indexed dk);
 
     // ######################
     // ##   Configuration  ##
@@ -114,8 +108,6 @@ interface IGeneralKeeper {
         string memory _name
     ) external;
 
-    // function createCorpSeal() external;
-
     /// @notice Get company information.
     /// @return Company info record; fields are zeroed if unset.
     function getCompInfo() external view returns(CompInfo memory);
@@ -131,11 +123,6 @@ interface IGeneralKeeper {
     /// @param keeper Keeper address (non-zero).
     function regKeeper(uint256 title, address keeper) external;
 
-    /// @notice Register a function selector to a keeper title.
-    /// @param sig Function selector (bytes4).
-    /// @param title Keeper title (uint, expected > 0).
-    function regSigToTitle(bytes4 sig,uint256 title) external;
-
     /// @notice Check if an address is a registered keeper.
     /// @param caller Address to check.
     /// @return flag True if registered; false otherwise.
@@ -150,6 +137,16 @@ interface IGeneralKeeper {
     /// @param keeper Keeper address.
     /// @return title Keeper title (0 if not registered).
     function getTitleOfKeeper(address keeper) external view returns (uint);
+
+    // ---- Router ----
+
+    /// @notice Set the address of the keepers router.
+    /// @param router Keepers router address (non-zero).
+    function setRouter(address router) external;
+
+    /// @notice Get the address of the keepers router.
+    /// @return router Keepers router address (zero if not set).
+    function getRouter() external view returns (address router);
 
     // ---- Books ----
 

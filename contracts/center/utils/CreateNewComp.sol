@@ -19,8 +19,6 @@
 
 pragma solidity ^0.8.24;
 
-// import "../access/Ownable.sol";
-
 import "../../openzeppelin/proxy/utils/Initializable.sol";
 import "../../openzeppelin/proxy/utils/UUPSUpgradeable.sol";
 
@@ -236,6 +234,9 @@ contract CreateNewComp is ICreateNewComp, Initializable, UUPSUpgradeable {
         IAccessControl(gk).initKeepers(address(this), gk);
         gk.getGK().createCorpSeal(uint8(typeOfEntity));
 
+        address router = _getLatestRouter();
+        gk.getGK().setRouter(router);
+
         _deployKeepers(typeOfEntity, gk);
 
         _deployBooks(typeOfEntity, dk, gk);
@@ -249,6 +250,13 @@ contract CreateNewComp is ICreateNewComp, Initializable, UUPSUpgradeable {
     {
         uint256 latest = rc.getRC().counterOfVersions(typeOfDoc);
         body = rc.getRC().proxyDoc(typeOfDoc, latest).body;
+    }
+
+    function _getLatestRouter() private view returns (address) {
+        // uint32(uint(keccak256("KeepersRouter")))
+        uint typeOfDoc = 0xf0ff1907;
+        uint version = rc.getRC().counterOfVersions(typeOfDoc);
+        return rc.getRC().getTemp(typeOfDoc,version).body;
     }
 
     function _deployKeepers(uint typeOfEntity, address gk) private {

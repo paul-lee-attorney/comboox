@@ -24,7 +24,7 @@ import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 import "../books/DocsRepo.sol";
 
-library ROAKeeper {
+contract ROAKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;
@@ -454,7 +454,6 @@ library ROAKeeper {
     ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
-        uint payee = to.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
         ICashier _cashier = _gk.getCashier();
 
@@ -465,12 +464,13 @@ library ROAKeeper {
         auth.from = msg.sender;
 
         if (deal.head.seqOfShare > 0) {
-            if (deal.head.seller != payee)
+            if (deal.head.seller != 
+                to.msgSender(TYPE_OF_DOC, VERSION, 58000))
                 revert ROAK_WrongParty(bytes32("ROAK_PayeeNotSeller"));
 
             // remark: PayOffShareTransferDeal
             _cashier.forwardUsd(
-                auth, to, 
+                auth, to,
                 bytes32(0x5061794f666653686172655472616e736665724465616c000000000000000000)
             );
         } else {

@@ -25,7 +25,7 @@ import "../utils/RoyaltyCharge.sol";
 import "../utils/ArrayUtils.sol";
 import "../../openzeppelin/utils/Address.sol";
 
-library GMMKeeper {
+contract GMMKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;
@@ -155,7 +155,7 @@ library GMMKeeper {
         _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
 
-    function proposeToTransferFund(
+    function proposeToTransferFundWithGM(
         address to,
         bool isCBP,
         uint amt,

@@ -22,6 +22,7 @@ pragma solidity ^0.8.24;
 import "../center/IRegCenter.sol";
 
 import "../comps/IGeneralKeeper.sol";
+import "../comps/keepers/IKeepersRouter.sol";
 
 import "../comps/books/roa/IRegisterOfAgreements.sol";
 import "../comps/books/roc/IRegisterOfConstitution.sol";
@@ -117,6 +118,12 @@ library InterfacesHub {
         return IRegCenter(rc);
     }
 
+    /// @notice Cast address to GeneralKeeper interface.
+    /// @param gk GeneralKeeper address (non-zero).
+    function getRCByGK(address gk) public view returns (IRegCenter) {
+        return IRegCenter(IOwnable(gk).getRegCenter());
+    }
+
     // ==== GeneralKeeper ====
 
     /// @notice Cast address to GeneralKeeper interface.
@@ -125,10 +132,8 @@ library InterfacesHub {
         return IGeneralKeeper(gk);
     }
 
-    /// @notice Cast address to GeneralKeeper interface.
-    /// @param gk GeneralKeeper address (non-zero).
-    function getRCByGK(address gk) public view returns (IRegCenter) {
-        return IRegCenter(IOwnable(gk).getRegCenter());
+    function getRouter(address router) public pure returns (IKeepersRouter) {
+        return IKeepersRouter(router);
     }
 
     // ==== Books ====

@@ -24,7 +24,7 @@ import "../../openzeppelin/utils/Address.sol";
 import "../InterfacesHub.sol";
 import "../utils/RoyaltyCharge.sol";
 
-library FundROIKeeper {
+contract FundROIKeeper {
     using RulesParser for bytes32;
     using Address for address;
     using InterfacesHub for address;

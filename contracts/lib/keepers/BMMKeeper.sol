@@ -29,7 +29,7 @@ import "../books/OfficersRepo.sol";
 
 // import "./LibOfBMMK.sol";
 
-library BMMKeeper {
+contract BMMKeeper {
     using RulesParser for bytes32;
     using Address for address;
     using ArrayUtils for uint[];
@@ -118,7 +118,7 @@ library BMMKeeper {
         );
     }
 
-    function proposeToTransferFund(
+    function proposeToTransferFundWithBoard(
         address to,
         bool isCBP,
         uint amt,

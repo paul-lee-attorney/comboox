@@ -58,7 +58,7 @@ interface IBMMKeeper {
     /// @param expireDate Motion expiry timestamp.
     /// @param seqOfVR Voting rule sequence.
     /// @param executor Executor user number.
-    function proposeToTransferFund(
+    function proposeToTransferFundWithBoard(
         address to,
         bool isCBP,
         uint amt,
