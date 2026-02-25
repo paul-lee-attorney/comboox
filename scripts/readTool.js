@@ -13,7 +13,20 @@ export async function readTool(targetName, targetAddr) {
 
   const art = await artifacts.readArtifact(targetName);
   const target = await ethers.getContractAt(art.abi, targetAddr);
-  console.log("Abtained ", targetName, "at address:", await target.getAddress(), "\n");
+  console.log("Abtained ", targetName, "at address:", target.target, "\n");
 
   return target;
 };
+
+export async function getContractWithSigner(targetName, targetAddr, signer) {
+
+  const { ethers } = await network.connect();
+
+  const art = await artifacts.readArtifact(targetName);
+  const target = new ethers.Contract(targetAddr, art.abi, signer);
+  console.log("Abtained ", targetName, "at address:", target.target, "\n");
+
+  return target;
+};
+
+

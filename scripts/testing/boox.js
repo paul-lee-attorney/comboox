@@ -58,18 +58,16 @@ const getCNC = async () => {
 // }
 
 const getFT = async () => {
-  return await readTool("UsdFuelTank", Temps.UsdFuelTank);
-}
-
-const getBR = async () => {
-  return await readTool("BooksRepo", Temps.BooksRepo);
+  const rc = await getRC();
+  const addrFT = (await rc.getDoc(getTypeByName("UsdFuelTank"), 1, 1))[1];
+  return await readTool("UsdFuelTank", addrFT);
 }
 
 // ==== Boox ====
 
 const getGK = async (addr) => {
   if (!addr) addr = Boox.GK;
-  return await readTool("CompKeeper", addr);
+  return await readTool("GeneralKeeper", addr);
 }
 
 const getFK = async (addr) => {

@@ -93,10 +93,11 @@ import { getGK, getROS, getROO, getRC, getROM, getCashier } from "./boox";
 import { increaseTime } from "./utils";
 import { getLatestShare, printShares } from "./ros";
 import { parseOption, parseOracle, parseSwap } from "./roo";
-import { royaltyTest, cbpOfUsers } from "./rc";
-import { depositOfUsers } from "./gk";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
+import { parseCompInfo } from "./gk";
 import { transferCBP } from "./saveTool";
 import { generateAuth } from "./sigTools";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -110,7 +111,11 @@ async function main() {
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getGK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const roo = await getROO();
     const ros = await getROS();
     const rom = await getROM();
@@ -121,10 +126,16 @@ async function main() {
     
     // ==== Update Oracles ====
 
+    gk = await readTool("ROOKeeper", gk.target);
+
     // await expect(gk.updateOracle(1, 5600 * 10 ** 4, 550 * 10 ** 4, 0)).to.be.revertedWith("AC.onlyDK: not");
     console.log(" \u2714 Passed Access Control Test for gk.updateOracle(). \n");
 
     let tx = await gk.connect(signers[1]).updateOracle(1, 4500 * 10 ** 4, 550 * 10 ** 4, 0);
+
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 18n, "gk.updateOracle().");
+
+    transferCBP(users[1], userComp, 18n);
 
     await expect(tx).to.emit(roo, "UpdateOracle").withArgs(1, 4500 * 10 ** 4, 550 * 10 ** 4, 0);
     console.log(" \u2714 Passed Event Test for roo.UpdateOracle(). \n");
@@ -146,13 +157,17 @@ async function main() {
     // await expect(gk.connect(signers[3]).execOption(1)).to.be.revertedWith("OR.EO: conds not satisfied");
     console.log(" \u2714 Passed Condition Check Test for gk.execOption(). \n");  
 
-    await gk.connect(signers[1]).updateOracle(1, 5500 * 10 ** 4, 550 * 10 ** 4, 0);
+    tx = await gk.connect(signers[1]).updateOracle(1, 5500 * 10 ** 4, 550 * 10 ** 4, 0);
+
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 18n, "gk.updateOracle().");
+
+    transferCBP(users[1], userComp, 18n);
 
     tx = await gk.connect(signers[3]).execOption(1);
 
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 18n, "gk.execOption().");
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 18n, "gk.execOption().");
 
-    transferCBP("3", "8", 18n);
+    transferCBP(users[3], userComp, 18n);
 
     await expect(tx).to.emit(roo, "ExecOpt").withArgs(1);
     console.log(" \u2714 Passed Event Test for roo.ExecOpt(). \n");
@@ -165,22 +180,28 @@ async function main() {
 
     // ==== Update Oracles & Exec Option 2 ====
 
-    await gk.connect(signers[1]).updateOracle(2, 800 * 10 ** 4, 120 * 10 ** 4, 0);
+    tx = await gk.connect(signers[1]).updateOracle(2, 800 * 10 ** 4, 120 * 10 ** 4, 0);
+
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 18n, "gk.updateOracle().");
+
+    transferCBP(users[1], userComp, 18n);
 
     await gk.connect(signers[1]).execOption(2);
 
-    transferCBP("2", "8", 18n);
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 36n, "gk.execOption().");
+
+    transferCBP(users[1], userComp, 18n);
 
     // ==== Create Swap ====
     
     // await expect(gk.connect(signers[1]).createSwap(1, 3, 500 * 10 ** 4, 2)).to.be.revertedWith("OR.mf.onlyRightholder: not");
-    console.log(" \u2714 Passed Access Control Test for gk.createSwap(). \n");  
+    console.log(" \u2714 Passed Access Control Test for gk.createSwap(). \n");
 
     tx = await gk.connect(signers[3]).createSwap(1, 3, 500 * 10 ** 4, 2);
 
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 36n, "gk.createSwap().");
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 36n, "gk.createSwap().");
 
-    transferCBP("3", "8", 36n);
+    transferCBP(users[3], userComp, 36n);
 
     await expect(tx).to.emit(roo, "RegSwap");
     console.log(" \u2714 Passed Event Test for roo.RegSwap(). \n");
@@ -200,9 +221,11 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for gk.execOption(). PutOption \n");
   
-    await gk.connect(signers[1]).createSwap(2, 3, 500 * 10 ** 4, 2);
+    tx = await gk.connect(signers[1]).createSwap(2, 3, 500 * 10 ** 4, 2);
 
-    transferCBP("2", "8", 36n);
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 36n, "gk.createSwap().");
+
+    transferCBP(users[1], userComp, 36n);
 
     swap = parseSwap(await roo.getSwap(2, 1));
 
@@ -228,16 +251,15 @@ async function main() {
     // tx = await gk.connect(signers[1]).payOffSwap(2, 1, {value:value + 100n});
 
     let auth = await generateAuth(signers[1],await cashier.getAddress(), 550);
-    tx = await gk.connect(signers[1]).payOffSwap(auth, 2, 1,await signers[3].getAddress());
 
-    // addEthToUser(value, "3");
-    // addEthToUser(100n, "2");
+    tx = await gk.connect(signers[1]).payOffSwap(auth, 2, 1,signers[3].address);
 
-    await royaltyTest(await rc.getAddress(), await signers[1].getAddress(), await gk.getAddress(), tx, 40n, "gk.payOffSwap().");
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 18n, "gk.payOffSwap().");
+    await royaltyTest(rc.target, await signers[1].getAddress(), gk.target, tx, 40n, "gk.payOffSwap().");
 
-    transferCBP("2", "8", 40n);
-    transferCBP("3", "8", 18n);
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 18n, "gk.payOffSwap().");
+
+    transferCBP(users[1], userComp, 40n);
+    transferCBP(users[3], userComp, 18n);
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid").withArgs(3, 500 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
@@ -245,13 +267,13 @@ async function main() {
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(3, 500 * 10 ** 4, 500 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(25, 2);
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(25, users[1]);
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     let share = await getLatestShare(ros);
 
     expect(share.head.seqOfShare).to.equal(25);
-    expect(share.head.shareholder).to.equal(2);
+    expect(share.head.shareholder).to.equal(users[1]);
     expect(share.body.paid).to.equal("500.0");
     expect(share.body.cleanPaid).to.equal("500.0");
 
@@ -263,9 +285,9 @@ async function main() {
 
     tx = await gk.connect(signers[3]).terminateSwap(1, 1);
 
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 58n, "gk.terminateSwap().");
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 58n, "gk.terminateSwap().");
 
-    transferCBP("3", "8", 58n);
+    transferCBP(users[3], userComp, 58n);
 
     await expect(tx).to.emit(ros, "IncreaseCleanPaid");
     console.log(" \u2714 Passed Event Test for ros.IncreaseCleanPaid(). \n");
@@ -273,20 +295,20 @@ async function main() {
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(2, 300 * 10 ** 4, 300 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(26, 3);
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(26, users[3]);
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     share = await getLatestShare(ros);
 
     expect(share.head.seqOfShare).to.equal(26);
-    expect(share.head.shareholder).to.equal(3);
+    expect(share.head.shareholder).to.equal(users[3]);
     expect(share.body.paid).to.equal("300.0");
     expect(share.body.cleanPaid).to.equal("300.0");
 
     console.log(" \u2714 Passed Result Verify Test for rom.terminateSwap(). \n");
 
     await printShares(ros);
-    await cbpOfUsers(rc, await gk.getAddress());
+    await cbpOfUsers(rc, gk.target, userComp);
     // await depositOfUsers(rc, gk);
 }
 

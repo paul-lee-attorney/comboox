@@ -84,11 +84,13 @@ import { Interface, formatUnits, decodeBytes32String } from "ethers";
 import { getGK, getROS, getRC, getUSDC, getCashier, getLOO, getROI } from "./boox";
 import { getLatestShare, printShares, parseShare } from "./ros";
 
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { transferCBP } from "./saveTool";
 import { parseFromSn, parseQtySn, parseToSn, parseNode, parseData } from "./loo";
 import { AddrZero, trimAddr, longDataParser, Bytes32Zero } from "./utils";
 import { generateAuth } from "./sigTools";
+import { parseCompInfo } from "./gk";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -102,16 +104,16 @@ async function main() {
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getGK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const usdc = await getUSDC();
     const cashier = await getCashier();
     const loo = await getLOO();
     const ros = await getROS();
     const roi = await getROI();
-    const addrRC = await rc.getAddress();
-    const addrGK = await gk.getAddress();
-    const addrCashier = await cashier.getAddress();
-    const addrLOO = await loo.getAddress();
 
     // ==== Parse Logs ====
 
@@ -132,7 +134,7 @@ async function main() {
 
       receipt.logs.forEach((log) => {
 
-        if (log.address == addrCashier) {
+        if (log.address == cashier.target) {
           try {
             const parsedLog = iface.parseLog(log);
 
@@ -140,7 +142,7 @@ async function main() {
 
               journal.push({
                 from: parsedLog.args[0].toString(),
-                to: addrCashier,
+                to: cashier.target,
                 amt: formatUnits(parsedLog.args[1].toString(), 6).toString(16),
                 remark: "ReceivedUsd",
               });
@@ -174,7 +176,7 @@ async function main() {
             } else if (parsedLog.name == "TransferUsd") {
 
               journal.push({
-                from: addrCashier,
+                from: cashier.target,
                 to: parsedLog.args[0].toString(),
                 amt: formatUnits(parsedLog.args[1].toString(), 6).toString(16),
                 remark: decodeBytes32String(parsedLog.args[2]),
@@ -213,7 +215,7 @@ async function main() {
 
       receipt.logs.forEach((log) => {
 
-        if (log.address == addrLOO) {
+        if (log.address == loo.target) {
           try {
             const parsedLog = iface.parseLog(log);
 
@@ -290,11 +292,13 @@ async function main() {
     // await expect(gk.placeInitialOffer(2, 1, 20 * 10 ** 10, 3.6 * 10 ** 4, 1024)).to.be.revertedWith("LOOK.placeIO: paid overflow");
     console.log(" \u2714 Passed Parameter Control Test for gk.placeInitialOffer(). paid overflow \n");
 
+    gk = await readTool("LOOKeeper", gk.target);
+
     let tx = await gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 18n, "gk.placeInitialOffer().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.placeInitialOffer().");
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
     await expect(tx).to.emit(ros, "IncreaseEquityOfClass");
     console.log(" \u2714 Passed Event Test for ros.IncreaseEquityOfClass(). \n");
@@ -310,7 +314,7 @@ async function main() {
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
     expect(orderPlaced[0].to.to).to.equal(trimAddr(AddrZero));
-    expect(orderPlaced[0].to.seller).to.equal(1);
+    expect(orderPlaced[0].to.seller).to.equal(users[0]);
     expect(orderPlaced[0].to.state).to.equal(0);
     expect(orderPlaced[0].to.inEth).to.equal(false);
     expect(orderPlaced[0].to.isOffer).to.equal(true);
@@ -327,21 +331,21 @@ async function main() {
 
     tx = await gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 3.8 * 10 ** 4, 1024);
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
     tx = await gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 4 * 10 ** 4, 1024);
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
     tx = await gk.withdrawInitialOffer(2, seqOfOrder, 1024);
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
     
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(orderWithdrawn.head.issuer).to.equal(1);
+    expect(orderWithdrawn.head.issuer).to.equal(users[0]);
     expect(orderWithdrawn.head.paid).to.equal("100.0");
     expect(orderWithdrawn.head.price).to.equal("4.0");
     expect(orderWithdrawn.head.isOffer).to.equal(true);
@@ -357,22 +361,22 @@ async function main() {
 
     // ==== Place Buy Order ====
 
-    let auth = await generateAuth(signers[1], addrCashier, 8 * 37);
+    let auth = await generateAuth(signers[1], cashier.target, 8 * 37);
     tx = await gk.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 3.7 * 10 ** 4, 1);  
 
-    await royaltyTest(addrRC, await signers[1].getAddress(), addrGK, tx, 88n, "gk.placeBuyOrder().");
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 88n, "gk.placeBuyOrder().");
 
-    transferCBP("2", "8", 88n);
+    transferCBP(users[1], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(dealClosed[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[0].from.buyer).to.equal(2);
-    expect(dealClosed[0].from.groupRep).to.equal(2);
+    expect(dealClosed[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[0].from.buyer).to.equal(users[1]);
+    expect(dealClosed[0].from.groupRep).to.equal(users[1]);
     expect(dealClosed[0].from.classOfShare).to.equal(2);
 
     expect(dealClosed[0].to.to).to.equal(trimAddr(AddrZero));
-    expect(dealClosed[0].to.seller).to.equal(1);
+    expect(dealClosed[0].to.seller).to.equal(users[0]);
     expect(dealClosed[0].to.inEth).to.equal(false);
 
     expect(dealClosed[0].qty.paid).to.equal("80.0");
@@ -385,17 +389,17 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('296.0');
     expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
-    expect(journal[1].from).to.equal(await signers[1].getAddress());
-    expect(journal[1].to).to.equal(addrCashier);
+    expect(journal[1].from).to.equal(signers[1].address);
+    expect(journal[1].to).to.equal(cashier.target);
     expect(journal[1].amt).to.equal('288.0');
     expect(journal[1].remark).to.equal("CloseBidAgainstInitOffer");
 
-    expect(journal[2].from).to.equal(await signers[1].getAddress());
-    expect(journal[2].to).to.equal(await signers[1].getAddress());
+    expect(journal[2].from).to.equal(signers[1].address);
+    expect(journal[2].to).to.equal(signers[1].address);
     expect(journal[2].amt).to.equal('8.0');
     expect(journal[2].remark).to.equal("RefundBalanceOfBidOrder");
 
@@ -403,7 +407,7 @@ async function main() {
 
     share = await getLatestShare(ros);
 
-    expect(share.head.shareholder).to.equal(2);
+    expect(share.head.shareholder).to.equal(users[1]);
     expect(share.head.priceOfPaid).to.equal('3.6');
     expect(share.body.paid).to.equal('80.0');
 
@@ -411,20 +415,20 @@ async function main() {
 
     // ---- Buy Order 2 ----
 
-    auth = await generateAuth(signers[1], addrCashier, 8 * 39);
+    auth = await generateAuth(signers[1], cashier.target, 8 * 39);
     tx = await gk.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 3.9 * 10 ** 4, 1);  
 
-    transferCBP("2", "8", 88n);
+    transferCBP(users[1], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(dealClosed[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[0].from.buyer).to.equal(2);
-    expect(dealClosed[0].from.groupRep).to.equal(2);
+    expect(dealClosed[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[0].from.buyer).to.equal(users[1]);
+    expect(dealClosed[0].from.groupRep).to.equal(users[1]);
     expect(dealClosed[0].from.classOfShare).to.equal(2);
 
     expect(dealClosed[0].to.to).to.equal(trimAddr(AddrZero));
-    expect(dealClosed[0].to.seller).to.equal(1);
+    expect(dealClosed[0].to.seller).to.equal(users[0]);
     expect(dealClosed[0].to.inEth).to.equal(false);
 
     expect(dealClosed[0].qty.paid).to.equal("60.0");
@@ -437,24 +441,24 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('312.0');
     expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
-    expect(journal[1].from).to.equal(await signers[1].getAddress());
-    expect(journal[1].to).to.equal(addrCashier);
+    expect(journal[1].from).to.equal(signers[1].address);
+    expect(journal[1].to).to.equal(cashier.target);
     expect(journal[1].amt).to.equal('228.0');
     expect(journal[1].remark).to.equal("CloseBidAgainstInitOffer");
 
     console.log(" \u2714 Passed Cashier Event Test for ReleaseUsd \n");
 
-    expect(dealClosed[1].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[1].from.buyer).to.equal(2);
-    expect(dealClosed[1].from.groupRep).to.equal(2);
+    expect(dealClosed[1].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[1].from.buyer).to.equal(users[1]);
+    expect(dealClosed[1].from.groupRep).to.equal(users[1]);
     expect(dealClosed[1].from.classOfShare).to.equal(2);
 
     expect(dealClosed[1].to.to).to.equal(trimAddr(AddrZero));
-    expect(dealClosed[1].to.seller).to.equal(1);
+    expect(dealClosed[1].to.seller).to.equal(users[0]);
     expect(dealClosed[1].to.inEth).to.equal(false);
 
     expect(dealClosed[1].qty.paid).to.equal("20.0");
@@ -465,14 +469,14 @@ async function main() {
 
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
-    expect(journal[2].from).to.equal(await signers[1].getAddress());
+    expect(journal[2].from).to.equal(signers[1].address);
     expect(journal[2].amt).to.equal('72.0');
     expect(journal[2].remark).to.equal("CloseBidAgainstInitOffer");
 
     console.log(" \u2714 Passed Cashier Event Test for CloseBidAgainstInitOffer to Cashier \n");
 
-    expect(journal[3].from).to.equal(await signers[1].getAddress());
-    expect(journal[3].to).to.equal(await signers[1].getAddress());
+    expect(journal[3].from).to.equal(signers[1].address);
+    expect(journal[3].to).to.equal(signers[1].address);
     expect(journal[3].amt).to.equal('12.0');
     expect(journal[3].remark).to.equal("RefundBalanceOfBidOrder");
 
@@ -480,7 +484,7 @@ async function main() {
 
     share = await getLatestShare(ros);
 
-    expect(share.head.shareholder).to.equal(2);
+    expect(share.head.shareholder).to.equal(users[1]);
     expect(share.head.priceOfPaid).to.equal('3.6');
     expect(share.body.paid).to.equal('20.0');
 
@@ -488,20 +492,20 @@ async function main() {
 
     // ---- Buy Order 3 ----
 
-    auth = await generateAuth(signers[1], addrCashier, 8 * 40);
+    auth = await generateAuth(signers[1], cashier.target, 8 * 40);
     tx = await gk.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 4 * 10 ** 4, 1);
 
-    transferCBP("2", "8", 88n);
+    transferCBP(users[1], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(dealClosed[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[0].from.buyer).to.equal(2);
-    expect(dealClosed[0].from.groupRep).to.equal(2);
+    expect(dealClosed[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[0].from.buyer).to.equal(users[1]);
+    expect(dealClosed[0].from.groupRep).to.equal(users[1]);
     expect(dealClosed[0].from.classOfShare).to.equal(2);
 
     expect(dealClosed[0].to.to).to.equal(trimAddr(AddrZero));
-    expect(dealClosed[0].to.seller).to.equal(1);
+    expect(dealClosed[0].to.seller).to.equal(users[0]);
     expect(dealClosed[0].to.inEth).to.equal(false);
 
     expect(dealClosed[0].qty.paid).to.equal("40.0");
@@ -512,9 +516,9 @@ async function main() {
 
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). \n");
 
-    expect(orderPlaced[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(orderPlaced[0].from.buyer).to.equal(2);
-    expect(orderPlaced[0].from.groupRep).to.equal(2);
+    expect(orderPlaced[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(orderPlaced[0].from.buyer).to.equal(users[1]);
+    expect(orderPlaced[0].from.groupRep).to.equal(users[1]);
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
     expect(orderPlaced[0].to.to).to.equal(trimAddr(AddrZero));
@@ -535,12 +539,12 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('320.0');
     expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
-    expect(journal[1].from).to.equal(await signers[1].getAddress());
-    expect(journal[1].to).to.equal(addrCashier);
+    expect(journal[1].from).to.equal(signers[1].address);
+    expect(journal[1].to).to.equal(cashier.target);
     expect(journal[1].amt).to.equal('152.0');
     expect(journal[1].remark).to.equal("CloseBidAgainstInitOffer");
 
@@ -548,7 +552,7 @@ async function main() {
 
     share = await getLatestShare(ros);
 
-    expect(share.head.shareholder).to.equal(2);
+    expect(share.head.shareholder).to.equal(users[1]);
     expect(share.head.priceOfPaid).to.equal('3.8');
     expect(share.body.paid).to.equal('40.0');
 
@@ -556,16 +560,16 @@ async function main() {
 
     // ---- Buy Order 4 ----
 
-    auth = await generateAuth(signers[1], addrCashier, 8 * 42);
+    auth = await generateAuth(signers[1], cashier.target, 8 * 42);
     tx = await gk.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 4.2 * 10 ** 4, 1);
 
-    transferCBP("2", "8", 88n);
+    transferCBP(users[1], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(orderPlaced[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(orderPlaced[0].from.buyer).to.equal(2);
-    expect(orderPlaced[0].from.groupRep).to.equal(2);
+    expect(orderPlaced[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(orderPlaced[0].from.buyer).to.equal(users[1]);
+    expect(orderPlaced[0].from.groupRep).to.equal(users[1]);
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
     expect(orderPlaced[0].to.to).to.equal(trimAddr(AddrZero));
@@ -586,7 +590,7 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('336.0');
     expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
@@ -596,17 +600,17 @@ async function main() {
 
     tx = await gk.connect(signers[1]).withdrawBuyOrder(2, seqOfOrder);
 
-    transferCBP("2", "8", 88n);
+    transferCBP(users[1], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(orderWithdrawn.head.issuer).to.equal(2);
+    expect(orderWithdrawn.head.issuer).to.equal(users[1]);
     expect(orderWithdrawn.head.paid).to.equal("80.0");
     expect(orderWithdrawn.head.price).to.equal("4.2");
     expect(orderWithdrawn.head.isOffer).to.equal(false);
 
     expect(orderWithdrawn.body.classOfShare).to.equal(2);
-    expect(orderWithdrawn.body.groupRep).to.equal(2);
+    expect(orderWithdrawn.body.groupRep).to.equal(users[1]);
     expect(orderWithdrawn.body.votingWeight).to.equal(0);
     expect(orderWithdrawn.body.distrWeight).to.equal(0);
     expect(orderWithdrawn.body.margin).to.equal("336.0");
@@ -616,8 +620,8 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
-    expect(journal[0].to).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
+    expect(journal[0].to).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('336.0');
     expect(journal[0].remark).to.equal("RefundValueOfBidOrder");
 
@@ -629,9 +633,9 @@ async function main() {
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 4.2 * 10 ** 4, 1024);
 
-    await royaltyTest(addrRC, await signers[3].getAddress(), addrGK, tx, 58n, "gk.placeSellOrder().");    
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 58n, "gk.placeSellOrder().");    
 
-    transferCBP("3", "8", 58n);
+    transferCBP(users[3], userComp, 58n);
 
     await expect(tx).to.emit(ros, "DecreaseCleanPaid");
     console.log(" \u2714 Passed Event Test for ros.DecreaseCleanPaid(). \n");
@@ -643,8 +647,8 @@ async function main() {
     expect(orderPlaced[0].from.groupRep).to.equal(0);
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
-    expect(orderPlaced[0].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(orderPlaced[0].to.seller).to.equal(3);
+    expect(orderPlaced[0].to.to).to.equal(trimAddr(signers[3].address));
+    expect(orderPlaced[0].to.seller).to.equal(users[3]);
     expect(orderPlaced[0].to.inEth).to.equal(false);
     expect(orderPlaced[0].to.isOffer).to.equal(true);
 
@@ -662,17 +666,17 @@ async function main() {
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 4 * 10 ** 4, 1024);
 
-    transferCBP("3", "8", 58n);
+    transferCBP(users[3], userComp, 58n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(dealClosed[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[0].from.buyer).to.equal(2);
-    expect(dealClosed[0].from.groupRep).to.equal(2);
+    expect(dealClosed[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[0].from.buyer).to.equal(users[1]);
+    expect(dealClosed[0].from.groupRep).to.equal(users[1]);
     expect(dealClosed[0].from.classOfShare).to.equal(2);
 
-    expect(dealClosed[0].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(dealClosed[0].to.seller).to.equal(3);
+    expect(dealClosed[0].to.to).to.equal(trimAddr(signers[3].address));
+    expect(dealClosed[0].to.seller).to.equal(users[3]);
     expect(dealClosed[0].to.inEth).to.equal(false);
 
     expect(dealClosed[0].qty.paid).to.equal("40.0");
@@ -685,13 +689,13 @@ async function main() {
     
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
-    expect(journal[0].to).to.equal(await signers[3].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
+    expect(journal[0].to).to.equal(signers[3].address);
     expect(journal[0].amt).to.equal('160.0');
     expect(journal[0].remark).to.equal("CloseOfferAgainstBid");
 
-    expect(journal[1].from).to.equal(await signers[1].getAddress());
-    expect(journal[1].to).to.equal(await signers[1].getAddress());
+    expect(journal[1].from).to.equal(signers[1].address);
+    expect(journal[1].to).to.equal(signers[1].address);
     expect(journal[1].amt).to.equal('8.0');
     expect(journal[1].remark).to.equal("RefundValueOfBidOrder");
 
@@ -699,7 +703,7 @@ async function main() {
 
     share = await getLatestShare(ros);
 
-    expect(share.head.shareholder).to.equal(2);
+    expect(share.head.shareholder).to.equal(users[1]);
     expect(share.head.priceOfPaid).to.equal('4.0');
     expect(share.body.paid).to.equal('40.0');
 
@@ -710,8 +714,8 @@ async function main() {
     expect(orderPlaced[0].from.groupRep).to.equal(0);
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
-    expect(orderPlaced[0].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(orderPlaced[0].to.seller).to.equal(3);
+    expect(orderPlaced[0].to.to).to.equal(trimAddr(signers[3].address));
+    expect(orderPlaced[0].to.seller).to.equal(users[3]);
     expect(orderPlaced[0].to.inEth).to.equal(false);
     expect(orderPlaced[0].to.isOffer).to.equal(true);
 
@@ -729,7 +733,7 @@ async function main() {
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 3.8 * 10 ** 4, 1024);
 
-    transferCBP("3", "8", 58n);
+    transferCBP(users[3], userComp, 58n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -738,8 +742,8 @@ async function main() {
     expect(orderPlaced[0].from.groupRep).to.equal(0);
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
-    expect(orderPlaced[0].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(orderPlaced[0].to.seller).to.equal(3);
+    expect(orderPlaced[0].to.to).to.equal(trimAddr(signers[3].address));
+    expect(orderPlaced[0].to.seller).to.equal(users[3]);
     expect(orderPlaced[0].to.inEth).to.equal(false);
     expect(orderPlaced[0].to.isOffer).to.equal(true);
 
@@ -757,7 +761,7 @@ async function main() {
 
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024);
 
-    transferCBP("3", "8", 58n);
+    transferCBP(users[3], userComp, 58n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
@@ -766,8 +770,8 @@ async function main() {
     expect(orderPlaced[0].from.groupRep).to.equal(0);
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
-    expect(orderPlaced[0].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(orderPlaced[0].to.seller).to.equal(3);
+    expect(orderPlaced[0].to.to).to.equal(trimAddr(signers[3].address));
+    expect(orderPlaced[0].to.seller).to.equal(users[3]);
     expect(orderPlaced[0].to.inEth).to.equal(false);
     expect(orderPlaced[0].to.isOffer).to.equal(true);
 
@@ -785,13 +789,15 @@ async function main() {
     // await expect(gk.connect(signers[1]).pause(1024)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
     console.log(' \u2714 Passed Access Control Test for gk.pause(). \n');
 
+    gk = await readTool("ROIKeeper", gk.target);
+
     tx = await gk.pause(1024);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 18n, "gk.pause().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.pause().");
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
-    await expect(tx).to.emit(roi, "Paused").withArgs(1);
+    await expect(tx).to.emit(roi, "Paused").withArgs(users[0]);
     console.log(" \u2714 Passed Event Test for roi.Paused(). \n");
 
     // await expect(gk.placeInitialOffer(2, 1, 100 * 10 ** 4, 3.6 * 10 ** 4, 1024)).to.be.revertedWith("LOOK: LOO is paused");
@@ -802,13 +808,15 @@ async function main() {
 
     // ---- Withdraw Order 2 ----
 
+    gk = await readTool("LOOKeeper", gk.target);
+
     tx = await gk.connect(signers[3]).withdrawSellOrder(2, seqOfOrder);
 
-    transferCBP("3", "8", 88n);
+    transferCBP(users[3], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(orderWithdrawn.head.issuer).to.equal(3);
+    expect(orderWithdrawn.head.issuer).to.equal(users[3]);
     expect(orderWithdrawn.head.paid).to.equal("100.0");
     expect(orderWithdrawn.head.price).to.equal("3.6");
     expect(orderWithdrawn.head.isOffer).to.equal(true);
@@ -832,13 +840,15 @@ async function main() {
     // await expect(gk.connect(signers[1]).unPause(1024)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
     console.log(' \u2714 Passed Access Control Test for gk.unPause(). \n');
 
+    gk = await readTool("ROIKeeper", gk.target);
+
     tx = await gk.unPause(1024);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 18n, "gk.unPause().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.unPause().");
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
-    await expect(tx).to.emit(roi, "UnPaused").withArgs(1);
+    await expect(tx).to.emit(roi, "UnPaused").withArgs(users[0]);
     console.log(" \u2714 Passed Event Test for roi.UnPaused(). \n");
 
     res = await roi.isPaused();
@@ -848,20 +858,22 @@ async function main() {
 
     // ==== Place Market Buy Order ====
 
-    auth = await generateAuth(signers[1], addrCashier, 4 * 160);
+    gk = await readTool("LOOKeeper", gk.target);
+
+    auth = await generateAuth(signers[1], cashier.target, 4 * 160);
     tx = await gk.connect(signers[1]).placeMarketBuyOrder(auth, 2, 160 * 10 ** 4, 1);
 
-    transferCBP("2", "8", 88n);
+    transferCBP(users[1], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(dealClosed[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[0].from.buyer).to.equal(2);
-    expect(dealClosed[0].from.groupRep).to.equal(2);
+    expect(dealClosed[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[0].from.buyer).to.equal(users[1]);
+    expect(dealClosed[0].from.groupRep).to.equal(users[1]);
     expect(dealClosed[0].from.classOfShare).to.equal(2);
 
-    expect(dealClosed[0].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(dealClosed[0].to.seller).to.equal(3);
+    expect(dealClosed[0].to.to).to.equal(trimAddr(signers[3].address));
+    expect(dealClosed[0].to.seller).to.equal(users[3]);
     expect(dealClosed[0].to.inEth).to.equal(false);
 
     expect(dealClosed[0].qty.paid).to.equal("60.0");
@@ -872,13 +884,13 @@ async function main() {
 
     console.log(" \u2714 Passed Event Test for loo.DealClosed(). deal-0\n");
 
-    expect(dealClosed[1].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[1].from.buyer).to.equal(2);
-    expect(dealClosed[1].from.groupRep).to.equal(2);
+    expect(dealClosed[1].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[1].from.buyer).to.equal(users[1]);
+    expect(dealClosed[1].from.groupRep).to.equal(users[1]);
     expect(dealClosed[1].from.classOfShare).to.equal(2);
 
-    expect(dealClosed[1].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(dealClosed[1].to.seller).to.equal(3);
+    expect(dealClosed[1].to.to).to.equal(trimAddr(signers[3].address));
+    expect(dealClosed[1].to.seller).to.equal(users[3]);
     expect(dealClosed[1].to.inEth).to.equal(false);
 
     expect(dealClosed[1].qty.paid).to.equal("100.0");
@@ -891,22 +903,22 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('640.0');
     expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
-    expect(journal[1].from).to.equal(await signers[1].getAddress());
-    expect(journal[1].to).to.equal(await signers[3].getAddress());
+    expect(journal[1].from).to.equal(signers[1].address);
+    expect(journal[1].to).to.equal(signers[3].address);
     expect(journal[1].amt).to.equal('240.0');
     expect(journal[1].remark).to.equal("CloseBidAgainstOffer");
 
-    expect(journal[2].from).to.equal(await signers[1].getAddress());
-    expect(journal[2].to).to.equal(await signers[3].getAddress());
+    expect(journal[2].from).to.equal(signers[1].address);
+    expect(journal[2].to).to.equal(signers[3].address);
     expect(journal[2].amt).to.equal('380.0');
     expect(journal[2].remark).to.equal("CloseBidAgainstOffer");
 
-    expect(journal[3].from).to.equal(await signers[1].getAddress());
-    expect(journal[3].to).to.equal(await signers[1].getAddress());
+    expect(journal[3].from).to.equal(signers[1].address);
+    expect(journal[3].to).to.equal(signers[1].address);
     expect(journal[3].amt).to.equal('20.0');
     expect(journal[3].remark).to.equal("RefundBalanceOfBidOrder");
 
@@ -914,7 +926,7 @@ async function main() {
 
     share = await getLatestShare(ros);
 
-    expect(share.head.shareholder).to.equal(2);
+    expect(share.head.shareholder).to.equal(users[1]);
     expect(share.head.priceOfPaid).to.equal('3.8');
     expect(share.body.paid).to.equal('100.0');
 
@@ -922,16 +934,16 @@ async function main() {
     
     // ==== Place Buy Order 5 ====
 
-    auth = await generateAuth(signers[1], addrCashier, 80 * 4);
+    auth = await generateAuth(signers[1], cashier.target, 80 * 4);
     tx = await gk.connect(signers[1]).placeBuyOrder(auth, 2, 80 * 10 ** 4, 4 * 10 ** 4, 1);
 
-    transferCBP("2", "8", 88n);
+    transferCBP(users[1], userComp, 88n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(orderPlaced[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(orderPlaced[0].from.buyer).to.equal(2);
-    expect(orderPlaced[0].from.groupRep).to.equal(2);
+    expect(orderPlaced[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(orderPlaced[0].from.buyer).to.equal(users[1]);
+    expect(orderPlaced[0].from.groupRep).to.equal(users[1]);
     expect(orderPlaced[0].from.classOfShare).to.equal(2);
 
     expect(orderPlaced[0].to.to).to.equal(trimAddr(AddrZero));
@@ -951,7 +963,7 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('320.0');
     expect(journal[0].remark).to.equal("CustodyValueOfBid");
 
@@ -961,17 +973,17 @@ async function main() {
     
     tx = await gk.connect(signers[3]).placeSellOrder(2, 1, 80 * 10 ** 4, 0, 1024);
 
-    transferCBP("3", "8", 58n);
+    transferCBP(users[3], userComp, 58n);
 
     [seqOfOrder, orderPlaced, orderWithdrawn, orderExpired, dealClosed] = await parseOrderLogs(tx);
 
-    expect(dealClosed[0].from.from).to.equal(trimAddr(await signers[1].getAddress()));
-    expect(dealClosed[0].from.buyer).to.equal(2);
-    expect(dealClosed[0].from.groupRep).to.equal(2);
+    expect(dealClosed[0].from.from).to.equal(trimAddr(signers[1].address));
+    expect(dealClosed[0].from.buyer).to.equal(users[1]);
+    expect(dealClosed[0].from.groupRep).to.equal(users[1]);
     expect(dealClosed[0].from.classOfShare).to.equal(2);
 
-    expect(dealClosed[0].to.to).to.equal(trimAddr(await signers[3].getAddress()));
-    expect(dealClosed[0].to.seller).to.equal(3);
+    expect(dealClosed[0].to.to).to.equal(trimAddr(signers[3].address));
+    expect(dealClosed[0].to.seller).to.equal(users[3]);
     expect(dealClosed[0].to.inEth).to.equal(false);
 
     expect(dealClosed[0].qty.paid).to.equal("80.0");
@@ -984,7 +996,7 @@ async function main() {
 
     journal = await parseUsdLogs(tx);
 
-    expect(journal[0].from).to.equal(await signers[1].getAddress());
+    expect(journal[0].from).to.equal(signers[1].address);
     expect(journal[0].amt).to.equal('320.0');
     expect(journal[0].remark).to.equal("CloseOfferAgainstBid");
 
@@ -992,7 +1004,7 @@ async function main() {
 
     share = await getLatestShare(ros);
 
-    expect(share.head.shareholder).to.equal(2);
+    expect(share.head.shareholder).to.equal(users[1]);
     expect(share.head.priceOfPaid).to.equal('4.0');
     expect(share.body.paid).to.equal('80.0');
 
@@ -1005,22 +1017,24 @@ async function main() {
     // await expect(gk.connect(signers[3]).freezeShare(1024, 2, 1500 * 10 ** 4, Bytes32Zero)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
     console.log(' \u2714 Passed Access Control Test for gk.freezeShare(). \n');
 
+    gk = await readTool("ROIKeeper", gk.target);
+
     tx = await gk.freezeShare(1024, 2, 1500 * 10 ** 4, Bytes32Zero);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 36n, "gk.freezeShare().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 36n, "gk.freezeShare().");
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
 
-    await expect(tx).to.emit(roi, "FreezeShare").withArgs(2, 1500 * 10 ** 4, 1, Bytes32Zero);
+    await expect(tx).to.emit(roi, "FreezeShare").withArgs(2, 1500 * 10 ** 4, users[0], Bytes32Zero);
     console.log(" \u2714 Passed Event Test for roi.FreezeShare(). \n");
 
-    res = await roi.isFrozen(2);
+    res = await roi.isFrozen(users[1]);
     expect(res).to.equal(true);
 
     res = await roi.isFrozenShare(2);
     expect(res).to.equal(true);
 
-    res = await roi.frozenShares(2);
+    res = await roi.frozenShares(users[1]);
     expect(res[0]).to.equal(2);
 
     res = await roi.frozenPaid(2);
@@ -1038,20 +1052,20 @@ async function main() {
 
     tx = await gk.unfreezeShare(1024, 2, 500 * 10 ** 4, Bytes32Zero);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 36n, "gk.freezeShare().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 36n, "gk.freezeShare().");
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
 
-    await expect(tx).to.emit(roi, "UnfreezeShare").withArgs(2, 500 * 10 ** 4, 1, Bytes32Zero);
+    await expect(tx).to.emit(roi, "UnfreezeShare").withArgs(2, 500 * 10 ** 4, users[0], Bytes32Zero);
     console.log(" \u2714 Passed Event Test for roi.UnfreezeShare(). \n");
 
-    res = await roi.isFrozen(2);
+    res = await roi.isFrozen(users[1]);
     expect(res).to.equal(true);
 
     res = await roi.isFrozenShare(2);
     expect(res).to.equal(true);
 
-    res = await roi.frozenShares(2);
+    res = await roi.frozenShares(users[1]);
     expect(res[0]).to.equal(2);
 
     res = await roi.frozenPaid(2);
@@ -1067,26 +1081,26 @@ async function main() {
     // await expect(gk.connect(signers[3]).forceTransfer(1024, 2, 500 * 10 ** 4, signers[3].address, Bytes32Zero)).to.be.revertedWith("ROIK.checkEnforcerLicense: no rights");
     console.log(' \u2714 Passed Access Control Test for gk.forceTransfer(). \n');
 
-    tx = await gk.forceTransfer(1024, 2, 500 * 10 ** 4, await signers[3].getAddress(), Bytes32Zero);
+    tx = await gk.forceTransfer(1024, 2, 500 * 10 ** 4, signers[3].address, Bytes32Zero);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 18n, "gk.freezeShare().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.freezeShare().");
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
-    await royaltyTest(addrRC, await signers[3].getAddress(), addrGK, tx, 88n, "gk.freezeShare().");
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 88n, "gk.freezeShare().");
 
-    transferCBP("3", "8", 88n);
+    transferCBP(users[3], userComp, 88n);
 
-    await expect(tx).to.emit(roi, "ForceTransfer").withArgs(2, 500 * 10 ** 4, 1, Bytes32Zero);
+    await expect(tx).to.emit(roi, "ForceTransfer").withArgs(2, 500 * 10 ** 4, users[0], Bytes32Zero);
     console.log(" \u2714 Passed Event Test for roi.ForceTransfer(). \n");
 
-    res = await roi.isFrozen(2);
+    res = await roi.isFrozen(users[1]);
     expect(res).to.equal(true);
 
     res = await roi.isFrozenShare(2);
     expect(res).to.equal(true);
 
-    res = await roi.frozenShares(2);
+    res = await roi.frozenShares(users[1]);
     expect(res[0]).to.equal(2);
 
     res = await roi.frozenPaid(2);
@@ -1104,14 +1118,14 @@ async function main() {
 
     tx = await gk.unfreezeShare(1024, 2, 500 * 10 ** 4, Bytes32Zero);
 
-    await royaltyTest(addrRC,  await signers[0].getAddress(), addrGK, tx, 36n, "gk.freezeShare().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 36n, "gk.freezeShare().");
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
 
-    await expect(tx).to.emit(roi, "UnfreezeShare").withArgs(2, 500 * 10 ** 4, 1, Bytes32Zero);
+    await expect(tx).to.emit(roi, "UnfreezeShare").withArgs(2, 500 * 10 ** 4, users[0], Bytes32Zero);
     console.log(" \u2714 Passed Event Test for roi.UnfreezeShare(). \n");
 
-    res = await roi.isFrozen(2);
+    res = await roi.isFrozen(users[1]);
     expect(res).to.equal(false);
 
     res = await roi.isFrozenShare(2);
@@ -1126,7 +1140,7 @@ async function main() {
     console.log(" \u2714 Passed Result Test for roi.unfreezeShare(). \n");
 
     await printShares(ros);
-    await cbpOfUsers(rc, addrGK);
+    await cbpOfUsers(rc, gk.target, userComp);
 
     const getUsdOf = async (signerNo) => {
       let balance = await usdc.balanceOf(await signers[signerNo].getAddress());
@@ -1138,7 +1152,7 @@ async function main() {
     await getUsdOf(3);
 
     console.log("balance of Comp:", longDataParser( 
-      formatUnits(await usdc.balanceOf(addrCashier), 6)
+      formatUnits(await usdc.balanceOf(cashier.target), 6)
     ));
 }
 

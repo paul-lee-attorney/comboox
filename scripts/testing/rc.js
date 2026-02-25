@@ -15,7 +15,7 @@ import { getUserCBP } from "./saveTool";
 // ComBoox. Each new user may obtain a sum of awards for its registration, rate
 // of which is defined in Platform Rule. And, the Platform Rule can only be set
 // and revised by the owner of the Platform.
-export async function cbpOfUsers(rc, addrOfGK) {
+export async function cbpOfUsers(rc, addrGK, usrComp) {
   const {ethers} = await network.connect();
   const signers = await ethers.getSigners();
   for (let i=0; i<7; i++) {
@@ -27,13 +27,13 @@ export async function cbpOfUsers(rc, addrOfGK) {
 
     console.log('CBP Balance of User_', userNo, ':', longDataParser(formatUnits(bala.toString(), 9)), '(GLee). \n');
   }
-  if (addrOfGK != AddrZero) {
-    const cbpOfComp = await rc.balanceOf(addrOfGK);
+  if (addrGK != AddrZero) {
+    const cbpOfComp = await rc.balanceOf(addrGK);
 
-    const cbpOfCompExpected = getUserCBP("8");
+    const cbpOfCompExpected = getUserCBP(usrComp.toString());
     expect(cbpOfCompExpected).to.equal(BigInt(cbpOfComp.toString()));
 
-    console.log('CBP Balance of Comp:', longDataParser(formatUnits(cbpOfComp.toString(), 9)), '(GLee). \n');
+    console.log('CBP Balance of Comp:', usrComp, ":", longDataParser(formatUnits(cbpOfComp.toString(), 9)), '(GLee). \n');
   }
 }
 
@@ -97,8 +97,10 @@ export async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
   const receipt = await tx.wait();
 
   const eventAbi = [
-    "event Transfer(address indexed from, address indexed to, uint256 indexed value)",
-    "event CreateDoc(bytes32 indexed snOfDoc, address indexed body)",
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "event CloneDoc(bytes32 indexed snOfDoc, address indexed body)",
+    "event ProxyDoc(bytes32 indexed snOfDoc, address indexed body)",
+    "event UpgradeDoc(bytes32 indexed snOfDoc, address indexed body)",
   ];
   
   const iface = new Interface(eventAbi);
@@ -107,20 +109,23 @@ export async function royaltyTest(addrOfRC, from, to, tx, rate, func) {
   let flag = false;
   
   for (const log of receipt.logs) {
-    if (log.address == addrOfRC) {
-      try {
-        const parsedLog = iface.parseLog(log);
-        
-        if (parsedLog.name == "CreateDoc") {
-          addr = parsedLog.args[1];
-        } else if (parsedLog.name == "Transfer") {
-          flag = (parsedLog.args[0] == from && parsedLog.args[1] == to && 
-              BigInt(parsedLog.args[2]) == (BigInt(rate) * 10n ** 13n));
-        }
-      } catch (err) {
-        console.log("Parse Log Error:", err);
+    if (log.address == addrOfRC){
+      const parsedLog = iface.parseLog(log);
+      if (!flag && parsedLog.name == "Transfer") 
+      {
+        flag = (
+            parsedLog.args[0].toLowerCase() == from.toLowerCase() && 
+            parsedLog.args[1].toLowerCase() == to.toLowerCase() && 
+            parsedLog.args[2] == (BigInt(rate) * 10n ** 13n)
+        );
       }
-
+      if (
+          parsedLog.name == "CloneDoc" || 
+          parsedLog.name == "ProxyDoc" ||
+          parsedLog.name == "UpgradeDoc"
+      ) {
+        addr = parsedLog.args[1];
+      }
     }
   }
 
@@ -138,16 +143,17 @@ export async function getUserNo(rc, signer) {
   return userNo;
 }
 
-export async function getAllUsers(rc) {
+export async function getAllUsers(rc, maxSignerNum) {
   const { ethers } = await network.connect();
   const signers = await ethers.getSigners();
 
   let users = [];
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i <= maxSignerNum; i++) {
     const signer = signers[i];
     const userNo = await rc.connect(signer).getMyUserNo();
     users.push(userNo);
+    console.log("User_", userNo.toString(), ":", signer.address);
   }
   return users;
 }

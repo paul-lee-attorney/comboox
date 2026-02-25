@@ -44,9 +44,11 @@ import { id } from "ethers";
 import { Bytes32Zero, increaseTime } from "./utils";
 import { getGK, getGMM, getRC, getROS, getROM } from "./boox";
 import { getLatestSeqOfMotion, parseMotion, allSupportMotion } from "./gmm";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { printShares } from "./ros";
 import { transferCBP } from "./saveTool";
+import { parseCompInfo } from "./gk";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -60,7 +62,11 @@ async function main() {
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getGK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const gmm = await getGMM();
     const ros = await getROS();
     const rom = await getROM();
@@ -71,18 +77,20 @@ async function main() {
 
     // selector of function mint(): 40c10f19
     let selector = id("mint(address,uint256)").substring(0, 10);
-    let firstInput = (await gk.getAddress()).substring(2).padStart(64, "0"); 
+    let firstInput = (gk.target).substring(2).padStart(64, "0"); 
     let secondInput = (88n * 10n ** 18n).toString(16).substring(2).padStart(64, '0');
     let payload = selector + firstInput + secondInput;
 
-    // await expect(gk.connect(signers[5]).createActionOfGM(9, [await rc.getAddress()], [0], [payload], id('9'+( await rc.getAddress() )+payload), 1)).to.be.revertedWith("GMMK: no right");
+    // await expect(gk.connect(signers[5]).createActionOfGM(9, [await rc.target], [0], [payload], id('9'+( await rc.target )+payload), 1)).to.be.revertedWith("GMMK: no right");
     console.log(" \u2714 Passed Access Control Test for gk.createActionOfGM().\n");
     
-    let tx = await gk.connect(signers[4]).createActionOfGM(9, [await rc.getAddress()], [0], [payload], id('9'+( await rc.getAddress() )+payload), 1);
+    gk = await readTool("IGMMKeeper", gk.target);
 
-    await royaltyTest(await rc.getAddress(), await signers[4].getAddress(), await gk.getAddress(), tx, 99n, "gk.createActionOfGM().");
+    let tx = await gk.connect(signers[4]).createActionOfGM(9, [rc.target], [0], [payload], id('9'+(rc.target)+payload), users[0]);
 
-    transferCBP("4", "8", 99n);
+    await royaltyTest(rc.target, signers[4].address, gk.target, tx, 99n, "gk.createActionOfGM().");
+
+    transferCBP(users[4], userComp, 99n);
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
@@ -90,8 +98,8 @@ async function main() {
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     let motion = parseMotion(await gmm.getMotion(seqOfMotion));
 
-    expect(motion.head.creator).to.equal(4);
-    expect(motion.head.executor).to.equal(1);
+    expect(motion.head.creator).to.equal(users[4]);
+    expect(motion.head.executor).to.equal(users[0]);
     expect(motion.body.state).to.equal('Created');
 
     console.log(" \u2714 Passed Result Verify Test for gk.createActionOfGM(). \n");
@@ -101,18 +109,18 @@ async function main() {
     // await expect(gk.connect(signers[4]).proposeMotionToGeneralMeeting(seqOfMotion)).to.be.revertedWith("MR.PMTGM: has no proposalRight");
     console.log(" \u2714 Passed Access Control Test for gk.proposeMotionToGneralMeeting(). \n");
     
-    tx = await gk.entrustDelegaterForGeneralMeeting(seqOfMotion, 4); 
+    tx = await gk.entrustDelegaterForGeneralMeeting(seqOfMotion, users[4]);
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 36n, "gk.entrustDelegaterForGeneralMeeting().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 36n, "gk.entrustDelegaterForGeneralMeeting().");
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
 
-    await expect(tx).to.emit(gmm, "EntrustDelegate").withArgs(seqOfMotion, 4, 1);
+    await expect(tx).to.emit(gmm, "EntrustDelegate").withArgs(seqOfMotion, users[4], users[0]);
     console.log(" \u2714 Passed Event Test for gmm.EntrustDelegate(). \n");
     
     await gk.connect(signers[4]).proposeMotionToGeneralMeeting(seqOfMotion);
 
-    transferCBP("4", "8", 72n);
+    transferCBP(users[4], userComp, 72n);
 
     // ==== Vote For Motion (fail) ====
     await increaseTime(86400*1);
@@ -122,53 +130,53 @@ async function main() {
     
     await gk.connect(signers[4]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    transferCBP("4", "8", 72n);
+    transferCBP(users[4], userComp, 72n);
 
     await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 2, Bytes32Zero);
 
-    transferCBP("2", "8", 72n);
+    transferCBP(users[1], userComp, 72n);
 
     await gk.connect(signers[3]).castVoteOfGM(seqOfMotion, 2, Bytes32Zero);
 
-    transferCBP("3", "8", 72n);
+    transferCBP(users[3], userComp, 72n);
 
     await increaseTime(86400*1);
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(false);
     console.log(" \u2714 Passed Result Test for rejected motion. \n");
 
     // ==== Vote For Motion (passed) ====
 
-    tx = await gk.createActionOfGM(9, [await rc.getAddress()], [0], [payload], id('9'+( await rc.getAddress() )+payload), 1);
+    tx = await gk.createActionOfGM(9, [rc.target], [0], [payload], id('9'+(rc.target)+payload), users[0]);
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 99n, "gk.createActionOfGM().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 99n, "gk.createActionOfGM().");
 
-    transferCBP("1", "8", 99n);
+    transferCBP(users[0], userComp, 99n);
 
     seqOfMotion = await getLatestSeqOfMotion(gmm);
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
-    transferCBP("1", "8", 72n);
+    transferCBP(users[0], userComp, 72n);
 
     await increaseTime(86400*1);
 
-    await allSupportMotion(gk, rom, seqOfMotion);
+    await allSupportMotion(gk, rom, seqOfMotion, userComp);
 
     await increaseTime(86400*1);
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Test for approved motion. \n");
 
     await printShares(ros);
-    await cbpOfUsers(rc, await gk.getAddress());
+    await cbpOfUsers(rc, gk.target, userComp);
     // await depositOfUsers(rc, gk);
 }
 

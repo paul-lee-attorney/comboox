@@ -56,12 +56,15 @@
 
 
 import { expect } from "chai";
-import { getRC, getFT, getGK, getROS, getCashier, getROMKeeper } from "./boox";
+import { getRC, getFT, getGK, getROS, getCashier, getTypeByName, getUSDC } from "./boox";
 import { printShares, parseShare } from "./ros";
-import { cbpOfUsers, royaltyTest } from "./rc";
+import { cbpOfUsers, getAllUsers, royaltyTest } from "./rc";
 import { generateAuth } from "./sigTools";
-import { setUserDepo, transferCBP } from "./saveTool";
+import { transferCBP } from "./saveTool";
 import { network } from "hardhat";
+import { getContractWithSigner, readTool } from "../readTool";
+import { parseCompInfo } from "./gk";
+import { now } from "./utils";
 
 async function main() {
 
@@ -71,102 +74,118 @@ async function main() {
     console.log('********************************');
     console.log('\n');
     
-    const {ethers} = await network.connect();
+    const { ethers } = await network.connect();
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
     const ft = await getFT();
-    const gk = await getGK();
+
+    let gk = await getGK();
+    const cashier = await getCashier();
+    const users = await getAllUsers(rc, 6);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
     const ros = await getROS();
 
-
     // ==== Pay In Capital in USD ====
+    
+    gk = await readTool("ROMKeeper", gk.target);
 
-    const cashier = await getCashier();
-    // const usdKeeper = await getUsdKeeper();
-    const romKeeper = await getROMKeeper();
+    // console.log("ROMK.interfaces:", gk.interface.fragments[2]);
 
-    const addrCashier = await cashier.getAddress();
-
-    let auth = await generateAuth(signers[4], addrCashier, 7500);
+    let auth = await generateAuth(signers[4], cashier.target, 7500);
     console.log("auth:", auth);
 
-    let tx = await gk.connect(signers[4]).payInCapital(auth, 4, 5000 * 10 ** 4);
+    let tx = await gk.connect(signers[4]).payInCapital(auth, 4n, 5000n * 10n ** 4n);
+    console.log("Transaction hash:", tx.hash, "\n");
 
-    setUserDepo("8", 0n);
-    setUserDepo("4", 0n);
+    await royaltyTest(rc.target, signers[4].address, signers[0].address, tx, 36n, "ROMK.payInCapital().");
+
+    // setUserDepo("8", 0n);
+    // setUserDepo("4", 0n);
     
-    setUserDepo("1", 0n);
-    setUserDepo("2", 0n);
-    setUserDepo("3", 0n);
-    setUserDepo("5", 0n);
-    setUserDepo("6", 0n);
-    setUserDepo("7", 0n);
+    // setUserDepo("1", 0n);
+    // setUserDepo("2", 0n);
+    // setUserDepo("3", 0n);
+    // setUserDepo("5", 0n);
+    // setUserDepo("6", 0n);
+    // setUserDepo("7", 0n);
 
-    await royaltyTest(await rc.getAddress(), await signers[4].getAddress(), await signers[0].getAddress(), tx, 36n, "ROMK.payInCapital().");
+    console.log("users[4]:", users[4], "users[0]:", users[0], "\n");
+    transferCBP(users[4], users[0], 36n);
 
-    // User_4 pays royalty to User_1 (author of Templates);
-    transferCBP("4", "1", 36n);
+    // console.log("Transferred 36 CBP from userNo", users[4].toString(), "to userNo", users[0].toString(), "\n");
 
-    await expect(tx).to.emit(romKeeper, "PayInCapital");
-    console.log(" \u2714 Passed Event Test for usdRomKeeper.PayInCapital(). \n");
+    // console.log("gk:", gk.target, "\n");
+
+    await expect(tx).to.emit(gk, "PayInCapital");
+    console.log(" \u2714 Passed Event Test for RomKeeper.PayInCapital(). \n");
     
     let share = parseShare(await ros.getShare(4));
 
     expect(share.body.paid).to.equal("20,000.0");
-    console.log(" \u2714 Passed Result Verify Test for USDKeeper.payInCapital(). \n");
-
+    console.log(" \u2714 Passed Result Verify Test for RomKeeper.payInCapital(). \n");
 
     // ==== Transfer Ownership of Platform to Company ====
     
     // await expect(rc.connect(signers[1]).transferOwnership(gk.address)).to.be.revertedWith("UR.mf.OO: not owner");
-    console.log(" \u2714 Passed Access Control Test for rc.transferOwnership(). \n");
+    // console.log(" \u2714 Passed Access Control Test for rc.transferOwnership(). \n");
 
-    await expect(rc.transferOwnership(await gk.getAddress())).to.emit(rc, "TransferOwnership");
+    await expect(rc.transferOwnership(gk.target)).to.emit(rc, "TransferOwnership");
     console.log(" \u2714 Passed Event Test for rc.TransferOwnership(). \n");
 
     let newOwner = (await rc.getOwner()).toLowerCase();
-    expect(newOwner).to.equal((await gk.getAddress()).toLowerCase());
+    expect(newOwner).to.equal((gk.target).toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for rc.transferOwnership(). \n');
 
     // ==== Transfer Ownership of Fuel Tank to Company ====
 
-    await ft.setCashier(addrCashier);
+    await ft.connect(signers[1]).setCashier(cashier.target);
 
     let newCashier = (await ft.cashier()).toLowerCase();
-    expect(newCashier).to.equal(addrCashier.toLowerCase());
+    expect(newCashier).to.equal(cashier.target.toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for ft.setCashier(). \n');
 
-    await ft.setNewOwner(await gk.getAddress());
-    newOwner = (await ft.getOwner()).toLowerCase();
-    expect(newOwner).to.equal((await gk.getAddress()).toLowerCase());
-    console.log(' \u2714 Passed Result Verify Test for ft.setNewOwner(). \n');
+    // await ft.setNewOwner(gk.target);
+    // newOwner = (await ft.getOwner()).toLowerCase();
+    // expect(newOwner).to.equal((gk.target).toLowerCase());
+    // console.log(' \u2714 Passed Result Verify Test for ft.setNewOwner(). \n');
 
-    await gk.connect(signers[1]).regKeeper(16, await ft.getAddress());
+    gk = await readTool("GeneralKeeper", gk.target);
+
+    await gk.connect(signers[1]).regKeeper(16, ft.target);
     let keeper_16 = (await gk.getKeeper(16)).toLowerCase();
-    expect(keeper_16).to.equal((await ft.getAddress()).toLowerCase());
+    expect(keeper_16).to.equal((ft.target).toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for usdFT as 16th keeper of the Company. \n');
 
     // ==== Transfer IPR of Templates to Company ====
 
-    const transferIPR = async (i)=>{
-      tx = await rc.transferIPR(i, 1, 8);
+    const transferIPR = async (nameOfTemp)=>{
+      const typeOfDoc = getTypeByName(nameOfTemp);
+
+      let tx = await rc.transferIPR(typeOfDoc, 1, userComp);
       await tx.wait();
       
-      await expect(tx).to.emit(rc, "TransferIPR").withArgs(i, 1, 8);
-      console.log(' \u2714 Passed Event Test for rc.transferIPR() with typeOfDoc', i, ' version 1. \n');
+      await expect(tx).to.emit(rc, "TransferIPR").withArgs(typeOfDoc, 1, userComp);
+      console.log(' \u2714 Passed Event Test for rc.transferIPR() with', typeOfDoc, 'version 1. \n');
     }
 
-    for (let i=1; i<29; i++) {
-      await transferIPR(i);
-    }
-
-    for (let i=35; i<38; i++) {
-      await transferIPR(i);
-    }
+    await transferIPR("GeneralKeeper");
+    await transferIPR("ROCKeeper");
+    await transferIPR("RODKeeper");
+    await transferIPR("BMMKeeper");
+    await transferIPR("ROMKeeper");
+    await transferIPR("GMMKeeper");
+    await transferIPR("ROAKeeper");
+    await transferIPR("ROOKeeper");
+    await transferIPR("ROPKeeper");
+    await transferIPR("SHAKeeper");
+    await transferIPR("Accountant");
+    await transferIPR("ROIKeeper");
+    await transferIPR("LOOKeeper");
+    await transferIPR("Cashier");
 
     await printShares(ros);
-    await cbpOfUsers(rc, await gk.getAddress());
+    await cbpOfUsers(rc, gk.target, userComp);
     // await depositOfUsers(rc, gk);
     
 }

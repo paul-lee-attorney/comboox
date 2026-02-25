@@ -87,16 +87,17 @@
 
 import { network } from "hardhat";
 import { expect } from "chai";
-import { encodeBytes32String } from "ethers";
+import { keccak256, toUtf8Bytes } from "ethers";
 import { readTool } from "../readTool"; 
 import { Bytes32Zero, now } from './utils';
-import { getROC, getGK, getRC, getROO, getROD, getROS } from "./boox";
+import { getROC, getGK, getRC, getROO, getROD, getROS, getTypeByName } from "./boox";
 import { grParser, grCodifier, vrParser, vrCodifier, prParser, prCodifier, 
   lrParser, lrCodifier, alongRuleCodifier, alongRuleParser } from "./sha";
 import { codifyHeadOfOption, codifyCond, parseOption } from "./roo";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { printShares } from "./ros";
 import { transferCBP, saveBooxAddr } from "./saveTool";
+import { parseCompInfo } from "./gk";
 
 async function main() {
 
@@ -112,25 +113,32 @@ async function main() {
 
 	  const signers = await ethers.getSigners();
     const rc = await getRC();
-    const gk = await getGK();
+    let gk = await getGK();
     const roc = await getROC();
     const roo = await getROO();
     const rod = await getROD();
     const ros = await getROS();
+    const users = await getAllUsers(rc, 6);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
 
     // ==== Create SHA ====
 
     // await expect(gk.connect(signers[5]).createSHA(1) ).to.be.revertedWith("not MEMBER");
     console.log(" \u2714 Passed Access Control Test of rocKeeper.createSHA() for OnlyMember. \n");
 
+    gk = await readTool("IROCKeeper", gk.target);
+
     let tx = await gk.createSHA(1);
 
-    let SHA = await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 18n, "gk.createSHA().");
+    let SHA = await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.createSHA().");
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 18n, "gk.createSHA().");
+    console.log("author of ROCKeeper:", await rc.getTemp(getTypeByName("ROCKeeper"), 1), "\n");
+    console.log("userComp:", userComp, "\n");
+
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.createSHA().");
     console.log(" \u2714 Passed Royalty Check Test for gk.createSHA(). \n");
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
     await expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(SHA, 1);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile(). \n");
@@ -143,17 +151,17 @@ async function main() {
 
     // ---- Set GC ----
 
-    const ATTORNEYS = encodeBytes32String("Attorneys");
+    const ATTORNEYS = keccak256(toUtf8Bytes("Attorneys"));
 
     // await expect(sha.connect(signers[1]).setRoleAdmin(ATTORNEYS, await signers[0].getAddress())).to.be.revertedWith("O.onlyOwner: NOT");
     console.log(" \u2714 Passed Access Control Test for sha.setRoleAdmin(). \n");
     
-    tx = await sha.setRoleAdmin(ATTORNEYS, await signers[0].getAddress());
+    tx = await sha.setRoleAdmin(ATTORNEYS, signers[0].address);
 
-    await expect(tx).to.emit(sha, "SetRoleAdmin").withArgs(ATTORNEYS, await signers[0].getAddress());
+    await expect(tx).to.emit(sha, "SetRoleAdmin").withArgs(ATTORNEYS, signers[0].address);
     console.log(" \u2714 Passed Event Test for sha.SetRoleAdmin(). \n");
     
-    expect(await sha.getRoleAdmin(ATTORNEYS)).to.equal(await signers[0].getAddress());
+    expect(await sha.getRoleAdmin(ATTORNEYS)).to.equal(await signers[0].address);
     console.log(" \u2714 Passed Result Verify Test for sha.setRoleAdmin(). \n");
 
     // ---- Set Rules and Terms ----
@@ -219,7 +227,7 @@ async function main() {
     pr.removePos = false;
     pr.seqOfPos = 1;
     pr.titleOfPos = 2;
-    pr.nominator = 1;
+    pr.nominator = users[0];
     pr.titleOfNominator = 1;
     pr.seqOfVR = 9;
     pr.endDate = endDate;
@@ -313,18 +321,19 @@ async function main() {
     console.log(" \u2714 Passed Result Verify Test for ad.removeBenchmark(). \n");
 
     // add User_2 as obligor under class 2.
-    await ad.addObligor(2, 2);
-    expect(await ad.isObligor(2, 2)).to.equal(true);
+    await ad.addObligor(2, users[1]);
+    expect(await ad.isObligor(2, users[1])).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for ad.addObligor(). \n");
 
     // add User_1 as obligor under class 2.
-    await ad.addObligor(2, 1);
-    await ad.removeObligor(2, 1);
-    expect(await ad.isObligor(2, 1)).to.equal(false);
+    await ad.addObligor(2, users[0]);
+    await ad.removeObligor(2, users[0]);
+    expect(await ad.isObligor(2, users[0])).to.equal(false);
     console.log(" \u2714 Passed Result Verify Test for ad.removeObligor(). \n");
     
     // ---- Lockup ----
 
+    console.log("LockUp:", getTypeByName("LockUp"), "\n");
     await sha.createTerm(2, 1);
 
     const LU = await sha.getTerm(2);
@@ -342,17 +351,17 @@ async function main() {
     expect(await lu.isLocked(2)).to.equal(false);
     console.log(" \u2714 Passed Result Verify Test for lu.delLocker(). \n");
     
-    await lu.addKeyholder(1, 3);
-    await lu.addKeyholder(1, 4);
+    await lu.addKeyholder(1, users[3]);
+    await lu.addKeyholder(1, users[4]);
 
     const locker = await lu.getLocker(1);
 
     expect(locker[0]).to.equal(expDate);
-    expect(locker[1]).to.deep.equal([3, 4]);    
+    expect(locker[1]).to.deep.equal([users[3], users[4]]);    
     console.log(" \u2714 Passed Result Verify Test for lu.setLocker() and lu.addKeyholder(). \n");
 
     // ---- Drag Along ----
-
+    console.log("Alongs:", getTypeByName("Alongs"), "\n");
     await sha.createTerm(3, 1);
 
     const DA = await sha.getTerm(3);
@@ -370,45 +379,46 @@ async function main() {
         argu: 0,
         ref: 0,
         data: 0,
-    }
+    };
 
-    await da.addDragger(alongRuleCodifier(alongRule), 1);
-    expect(await da.isDragger(1)).to.equal(true);
+    await da.addDragger(alongRuleCodifier(alongRule), users[0]);
+    expect(await da.isDragger(users[0])).to.equal(true);
 
-    let retAlongRule = alongRuleParser(await da.getLinkRule(1));    
+    let retAlongRule = alongRuleParser(await da.getLinkRule(users[0]));    
     expect(retAlongRule).to.deep.equal(alongRule);
 
     console.log(" \u2714 Passed Result Verify Test for ad.addDragger(). \n");
 
-    await da.addDragger(alongRuleCodifier(alongRule), 2);
-    expect(await da.isDragger(2)).to.equal(true);
+    await da.addDragger(alongRuleCodifier(alongRule), users[1]);
+    expect(await da.isDragger(users[1])).to.equal(true);
 
-    await da.removeDragger(2);
-    expect(await da.isDragger(2)).to.equal(false);
+    await da.removeDragger(users[1]);
+    expect(await da.isDragger(users[1])).to.equal(false);
     
     console.log(" \u2714 Passed Result Verify Test for ad.removeDragger(). \n");
     
-    await da.addFollower(1, 3);
-    expect(await da.isFollower(1, 3)).to.equal(true);
+    await da.addFollower(users[0], users[3]);
+    expect(await da.isFollower(users[0], users[3])).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for ad.addFollower(). \n");
     
-    await da.addFollower(1, 4);
-    await da.removeFollower(1, 4);
-    expect(await da.isFollower(1, 4)).to.equal(false);
+    await da.addFollower(users[0], users[4]);
+    await da.removeFollower(users[0], users[4]);
+    expect(await da.isFollower(users[0], users[4])).to.equal(false);
     console.log(" \u2714 Passed Result Verify Test for ad.removeFollower(). \n");
 
-    await da.addFollower(1, 4);
+    await da.addFollower(users[0], users[4]);
 
     let draggers = (await da.getDraggers()).map(v => parseInt(v));
-    expect(draggers).to.deep.equal([1]);
+    expect(draggers).to.deep.equal([users[0]]);
 
-    let followers = (await da.getFollowers(1)).map(v => parseInt(v));
-    expect(followers).to.deep.equal([3, 4]);    
+    let followers = (await da.getFollowers(users[0])).map(v => parseInt(v));
+    expect(followers).to.deep.equal([users[3], users[4]]);
     
     console.log(" \u2714 Passed Result Verify Test for Drag Along. \n");
 
     // ---- Tag Along ----
-    
+
+    console.log("Alongs:", getTypeByName("Alongs"), "\n");
     await sha.createTerm(4, 1);
 
     const TA = await sha.getTerm(4);
@@ -428,21 +438,22 @@ async function main() {
         data: 0,
     }
 
-    await ta.addDragger(alongRuleCodifier(alongRule), 1);
+    await ta.addDragger(alongRuleCodifier(alongRule), users[0]);
 
-    await ta.addFollower(1, 3);
-    await ta.addFollower(1, 4);
+    await ta.addFollower(users[0], users[3]);
+    await ta.addFollower(users[0], users[4]);
 
     draggers = (await ta.getDraggers()).map(v => parseInt(v));
-    expect(draggers).to.deep.equal([1]);
+    expect(draggers).to.deep.equal([users[0]]);
 
-    followers = (await ta.getFollowers(1)).map(v => parseInt(v));
-    expect(followers).to.deep.equal([3, 4]);    
+    followers = (await ta.getFollowers(users[0])).map(v => parseInt(v));
+    expect(followers).to.deep.equal([users[3], users[4]]);    
     
     console.log(" \u2714 Passed Result Verify Test for Tag Along. \n");
 
     // ---- Call / Put Option ----
-
+      
+    console.log("Options:", getTypeByName("Options"), "\n");
     await sha.createTerm(5, 1);
     const OP = await sha.getTerm(5);
     const op = await readTool("Options", OP);
@@ -459,7 +470,7 @@ async function main() {
         triggerDate: triggerDate,
         execDays: 90,
         closingDays: 3,
-        obligor: 3,
+        obligor: users[3],
     };
 
     let cond = {
@@ -473,12 +484,12 @@ async function main() {
       para3: 0,
     };
 
-    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), 2, 500 * 10 ** 4, 500 * 10 ** 4);
+    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), users[1], 500 * 10 ** 4, 500 * 10 ** 4);
 
     let retOpt = parseOption(await op.getOption(1));
     expect(retOpt.head).to.deep.equal(headOfOpt);
     expect(retOpt.cond).to.deep.equal(cond);
-    expect(retOpt.body.rightholder).to.equal(2);
+    expect(retOpt.body.rightholder).to.equal(users[1]);
     expect(retOpt.body.paid).to.equal(500);
     expect(retOpt.body.par).to.equal(500);
     expect(retOpt.body.closingDeadline).to.equal(triggerDate + 86400 * (93));
@@ -486,7 +497,7 @@ async function main() {
     
     console.log(" \u2714 Passed Result Verify Test for op.createOption(). \n");
 
-    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), 2, 500 * 10 ** 4, 500 * 10 ** 4);
+    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), users[1], 500 * 10 ** 4, 500 * 10 ** 4);
     expect(await op.isOption(2)).to.equal(true);
     
     await op.delOption(2);
@@ -503,7 +514,7 @@ async function main() {
       triggerDate: triggerDate,
       execDays: 90,
       closingDays: 3,
-      obligor: 2,
+      obligor: users[1],
     };
 
     cond = {
@@ -517,14 +528,14 @@ async function main() {
       para3: 0,
     };
 
-    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), 3, 500 * 10 ** 4, 500 * 10 ** 4);
+    await op.createOption(codifyHeadOfOption(headOfOpt), codifyCond(cond), users[3], 500 * 10 ** 4, 500 * 10 ** 4);
 
-    await op.addObligorIntoOpt(3, 1);
-    expect(await op.isObligor(3, 1)).to.equal(true);
+    await op.addObligorIntoOpt(3, users[0]);
+    expect(await op.isObligor(3, users[0])).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for op.addObligorIntoOpt(). \n");
     
-    await op.removeObligorFromOpt(3, 1);
-    expect(await op.isObligor(3, 1)).to.equal(false);
+    await op.removeObligorFromOpt(3, users[0]);
+    expect(await op.isObligor(3, users[0])).to.equal(false);
     console.log(" \u2714 Passed Result Verify Test for op.removeObligorFromOpt(). \n");
     
     // ---- Config SigPage of SHA ----
@@ -536,25 +547,25 @@ async function main() {
 
     console.log(" \u2714 Passed Result Verify Test for sha.setTiming(). \n");
 
-    await sha.addBlank(true, false, 1, 1);
-    expect(await sha.isParty(1)).to.equal(true);
-    expect(await sha.isSeller(true, 1)).to.equal(true);
-    expect(await sha.isBuyer(true, 1)).to.equal(false);
+    await sha.addBlank(true, false, 1, users[0]);
+    expect(await sha.isParty(users[0])).to.equal(true);
+    expect(await sha.isSeller(true, users[0])).to.equal(true);
+    expect(await sha.isBuyer(true, users[0])).to.equal(false);
 
     console.log(" \u2714 Passed Result Verify Test for sha.addBlank(). \n");
 
-    await sha.removeBlank(true, 1, 1);
-    expect(await sha.isParty(1)).to.equal(false);
+    await sha.removeBlank(true, 1, users[0]);
+    expect(await sha.isParty(users[0])).to.equal(false);
 
     console.log(" \u2714 Passed Result Verify Test for sha.removeBlank(). \n");
 
-    await sha.addBlank(true, false, 1, 1);
-    await sha.addBlank(true, false, 1, 2);
-    await sha.addBlank(true, true, 1, 3);
-    await sha.addBlank(true, true, 1, 4);
+    await sha.addBlank(true, false, 1, users[0]);
+    await sha.addBlank(true, false, 1, users[1]);
+    await sha.addBlank(true, true, 1, users[3]);
+    await sha.addBlank(true, true, 1, users[4]);
 
     const parties = (await sha.getParties()).map(v=> parseInt(v.toString()));
-    expect(parties).to.deep.equal([3, 4, 1, 2]);
+    expect(parties).to.deep.equal([users[3], users[4], users[0], users[1]]);
 
     console.log(" \u2714 Passed Result Verify Test for Parties of SHA. \n");
 
@@ -583,14 +594,13 @@ async function main() {
     // await expect(gk.signSHA(sha.address, Bytes32Zero)).to.be.revertedWith("SHA not in Circulated State");
     console.log(" \u2714 Passed State Control Test for gk.signSHA(). \n ");
 
+    tx = await gk.circulateSHA(sha.target, Bytes32Zero, Bytes32Zero);
 
-    tx = await gk.circulateSHA(await sha.getAddress(), Bytes32Zero, Bytes32Zero);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.createSHA().");
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 18n, "gk.createSHA().");
+    transferCBP(users[0], userComp, 18n);
 
-    transferCBP("1", "8", 18n);
-
-    expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(await sha.getAddress(), 2);
+    expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(sha.target, 2);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");
 
     expect(tx).to.emit(sha, "CirculateDoc");
@@ -609,25 +619,25 @@ async function main() {
     // await expect(gk.connect(signers[5]).signSHA(await sha.getAddress(), Bytes32Zero)).to.be.revertedWith("NOT Party of Doc");
     console.log(" \u2714 Passed Access Control Test for gk.signSHA().OnlyParty(). \n ");
 
-    tx = await gk.signSHA(await sha.getAddress(), Bytes32Zero);
+    tx = await gk.signSHA(sha.target, Bytes32Zero);
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 18n, "gk.signSHA().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.signSHA().");
 
-    transferCBP("1", "8", 18n);
+    transferCBP(users[0], userComp, 18n);
 
-    expect(await sha.isSigner(1)).to.equal(true);
+    expect(await sha.isSigner(users[0])).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signSHA().\n");
 
-    await gk.connect(signers[1]).signSHA(await sha.getAddress(), Bytes32Zero);
+    await gk.connect(signers[1]).signSHA(sha.target, Bytes32Zero);
 
-    transferCBP("2", "8", 18n);
+    transferCBP(users[1], userComp, 18n);
 
-    await gk.connect(signers[3]).signSHA(await sha.getAddress(), Bytes32Zero);
-    transferCBP("3", "8", 18n);
+    await gk.connect(signers[3]).signSHA(sha.target, Bytes32Zero);
+    transferCBP(users[3], userComp, 18n);
 
-    await gk.connect(signers[4]).signSHA(await sha.getAddress(), Bytes32Zero);
+    await gk.connect(signers[4]).signSHA(sha.target, Bytes32Zero);
 
-    transferCBP("4", "8", 18n);
+    transferCBP(users[4], userComp, 18n);
 
     expect(await sha.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for all gk.signSHA().\n");
@@ -637,10 +647,10 @@ async function main() {
     // await expect(gk.connect(signers[5]).activateSHA(await sha.getAddress())).to.be.revertedWith("NOT Party of Doc");
     console.log(" \u2714 Passed Access Control Test for gk.activateSHA().OnlyParty(). \n ");
 
-    tx = await gk.activateSHA(await sha.getAddress());
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 58n, "gk.activateSHA().");
+    tx = await gk.activateSHA(sha.target);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 58n, "gk.activateSHA().");
 
-    transferCBP("1", "8", 58n);
+    transferCBP(users[0], userComp, 58n);
 
     expect(tx).to.emit(roc, "UpdateStateOfFile").withArgs(await sha.getAddress(), 6);
     console.log(" \u2714 Passed Event Test for roc.UpdateStateOfFile().\n");
@@ -660,7 +670,7 @@ async function main() {
     saveBooxAddr("SHA", governingSHA);
 
     await printShares(ros);
-    await cbpOfUsers(rc, await gk.getAddress());
+    await cbpOfUsers(rc, gk.target, userComp);
     // await depositOfUsers(rc, gk);
 }
 

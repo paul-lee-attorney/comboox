@@ -75,18 +75,19 @@
 
 import { network } from "hardhat";
 import { expect } from "chai";
-import { encodeBytes32String, id } from "ethers";
+import { encodeBytes32String, id, keccak256, toUtf8Bytes } from "ethers";
 
 import { getGK, getROA, getGMM, getROS, getRC, getCashier } from "./boox";
 import { readTool } from "../readTool"; 
 import { increaseTime, Bytes32Zero, now } from "./utils";
-import { codifyHeadOfDeal, parseDeal, getDealValue } from "./roa";
+import { codifyHeadOfDeal, parseDeal, getDealValue, codifyDTClaimHead } from "./roa";
 import { printShares } from "./ros";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { getLatestSeqOfMotion } from "./gmm";
 // import { depositOfUsers } from "./gk";
 import { transferCBP } from "./saveTool";
 import { generateAuth } from "./sigTools";
+import { parseCompInfo } from "./gk";
 
 async function main() {
 
@@ -100,7 +101,11 @@ async function main() {
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getGK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const roa = await getROA();
     const gmm = await getGMM();
     const ros = await getROS();
@@ -111,18 +116,20 @@ async function main() {
 
     // ==== Create Investment Agreement ====
 
+    gk = await readTool("ROAKeeper", gk.target);
+
     let tx = await gk.createIA(1);
 
-    let Addr = await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 58n, "gk.createIA().");
+    let Addr = await royaltyTest(rc.target, signers[0].address, gk.target, tx, 58n, "gk.createIA().");
 
-    transferCBP("1", "8", 58n);
+    transferCBP(users[0], userComp, 58n);
 
     let ia = await readTool("InvestmentAgreement", Addr);
 
     // ---- Set GC ----
 
-    const ATTORNEYS = encodeBytes32String("Attorneys");
-    await ia.setRoleAdmin(ATTORNEYS, await signers[0].getAddress());
+    const ATTORNEYS = keccak256(toUtf8Bytes("Attorneys"));
+    await ia.setRoleAdmin(ATTORNEYS, signers[0].address);
 
     // ---- Create Deal ----
     const closingDeadline = (await now()) + 86400 * 90;
@@ -133,21 +140,21 @@ async function main() {
       preSeq: 0,
       classOfShare: 1,
       seqOfShare: 1,
-      seller: 1,
+      seller: users[0],
       priceOfPaid: 2.8,
       priceOfPar: 0,
       closingDeadline: closingDeadline,
       votingWeight: 100,
     }
     
-    await ia.addDeal(codifyHeadOfDeal(headOfDeal), 5, 5, 95000 * 10 ** 4, 95000 * 10 ** 4, 100);
+    await ia.addDeal(codifyHeadOfDeal(headOfDeal), users[5], users[5], 95000 * 10 ** 4, 95000 * 10 ** 4, 100);
 
     let deal = parseDeal(await ia.getDeal(1));
 
     expect(deal.head).to.deep.equal(headOfDeal);
     expect(deal.body).to.deep.equal({
-      buyer: 5,
-      groupOfBuyer: 5, 
+      buyer: users[5],
+      groupOfBuyer: users[5], 
       paid: '95,000.0',
       par: '95,000.0',
       state: 0,
@@ -163,33 +170,33 @@ async function main() {
 
     await ia.setTiming(true, 1, 90);
 
-    await ia.addBlank(true, false, 1, 1);
-    await ia.addBlank(true, true, 1, 5);
+    await ia.addBlank(true, false, 1, users[0]);
+    await ia.addBlank(true, true, 1, users[5]);
 
     // ---- Circulate IA ----
 
     await ia.finalizeIA();
-    tx = await gk.circulateIA(await ia.getAddress(), Bytes32Zero, Bytes32Zero);
+    tx = await gk.circulateIA(ia.target, Bytes32Zero, Bytes32Zero);
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 36n, "gk.circulateIA().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 36n, "gk.circulateIA().");
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
 
     expect(await ia.circulated()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.circulateIA(). \n");
 
     // ---- Sign IA ----
 
-    tx = await gk.connect(signers[5]).signIA(await ia.getAddress(), Bytes32Zero);
+    tx = await gk.connect(signers[5]).signIA(ia.target, Bytes32Zero);
 
-    await royaltyTest(await rc.getAddress(), await signers[5].getAddress(), await gk.getAddress(), tx, 36n, "gk.signIA().");
+    await royaltyTest(rc.target, signers[5].address, gk.target, tx, 36n, "gk.signIA().");
 
-    transferCBP("5", "8", 36n);
+    transferCBP(users[5], userComp, 36n);
 
-    tx = await gk.signIA(await ia.getAddress(), Bytes32Zero);
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 36n, "gk.signIA().");
+    tx = await gk.signIA(ia.target, Bytes32Zero);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 36n, "gk.signIA().");
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
 
     expect(await ia.established()).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.signIA() & ia.established(). \n");    
@@ -198,20 +205,44 @@ async function main() {
 
     await increaseTime(86400 * 2);
 
-    tx = await gk.connect(signers[3]).execTagAlong(await ia.getAddress(), 1, 3, 20000 * 10 ** 4, 20000 * 10 ** 4, id(await signers[3].getAddress()));
+    gk = await readTool("SHAKeeper", gk.target);
 
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 88n, "gk.execTagAlong().");
+    let dtClaimHead = {
+      seqOfDeal: 1,
+      dragAlong: false,
+      seqOfShare: 3,
+      paid: 20000n * 10n ** 4n,
+      par: 20000n * 10n ** 4n,
+      caller: 0,
+      para: 0,
+      argu: 0
+    };
 
-    transferCBP("3", "8", 88n);
+    tx = await gk.connect(signers[3]).execAlongRight(ia.target, codifyDTClaimHead(dtClaimHead), id(signers[3].address));
+
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 88n, "gk.execAlongRight().");
+
+    transferCBP(users[3], userComp, 88n);
 
     await expect(tx).to.emit(roa, "ExecAlongRight");
     console.log(" \u2714 Passed Event Test for roa.ExecAlongRight(). \n");
 
-    tx = await gk.execDragAlong(await ia.getAddress(), 1, 4, 9000 * 10 ** 4, 9000 * 10 ** 4, id(await signers[0].getAddress()));
+    dtClaimHead = {
+      seqOfDeal: 1,
+      dragAlong: true,
+      seqOfShare: 4,
+      paid: 9000n * 10n ** 4n,
+      par: 9000n * 10n ** 4n,
+      caller: 0,
+      para: 0,
+      argu: 0
+    };
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 88n, "gk.execDragAlong().");
+    tx = await gk.execAlongRight(ia.target, codifyDTClaimHead(dtClaimHead), id(signers[0].address));
+    
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 88n, "gk.execAlongRight().");
 
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     await expect(tx).to.emit(roa, "ExecAlongRight");
     console.log(" \u2714 Passed Event Test for roa.ExecAlongRight(). \n");
@@ -222,16 +253,16 @@ async function main() {
     // await expect(gk.connect(signers[1]).acceptAlongDeal(ia.address, 1, ethers.utils.id(signers[5].address))).to.be.revertedWith("SHAK.AAD: not buyer");
     console.log(" \u2714 Passed Access Control Test for gk.acceptAlongDeal(). \n");
 
-    const doc = BigInt(await ia.getAddress());
+    const doc = BigInt(ia.target);
 
     // await expect(gk.proposeDocOfGM(doc, 1, 1)).to.be.revertedWith("GMMK: Claims outstanding");
     console.log(" \u2714 Passed Procedure Control Test for gk.proposeDocOfGM(). ClaimsOutStandingBlock \n");
 
-    tx = await gk.connect(signers[5]).acceptAlongDeal(await ia.getAddress(), 1, id(await signers[5].getAddress()));
+    tx = await gk.connect(signers[5]).acceptAlongDeal(ia.target, 1, id(signers[5].address));
 
-    await royaltyTest(await rc.getAddress(), await signers[5].getAddress(), await gk.getAddress(), tx, 36n, "gk.acceptAlongDeal().");
+    await royaltyTest(rc.target, signers[5].address, gk.target, tx, 36n, "gk.acceptAlongDeal().");
 
-    transferCBP("5", "8", 36n);
+    transferCBP(users[5], userComp, 36n);
 
     await expect(tx).to.emit(ia, "RegDeal").withArgs(2);
     await expect(tx).to.emit(ia, "RegDeal").withArgs(3);
@@ -243,11 +274,13 @@ async function main() {
     
     // ==== Vote for IA ====
 
-    tx = await gk.proposeDocOfGM(doc, 1, 1);
+    gk = await readTool("GMMKeeper", gk.target);
 
-    await royaltyTest(await rc.getAddress(), await signers[0].getAddress(), await gk.getAddress(), tx, 116n, "gk.proposeDocOfGM().");
+    tx = await gk.proposeDocOfGM(doc, 1, users[0]);
 
-    transferCBP("1", "8", 116n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 116n, "gk.proposeDocOfGM().");
+
+    transferCBP(users[0], userComp, 116n);
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     
@@ -258,15 +291,15 @@ async function main() {
 
     tx = await gk.connect(signers[1]).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    await royaltyTest(await rc.getAddress(), await signers[1].getAddress(), await gk.getAddress(), tx, 72n, "gk.castVoteOfGM().");
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 72n, "gk.castVoteOfGM().");
 
-    transferCBP("2", "8", 72n);
+    transferCBP(users[1], userComp, 72n);
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Verify Test for gk.castVote(). \n");
@@ -284,25 +317,23 @@ async function main() {
       const value = 280n * paid / 10n ** 6n;
 
       console.log("deal:", parseDeal(deal));
-      console.log("Payee: ", await signers[numOfSigner].getAddress());
+      console.log("Payee: ", signers[numOfSigner].address);
 
-      auth = await generateAuth(signers[5], await cashier.getAddress(), value);
-      tx = await gk.connect(signers[5]).payOffApprovedDeal(auth, await ia.getAddress(), seqOfDeal, await signers[numOfSigner].getAddress());
+      auth = await generateAuth(signers[5], cashier.target, value);
+      tx = await gk.connect(signers[5]).payOffApprovedDeal(auth, ia.target, seqOfDeal, signers[numOfSigner].address);
 
-      transferCBP("5", "8", 58n);
+      transferCBP(users[5], userComp, 58n);
 
-      if (numOfSigner > 0) {
-        transferCBP(numOfSigner.toString(), "8", 18n);
-      } else {
-        transferCBP("1", "8", 18n);
-      }
+      transferCBP(users[numOfSigner], userComp, 58n);
     }
 
     // let value = 280n * 95000n * BigInt(centPrice);
 
     // await expect(gk.connect(signers[5]).payOffApprovedDeal(ia.address, 1)).to.be.revertedWith("ROAK.shareTransfer: Along Deal Open");
     // console.log(" \u2714 Passed Procedural Control Test for gk.shareTransfer(). \n");
-     
+    
+    gk = await readTool("ROAKeeper", gk.target);
+
     await payOffDeal(3, 3);
     await payOffDeal(2, 4);
     await payOffDeal(1, 0);
@@ -310,7 +341,7 @@ async function main() {
     console.log(" \u2714 Passed All Tests for Alongs. \n");
 
     await printShares(ros);
-    await cbpOfUsers(rc, await gk.getAddress());
+    await cbpOfUsers(rc, gk.target, userComp);
     // await depositOfUsers(rc, gk);
 
 }

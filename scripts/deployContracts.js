@@ -41,7 +41,10 @@ async function main() {
 	await rc.connect(signers[1]).proxyDoc(getTypeByName("MockUSDC"), 1);
 
 	const usdc = await readTool("MockUSDC", (await rc.getDoc(getTypeByName("MockUSDC"), 1, 1))[1]);
-	console.log("deployed MockUSDC:", usdc.target, "with owner: ", await rc.getOwner(), "\n");
+	await usdc.connect(signers[1]).setNewOwner(signers[0].address);
+	
+	console.log("deployed MockUSDC:", usdc.target, "with owner: ", await usdc.getOwner(), "\n");
+
 	
 	// ---- CreateNewComp ----
 
@@ -56,8 +59,7 @@ async function main() {
 	const cnc = await readTool("CreateNewComp", (await rc.getDoc(getTypeByName("CreateNewComp"), 1, 1))[1]);
 
 	await cnc.connect(signers[1]).updateBank(usdc.target); 
-	console.log("updated Bank for CreateNewComp as:", (await cnc.bank())[0], "\n");
-	console.log("deployed CreateNewComp:", cnc.target, "\n");
+	console.log("updated Bank for CreateNewComp as:", await cnc.bank(), "\n");
 
 	// ---- CashLockers ----
 
@@ -89,10 +91,13 @@ async function main() {
 	console.log("set rate for UsdFuelTank to: ", 2600 * 10 ** 6, "\n");
 
 	// ==== Keepers ====
+	libraries = {}
+	const addrKeepersRouter = await deployTool(signers[0], "KeepersRouter", libraries, params);
+	await rc.connect(signers[1]).setTemplate(getTypeByName("KeepersRouter"), addrKeepersRouter, acct_0);
+	console.log("set template for 'KeepersRouter' with TypeOfDoc:", getTypeByName("KeepersRouter"), "at address: ", addrKeepersRouter, "\n");
 
 	libraries = {
-		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
-		"KeepersRouter": (await rc.getTemp(getTypeByName("KeepersRouter"), 1))[1],
+		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1]
 	}
 	const addrGK = await deployTool(signers[0], "GeneralKeeper", libraries, params);
 	await rc.connect(signers[1]).setTemplate( getTypeByName("GeneralKeeper"), addrGK, acct_0);

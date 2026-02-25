@@ -45,13 +45,14 @@
 import { network } from "hardhat";
 import { expect } from "chai";
 
-import { getGK, getROM, getRC, getGMM, getROS, getGMMKeeper, getCashier, getUSDC } from "./boox";
+import { getGK, getROM, getRC, getGMM, getROS, getCashier, getUSDC } from "./boox";
 import { increaseTime, now } from "./utils";
 import { getLatestSeqOfMotion, parseMotion, allSupportMotion } from "./gmm";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { printShares } from "./ros";
-import { depositOfUsers } from "./gk";
+import { depositOfUsers, parseCompInfo } from "./gk";
 import { transferCBP } from "./saveTool";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -67,12 +68,14 @@ async function main() {
     const cashier = await getCashier();
     const usdc = await getUSDC();
     const rc = await getRC();
-    const gk = await getGK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;;
+
     const gmm = await getGMM();
     const rom = await getROM();
     const ros = await getROS();
-    const addrRC = await rc.getAddress();
-    const addrGK = await gk.getAddress();
 
     // ==== Propose Distribution ====
 
@@ -88,15 +91,18 @@ async function main() {
     // const data = iface.encodeFunctionData('distributeUsd', [distAmt]);
 
     // let tx = await gk.createActionOfGM(seqOfVR, [addrCashier], [0n], [data], desHash, executor);
-    // await royaltyTest(addrRC, signers[0].address, addrGK, tx, 99n, "gk.createActionOfGM().");
+    // await royaltyTest(rc.target, signers[0].address, gk.target, tx, 99n, "gk.createActionOfGM().");
     // transferCBP("1", "8", 99n);
 
     let today = await now();
     let expireDate = today + 86400 * 3;
 
+    gk = await readTool("GMMKeeper", gk.target);
+
     let tx = await gk.proposeToDistributeUsd(distAmt, expireDate, seqOfVR, seqOfDR, 0, executor);
-    await royaltyTest(addrRC, signers[0].address, addrGK, tx, 68n, "gk.proposeToDistributeUsd().");
-    transferCBP("1", "8", 68n);
+
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 68n, "gk.proposeToDistributeUsd().");
+    transferCBP(users[0], userComp, 68n);
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
 
@@ -107,8 +113,8 @@ async function main() {
 
     expect(motion.head.typeOfMotion).to.equal("Distribute Profits");
     expect(motion.head.seqOfVR).to.equal(9);
-    expect(motion.head.creator).to.equal(1);
-    expect(motion.body.proposer).to.equal(1);
+    expect(motion.head.creator).to.equal(users[0]);
+    expect(motion.body.proposer).to.equal(users[0]);
 
     console.log(" \u2714 Passed Result Verify Test for gk.proposeMotionToGeneralMeeting(). \n");
 
@@ -116,13 +122,14 @@ async function main() {
 
     await increaseTime(86400);
 
-    await allSupportMotion(gk, rom, seqOfMotion);
+    await allSupportMotion(gk, rom, seqOfMotion, userComp);
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    transferCBP("1", "8", 88n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 88n, "gk.voteCountingOfGM().");
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(' \u2714 Passed Result Verify Test for motion voting. \n');
@@ -134,15 +141,17 @@ async function main() {
 
     let balaBefore = await cashier.balanceOfComp();
 
-    tx = await gk.distributeProfits(distAmt, expireDate, seqOfDR, seqOfMotion);
+    gk = await readTool("Accountant", gk.target);
+
+    tx = await gk.distrProfits(distAmt, expireDate, seqOfDR, seqOfMotion);
     // console.log("distribution tx:", tx);
 
     let balaAfter = await cashier.balanceOfComp();
 
-    await royaltyTest(addrRC, signers[0].address, addrGK, tx, 18n, "gk.distributeUsd().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.distributeUsd().");
+    transferCBP(users[0], userComp, 18n);
 
-    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, 1);
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, users[0]);
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(cashier, "DistrProfits").withArgs(distAmt, seqOfDR, 1);
@@ -162,13 +171,13 @@ async function main() {
       const userNo = await rc.connect(signers[i]).getMyUserNo();
       const depo = await cashier.connect(signers[i]).depositOfMine(userNo);
 
-      balaBefore = await usdc.balanceOf(signers[i].address);
+      balaBefore = await usdc.balanceOf(signers[i].address);      
       tx = await cashier.connect(signers[i]).pickupUsd();
       balaAfter = await usdc.balanceOf(signers[i].address);
       
-      await royaltyTest(addrRC, signers[i].address, addrGK, tx, 18n, "cashier.pickupUsd().");
+      await royaltyTest(rc.target, signers[i].address, gk.target, tx, 18n, "cashier.pickupUsd().");
 
-      transferCBP(userNo.toString(), "8", 18n);
+      transferCBP(users[i], userComp, 18n);
 
       await expect(tx).to.emit(cashier, "PickupUsd").withArgs(signers[i].address, userNo, depo);
       console.log(" \u2714 Passed Event Test for cashier.PickupUsd(). \n");
@@ -182,7 +191,7 @@ async function main() {
     }
 
     await printShares(ros);
-    await cbpOfUsers(rc, addrGK);
+    await cbpOfUsers(rc, gk.target, userComp);
 
 }
 

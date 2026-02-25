@@ -144,10 +144,10 @@ async function main() {
 	await rc.connect(signers[1]).setTemplate( getTypeByName("InterfacesHub"), libInterfacesHub, acct_0);
 	console.log("set template for 'InterfacesHub' with TypeOfDoc:", getTypeByName("InterfacesHub"), "at address: ", libInterfacesHub, "\n");
 
-	const libKeepersRouter = await deployTool(signers[0], "KeepersRouter", libraries, params);
+	// const libKeepersRouter = await deployTool(signers[0], "KeepersRouter", libraries, params);
 
-	await rc.connect(signers[1]).setTemplate( getTypeByName("KeepersRouter"), libKeepersRouter, acct_0);
-	console.log("set template for 'KeepersRouter' with TypeOfDoc:", getTypeByName("KeepersRouter"), "at address: ", libKeepersRouter, "\n");
+	// await rc.connect(signers[1]).setTemplate( getTypeByName("KeepersRouter"), libKeepersRouter, acct_0);
+	// console.log("set template for 'KeepersRouter' with TypeOfDoc:", getTypeByName("KeepersRouter"), "at address: ", libKeepersRouter, "\n");
 
 	// ==== Batch 2 ====
 

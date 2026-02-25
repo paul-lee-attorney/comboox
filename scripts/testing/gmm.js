@@ -10,6 +10,8 @@ import { getAllMembers } from "./rom";
 import { Bytes32Zero, parseTimestamp } from "./utils";
 import { transferCBP } from "./saveTool";
 import { parseUnits } from "ethers";
+import { getAllUsers } from "./rc";
+import { getRC } from "./boox";
 
 const typeOfMotion = [
   'ZeroPoint', 'Elect Officer', 'Remove Officer', 'Approve Doc',
@@ -76,29 +78,28 @@ const castSupportVote = async (gk, signer, seqOfMotion) => {
   await gk.connect(signer).castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 }
 
-const allSupportMotion = async (gk, rom, seqOfMotion) => {
+const allSupportMotion = async (gk, rom, seqOfMotion, userComp) => {
 
   const { ethers } = await network.connect();
 
+  const rc = await getRC();
+
   const signers = await ethers.getSigners();
 
-  const membersList = await getAllMembers(rom);
-  let len = membersList.length;
-  while (len > 0) {
-    const userNo = membersList[len - 1];
-    if (userNo < 3) {
-      await castSupportVote(gk, signers[userNo - 1], seqOfMotion);
-    } else {
-      await castSupportVote(gk, signers[userNo], seqOfMotion);
+  const users = await getAllUsers(rc, 9);
+
+  for (let i=0; i<10; i++) {
+    if (await rom.isMember(users[i])) {
+      await castSupportVote(gk, signers[i], seqOfMotion);
+      transferCBP(users[i], userComp, 72n); 
     }
-    transferCBP(userNo.toString(), "8", 72n);
-    len--;
   }
+
 }
 
-const allSupportLatestMotion = async (gk, rom, gmm) => {
+const allSupportLatestMotion = async (gk, rom, gmm, userComp) => {
   const seqOfMotion = await getLatestSeqOfMotion(gmm);
-  await allSupportMotion(gk, rom, seqOfMotion);
+  await allSupportMotion(gk, rom, seqOfMotion, userComp);
 }
 
 export {

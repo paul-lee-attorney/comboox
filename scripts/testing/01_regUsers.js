@@ -54,7 +54,7 @@ async function main() {
     console.log('\n');
 
     // ==== Obtain Instances ====
-    const {ethers} = await network.connect();
+    const { ethers } = await network.connect();
     const signers = await ethers.getSigners();
     const rc = await getRC();
 
@@ -93,7 +93,7 @@ async function main() {
 
     setUserCBP(userNo2, BigInt(8n * 10n ** 18n));
 
-    for (let i = 3; i<7; i++) {
+    for (let i = 3; i<10; i++) {
       await rc.connect(signers[i]).regUser();
 
       const userNo = await getUserNo(rc, signers[i]);
@@ -116,11 +116,11 @@ async function main() {
     expect(formatUnits((await rc.balanceOf(signers[2].address)).toString(), 18)).to.equal("0.018");
     console.log(' \u2714 Passed NewUserAwards Test for signers[', 2, '].', '\n');
 
-    for (let i=0; i<7; i++) {
+    for (let i=0; i<10; i++) {
       await rc.connect(signers[i]).setBackupKey(signers[i+10].address);
     }
 
-    await cbpOfUsers(rc, AddrZero);
+    await cbpOfUsers(rc, AddrZero, userNo1);
 }
 
 main()

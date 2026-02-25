@@ -95,11 +95,13 @@ import { expect } from "chai";
 import { id } from "ethers";
 
 import { getGK, getROP, getROS, getRC, getROM } from "./boox";
-import { increaseTime, Bytes32Zero } from "./utils";
+import { increaseTime } from "./utils";
 import { codifyHeadOfPledge, parsePledge } from "./rop";
 import { getLatestShare, parseShare, printShares } from "./ros";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { transferCBP } from "./saveTool";
+import { parseCompInfo } from "./gk";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -113,7 +115,11 @@ async function main() {
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getGK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;    
+
     const rop = await getROP();
     const ros = await getROS();
     const rom = await getROM();
@@ -121,15 +127,17 @@ async function main() {
     
     // ==== Create Pledge ====
 
+    gk = await readTool("ROPKeeper", gk.target);
+
     let headOfPld = {
       seqOfShare: 9,
       seqOfPld: 1,
       createDate: 0,
       daysToMaturity: 10, 
       guaranteeDays: 10,
-      creditor: 6,
-      debtor: 2,
-      pledgor: 3,
+      creditor: users[6],
+      debtor: users[1],
+      pledgor: users[3],
       state: 0,
     };
 
@@ -138,11 +146,11 @@ async function main() {
 
     let tx = await gk.connect(signers[3]).createPledge(codifyHeadOfPledge(headOfPld), 8000 * 10 ** 4, 8000 * 10 ** 4, 4000 * 10 ** 4, 5);
     
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 66n, "gk.createPledge().");
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 66n, "gk.createPledge().");
 
-    transferCBP("3", "8", 66n);
+    transferCBP(users[3], userComp, 66n);
 
-    await expect(tx).to.emit(rop, "CreatePledge").withArgs(9, 1, 6, 8000 * 10 ** 4, 8000 * 10 ** 4);
+    await expect(tx).to.emit(rop, "CreatePledge").withArgs(9, 1, users[6], 8000 * 10 ** 4, 8000 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for rop.CreatePledge(). \n");
     
     await expect(tx).to.emit(ros, "DecreaseCleanPaid").withArgs(9, 8000 * 10 ** 4);
@@ -154,9 +162,9 @@ async function main() {
     expect(pld.head.seqOfPld).to.equal(1);
     expect(pld.head.daysToMaturity).to.equal(10);
     expect(pld.head.guaranteeDays).to.equal(10);
-    expect(pld.head.creditor).to.equal(6);
-    expect(pld.head.debtor).to.equal(2);
-    expect(pld.head.pledgor).to.equal(3);
+    expect(pld.head.creditor).to.equal(users[6]);
+    expect(pld.head.debtor).to.equal(users[1]);
+    expect(pld.head.pledgor).to.equal(users[3]);
     expect(pld.head.state).to.equal("Issued");
     expect(pld.body.paid).to.equal("8,000.0");
     
@@ -168,13 +176,13 @@ async function main() {
 
     // ==== Transfer Pledge ====
 
-    tx = await gk.connect(signers[6]).transferPledge(9, 1, 5, 2000 * 10 ** 4);
+    tx = await gk.connect(signers[6]).transferPledge(9, 1, users[5], 2000 * 10 ** 4);
 
-    await royaltyTest(await rc.getAddress(), await signers[6].getAddress(), await gk.getAddress(), tx, 36n, "gk.transferPledge().");
+    await royaltyTest(rc.target, signers[6].address, gk.target, tx, 88n, "gk.transferPledge().");
 
-    transferCBP("6", "8", 36n);
+    transferCBP(users[6], userComp, 88n);
 
-    await expect(tx).to.emit(rop, "TransferPledge").withArgs(pld.head.seqOfShare, 1, 2, 5, 4000 * 10 ** 4, 4000 * 10 ** 4);
+    await expect(tx).to.emit(rop, "TransferPledge").withArgs(pld.head.seqOfShare, 1, 2, users[5], 4000 * 10 ** 4, 4000 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for rop.TransferPledge(). \n");
 
     pld = parsePledge(await rop.getPledge(9, 2));
@@ -183,9 +191,9 @@ async function main() {
     expect(pld.head.seqOfPld).to.equal(2);
     expect(pld.head.daysToMaturity).to.equal(10);
     expect(pld.head.guaranteeDays).to.equal(10);
-    expect(pld.head.creditor).to.equal(5);
-    expect(pld.head.debtor).to.equal(2);
-    expect(pld.head.pledgor).to.equal(3);
+    expect(pld.head.creditor).to.equal(users[5]);
+    expect(pld.head.debtor).to.equal(users[1]);
+    expect(pld.head.pledgor).to.equal(users[3]);
     expect(pld.head.state).to.equal("Issued");
     expect(pld.body.paid).to.equal("4,000.0");
 
@@ -195,9 +203,9 @@ async function main() {
 
     tx = await gk.connect(signers[5]).refundDebt(9, 2, 1000 * 10 ** 4);
 
-    await royaltyTest(await rc.getAddress(), await signers[5].getAddress(), await gk.getAddress(), tx, 36n, "gk.refundDebt().");
+    await royaltyTest(rc.target, signers[5].address, gk.target, tx, 36n, "gk.refundDebt().");
 
-    transferCBP("5", "8", 36n);
+    transferCBP(users[5], userComp, 36n);
 
     await expect(tx).to.emit(rop, "RefundDebt").withArgs(pld.head.seqOfShare, pld.head.seqOfPld, 1000 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for rop.RefundDebt(). \n");
@@ -222,9 +230,9 @@ async function main() {
 
     tx = await gk.connect(signers[3]).extendPledge(9, 1, 10);
 
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 18n, "gk.extendPledge().");
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 18n, "gk.extendPledge().");
 
-    transferCBP("3", "8", 18n);
+    transferCBP(users[3], userComp, 18n);
 
     await expect(tx).to.emit(rop, "ExtendPledge").withArgs(9, 1, 10);
     console.log(" \u2714 Passed Event Test for rop.ExtendPledge(). \n");
@@ -236,11 +244,11 @@ async function main() {
 
     // ==== Lock & Release Pledge ====
 
-    tx = await gk.connect(signers[5]).transferPledge(9, 2, 6, 500 * 10 ** 4);
+    tx = await gk.connect(signers[5]).transferPledge(9, 2, users[6], 500 * 10 ** 4);
 
-    await royaltyTest(await rc.getAddress(), await signers[5].getAddress(), await gk.getAddress(), tx, 36n, "gk.transferPledge().");
+    await royaltyTest(rc.target, signers[5].address, gk.target, tx, 88n, "gk.transferPledge().");
 
-    transferCBP("5", "8", 36n);
+    transferCBP(users[5], userComp, 88n);
 
     const hashLock = id('Spring is coming');
 
@@ -252,9 +260,9 @@ async function main() {
 
     tx = await gk.connect(signers[5]).lockPledge(9, 2, hashLock);
 
-    await royaltyTest(await rc.getAddress(), await signers[5].getAddress(), await gk.getAddress(), tx, 58n, "gk.lockPledge().");
+    await royaltyTest(rc.target, signers[5].address, gk.target, tx, 58n, "gk.lockPledge().");
 
-    transferCBP("5", "8", 58n);
+    transferCBP(users[5], userComp, 58n);
 
     await expect(tx).to.emit(rop, "LockPledge").withArgs(9, 2, hashLock);
     console.log(" \u2714 Passed Event Test for rop.LockPledge(). \n");
@@ -265,9 +273,9 @@ async function main() {
     expect(pld.head.seqOfPld).to.equal(2);
     expect(pld.head.daysToMaturity).to.equal(10);
     expect(pld.head.guaranteeDays).to.equal(10);
-    expect(pld.head.creditor).to.equal(5);
-    expect(pld.head.debtor).to.equal(2);
-    expect(pld.head.pledgor).to.equal(3);
+    expect(pld.head.creditor).to.equal(users[5]);
+    expect(pld.head.debtor).to.equal(users[1]);
+    expect(pld.head.pledgor).to.equal(users[3]);
     expect(pld.head.state).to.equal("Locked");
     expect(pld.body.paid).to.equal("1,000.0");
     expect(pld.hashLock).to.equal(hashLock);
@@ -281,6 +289,10 @@ async function main() {
 
     tx = await gk.connect(signers[3]).releasePledge(9, 2, 'Spring is coming');
 
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 58n, "gk.releasePledge().");
+
+    transferCBP(users[3], userComp, 58n);
+
     await expect(tx).to.emit(rop, "ReleasePledge").withArgs(9, 2, "Spring is coming");
     console.log(" \u2714 Passed Event Test for rop.ReleasePledge(). \n");
 
@@ -293,9 +305,9 @@ async function main() {
     expect(pld.head.seqOfPld).to.equal(2);
     expect(pld.head.daysToMaturity).to.equal(10);
     expect(pld.head.guaranteeDays).to.equal(10);
-    expect(pld.head.creditor).to.equal(5);
-    expect(pld.head.debtor).to.equal(2);
-    expect(pld.head.pledgor).to.equal(3);
+    expect(pld.head.creditor).to.equal(users[5]);
+    expect(pld.head.debtor).to.equal(users[1]);
+    expect(pld.head.pledgor).to.equal(users[3]);
     expect(pld.head.state).to.equal("Released");
     expect(pld.body.paid).to.equal("1,000.0");
     expect(pld.hashLock).to.equal(hashLock);
@@ -322,11 +334,11 @@ async function main() {
 
     // // ---- Exec Pledge by User_6 ----
 
-    tx = await gk.connect(signers[6]).execPledge(9, 1, 6, 6);
+    tx = await gk.connect(signers[6]).execPledge(9, 1, users[6], users[6]);
 
-    await royaltyTest(await rc.getAddress(), await signers[6].getAddress(), await gk.getAddress(), tx, 88n, "gk.execPledge().");
+    await royaltyTest(rc.target, signers[6].address, gk.target, tx, 88n, "gk.execPledge().");
 
-    transferCBP("6", "8", 88n);
+    transferCBP(users[6], userComp, 88n);
 
     await expect(tx).to.emit(rop, "ExecPledge").withArgs(9, 1);
     console.log(" \u2714 Passed Event Test for rop.ExecPledge(). \n");
@@ -337,10 +349,10 @@ async function main() {
     await expect(tx).to.emit(ros, "SubAmountFromShare").withArgs(9, 4000 * 10 ** 4, 4000 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.SubAmountFromShare(). \n");
 
-    await expect(tx).to.emit(rom, "AddMember").withArgs(6, 5);
+    await expect(tx).to.emit(rom, "AddMember").withArgs(users[6], 5);
     console.log(" \u2714 Passed Event Test for rom.AddMember(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(24, 6);
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(24, users[6]);
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     pld = parsePledge(await rop.getPledge(9, 1));
@@ -349,16 +361,16 @@ async function main() {
     expect(pld.head.seqOfPld).to.equal(1);
     expect(pld.head.daysToMaturity).to.equal(10);
     expect(pld.head.guaranteeDays).to.equal(20);
-    expect(pld.head.creditor).to.equal(6);
-    expect(pld.head.debtor).to.equal(2);
-    expect(pld.head.pledgor).to.equal(3);
+    expect(pld.head.creditor).to.equal(users[6]);
+    expect(pld.head.debtor).to.equal(users[1]);
+    expect(pld.head.pledgor).to.equal(users[3]);
     expect(pld.head.state).to.equal("Executed");
     expect(pld.body.paid).to.equal("4,000.0");
 
     share = await getLatestShare(ros);
 
     expect(share.head.seqOfShare).to.equal(24);
-    expect(share.head.shareholder).to.equal(6);
+    expect(share.head.shareholder).to.equal(users[6]);
     expect(share.body.paid).to.equal("4,000.0");
     expect(share.body.cleanPaid).to.equal("4,000.0");
     
@@ -385,9 +397,9 @@ async function main() {
 
     tx = await gk.connect(signers[3]).revokePledge(9, 3);
 
-    await royaltyTest(await rc.getAddress(), await signers[3].getAddress(), await gk.getAddress(), tx, 58n, "gk.revokePledge().");
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 58n, "gk.revokePledge().");
 
-    transferCBP("3", "8", 58n);
+    transferCBP(users[3], userComp, 58n);
 
     await expect(tx).to.emit(rop, "RevokePledge").withArgs(9, 3);
     console.log(" \u2714 Passed Event Test for rop.RevokePledge(). \n");
@@ -401,9 +413,9 @@ async function main() {
     expect(pld.head.seqOfPld).to.equal(3);
     expect(pld.head.daysToMaturity).to.equal(10);
     expect(pld.head.guaranteeDays).to.equal(10);
-    expect(pld.head.creditor).to.equal(6);
-    expect(pld.head.debtor).to.equal(2);
-    expect(pld.head.pledgor).to.equal(3);
+    expect(pld.head.creditor).to.equal(users[6]);
+    expect(pld.head.debtor).to.equal(users[1]);
+    expect(pld.head.pledgor).to.equal(users[3]);
     expect(pld.head.state).to.equal("Revoked");
     expect(pld.body.paid).to.equal("1,000.0");
 
@@ -414,7 +426,7 @@ async function main() {
     console.log(' \u2714 Passed Result Verify Test for gk.revokePledge(). \n');
       
     await printShares(ros);
-    await cbpOfUsers(rc, await gk.getAddress());
+    await cbpOfUsers(rc, gk.target, userComp);
     // await depositOfUsers(rc, gk);
 }
 
