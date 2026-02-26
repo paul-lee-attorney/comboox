@@ -19,12 +19,14 @@
 
 pragma solidity ^0.8.24;
 
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
-import "../books/RulesParser.sol";
-import "../books/DTClaims.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/books/DTClaims.sol";
 
-contract SHAKeeper {
+import "./ISHAKeeper.sol";
+
+contract SHAKeeper is ISHAKeeper {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
     using RulesParser for bytes32;
@@ -33,21 +35,6 @@ contract SHAKeeper {
     // uint32(uint(keccak256("SHAKeeper")));
     uint public constant TYPE_OF_DOC = 0x2beb4fa1;
     uint public constant VERSION = 1;
-
-    // #######################
-    // ##   Error & Event   ##
-    // #######################
-    
-    error SHAK_WrongParty(bytes32 reason);
-
-    error SHAK_WrongState(bytes32 reason);
-
-    error SHAK_AmtOverflow(bytes32 reason);
-
-    error SHAK_ShareLocked(bytes32 reason);
-
-    error SHAK_WrongTypeOfDeal(bytes32 reason);
-
 
     // ======== TagAlong & DragAlong ========
 
@@ -392,7 +379,7 @@ contract SHAKeeper {
             revert SHAK_WrongParty(bytes32("SHAK_NotBuyer"));
 
         if(!_ros.notLocked(deal.head.seqOfShare, block.timestamp))
-            revert SHAK_ShareLocked(bytes32("SHAK_ShareLocked"));
+            revert SHAK_WrongState(bytes32("SHAK_ShareLocked"));
 
         if (_ia.takeGift(seqOfDeal))
             _gk.getROA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
@@ -439,7 +426,7 @@ contract SHAKeeper {
             _gk.getSHA().getRule(seqOfFRRule).firstRefusalRuleParser();
 
         if(rule.typeOfDeal != headOfDeal.typeOfDeal)
-            revert SHAK_WrongTypeOfDeal(bytes32("SHAK_WrongTypeOfDeal"));
+            revert SHAK_WrongInput(bytes32("SHAK_WrongTypeOfDeal"));
 
         if(
             rule.membersEqual && 

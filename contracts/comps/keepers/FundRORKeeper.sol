@@ -19,26 +19,18 @@
 
 pragma solidity ^0.8.24;
 
-import "../utils/RoyaltyCharge.sol";
-import "../InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/InterfacesHub.sol";
 
-contract FundRORKeeper {
+import "./IRORKeeper.sol";
+
+contract FundRORKeeper is IRORKeeper {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 
     // uint32(uint(keccak256("FundRORKeeper")))
     uint constant public TYPE_OF_DOC = 0x7ecb1211;
     uint constant public VERSION = 1;
-
-    //######################
-    //##   Error & Event  ##
-    //######################
-
-    error FundRORK_WrongParty(bytes32 reason);
-
-    error FundRORK_Overflow(bytes32 reason);
-
-    error FundRORK_ZeroValue(bytes32 reason);
 
     modifier onlyDK() {
         if (msg.sender != IAccessControl(address(this)).getDK()) {

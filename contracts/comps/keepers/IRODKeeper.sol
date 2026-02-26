@@ -23,6 +23,12 @@ pragma solidity ^0.8.24;
 /// @notice Interface for director and officer appointment actions.
 interface IRODKeeper {
 
+    //###############
+    //##   Error   ##
+    //###############
+
+    error RODK_WrongTypeOfMotion(bytes32 reason);
+
     // ==== Directors ====
 
     /// @notice Take a director seat after motion approval.

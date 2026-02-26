@@ -74,7 +74,7 @@ contract Cashier is ICashier, AccessControl {
         emit RedeemClass(class, principal);
     }
 
-    function collectUsd(TransferAuth memory auth, bytes32 remark) external onlyKeeper {
+    function collectUsd(TransferAuth memory auth, bytes32 remark) external {
         _transferWithAuthorization(auth);
         emit ReceiveUsd(auth.from, auth.value, remark);
     }

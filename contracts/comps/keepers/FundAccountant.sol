@@ -19,12 +19,14 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
-import "../books/WaterfallsRepo.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/WaterfallsRepo.sol";
 
-contract FundAccountant {
+import "./IAccountant.sol";
+
+contract FundAccountant is IAccountant {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;

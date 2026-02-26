@@ -20,11 +20,13 @@
 pragma solidity ^0.8.24;
 
 
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
-import "../books/PledgesRepo.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/PledgesRepo.sol";
 
-contract ROPKeeper {
+import "./IROPKeeper.sol";
+
+contract ROPKeeper is IROPKeeper {
     using PledgesRepo for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;
@@ -37,11 +39,11 @@ contract ROPKeeper {
     // ##   Error & Event   ##
     // #######################
 
-    error ROPK_NotVerified(bytes32 reason);
+    // error ROPK_WrongParty(bytes32 reason);
 
     error ROPK_WrongParty(bytes32 reason);
 
-    error ROPK_ShareLocked(bytes32 reason);
+    error ROPK_WrongState(bytes32 reason);
 
 
     function _pledgerIsVerified(
@@ -50,10 +52,10 @@ contract ROPKeeper {
     ) private view {
         if (_gk.getROI().getInvestor(pledgor).state != 
             uint8(InvestorsRepo.StateOfInvestor.Approved)) {
-            revert ROPK_NotVerified(bytes32("ROPK_PledgorNotVerified"));
+            revert ROPK_WrongParty(bytes32("ROPK_PledgorNotVerified"));
         }
         if (!_gk.getSHA().isSigner(pledgor)) {
-            revert ROPK_NotVerified(bytes32("ROPK_ShaNotSignedByPledgor"));
+            revert ROPK_WrongParty(bytes32("ROPK_ShaNotSignedByPledgor"));
         }
     }
 
@@ -80,7 +82,7 @@ contract ROPKeeper {
         }
 
         if (!_ros.notLocked(head.seqOfShare, block.timestamp)) {
-            revert ROPK_ShareLocked(bytes32("ROPK_ShareLocked"));
+            revert ROPK_WrongState(bytes32("ROPK_ShareLocked"));
         }
 
         head = _gk.getROP().createPledge(
@@ -180,7 +182,7 @@ contract ROPKeeper {
         IRegisterOfMembers _rom = _gk.getROM();
 
         if (!_ros.notLocked(pld.head.seqOfShare, block.timestamp)) {
-            revert ROPK_ShareLocked(bytes32("ROPK_ShareLocked"));
+            revert ROPK_WrongState(bytes32("ROPK_ShareLocked"));
         }
         
         DealsRepo.Deal memory deal;
@@ -217,7 +219,7 @@ contract ROPKeeper {
         }
 
         if (!_gk.getROS().notLocked(pld.head.seqOfShare, block.timestamp)) {
-            revert ROPK_ShareLocked(bytes32("ROPK_ShareLocked"));
+            revert ROPK_WrongState(bytes32("ROPK_ShareLocked"));
         }
 
         _rop.revokePledge(seqOfShare, seqOfPld, caller);

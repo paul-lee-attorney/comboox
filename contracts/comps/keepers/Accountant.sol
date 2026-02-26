@@ -19,11 +19,13 @@
 
 pragma solidity ^0.8.24;
 
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
-import "../books/WaterfallsRepo.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/WaterfallsRepo.sol";
 
-contract Accountant {
+import "./IAccountant.sol";
+
+contract Accountant is IAccountant {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 

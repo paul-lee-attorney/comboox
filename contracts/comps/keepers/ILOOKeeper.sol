@@ -29,29 +29,12 @@ interface ILOOKeeper {
     //##   Error   ##
     //###############
 
-    /// @notice Revert when LOO is paused.
-    error LOOK_IsPaused();
+    error LOOK_WrongState(bytes32 reason);
 
-    /// @notice Revert when caller is not entitled to place an offer.
-    error LOOK_NotEntitled(uint caller);
+    error LOOK_WrongParty(bytes32 reason);
 
-    /// @notice Revert when the class of share does not match the listing rule.
-    error LOOK_WrongClass(uint expected, uint actual);
+    error LOOK_WrongInput(bytes32 reason);
 
-    /// @notice Revert when the price is lower than the floor price.
-    error LOOK_LowerThanFloor(uint floor, uint actual);
-
-    /// @notice Revert when the price is higher than the ceiling price.
-    error LOOK_HigherThanCeiling(uint ceiling, uint actual);
-
-    /// @notice Revert when the paid amount overflows.
-    error LOOK_PaidOverflow(uint max, uint actual);
-
-    /// @notice Revert when the order to withdraw is not an initial offer.
-    error LOOK_NotInitOrder(uint seqOfShare);
-
-    /// @notice Revert when the caller is not a qualified investor.
-    error LOOK_NotQualifiedInvestor(uint caller);
 
     //###############
     //##   Write   ##

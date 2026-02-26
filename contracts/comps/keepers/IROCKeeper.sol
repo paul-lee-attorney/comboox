@@ -23,9 +23,16 @@ pragma solidity ^0.8.24;
 /// @notice Interface for shareholder agreement lifecycle actions.
 interface IROCKeeper {
 
-    // ############
-    // ##  SHA   ##
-    // ############
+    // ##########################
+    // ##   Error & Modifier   ##
+    // ##########################
+
+    error ROCK_WrongParty(bytes32 reason);
+
+    error ROCK_WrongState(bytes32 reason);
+
+    error ROCK_WrongInput(bytes32 reason);
+
 
     /// @notice Create a shareholder agreement.
     /// @param version Agreement version.

@@ -33,6 +33,16 @@ interface IOwnable {
         uint8 state;
     }
 
+    // ########################
+    // ##   Error & Event    ##
+    // ########################
+
+    error Ownable_WrongParty(bytes32 reason);
+
+    error Ownable_WrongInput(bytes32 reason);
+
+    error Ownable_WrongState(bytes32 reason);
+
     /// @notice Emitted when the owner address is updated.
     /// @param owner New owner address.
     event SetNewOwner(address indexed owner);

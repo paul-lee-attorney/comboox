@@ -19,13 +19,15 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
-import "../utils/ArrayUtils.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/utils/ArrayUtils.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 import "../../openzeppelin/utils/Address.sol";
 
-contract FundGMMKeeper {
+import "./IGMMKeeper.sol";
+
+contract FundGMMKeeper is IGMMKeeper {
     using RulesParser for bytes32;
     using ArrayUtils for uint[];
     using InterfacesHub for address;
@@ -40,25 +42,11 @@ contract FundGMMKeeper {
     //##   Error & Event  ##
     //######################
 
-    error FundGMMK_WrongParty(bytes32 reason);
-
-    error FundGMMK_WrongState(bytes32 reason);
-
-    error FundGMMK_WrongInput(bytes32 reason);
-
-    /// @notice Emitted when a general meeting action is executed.
-    /// @param targets Target contract address.
-    /// @param values ETH value.
-    /// @param params Encoded parameters blob.
-    /// @param seqOfMotion Motion sequence.
-    /// @param caller Caller user number.
-    event ExecAction(address indexed targets, uint indexed values, bytes indexed params, uint seqOfMotion, uint caller);
-
     modifier onlyDK() {
         address _gk = address(this);
 
         if( msg.sender != IAccessControl(_gk).getDK() )
-            revert FundGMMK_WrongParty(bytes32("FundGMMK_NotDK"));
+            revert GMMK_WrongParty(bytes32("FundGMMK_NotDK"));
         _;
     }
 
@@ -68,13 +56,13 @@ contract FundGMMKeeper {
         address _gk = address(this);
         if( !_gk.getROM().isClassMember(caller, 1) && 
             !_gk.getROD().isDirector(caller)
-        ) revert FundGMMK_WrongParty(bytes32("FundGMMK_NotGPOrManager"));
+        ) revert GMMK_WrongParty(bytes32("FundGMMK_NotGPOrManager"));
     }
 
     function _onlyGP(uint caller) private view{
         address _gk = address(this);
         if( !_gk.getROM().isClassMember(caller, 1) ) 
-            revert FundGMMK_WrongParty(bytes32("FundGMMK_NotGP"));
+            revert GMMK_WrongParty(bytes32("FundGMMK_NotGP"));
     }
 
     // ==== CreateMotion ====
@@ -104,7 +92,7 @@ contract FundGMMKeeper {
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 116000);
 
         if(!_gk.getROM().isMember(caller))
-            revert FundGMMK_WrongParty(bytes32("FundGMMK_NotMember"));
+            revert GMMK_WrongParty(bytes32("FundGMMK_NotMember"));
 
         uint seqOfVR = _gk.getROD().getPosition(seqOfPos).seqOfVR;
 
@@ -124,7 +112,7 @@ contract FundGMMKeeper {
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 116000);
 
         if(!_gk.getROM().isMember(caller))
-            revert FundGMMK_WrongParty(bytes32("FundGMMK_NotMember"));
+            revert GMMK_WrongParty(bytes32("FundGMMK_NotMember"));
 
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -138,10 +126,10 @@ contract FundGMMKeeper {
             address addr = address(uint160(doc));
 
             if(!ISigPage(addr).isSigner(caller))
-                revert FundGMMK_WrongParty(bytes32("FundGMMK_NotSignerOfDoc"));
+                revert GMMK_WrongParty(bytes32("FundGMMK_NotSignerOfDoc"));
 
             if(!ISigPage(addr).established())
-                revert FundGMMK_WrongState(bytes32("FundGMMK_DocNotEstablished"));
+                revert GMMK_WrongState(bytes32("FundGMMK_DocNotEstablished"));
 
             if (seqOfVR == 8) {
                 _gk.getROC().proposeFile(addr, seqOfMotion);
@@ -172,7 +160,7 @@ contract FundGMMKeeper {
         _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
 
-    function proposeToTransferFund(
+    function proposeToTransferFundWithGM(
         address to,
         bool isCBP,
         uint amt,
@@ -258,7 +246,7 @@ contract FundGMMKeeper {
 
         if (motion.votingRule.class != 0 &&
             !_gk.getROM().isClassMember(caller, motion.votingRule.class)) {
-            revert FundGMMK_WrongParty(bytes32("FundGMMK_NotClassMember"));
+            revert GMMK_WrongParty(bytes32("FundGMMK_NotClassMember"));
         }
 
         if (motion.head.typeOfMotion == 
@@ -267,7 +255,7 @@ contract FundGMMKeeper {
         {
             address doc = address(uint160(motion.contents));
             if (ISigPage(doc).isSigner(caller)) {
-                revert FundGMMK_WrongParty(bytes32("FundGMMK_IsSignerOfDoc"));
+                revert GMMK_WrongParty(bytes32("FundGMMK_IsSignerOfDoc"));
             }
         }
     }
@@ -499,7 +487,7 @@ contract FundGMMKeeper {
         if(
             targets.length != values.length || targets.length != params.length
         ) {
-            revert FundGMMK_WrongInput(bytes32("FundGMMK_InputLenMismatch"));
+            revert GMMK_WrongInput(bytes32("FundGMMK_InputLenMismatch"));
         }
 
         uint len = targets.length;

@@ -23,26 +23,29 @@ pragma solidity ^0.8.24;
 /// @notice Interface for general meeting motions and executions.
 interface IGMMKeeper {
 
-    // ################
-    // ##   Error    ##
-    // ################
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
 
-    error GMMK_HasNoNominationRight(uint caller);
+    error GMMK_WrongParty(bytes32 reason);
 
-    error GMMK_NotMember(uint caller);
+    error GMMK_WrongState(bytes32 reason);
 
-    error GMMK_NotClassMember(uint caller, uint class);
+    error GMMK_WrongInput(bytes32 reason);
 
-    error GMMK_NotSignerOfDoc(uint caller, address doc);
-
-    error GMMK_DocNotEstablished(address doc);
-
-    error GMMK_HasOutstandingClaims(address doc);
-
-    error GMMK_NoRight(uint caller);
-
-    error GMMK_IsRelatedParty(uint caller);
-
+    /// @notice Emitted when a general meeting action is executed.
+    /// @param targets Target contract address.
+    /// @param values ETH value.
+    /// @param params Encoded parameters blob.
+    /// @param seqOfMotion Motion sequence.
+    /// @param caller Caller user number.
+    event ExecAction(
+        address indexed targets, 
+        uint indexed values, 
+        bytes indexed params, 
+        uint seqOfMotion, 
+        uint caller
+    );
 
     // ################
     // ##   Motion   ##

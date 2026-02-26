@@ -51,7 +51,7 @@ import { getLatestSeqOfMotion, parseMotion, allSupportMotion } from "./gmm";
 import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { printShares } from "./ros";
 import { depositOfUsers, parseCompInfo } from "./gk";
-import { transferCBP } from "./saveTool";
+import { resetCBP, transferCBP } from "./saveTool";
 import { readTool } from "../readTool";
 
 async function main() {
@@ -192,6 +192,8 @@ async function main() {
 
     await printShares(ros);
     await cbpOfUsers(rc, gk.target, userComp);
+
+    resetCBP();
 
 }
 

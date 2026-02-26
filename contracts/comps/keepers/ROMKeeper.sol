@@ -19,26 +19,18 @@
 
 pragma solidity ^0.8.24;
 
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 
-contract ROMKeeper {
+import "./IROMKeeper.sol";
+
+contract ROMKeeper is IROMKeeper {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 
     // = uint32(uint(keccak256("ROMKeeper")));
     uint public constant TYPE_OF_DOC = 0xa223ca65;
     uint public constant VERSION = 1;
-
-    // ######################
-    // ##   Error & Event  ##
-    // ######################
-
-    error ROMK_WrongAccess(bytes32 reason);
-
-    error ROMK_WrongParty(bytes32 reason);
-
-    event PayInCapital(uint seqOfShare, uint paid, uint amt);
 
     modifier onlyDK() {
         if(msg.sender != IAccessControl(address(this)).getDK())
@@ -49,7 +41,6 @@ contract ROMKeeper {
     function setMaxQtyOfMembers(uint max) external onlyDK  {
         address _gk = address(this);
         msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
-
         _gk.getROM().setMaxQtyOfMembers(max);
     }
 

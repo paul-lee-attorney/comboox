@@ -19,11 +19,13 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 
-contract LOOKeeper {
+import "./ILOOKeeper.sol";
+
+contract LOOKeeper is ILOOKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;
@@ -34,25 +36,9 @@ contract LOOKeeper {
 
     modifier whenNotPaused() {
         if (address(this).getROI().isPaused())
-            revert LOOK_IsPaused(bytes32("LOOK_IsPaused"));
+            revert LOOK_WrongState(bytes32("LOOK_IsPaused"));
         _;
     }
-
-    //###############
-    //##   Error   ##
-    //###############
-
-    error LOOK_IsPaused(bytes32 reason);
-
-    error LOOK_WrongParty(bytes32 reaason);
-
-    error LOOK_WrongClass(bytes32 reason);
-
-    error LOOK_WrongPrice(bytes32 reason);
-
-    error LOOK_WrongAmt(bytes32 reason);
-
-    error LOOK_WrongType(bytes32 reason);
 
     //###############
     //##   Write   ##
@@ -76,17 +62,17 @@ contract LOOKeeper {
             revert LOOK_WrongParty(bytes32("LOOK_NotIssuer"));
 
         if (lr.classOfShare != classOfShare)
-            revert LOOK_WrongClass(bytes32("LOOK_WrongClass"));
+            revert LOOK_WrongInput(bytes32("LOOK_WrongClass"));
 
         if (uint32(price) < lr.floorPrice)
-            revert LOOK_WrongPrice(bytes32("LOOK_LowerThanFloor"));
+            revert LOOK_WrongInput(bytes32("LOOK_LowerThanFloor"));
 
         if (lr.ceilingPrice > 0 && uint32(price) > lr.ceilingPrice)
-            revert LOOK_WrongPrice(bytes32("LOOK_HigherThanCeiling"));
+            revert LOOK_WrongInput(bytes32("LOOK_HigherThanCeiling"));
 
         if (_ros.getInfoOfClass(classOfShare).body.cleanPaid + paid > 
             uint64(lr.maxTotalPar) * 10000
-        ) revert LOOK_WrongAmt(bytes32("LOOK_PaidOverflow"));
+        ) revert LOOK_WrongInput(bytes32("LOOK_PaidOverflow"));
 
         _ros.increaseEquityOfClass(true, classOfShare, 0, 0, paid);
 
@@ -119,7 +105,7 @@ contract LOOKeeper {
             _loo.getOrder(classOfShare, seqOfOrder, true);
 
         if (order.data.seqOfShare > 0)
-            revert LOOK_WrongType(bytes32("LOOK_NotInitOrder"));
+            revert LOOK_WrongInput(bytes32("LOOK_NotInitOrder"));
 
         RulesParser.ListingRule memory lr =
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
@@ -151,10 +137,10 @@ contract LOOKeeper {
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
         if (seqOfClass != lr.classOfShare)
-            revert LOOK_WrongClass(bytes32("LOOK_WrongClass"));
+            revert LOOK_WrongInput(bytes32("LOOK_WrongClass"));
 
         if (uint32(price) < lr.offPrice)
-            revert LOOK_WrongPrice(bytes32("LOOK_LowerThanOffPrice"));
+            revert LOOK_WrongInput(bytes32("LOOK_LowerThanOffPrice"));
 
         uint[] memory sharesInhand = 
             _gk.getROM().sharesInClass(caller, lr.classOfShare);
@@ -218,7 +204,7 @@ contract LOOKeeper {
             _loo.getOrder(classOfShare, seqOfOrder, true);
 
         if(order.data.seqOfShare == 0) {
-            revert LOOK_WrongType(bytes32("LOOK_NoTargetShare"));
+            revert LOOK_WrongInput(bytes32("LOOK_NoTargetShare"));
         }
 
         SharesRepo.Share memory share =
@@ -250,7 +236,7 @@ contract LOOKeeper {
         }
 
         if (price == 0) {
-            revert LOOK_WrongPrice(bytes32("LOOK_ZeroPrice"));
+            revert LOOK_WrongInput(bytes32("LOOK_ZeroPrice"));
         }
 
         if (!_gk.getSHA().isSigner(caller)) {
@@ -287,7 +273,7 @@ contract LOOKeeper {
         }
 
         if (auth.value == 0) {
-            revert LOOK_WrongPrice(bytes32("LOOK_ZeroMargin"));
+            revert LOOK_WrongInput(bytes32("LOOK_ZeroMargin"));
         }
 
         if (!_gk.getSHA().isSigner(caller)) {

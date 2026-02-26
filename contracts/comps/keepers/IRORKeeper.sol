@@ -24,6 +24,16 @@ pragma solidity ^0.8.24;
 /// @notice Interface for redemption configuration and execution.
 interface IRORKeeper {
 
+    //######################
+    //##   Error & Event  ##
+    //######################
+
+    error FundRORK_WrongParty(bytes32 reason);
+
+    error FundRORK_Overflow(bytes32 reason);
+
+    error FundRORK_ZeroValue(bytes32 reason);
+
     /// @notice Add a redeemable class.
     /// @param class Share class id.
     function addRedeemableClass(uint class) external;

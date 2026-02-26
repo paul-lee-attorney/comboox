@@ -19,50 +19,42 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
 import "../../openzeppelin/utils/Address.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 
-contract ROIKeeper {
+import "./IROIKeeper.sol";
+
+contract FundROIKeeper is IROIKeeper {
     using RulesParser for bytes32;
+    using Address for address;
     using InterfacesHub for address;
     using RoyaltyCharge for address;
-    using Address for address;
 
-    // uint32(uint(keccak256("ROIKeeper")));
-    uint public constant TYPE_OF_DOC = 0xd042852b;
-    uint public constant VERSION = 1;
-
-    // ######################
-    // ##   Error & Event  ##
-    // ######################
-
-    error ROIK_WrongParty(bytes32 reason);
-    
-    error ROIK_WrongKey(bytes32 reason);
-
-    error ROIK_NoQuota(bytes32 reason);
+    // uint32(uint(keccak256("FundROIKeeper")))
+    uint constant public TYPE_OF_DOC = 0x918b186a;
+    uint constant public VERSION = 1;
 
     // ==== Pause LOO ====
 
-    function _checkVerifierLicense(address _gk, uint seqOfLR, uint caller) private view {
+    function _checkVerifierLicense(address _gk, uint seqOfLR, uint caller) private view{
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
         if(!_gk.getROD().hasTitle(caller, lr.titleOfVerifier)) {
-            revert ROIK_WrongParty(bytes32("ROIK_NoRightOfVerify"));
+            revert ROIK_WrongParty("FundROIK_NotVerifier");
         }
     }
 
-    function _checkEnforcerLicense(address _gk, uint seqOfLR, uint caller) private view {
+    function _checkEnforcerLicense(address _gk, uint seqOfLR, uint caller) private view{
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
         if(!_gk.getROD().hasTitle(caller, lr.para)) {
-            revert ROIK_WrongParty(bytes32("ROIK_NoRightOfEnforce"));
+            revert ROIK_WrongParty("FundROIK_NotEnforcer");
         }
     }
 
-    function pause(uint seqOfLR) external {
+    function pause(uint seqOfLR) external  {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
@@ -76,14 +68,14 @@ contract ROIKeeper {
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
         _checkEnforcerLicense(_gk, seqOfLR, caller);
+
         _gk.getROI().unPause(caller);
     }
 
     // ==== Freeze Share ====
 
     function freezeShare(
-        uint seqOfLR, uint seqOfShare, uint paid, 
-        bytes32 hashOrder
+        uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
     ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
@@ -97,14 +89,13 @@ contract ROIKeeper {
     }
 
     function unfreezeShare(
-        uint seqOfLR, uint seqOfShare, uint paid, 
-        bytes32 hashOrder
+        uint seqOfLR, uint seqOfShare, uint paid, bytes32 hashOrder
     ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
-
+        
         _checkEnforcerLicense(_gk, seqOfLR, caller);
-    
+
         IRegisterOfShares _ros = _gk.getROS();
         _ros.increaseCleanPaid(seqOfShare, paid);
         uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
@@ -117,14 +108,13 @@ contract ROIKeeper {
     ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
-
+       
         _checkEnforcerLicense(_gk, seqOfLR, caller);
         
         IRegisterOfInvestors _roi = _gk.getROI();
         uint to = addrTo.msgSender(TYPE_OF_DOC, VERSION, 88000);
-
-        if(!_roi.isInvestor(to)) {
-            revert ROIK_WrongParty(bytes32("ROIK_NotInvestor"));
+        if (!_roi.isInvestor(to)) {
+            revert ROIK_WrongParty("FundROIK_NotInvestor");
         }
 
         IRegisterOfShares _ros = _gk.getROS();
@@ -134,33 +124,34 @@ contract ROIKeeper {
         _roi.forceTransfer(share.head.shareholder, seqOfShare, paid, caller, hashOrder);
         _ros.transferShare(seqOfShare, paid, paid, to, share.head.priceOfPaid, share.head.priceOfPar);   
     }
+
     // ==== Investor ====
 
     function regInvestor(
         address bKey, uint groupRep, bytes32 idHash
     ) external {
-
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        // address _rc = _gk.getRCByGK();
-
-        if(msg.sender == bKey)
-            revert ROIK_WrongKey(bytes32("ROIK_SameKey"));
+        if(msg.sender == bKey) {
+            revert ROIK_WrongParty("FundROIK_SameKey");
+        }
 
         if(caller != bKey.msgSender(TYPE_OF_DOC, VERSION, 18000)) {
-            revert ROIK_WrongKey(bytes32("ROIK_WrongBackupKey"));
+            revert ROIK_WrongParty("FundROIK_WrongBackupKey");
         }
 
         if (msg.sender.isContract()) {
-            // uint32(uint(keccak256("GeneralKeeper"))
-            if(_gk.getRCByGK().getHeadByBody(msg.sender).typeOfDoc != 0x25586efd)  
-                revert ROIK_WrongParty(bytes32("ROIK_COAApplicantNotGK"));
+            // uint32(uint(keccak256("GeneralKeeper")))
+            if(_gk.getRCByGK().getHeadByBody(msg.sender).typeOfDoc != 0x25586efd) { 
+                revert ROIK_WrongParty("FundROIK_NotGK");
+            }
         }
 
         if (bKey.isContract()) {
-            if(_gk.getRCByGK().getHeadByBody(bKey).typeOfDoc != 0x25586efd)
-                revert ROIK_WrongParty(bytes32("ROIK_COABackupKeyNotGK"));
+            if (_gk.getRCByGK().getHeadByBody(bKey).typeOfDoc != 0x25586efd) {
+                revert ROIK_WrongParty("FundROIK_BKeyNotGK");
+            }
         }
 
         _gk.getROI().regInvestor(caller, groupRep, idHash);
@@ -169,7 +160,7 @@ contract ROIKeeper {
     function approveInvestor(
         uint userNo,
         uint seqOfLR
-    ) external {
+    ) external  {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
@@ -180,10 +171,12 @@ contract ROIKeeper {
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
-        if(lr.maxQtyOfInvestors != 0 &&
-            _roi.getQtyOfInvestors() >= lr.maxQtyOfInvestors
-        ) {
-            revert ROIK_NoQuota(bytes32("ROIK_NoQuotaOfInvestors"));
+        if(!_gk.getROM().isClassMember(caller, 1)) {
+            revert ROIK_WrongParty("FundROIK_NotGP");
+        }
+
+        if(lr.maxQtyOfInvestors != 0 && _roi.getQtyOfInvestors() >= lr.maxQtyOfInvestors) {
+            revert ROIK_WrongInput("FundROIK_NoQuotaForNewInvestor");
         }
 
         _roi.approveInvestor(userNo, caller);
@@ -192,11 +185,15 @@ contract ROIKeeper {
     function revokeInvestor(
         uint userNo,
         uint seqOfLR
-    ) external {
+    ) external  {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
         _checkVerifierLicense(_gk, seqOfLR, caller);
+
+        if(!_gk.getROM().isClassMember(caller, 1)) {
+            revert ROIK_WrongParty("FundROIK_NotGP");
+        }
 
         _gk.getROI().revokeInvestor(userNo, caller);
     }

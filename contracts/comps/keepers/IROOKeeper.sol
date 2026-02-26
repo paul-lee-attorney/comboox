@@ -26,9 +26,15 @@ import "../books/cashier/ICashier.sol";
 /// @notice Interface for option swaps and related transfers.
 interface IROOKeeper {
 
-    // #################
-    // ##  ROOKeeper  ##
-    // #################
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
+
+    error ROOK_WrongAccess(bytes32 reason);
+
+    error ROOK_WrongState(bytes32 reason);
+
+    error ROOK_WrongParty(bytes32 reason);
 
     /// @notice Emitted when an option swap is paid off.
     /// @param seqOfOpt Option sequence.

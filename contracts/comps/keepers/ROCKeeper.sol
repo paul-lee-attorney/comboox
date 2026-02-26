@@ -19,62 +19,47 @@
 
 pragma solidity ^0.8.24;
 
-import "../utils/RoyaltyCharge.sol";
-import "../utils/ArrayUtils.sol";
-import "../books/RulesParser.sol";
-import "../InterfacesHub.sol";
-import "../books/OfficersRepo.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/utils/ArrayUtils.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/OfficersRepo.sol";
+import "../../lib/books/DocsRepo.sol";
 
-contract FundROCKeeper {
+import "./IROCKeeper.sol";
+
+contract ROCKeeper is IROCKeeper {
     using RulesParser for bytes32;
+    using DocsRepo for DocsRepo.Head;
     using ArrayUtils for uint[];
     using InterfacesHub for address;
     using RoyaltyCharge for address;
+    
+    // uint32(uint(keccak256("ROCKeeper")));
+    uint public constant TYPE_OF_DOC = 0x4c9c9582;
+    uint public constant VERSION = 1;
 
+    // #############
+    // ##  Error  ##
+    // #############
 
-    // uint32(uint(keccak256("FundROCKeeper")))
-    uint constant public TYPE_OF_DOC = 0x1590b2fb;
-    uint constant public VERSION = 1;
+    // ==== Functions ====
 
-    // ##########################
-    // ##   Error & Modifier   ##
-    // ##########################
-
-    error FundROCK_WrongParty(bytes32 reason);
-
-    error FundROCK_WrongState(bytes32 reason);
-
-    error FundROCK_ZeroValue(bytes32 reason);
-
-    error FundROCK_Overflow(bytes32 reason);
-
-    modifier onlyDK() {
-        if (msg.sender != IAccessControl(address(this)).getDK()) {
-            revert FundROCK_WrongParty("FundROCK_NotDK");
-        }
-        _;
-    }
-
-    // ==== Draft SHA ====
-
-    function createSHA(
-        uint version
-    ) external onlyDK {
+    function createSHA(uint version) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        if(!_gk.getROM().isClassMember(caller, 1)) {
-            revert FundROCK_WrongParty("FundROCK_NotGP");
+        if (!_gk.getROM().isMember(caller)) {
+            revert ROCK_WrongParty(bytes32("ROCK_NotMember"));
         }
 
         DocsRepo.Doc memory doc = _gk.getRCByGK().cloneDoc(
             // uint32(uint(keccak256("ShareholdersAgreement")))
-            0x8c5a073d,version
+            0x8c5a073d, version
         );
 
         IAccessControl(doc.body).initKeepers(
-            address(this),
-            _gk
+            _gk, _gk
         );
 
         IShareholdersAgreement(doc.body).initDefaultRules();
@@ -84,20 +69,21 @@ contract FundROCKeeper {
         IOwnable(doc.body).setNewOwner(msg.sender);
     }
 
+
     function circulateSHA(
         address sha,
         bytes32 docUrl,
         bytes32 docHash
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        if(!_gk.getROM().isClassMember(caller, 1)) {
-            revert FundROCK_WrongParty("FundROCK_NotGP");
+        if (!ISigPage(sha).isParty(caller)) {
+            revert ROCK_WrongParty(bytes32("ROCK_NotPartyOfSha"));
         }
 
-        if(!IDraftControl(sha).isFinalized()) {
-            revert FundROCK_WrongState("FundROCK_ShaNotFinalized");
+        if (!IDraftControl(sha).isFinalized()) {
+            revert ROCK_WrongState(bytes32("ROCK_ShaNotFinalized"));
         }
         
         IShareholdersAgreement _sha = IShareholdersAgreement(sha);
@@ -119,49 +105,39 @@ contract FundROCKeeper {
     function signSHA(
         address sha,
         bytes32 sigHash
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        if(!ISigPage(sha).isParty(caller)) {
-            revert FundROCK_WrongParty("FundROCK_NotPartyOfSha");
+        if (!ISigPage(sha).isParty(caller)) {
+            revert ROCK_WrongParty(bytes32("ROCK_NotPartyOfSha"));
         }
 
-        if(_gk.getROC().getHeadOfFile(sha).state != uint8(FilesRepo.StateOfFile.Circulated)) {
-            revert FundROCK_WrongState("FundROCK_ShaNotCirculated");
-        }
+        if (
+            _gk.getROC().getHeadOfFile(sha).state != 
+            uint8(FilesRepo.StateOfFile.Circulated)
+        ) revert ROCK_WrongState(bytes32("ROCK_ShaNotCirculated"));
 
         ISigPage(sha).signDoc(true, caller, sigHash);
     }
 
-    function _membersAllSigned(
-        IRegisterOfMembers _rom,
-        IShareholdersAgreement _sha
-    ) view private returns (bool) {
-        uint[] memory members = _rom.membersList();
-        uint[] memory parties = _sha.getParties();
-        
-        if (parties.length == 0 || parties.length != members.length) {
-            return false;
-        }
+    // ==== Activate SHA ====
 
-        return members.fullyCoveredBy(parties);
-    }
-
-    function activateSHA(address sha) external onlyDK {
+    function activateSHA(address sha) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
-        if(!ISigPage(sha).isParty(caller)) {
-            revert FundROCK_WrongParty("FundROCK_NotPartyOfSha");
+        if (!ISigPage(sha).isParty(caller)) {
+            revert ROCK_WrongParty(bytes32("ROCK_NotPartyOfSha"));
         }
         
         IRegisterOfConstitution _roc = _gk.getROC();
         IRegisterOfMembers _rom = _gk.getROM();
 
-        if(sha == address(0)) {
-            revert FundROCK_WrongParty("FundROCK_ZeroShaAddr");
+        if (sha == address(0)) {
+            revert ROCK_WrongInput(bytes32("ROCK_ZeroAddr"));
         }
+
         IShareholdersAgreement _sha = IShareholdersAgreement(sha);
 
         uint seqOfMotion = _roc.getHeadOfFile(sha).seqOfMotion;
@@ -191,19 +167,33 @@ contract FundROCKeeper {
             _rom.setMinVoteRatioOnChain(gr.minVoteRatioOnChain);
         
         if (_sha.hasTitle(uint8(IShareholdersAgreement.TitleOfTerm.Options))) 
-            _regOptionTerms(_gk, _sha);
+            _regOptionTerms(_sha);
 
-        _updatePositionSetting(_gk, _sha);
-        _updateGrouping(_gk, _sha);
+        _updatePositionSetting(_sha);
+        _updateGrouping(_sha);
     }
 
-    function _regOptionTerms(address _gk, IShareholdersAgreement _sha) private {
+    function _membersAllSigned(
+        IRegisterOfMembers _rom,
+        IShareholdersAgreement _sha
+    ) view private returns (bool) {
+        uint[] memory members = _rom.membersList();
+        uint[] memory parties = _sha.getParties();
+        
+        if (parties.length == 0 || parties.length != members.length) {
+            return false;
+        }
+
+        return members.fullyCoveredBy(parties);
+    }
+
+    function _regOptionTerms(IShareholdersAgreement _sha) private {
         address opts = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.Options));
-        _gk.getROO().regOptionTerms(opts);
+        address(this).getROO().regOptionTerms(opts);
     }
 
-    function _updatePositionSetting(address _gk, IShareholdersAgreement _sha) private {
-        IRegisterOfDirectors _rod = _gk.getROD();
+    function _updatePositionSetting(IShareholdersAgreement _sha) private {
+        IRegisterOfDirectors _rod = address(this).getROD();
 
         uint256 len = _sha.getRule(256).positionAllocateRuleParser().qtyOfSubRule;
         uint256 i;
@@ -234,9 +224,8 @@ contract FundROCKeeper {
         }                
     }
 
-
-    function _updateGrouping(address _gk, IShareholdersAgreement _sha) private {
-        IRegisterOfMembers _rom = _gk.getROM();
+    function _updateGrouping(IShareholdersAgreement _sha) private {
+        IRegisterOfMembers _rom = address(this).getROM();
 
         uint256 len = _sha.getRule(768).groupUpdateOrderParser().qtyOfSubRule;
         uint256 i;
@@ -264,7 +253,9 @@ contract FundROCKeeper {
         }        
     }
 
-    function acceptSHA(bytes32 sigHash) external onlyDK {
+    // ==== Accept SHA ====
+
+    function acceptSHA(bytes32 sigHash) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 

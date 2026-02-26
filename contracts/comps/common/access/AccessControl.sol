@@ -120,10 +120,7 @@ contract AccessControl is IAccessControl, Ownable {
 
     /// @notice Restrict to general keeper or direct keeper.
     modifier onlyKeeper virtual {
-        if (_gk != msg.sender && 
-            _dk.addr != msg.sender &&
-            !_gk.getGK().isKeeper(msg.sender)
-        ) {
+        if (_gk != msg.sender && _dk.addr != msg.sender) {
             revert AC_WrongAccess(bytes32("AC_NotKeeper"));
         }
         _;

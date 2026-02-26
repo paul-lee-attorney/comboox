@@ -19,33 +19,18 @@
 
 pragma solidity ^0.8.24;
 
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 
-contract ROOKeeper {
+import "./IROOKeeper.sol";
+
+contract ROOKeeper is IROOKeeper {
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 
     // uint32(uint(keccak256("ROOKeeper")));
     uint public constant TYPE_OF_DOC = 0x3ac07862;
     uint public constant VERSION = 1;
-
-    // #####################
-    // ##  Error & Event  ##
-    // #####################
-
-    error ROOK_NotDK(bytes32 reason);
-
-    error ROOK_ShareLocked(bytes32 reason);
-    
-    error ROOK_TargetLocked(bytes32 reason);
-
-    error ROOK_WrongParty(bytes32 reason);
-
-    event PayOffSwap(
-        uint256 indexed seqOfOpt, uint256 indexed seqOfSwap, address indexed from, 
-        address to, uint value
-    );
 
     function updateOracle(
         uint256 seqOfOpt,
@@ -57,7 +42,7 @@ contract ROOKeeper {
         msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
         if (IAccessControl(_gk).getDK() != msg.sender)
-            revert ROOK_NotDK(bytes32("ROOK_NotDK"));
+            revert ROOK_WrongAccess(bytes32("ROOK_NotDK"));
 
         _gk.getROO().updateOracle(seqOfOpt, d1, d2, d3);
     }
@@ -82,10 +67,10 @@ contract ROOKeeper {
         IRegisterOfShares _ros = _gk.getROS();
 
         if (!_ros.notLocked(seqOfTarget, closingDate))
-            revert ROOK_ShareLocked(bytes32("ROOK_TargetLocked"));
+            revert ROOK_WrongState(bytes32("ROOK_TargetLocked"));
 
         if (!_ros.notLocked(seqOfPledge, closingDate))
-            revert ROOK_ShareLocked(bytes32("ROOK_PledgeLocked"));
+            revert ROOK_WrongState(bytes32("ROOK_PledgeLocked"));
 
         SwapsRepo.Swap memory swap = 
             _roo.createSwap(seqOfOpt, seqOfTarget, paidOfTarget, seqOfPledge, caller);
@@ -139,7 +124,7 @@ contract ROOKeeper {
             _gk.getROO().payOffSwap(seqOfOpt, seqOfSwap);
 
         if (!_ros.notLocked(swap.seqOfTarget, block.timestamp))
-            revert ROOK_TargetLocked(bytes32("ROOK_TargetLocked"));
+            revert ROOK_WrongState(bytes32("ROOK_TargetLocked"));
 
         uint buyer = _ros.getShare(swap.seqOfPledge).head.shareholder;
         
@@ -174,7 +159,7 @@ contract ROOKeeper {
             revert ROOK_WrongParty(bytes32("ROOK_NotSeller"));
 
         if(!_ros.notLocked(swap.seqOfPledge, block.timestamp))
-            revert ROOK_ShareLocked(bytes32("ROOK_PledgeLocked"));
+            revert ROOK_WrongState(bytes32("ROOK_PledgeLocked"));
 
         _ros.increaseCleanPaid(swap.seqOfTarget, swap.paidOfTarget);
         

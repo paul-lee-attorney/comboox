@@ -154,6 +154,10 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
     emit SetRate(newRate);
   }
 
+  function takeBackKeys (address target) external onlyKeeper {
+      IAccessControl(target).setDirectKeeper(msg.sender);
+  }
+
   /// @notice Pull USDC via Cashier authorization and transfer CBP to caller.
   /// @param auth USDC authorization (EIP-3009 style) for Cashier to collect.
   /// @param amt CBP amount requested (18 decimals). If zero, it is derived from auth.value.

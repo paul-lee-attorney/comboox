@@ -25,6 +25,14 @@ import "../books/cashier/ICashier.sol";
 /// @notice Interface for member/pay-in related actions.
 interface IROMKeeper {
 
+    // ######################
+    // ##   Error & Event  ##
+    // ######################
+
+    error ROMK_WrongAccess(bytes32 reason);
+
+    error ROMK_WrongParty(bytes32 reason);
+
     /// @notice Emitted when capital is paid in and recorded with deal value.
     /// @param seqOfShare Share sequence.
     /// @param amt Paid-in amount.
@@ -74,10 +82,12 @@ interface IROMKeeper {
     /// @param par Par amount decreased.
     /// @param amt Amount to deduct.
     function decreaseCapital(
+        uint seqOfVR,
         uint256 seqOfShare,
         uint paid,
         uint par,
-        uint amt
+        uint amt,
+        uint seqOfMotion
     ) external;
 
     /// @notice Update paid-in deadline for a share.

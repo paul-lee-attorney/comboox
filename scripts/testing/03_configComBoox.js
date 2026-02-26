@@ -150,12 +150,18 @@ async function main() {
     // expect(newOwner).to.equal((gk.target).toLowerCase());
     // console.log(' \u2714 Passed Result Verify Test for ft.setNewOwner(). \n');
 
-    gk = await readTool("GeneralKeeper", gk.target);
+    // gk = await readTool("GeneralKeeper", gk.target);
 
-    await gk.connect(signers[1]).regKeeper(16, ft.target);
-    let keeper_16 = (await gk.getKeeper(16)).toLowerCase();
-    expect(keeper_16).to.equal((ft.target).toLowerCase());
-    console.log(' \u2714 Passed Result Verify Test for usdFT as 16th keeper of the Company. \n');
+    // await gk.connect(signers[1]).regKeeper(16, ft.target);
+    // let keeper_16 = (await gk.getKeeper(16)).toLowerCase();
+    // expect(keeper_16).to.equal((ft.target).toLowerCase());
+    // console.log(' \u2714 Passed Result Verify Test for usdFT as 16th keeper of the Company. \n');
+
+    gk = await readTool("AccessControl", gk.target);
+
+    tx = await gk.connect(signers[1]).takeBackKeys(cashier.target);
+
+    tx = await cashier.connect(signers[1]).setDirectKeeper(ft.target);
 
     // ==== Transfer IPR of Templates to Company ====
 

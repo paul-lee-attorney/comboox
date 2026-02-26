@@ -47,8 +47,13 @@ contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
         address owner_,
         address regCenter_
     ) internal {
-        require(_owner.state == 0, "already inited");
-        require(regCenter_ != address(0), "zero regCenter");
+        if (_owner.state != 0) {
+            revert Ownable_WrongState(bytes32("Ownable_AlreadyInited"));
+        }
+        if (regCenter_ == address(0)) {
+            revert Ownable_WrongInput(bytes32("Ownable_ZeroRegCenter"));
+        }
+
         _owner.addr = owner_;
         _owner.state = 1;
         _rc = regCenter_;
@@ -65,10 +70,9 @@ contract Ownable is IOwnable, Initializable, UUPSUpgradeable {
     // ################
 
     modifier onlyOwner virtual {
-        require(
-            _owner.addr == msg.sender,
-            "O.onlyOwner: NOT"
-        );
+        if (_owner.addr != msg.sender) {
+            revert Ownable_WrongParty(bytes32("Ownable_NotOwner"));
+        }
         _;
     }
 

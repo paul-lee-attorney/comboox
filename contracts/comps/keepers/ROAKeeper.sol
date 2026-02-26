@@ -19,12 +19,15 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
-import "../books/DocsRepo.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/DocsRepo.sol";
 
-contract ROAKeeper {
+import "./IROAKeeper.sol";
+
+
+contract ROAKeeper is IROAKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;

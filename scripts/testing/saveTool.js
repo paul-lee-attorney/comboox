@@ -42,6 +42,11 @@ export function setUserCBP(userNo, bala) {
   );
 };
 
+export function resetCBP() {
+  const balaList = join(__dirname, "cbp.json");
+  writeFileSync(balaList, JSON.stringify({}, null, 2));
+}
+
 export function getUserCBP(userNo) {
 
   const balaList = join(__dirname, "cbp.json");

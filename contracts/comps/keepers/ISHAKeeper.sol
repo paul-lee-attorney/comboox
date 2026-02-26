@@ -23,6 +23,18 @@ pragma solidity ^0.8.24;
 /// @notice Interface for SHA rights execution (along, anti-dilution, refusal).
 interface ISHAKeeper {
 
+    // #######################
+    // ##   Error & Event   ##
+    // #######################
+    
+    error SHAK_WrongParty(bytes32 reason);
+
+    error SHAK_WrongState(bytes32 reason);
+
+    error SHAK_AmtOverflow(bytes32 reason);
+
+    error SHAK_WrongInput(bytes32 reason);
+
     // ======== TagAlong & DragAlong ========
 
     /// @notice Execute drag-along or tag-along right.

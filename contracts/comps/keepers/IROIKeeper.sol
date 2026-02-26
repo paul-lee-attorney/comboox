@@ -24,6 +24,16 @@ pragma solidity ^0.8.24;
 /// @notice Interface for investor compliance actions and LOO pause.
 interface IROIKeeper {
 
+    //##########################
+    //##     Error & Event    ##
+    //##########################
+
+    error ROIK_WrongParty(bytes32 reason);
+
+    error ROIK_WrongInput(bytes32 reason);
+
+    error ROIK_WrongState(bytes32 reason);
+
     //###############
     //##   Write   ##
     //###############

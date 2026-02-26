@@ -19,12 +19,13 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 
+import "./ILOOKeeper.sol";
 
-contract FundLOOKeeper {
+contract FundLOOKeeper is ILOOKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;
@@ -33,30 +34,17 @@ contract FundLOOKeeper {
     uint constant public TYPE_OF_DOC = 0x6ab7d4a6;
     uint constant public VERSION = 1;
 
-    //##########################
-    //##  Error & Modifiers   ##
-    //##########################
-
-    error FundLOOK_WrongState(bytes32 reason);
-
-    error FundLOOK_WrongParty(bytes32 reason);
-
-    error FundLOOK_Overflow(bytes32 reason);
-
-    error FundLOOK_ZeroValue(bytes32 reason);
-
-
 
     modifier whenNotPaused() {
         if(address(this).getROI().isPaused()) {
-            revert FundLOOK_WrongState(bytes32("FundLOOK_LooPaused"));
+            revert LOOK_WrongState(bytes32("FundLOOK_LooPaused"));
         }
         _;
     }
 
     modifier onlyDK() {
         if (msg.sender != IAccessControl(address(this)).getDK()) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotDK"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotDK"));
         }
         _;
     }
@@ -76,28 +64,28 @@ contract FundLOOKeeper {
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
         if(!_gk.getROM().isClassMember(caller, 1)) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotGP"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotGP"));
         }
 
         if(_gk.getCashier().getGulfInfo(classOfShare).principal != 0) {
-            revert FundLOOK_WrongState(bytes32("FundLOOK_ClassEstablished"));
+            revert LOOK_WrongState(bytes32("FundLOOK_ClassEstablished"));
         }
 
         if(lr.classOfShare != classOfShare) {
-            revert FundLOOK_WrongState(bytes32("FundLOOK_WrongClass"));
+            revert LOOK_WrongState(bytes32("FundLOOK_WrongClass"));
         }
         
         if(uint32(price) < lr.floorPrice) {
-            revert FundLOOK_Overflow(bytes32("FundLOOK_PriceLowerFloor"));
+            revert LOOK_WrongInput(bytes32("FundLOOK_PriceLowerFloor"));
         }
 
         if(lr.ceilingPrice != 0 && uint32(price) > lr.ceilingPrice) {
-            revert FundLOOK_Overflow(bytes32("FundLOOK_PriceHigherCeiling"));
+            revert LOOK_WrongInput(bytes32("FundLOOK_PriceHigherCeiling"));
         }
 
         if (_ros.getInfoOfClass(classOfShare).body.cleanPaid +
             paid > uint64(lr.maxTotalPar) * 10000) {
-            revert FundLOOK_Overflow(bytes32("FundLOOK_PaidOverflow"));
+            revert LOOK_WrongInput(bytes32("FundLOOK_PaidOverflow"));
         }
 
         _ros.increaseEquityOfClass(true, classOfShare, 0, 0, paid);
@@ -129,18 +117,18 @@ contract FundLOOKeeper {
             _loo.getOrder(classOfShare, seqOfOrder, true);
 
         if(order.data.seqOfShare != 0) {
-            revert FundLOOK_WrongState(bytes32("FundLOOK_NotInitOrder"));
+            revert LOOK_WrongState(bytes32("FundLOOK_NotInitOrder"));
         }
 
         if(!_gk.getROM().isClassMember(caller, 1)) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotGP"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotGP"));
         }
 
         RulesParser.ListingRule memory lr =
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
         
         if(!_gk.getROD().hasTitle(caller, lr.titleOfIssuer)) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotIssuer"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotIssuer"));
         }
 
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, true);
@@ -157,7 +145,7 @@ contract FundLOOKeeper {
 
         if(_gk.getROI().getInvestor(caller).state != 
             uint8(InvestorsRepo.StateOfInvestor.Approved)) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotQualifiedInvestor"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotQualifiedInvestor"));
         }
 
         IRegisterOfShares _ros = _gk.getROS();
@@ -166,11 +154,11 @@ contract FundLOOKeeper {
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
         if(seqOfClass != lr.classOfShare) {
-            revert FundLOOK_WrongState(bytes32("FundLOOK_WrongClass"));
+            revert LOOK_WrongState(bytes32("FundLOOK_WrongClass"));
         }
 
         if(uint32(price) < lr.offPrice) {
-            revert FundLOOK_Overflow(bytes32("FundLOOK_PriceLowerOff"));
+            revert LOOK_WrongInput(bytes32("FundLOOK_PriceLowerOff"));
         }
 
         uint[] memory sharesInhand = 
@@ -236,14 +224,14 @@ contract FundLOOKeeper {
             _loo.getOrder(classOfShare, seqOfOrder, true);
 
         if(order.data.seqOfShare == 0) {
-            revert FundLOOK_ZeroValue(bytes32("FundLOOK_ZeroSeqOfShare"));
+            revert LOOK_WrongInput(bytes32("FundLOOK_ZeroSeqOfShare"));
         }
 
         SharesRepo.Share memory share =
             _ros.getShare(order.data.seqOfShare);
         
         if(share.head.shareholder != caller) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotShareholder"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotShareholder"));
         }
         
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, true);
@@ -264,11 +252,11 @@ contract FundLOOKeeper {
             _gk.getROI().getInvestor(caller);
 
         if(investor.state != uint8(InvestorsRepo.StateOfInvestor.Approved)) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotQualifiedInvestor"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotQualifiedInvestor"));
         }
         
         if(price == 0) {
-            revert FundLOOK_ZeroValue(bytes32("FundLOOK_ZeroPrice"));
+            revert LOOK_WrongInput(bytes32("FundLOOK_ZeroPrice"));
         }
 
         UsdOrdersRepo.Deal memory input;
@@ -297,11 +285,11 @@ contract FundLOOKeeper {
             _gk.getROI().getInvestor(caller);
 
         if(investor.state != uint8(InvestorsRepo.StateOfInvestor.Approved)) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotQualifiedInvestor"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotQualifiedInvestor"));
         }
 
         if(auth.value == 0) {
-            revert FundLOOK_ZeroValue(bytes32("FundLOOK_ZeroMargin"));
+            revert LOOK_WrongInput(bytes32("FundLOOK_ZeroMargin"));
         }
 
         UsdOrdersRepo.Deal memory input;
@@ -330,7 +318,7 @@ contract FundLOOKeeper {
             _loo.getOrder(classOfShare, seqOfOrder, false);
         
         if(order.node.issuer != caller) {
-            revert FundLOOK_WrongParty(bytes32("FundLOOK_NotBuyer"));
+            revert LOOK_WrongParty(bytes32("FundLOOK_NotBuyer"));
         }
         
         order = _loo.withdrawOrder(classOfShare, seqOfOrder, false);

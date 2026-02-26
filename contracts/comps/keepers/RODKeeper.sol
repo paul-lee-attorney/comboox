@@ -19,21 +19,17 @@
 
 pragma solidity ^0.8.24;
 
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 
-contract RODKeeper {    
+import "./IRODKeeper.sol";
+
+contract RODKeeper is IRODKeeper {    
     using InterfacesHub for address;
     using RoyaltyCharge for address;
 
     // uint32(uint(keccak256("RODKeeper")));
     uint public constant TYPE_OF_DOC = 0x4218a169;
     uint public constant VERSION = 1;
-
-    //###############
-    //##   Error   ##
-    //###############
-
-    error RODK_WrongTypeOfMotion(bytes32 reason);
     
     // ==== Directors ====
 

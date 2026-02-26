@@ -19,17 +19,16 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
+import "../../lib/books/RulesParser.sol";
 import "../../openzeppelin/utils/Address.sol";
-import "../utils/ArrayUtils.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
+import "../../lib/utils/ArrayUtils.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/OfficersRepo.sol";
 
-import "../books/OfficersRepo.sol";
+import "./IBMMKeeper.sol";
 
-// import "./LibOfBMMK.sol";
-
-contract BMMKeeper {
+contract BMMKeeper is IBMMKeeper {
     using RulesParser for bytes32;
     using Address for address;
     using ArrayUtils for uint[];

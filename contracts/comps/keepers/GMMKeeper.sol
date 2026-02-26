@@ -19,13 +19,15 @@
 
 pragma solidity ^0.8.24;
 
-import "../books/RulesParser.sol";
-import "../InterfacesHub.sol";
-import "../utils/RoyaltyCharge.sol";
-import "../utils/ArrayUtils.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/utils/ArrayUtils.sol";
 import "../../openzeppelin/utils/Address.sol";
 
-contract GMMKeeper {
+import "./IGMMKeeper.sol";
+
+contract GMMKeeper is IGMMKeeper {
     using RulesParser for bytes32;
     using InterfacesHub for address;
     using RoyaltyCharge for address;
@@ -39,20 +41,6 @@ contract GMMKeeper {
     // #####################
     // ##  Error & Event  ##
     // #####################
-
-    error GMMK_WrongParty(bytes32 reason);
-
-    error GMMK_WrongState(bytes32 reason);
-
-    error GMMK_WrongInput(bytes32 reason);
-
-    /// @notice Emitted when a general meeting action is executed.
-    /// @param targets Target contract address.
-    /// @param values ETH value.
-    /// @param params Encoded parameters blob.
-    /// @param seqOfMotion Motion sequence.
-    /// @param caller Caller user number.
-    event ExecAction(address indexed targets, uint indexed values, bytes indexed params, uint seqOfMotion, uint caller);
 
     // ==== CreateMotion ====
 
