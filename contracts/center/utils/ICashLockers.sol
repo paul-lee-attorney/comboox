@@ -36,9 +36,13 @@ interface ICashLockers {
         bytes32 s;
     }
 
-    // ##################
-    // ##    Event     ##
-    // ##################
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
+
+    error CL_WrongInput(bytes32 reason);
+
+    error CL_WrongState(bytes32 reason);
 
     event LockUsd(
         address indexed from, address indexed to, uint indexed amt,

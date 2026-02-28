@@ -35,7 +35,8 @@ contract BookOfUsers is IBookOfUsers, Initializable, UUPSUpgradeable {
     uint[50] private __gap;
 
     function _initUsers(address keeper) internal {
-        require(keeper != address(0), "BOU: zero keeper");
+        if (keeper == address(0)) 
+            revert BOU_WrongInput(bytes32("BOU_ZeroKeeper"));
         _users.users[0].primeKey.pubKey = msg.sender;
         _users.users[0].backupKey.pubKey = keeper;
         _users.regUser(msg.sender);
@@ -49,14 +50,14 @@ contract BookOfUsers is IBookOfUsers, Initializable, UUPSUpgradeable {
     // #####################
 
     modifier onlyOwner() {
-        require(msg.sender == _users.getOwner(),
-            "BOU: not owner");
+        if (msg.sender != _users.getOwner()) 
+            revert BOU_WrongParty(bytes32("BOU_NotOwner"));
         _;
     }
 
     modifier onlyKeeper() {
-        require(msg.sender == _users.getBookeeper(),
-            "BOU: not keeper");
+        if (msg.sender != _users.getBookeeper()) 
+            revert BOU_WrongParty(bytes32("BOU_NotKeeper"));
         _;
     }
 
@@ -151,7 +152,7 @@ contract BookOfUsers is IBookOfUsers, Initializable, UUPSUpgradeable {
     {
         if (_users.isUserNo(acct)) {
             usr = _users.users[acct];
-        } else revert ("BOU: not registered");
+        } else revert BOU_WrongInput(bytes32("BOU_AcctNotRegistered"));
     }
 
     function getRoyaltyRule(uint author) public view returns (UsersRepo.Key memory) {

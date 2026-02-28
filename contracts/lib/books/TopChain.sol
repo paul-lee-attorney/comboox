@@ -76,13 +76,21 @@ library TopChain {
         cat: basedOnPar;
     } */
 
-    //#################
-    //##   Modifier  ##
-    //#################
+    //########################
+    //##  Error & Modifier  ##
+    //########################
+
+    error TopChain_WrongInput(bytes32 reason);
+
+    error TopChain_WrongState(bytes32 reason);
+
+    error TopChain_WrongParty(bytes32 reason);
 
     /// @notice Ensure member exists in chain.
     modifier memberExist(Chain storage chain, uint256 acct) {
-        require(isMember(chain, acct), "TC.memberExist: acct not member");
+        if (!isMember(chain, acct)) {
+            revert TopChain_WrongParty(bytes32("TC_MemberNotExist"));
+        }
         _;
     }
 
@@ -103,7 +111,9 @@ library TopChain {
     /// @param chain Storage chain.
     /// @param min Minimum ratio (0-4999).
     function setMinVoteRatioOnChain(Chain storage chain, uint min) public {
-        require(min < 5000, "minVoteRatioOnChain: overflow");
+        if (min >= 5000) {
+            revert TopChain_WrongInput(bytes32("TC_InvalidMinVoteRatio"));
+        }
         chain.para.minVoteRatioOnChain = uint16(min);
     }
 
@@ -124,15 +134,18 @@ library TopChain {
     /// @param acct Member user number.
     function addNode(Chain storage chain, uint acct) public {
 
-        require(acct > 0, "TC.addNode: zero acct");
+        if (acct == 0) {
+            revert TopChain_WrongInput(bytes32("TC_ZeroAcct"));
+        }
 
         Node storage n = chain.nodes[acct];
 
         if (n.ptr == 0) {
-            require( maxQtyOfMembers(chain) == 0 ||
-                qtyOfMembers(chain) < maxQtyOfMembers(chain),
-                "TC.addNode: no vacance"
-            );
+            if ( maxQtyOfMembers(chain) != 0 &&
+                qtyOfMembers(chain) >= maxQtyOfMembers(chain)
+            ) {
+                revert TopChain_WrongInput(bytes32("TC_NoVacanceForMember"));
+            }
 
             n.ptr = uint40(acct);
 
@@ -245,9 +258,15 @@ library TopChain {
         Node storage n = chain.nodes[acct];
         Node storage r = chain.nodes[root];
 
-        require(acct != root, "TC.T2S: self grouping");
-        require(_isIndepMember(n), "TC.T2S: not indepMember");
-        require(_notGroupMember(r), "TC.T2S: leaf as root");
+        if (acct == root) {
+            revert TopChain_WrongState(bytes32("TC_SameAcct"));
+        }
+        if (!_isIndepMember(n)) {
+            revert TopChain_WrongState(bytes32("TC_NotIndepMember"));
+        }
+        if (!_notGroupMember(r)) {
+            revert TopChain_WrongState(bytes32("TC_LeafAsRoot"));
+        }
 
         _carveOut(chain, n.ptr);
         _vInsert(chain, n.ptr, uint40(root));
@@ -259,7 +278,9 @@ library TopChain {
     function sub2Top(Chain storage chain, uint256 acct) public {
 
         Node storage n = chain.nodes[acct];
-        require(_isInGroup(n), "TC.S2T: not in a branch");
+        if(!_isInGroup(n)) {
+            revert TopChain_WrongState(bytes32("TC_NotInGroup"));
+        }
 
         _carveOut(chain, acct);
 

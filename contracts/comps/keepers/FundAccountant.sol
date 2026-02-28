@@ -44,7 +44,7 @@ contract FundAccountant is IAccountant {
     modifier onlyDK() {
         address _gk = address(this);
         if (msg.sender != IAccessControl(_gk).getDK()) {
-            revert FundACCT_WrongParty("Not DK");
+            revert FundACCT_WrongParty(bytes32("FundACCT_NotDK"));
         }
         _;
     }
@@ -62,12 +62,13 @@ contract FundAccountant is IAccountant {
         uint expireDate,
         uint seqOfDR,
         uint seqOfMotion
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        require(_gk.getROM().isClassMember(caller, 1), 
-            "Accountant: not GP");
+        if (!_gk.getROM().isClassMember(caller, 1)) {
+            revert FundACCT_WrongParty(bytes32("FundACCT_NotGP"));
+        }
 
         _gk.getGMM().distributeUsd(
             amt,
@@ -87,12 +88,13 @@ contract FundAccountant is IAccountant {
         uint seqOfDR,
         uint fundManager,
         uint seqOfMotion        
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        require(_gk.getROM().isClassMember(caller, 1), 
-            "Accountant: not GP");
+        if (!_gk.getROM().isClassMember(caller, 1)) {
+            revert FundACCT_WrongParty(bytes32("FundACCT_NotGP"));
+        }
 
         IRegisterOfShares _ros = _gk.getROS();
         ICashier _cashier = _gk.getCashier();
@@ -155,13 +157,14 @@ contract FundAccountant is IAccountant {
         uint amt,
         uint expireDate,
         uint seqOfMotion
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 76000);
 
-        require(_gk.getROM().isClassMember(caller, 1) ||
-            _gk.getROD().isDirector(caller), 
-            "GMMK: not GP");
+        if (!_gk.getROM().isClassMember(caller, 1) &&
+            !_gk.getROD().isDirector(caller)) {
+            revert FundACCT_WrongParty(bytes32("FundACCT_NotGPorDirector"));
+        }
 
         if (fromBMM) {
             _gk.getBMM().transferFund(

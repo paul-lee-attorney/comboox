@@ -121,16 +121,18 @@ contract CashLockers is ICashLockers {
         UsdLockersRepo.Head memory head =
             _lockers.releaseUsd(lock, key, msg.sender);
 
-        require(_coffers[head.from] >= head.amt,
-            "CashLocker.releaseUsd: insufficient balance");
+        if (_coffers[head.from] < head.amt) {
+            revert CL_WrongState(bytes32("CL_InsufficientBalance"));
+        }
 
         _coffers[head.from] -= head.amt;
         _coffers[address(1)] -= head.amt;
 
         emit UnlockUsd(head.from, head.to, head.amt, lock);
 
-        require(usdc.transfer(head.to, head.amt),
-            "CashLocker.releaseUsd: transfer failed");
+        if (!usdc.transfer(head.to, head.amt)) {
+            revert CL_WrongState(bytes32("CL_TransferFailed"));
+        }
     }
 
     /// @notice Withdraw a lock after expiry by the creator.
@@ -140,16 +142,18 @@ contract CashLockers is ICashLockers {
         UsdLockersRepo.Head memory head =
             _lockers.withdrawUsd(lock, msg.sender);
 
-        require(_coffers[head.from] >= head.amt,
-            "CashLocker.withdrawUsd: insufficient amt");
+        if (_coffers[head.from] < head.amt) {
+            revert CL_WrongState(bytes32("CL_InsufficientBalance"));
+        }
 
         _coffers[head.from] -= head.amt;
         _coffers[address(1)] -= head.amt;
 
         emit WithdrawUsd(head.from, head.amt, lock);
 
-        require(usdc.transfer(head.from, head.amt),
-            "CashLocker.withdrawUsd: transfer failed");
+        if (!usdc.transfer(head.from, head.amt)) {
+            revert CL_WrongState(bytes32("CL_TransferFailed"));
+        }
     }
 
     //##################

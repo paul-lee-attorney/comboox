@@ -46,8 +46,8 @@ contract ListOfOrders is IListOfOrders, AccessControl {
 
     function placeSellOrder(
         UsdOrdersRepo.Deal memory input, uint execHours
-    ) external onlyDK returns(
-        UsdOrdersRepo.Deal[] memory deals, 
+    ) external onlyKeeper returns(
+        UsdOrdersRepo.Deal[] memory deals,
         uint lenOfDeals,
         GoldChain.Order[] memory expired,
         uint lenOfExpired,
@@ -95,7 +95,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     function placeBuyOrder(
         UsdOrdersRepo.Deal memory input,
         uint execHours
-    ) external onlyDK returns (
+    ) external onlyKeeper returns (
         UsdOrdersRepo.Deal[] memory deals,
         uint lenOfDeals, 
         GoldChain.Order[] memory expired,
@@ -118,7 +118,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
 
     function withdrawOrder(
         uint classOfShare, uint seqOfOrder, bool isOffer
-    ) external onlyDK returns(GoldChain.Order memory order) {
+    ) external onlyKeeper returns(GoldChain.Order memory order) {
 
         if (!_classesList.contains(classOfShare)) return order;
 

@@ -43,7 +43,7 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
         uint par,
         uint guaranteedAmt,
         uint execDays
-    ) external onlyDK returns(PledgesRepo.Head memory head){
+    ) external onlyKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
             snOfPld,
             paid,
@@ -167,21 +167,23 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
         uint256 seqOfPld, 
         string memory hashKey
     ) external onlyKeeper returns (uint64) {
-        PledgesRepo.Pledge storage pld = _repo.pledges[seqOfShare][seqOfPld];
+        PledgesRepo.Pledge storage pld = 
+            _repo.pledges[seqOfShare][seqOfPld];
         pld.releasePledge(hashKey);   
         emit ReleasePledge(seqOfShare, seqOfPld, hashKey);
         return pld.body.paid;
     }
 
-    function execPledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
-        external onlyKeeper 
-    {
+    function execPledge(
+        uint256 seqOfShare, uint256 seqOfPld, uint caller
+    ) external onlyKeeper {
         _repo.pledges[seqOfShare][seqOfPld].execPledge(caller);
         emit ExecPledge(seqOfShare, seqOfPld);
     }
 
-    function revokePledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
-        external onlyKeeper {
+    function revokePledge(
+        uint256 seqOfShare, uint256 seqOfPld, uint caller
+    ) external onlyKeeper {
         _repo.pledges[seqOfShare][seqOfPld].revokePledge(caller);
         emit RevokePledge(seqOfShare, seqOfPld);
     }

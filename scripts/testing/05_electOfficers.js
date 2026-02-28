@@ -136,7 +136,7 @@ async function main() {
 
     // ---- Nominate Chairman ----
 
-    gk = await readTool("IGMMKeeper", gk.target);
+    gk = await readTool("GMMKeeper", gk.target);
 
     // await expect(gk.connect(signers[1]).nominateDirector(1, 1)).to.be.revertedWith("GMMK: has no right");
     console.log(" \u2714 Passed Access Control Test for gk.nominateDirector(). \n");
@@ -238,7 +238,7 @@ async function main() {
     // await expect(gk.connect(signers[1]).takeSeat(seqOfMotion, 1)).to.be.revertedWith("MR.ER: not executor");
     console.log(" \u2714 Passed Access Control Test for gk.takeSeat(). \n");
 
-    gk = await readTool("IRODKeeper", gk.target);
+    gk = await readTool("RODKeeper", gk.target);
 
     tx = await gk.takeSeat(seqOfMotion, 1);
 
@@ -263,7 +263,7 @@ async function main() {
 
     // await expect(gk.connect(signers[1]).createMotionToRemoveDirector(1)).to.be.revertedWith("GMMK: has no right");
 
-    gk = await readTool("IGMMKeeper", gk.target);
+    gk = await readTool("GMMKeeper", gk.target);
 
     tx = await gk.createMotionToRemoveDirector(1);
 

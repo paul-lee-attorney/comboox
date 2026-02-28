@@ -106,7 +106,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         }
     }
 
-    function initDefaultRules() external onlyDK {
+    function initDefaultRules() external onlyKeeper {
 
         bytes32[] memory rules = new bytes32[](15);
         uint16[15] memory seqs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 512, 513];

@@ -70,10 +70,10 @@ const getGK = async (addr) => {
   return await readTool("GeneralKeeper", addr);
 }
 
-const getFK = async (addr) => {
-  if (!addr) addr = Boox.FundKeeper;
-  return await readTool("FundKeeper", addr);
-}
+// const getFK = async (addr) => {
+//   if (!addr) addr = Boox.FundKeeper;
+//   return await readTool("FundKeeper", addr);
+// }
 
 const getBMM = async () => {
   return await readTool("MeetingMinutes", Boox.BMM);
@@ -166,7 +166,7 @@ export {
   // getCNF,
   getFT,
   getGK,
-  getFK,
+  // getFK,
   getBMM,
   getGMM,
   getLOO,

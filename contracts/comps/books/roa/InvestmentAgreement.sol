@@ -41,7 +41,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint paid,
         uint par,
         uint distrWeight
-    ) external onlyAttorney() {
+    ) external onlyAttorney {
         _repo.addDeal(sn, buyer, groupOfBuyer, paid, par, distrWeight);
     }
 
@@ -78,7 +78,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     function releaseDealSubject(uint256 seq)
-        external onlyDK returns (bool flag)
+        external onlyKeeper returns (bool flag)
     {
         flag = _repo.releaseDealSubject(seq);
     }
@@ -87,14 +87,14 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint256 seq,
         bytes32 hashLock,
         uint closingDeadline
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.clearDealCP(seq, hashLock, closingDeadline);
         emit ClearDealCP(seq, hashLock, closingDeadline);
     }
 
     function closeDeal(uint256 seq, string memory hashKey)
         external
-        onlyDK
+        onlyKeeper
         returns (bool flag)
     {        
         flag = _repo.closeDeal(seq, hashKey);
@@ -103,7 +103,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
 
     function directCloseDeal(uint256 seq)
         external
-        onlyDK
+        onlyKeeper
         returns (bool flag)
     {        
         flag = _repo.directCloseDeal(seq);
@@ -133,7 +133,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint seqOfDeal,
         uint msgValue,
         uint caller
-    ) external returns (bool flag){
+    ) external onlyKeeper returns (bool flag){
         flag = _repo.payOffApprovedDeal(seqOfDeal, caller);
         emit PayOffApprovedDeal(seqOfDeal, msgValue);
     }

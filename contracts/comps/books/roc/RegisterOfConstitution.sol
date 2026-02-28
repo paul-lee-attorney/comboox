@@ -37,7 +37,7 @@ contract RegisterOfConstitution is IRegisterOfConstitution, FilesFolder {
     //##  Write I/O  ##
     //##################
 
-    function changePointer(address body) external onlyDK {
+    function changePointer(address body) external onlyKeeper {
         if (_pointer != address(0)) 
             setStateOfFile(_pointer, uint8(FilesRepo.StateOfFile.Revoked));
         _pointer = body;

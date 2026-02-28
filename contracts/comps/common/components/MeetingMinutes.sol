@@ -320,12 +320,12 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller
     ) external onlyKeeper {
 
-        require(block.timestamp < expireDate, 
-            "MM.distrProf: missed deadline");
+        if(block.timestamp >= expireDate) 
+            revert MM_WrongInput(bytes32("MM_ExpireDateNotFuture"));
 
-        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.DistributeProfits), 
-            "MM.distrProf: wrong typeOfMotion");
+        if( _repo.getMotion(seqOfMotion).head.typeOfMotion != 
+                uint8(MotionsRepo.TypeOfMotion.DistributeProfits)
+        ) revert MM_WrongInput(bytes32("MM_WrongTypeOfMotion"));
         
         uint contents = _hashPayment(address(uint160(seqOfDR << 40 + para)), false, amt, expireDate);
 
@@ -341,12 +341,12 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller
     ) external onlyKeeper {
 
-        require(block.timestamp < expireDate, 
-            "MM.TF: missed deadline");
+        if(block.timestamp >= expireDate)
+            revert MM_WrongInput(bytes32("MM_TF_ExpireDateNotFuture"));
 
-        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.TransferFund), 
-            "MM.TF: wrong typeOfMotion");
+        if (_repo.getMotion(seqOfMotion).head.typeOfMotion != 
+                uint8(MotionsRepo.TypeOfMotion.TransferFund)
+        ) revert MM_WrongInput(bytes32("MM_TF_WrongTypeOfMotion"));
         
         uint contents = _hashPayment(to, isCBP, amt, expireDate);
 
@@ -366,9 +366,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         MotionsRepo.Motion memory motion =  
             _repo.getMotion(seqOfMotion);
 
-        require(motion.head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.ApproveAction), 
-            "MM.EA: wrong typeOfMotion");
+        if (motion.head.typeOfMotion != 
+            uint8(MotionsRepo.TypeOfMotion.ApproveAction)
+        ) revert MM_WrongInput(bytes32("MM_EA_WrongTypeOfMotion"));
 
         contents = _hashAction(
             seqOfVR,
@@ -386,9 +386,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint paid, uint par, uint amt,
         uint seqOfMotion, uint caller
     ) external onlyKeeper {
-        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.DecreaseCapital), 
-            "MM.DC: wrong typeOfMotion");
+        if (_repo.getMotion(seqOfMotion).head.typeOfMotion != 
+            uint8(MotionsRepo.TypeOfMotion.DecreaseCapital)
+        ) revert MM_WrongInput(bytes32("MM_DC_WrongTypeOfMotion"));
         
         uint contents = _hashDecreaseCapital(seqOfVR, seqOfShare, paid, par, amt);
 

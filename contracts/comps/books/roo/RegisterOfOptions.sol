@@ -79,12 +79,12 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         }
     }
 
-    function addObligorIntoOption(uint256 seqOfOpt, uint256 obligor) external onlyDK {
+    function addObligorIntoOption(uint256 seqOfOpt, uint256 obligor) external onlyKeeper {
         if (_repo.addObligorIntoOption(seqOfOpt, obligor))
             emit AddObligorIntoOpt(seqOfOpt, obligor);
     }
 
-    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external onlyDK {
+    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external onlyKeeper {
         if (_repo.removeObligorFromOption(seqOfOpt, obligor))
             emit RemoveObligorFromOpt(seqOfOpt, obligor);
     }
@@ -96,7 +96,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         uint d1,
         uint d2,
         uint d3
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.updateOracle(seqOfOpt, d1, d2, d3);
         emit UpdateOracle(seqOfOpt, d1, d2, d3);
     }
@@ -120,9 +120,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     function payOffSwap(
         uint seqOfOpt,
         uint seqOfSwap
-        // uint msgValue,
-        // uint centPrice
-    ) external returns (SwapsRepo.Swap memory swap) {
+    ) external onlyKeeper returns (SwapsRepo.Swap memory swap) {
         swap = _repo.payOffSwap(seqOfOpt, seqOfSwap);
         emit PayOffSwap(seqOfOpt, SwapsRepo.codifySwap(swap));
     }
@@ -130,7 +128,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     function terminateSwap(
         uint seqOfOpt,
         uint seqOfSwap
-    ) external returns (SwapsRepo.Swap memory swap){
+    ) external onlyKeeper returns (SwapsRepo.Swap memory swap){
         swap = _repo.terminateSwap(seqOfOpt, seqOfSwap);
         emit TerminateSwap(seqOfOpt, seqOfSwap);
     }

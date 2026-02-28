@@ -110,13 +110,13 @@ contract AccessControl is IAccessControl, Ownable {
         _;
     }
 
-    /// @notice Restrict to general keeper.
-    modifier onlyGK {
-        if (_gk != msg.sender) {
-            revert AC_WrongAccess(bytes32("AC_NotGK"));
-        }
-        _;
-    }
+    // /// @notice Restrict to general keeper.
+    // modifier onlyGK {
+    //     if (_gk != msg.sender) {
+    //         revert AC_WrongAccess(bytes32("AC_NotGK"));
+    //     }
+    //     _;
+    // }
 
     /// @notice Restrict to general keeper or direct keeper.
     modifier onlyKeeper virtual {

@@ -32,13 +32,6 @@ contract FundRORKeeper is IRORKeeper {
     uint constant public TYPE_OF_DOC = 0x7ecb1211;
     uint constant public VERSION = 1;
 
-    modifier onlyDK() {
-        if (msg.sender != IAccessControl(address(this)).getDK()) {
-            revert FundRORK_WrongParty(bytes32("FundRORK_NotDK"));
-        }
-        _;
-    }   
-
     function _gpOrManager(address _gk, uint caller) private view{
         if (!(_gk.getROM().isClassMember(caller, 1) ||
             _gk.getROD().isDirector(caller))) {
@@ -46,21 +39,21 @@ contract FundRORKeeper is IRORKeeper {
         }
     }
 
-    function addRedeemableClass(uint class) external onlyDK {
+    function addRedeemableClass(uint class) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
         _gpOrManager(_gk, caller);
         _gk.getROR().addRedeemableClass(class);
     }
 
-    function removeRedeemableClass(uint class) external onlyDK  {
+    function removeRedeemableClass(uint class) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
         _gpOrManager(_gk, caller);
         _gk.getROR().removeRedeemableClass(class);
     }
 
-    function updateNavPrice(uint class, uint price) external onlyDK  {
+    function updateNavPrice(uint class, uint price) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
         _gpOrManager(_gk, caller);
@@ -72,7 +65,7 @@ contract FundRORKeeper is IRORKeeper {
 
     function requestForRedemption(
         uint class, uint paid
-    ) external onlyDK  {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
 
@@ -121,7 +114,7 @@ contract FundRORKeeper is IRORKeeper {
 
     }
 
-    function redeem(uint class, uint seqOfPack) external onlyDK  {
+    function redeem(uint class, uint seqOfPack) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 

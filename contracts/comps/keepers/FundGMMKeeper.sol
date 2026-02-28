@@ -71,7 +71,7 @@ contract FundGMMKeeper is IGMMKeeper {
     function nominateDirector(
         uint256 seqOfPos,
         uint candidate
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 72000);
 
@@ -87,7 +87,7 @@ contract FundGMMKeeper is IGMMKeeper {
 
     function createMotionToRemoveDirector(
         uint256 seqOfPos
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 116000);
 
@@ -107,7 +107,7 @@ contract FundGMMKeeper is IGMMKeeper {
         uint doc,
         uint seqOfVR,
         uint executor
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 116000);
 
@@ -146,7 +146,7 @@ contract FundGMMKeeper is IGMMKeeper {
         uint seqOfDR,
         uint para,
         uint executor
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 68000);
 
@@ -167,7 +167,7 @@ contract FundGMMKeeper is IGMMKeeper {
         uint expireDate,
         uint seqOfVR,
         uint executor
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 99000);
 
@@ -188,7 +188,7 @@ contract FundGMMKeeper is IGMMKeeper {
         bytes[] memory params,
         bytes32 desHash,
         uint executor
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 99000);
 
@@ -210,7 +210,7 @@ contract FundGMMKeeper is IGMMKeeper {
     function entrustDelegaterForGeneralMeeting(
         uint256 seqOfMotion,
         uint delegate
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 
@@ -221,7 +221,7 @@ contract FundGMMKeeper is IGMMKeeper {
 
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 72000);
 
@@ -232,7 +232,7 @@ contract FundGMMKeeper is IGMMKeeper {
         uint256 seqOfMotion,
         uint attitude,
         bytes32 sigHash
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 72000);
 
@@ -262,7 +262,7 @@ contract FundGMMKeeper is IGMMKeeper {
 
     // ==== VoteCounting ====
 
-    function voteCountingOfGM(uint256 seqOfMotion) external onlyDK {
+    function voteCountingOfGM(uint256 seqOfMotion) external {
         address _gk = address(this);
         msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
 
@@ -461,7 +461,7 @@ contract FundGMMKeeper is IGMMKeeper {
         bytes[] memory params,
         bytes32 desHash,
         uint256 seqOfMotion
-    ) external onlyDK {
+    ) external {
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 
         _execActionOfGM(

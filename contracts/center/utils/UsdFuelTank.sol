@@ -78,6 +78,8 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
 
   error UFT_WrongParty(bytes32 reason);
 
+  error UFT_WrongState(bytes32 reason);
+
   modifier onlyOwner {
     if (msg.sender != rc.getRC().getOwner()) {
       revert UFT_WrongParty(bytes32("UFT_NotOwner"));
@@ -140,8 +142,10 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
   /// @notice Set Cashier contract.
   /// @param newCashier Cashier address (non-zero, must be a contract).
   function setCashier(address newCashier) external onlyKeeper {
-    if (newCashier == address(0)) revert UFT_WrongInput(bytes32("UFT_ZeroCashier"));
-    if (!newCashier.isContract()) revert UFT_WrongInput(bytes32("UFT_CashierNotContract"));
+    if (newCashier == address(0)) 
+        revert UFT_WrongInput(bytes32("UFT_ZeroCashier"));
+    if (!newCashier.isContract()) 
+        revert UFT_WrongInput(bytes32("UFT_CashierNotContract"));
     cashier = newCashier;
     emit SetCashier(newCashier);
   }
@@ -149,7 +153,8 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
   /// @notice Set USDC-per-1e18-CBP rate.
   /// @param newRate New rate (must be > 0).
   function setRate(uint newRate) external onlyKeeper {
-    require(newRate > 0, "zero rate");
+    if (newRate == 0) 
+        revert UFT_WrongInput(bytes32("UFT_ZeroRate"));
     rate = newRate;
     emit SetRate(newRate);
   }
@@ -166,8 +171,9 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
     if (amt == 0) {
       amt = auth.value * 10 ** 18 / rate ;
     } else {
-      require (auth.value >= (rate * amt / 10 ** 18), 
-        "UsdFT.Refule: insufficient USDC");
+      if (auth.value < (rate * amt / 10 ** 18)) {
+        revert UFT_WrongInput(bytes32("UFT_InsufficientUSDC"));
+      }
       balance = auth.value - (rate * amt / 10 ** 18);
     }
 
@@ -178,7 +184,7 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
       ICashier(cashier).collectUsd(auth,
         bytes32(0x436f6c6c65637455534443466f7252656675656c434250000000000000000000));
       if (!rc.getRC().transfer(msg.sender, amt)) {
-        revert ('CBP Transfer Failed');
+        revert UFT_WrongState(bytes32("UFT_CBPTransferFailed"));
       } else if (balance > 0) {
         uint temp = balance;
         balance = 0;
@@ -186,7 +192,7 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
         ICashier(cashier).transferUsd(auth.from, temp,
           bytes32(0x526566756e6442616c616e636555534443466f7252656675656c434250000000));
       }
-    } else revert ('zero amt or insufficient CBP reserve');
+    } else revert UFT_WrongState(bytes32("UFT_ShortOfCBPReserve"));
 
   }
 
@@ -196,9 +202,9 @@ contract UsdFuelTank is Initializable, UUPSUpgradeable {
     if (rc.getRC().balanceOf(address(this)) >= amt) {
         emit WithdrawFuel(msg.sender, amt);
         if (!rc.getRC().transfer(msg.sender, amt)) {
-          revert('CBP Transfer Failed');
+          revert UFT_WrongState(bytes32("UFT_CBPTransferFailed"));
         }
-    } else revert('insufficient fuel');
+    } else revert UFT_WrongState(bytes32("UFT_ShortOfCBPReserve"));
   }
 
 }

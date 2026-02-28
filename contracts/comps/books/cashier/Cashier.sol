@@ -63,23 +63,31 @@ contract Cashier is ICashier, AccessControl {
         );
     }
 
-    function initClass(uint class, uint principal) external onlyKeeper {
+    function initClass(
+        uint class, uint principal
+    ) external onlyKeeper {
         WaterfallsRepo.Drop memory info =
             _rivers.initClass(class, principal * 100);
         emit InitClass(class, principal, info.distrDate);
     }
 
-    function redeemClass(uint class, uint principal) external onlyKeeper {
+    function redeemClass(
+        uint class, uint principal
+    ) external onlyKeeper {
         _rivers.redeemClass(class, principal * 100);
         emit RedeemClass(class, principal);
     }
 
-    function collectUsd(TransferAuth memory auth, bytes32 remark) external {
+    function collectUsd(
+        TransferAuth memory auth, bytes32 remark
+    ) external onlyKeeper {
         _transferWithAuthorization(auth);
         emit ReceiveUsd(auth.from, auth.value, remark);
     }
 
-    function forwardUsd(TransferAuth memory auth, address to, bytes32 remark) external onlyKeeper{
+    function forwardUsd(
+        TransferAuth memory auth, address to, bytes32 remark
+    ) external onlyKeeper{
         _transferWithAuthorization(auth);
         emit ForwardUsd(auth.from, to, auth.value, remark);
 
@@ -88,7 +96,9 @@ contract Cashier is ICashier, AccessControl {
         }
     }
 
-    function custodyUsd(TransferAuth memory auth, bytes32 remark) external onlyKeeper {
+    function custodyUsd(
+        TransferAuth memory auth, bytes32 remark
+    ) external onlyKeeper {
         _transferWithAuthorization(auth);
         _coffers[auth.from] += auth.value;
         _coffers[address(0)] += auth.value;
@@ -96,7 +106,9 @@ contract Cashier is ICashier, AccessControl {
         emit CustodyUsd(auth.from, auth.value, remark);
     }
 
-    function releaseUsd(address from, address to, uint amt, bytes32 remark) external onlyKeeper {
+    function releaseUsd(
+        address from, address to, uint amt, bytes32 remark
+    ) external onlyKeeper {
         if(_coffers[from] < amt) {
             revert Cashier_Overflow("Cashier_InsufficientAmt");
         }
@@ -111,7 +123,9 @@ contract Cashier is ICashier, AccessControl {
         }
     }
 
-    function transferUsd(address to, uint amt, bytes32 remark) external onlyKeeper {
+    function transferUsd(
+        address to, uint amt, bytes32 remark
+    ) external onlyKeeper {
 
         if (balanceOfComp() < amt) {
             revert Cashier_Overflow(bytes32("Cashier_InsufficientAmt"));

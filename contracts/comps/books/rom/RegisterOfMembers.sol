@@ -56,12 +56,12 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         emit SetMaxQtyOfMembers(max);
     }
 
-    function setMinVoteRatioOnChain(uint min) external onlyGK {
+    function setMinVoteRatioOnChain(uint min) external onlyKeeper {
         _repo.chain.setMinVoteRatioOnChain(min);
         emit SetMinVoteRatioOnChain(min);
     }
 
-    function setVoteBase(bool _basedOnPar) external onlyGK {
+    function setVoteBase(bool _basedOnPar) external onlyKeeper {
         IRegisterOfShares _ros = _gk.getROS();
         if (_repo.setVoteBase(_ros, _basedOnPar)) 
             emit SetVoteBase(_basedOnPar);
@@ -167,20 +167,20 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
     // ==== Restore ====
 
-    function restoreSharesInRom(SharesRepo.Share[] memory shares) external onlyDK{
+    function restoreSharesInRom(SharesRepo.Share[] memory shares) external onlyKeeper{
         _repo.restoreSharesInRepo(shares);
     }
 
     function restoreTopChainInRom(
         TopChain.Node[] memory list, TopChain.Para memory para
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.chain.restoreChain(list, para);
     }
 
     function restoreVotesHistoryInRom(
         uint acct, Checkpoints.Checkpoint[] memory list,
         Checkpoints.Checkpoint memory distrPts
-    ) external onlyDK {
+    ) external onlyKeeper {
         MembersRepo.Member storage member = _repo.members[acct];
         member.votesInHand.restoreHistory(list);
         member.votesInHand.updateDistrPoints(distrPts.rate, distrPts.paid, distrPts.par, distrPts.points);

@@ -42,19 +42,12 @@ contract FundLOOKeeper is ILOOKeeper {
         _;
     }
 
-    modifier onlyDK() {
-        if (msg.sender != IAccessControl(address(this)).getDK()) {
-            revert LOOK_WrongParty(bytes32("FundLOOK_NotDK"));
-        }
-        _;
-    }
-
     // ==== Offers ====
 
     function placeInitialOffer(
         uint classOfShare, uint execHours, 
         uint paid, uint price, uint seqOfLR
-    ) external onlyDK whenNotPaused {
+    ) external whenNotPaused {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
@@ -107,7 +100,7 @@ contract FundLOOKeeper is ILOOKeeper {
         uint classOfShare,
         uint seqOfOrder,
         uint seqOfLR
-    ) external onlyDK  {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
@@ -139,7 +132,7 @@ contract FundLOOKeeper is ILOOKeeper {
     function placeSellOrder(
         uint seqOfClass, uint execHours,
         uint paid, uint price, uint seqOfLR
-    ) external onlyDK whenNotPaused  {
+    ) external whenNotPaused  {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
@@ -213,7 +206,7 @@ contract FundLOOKeeper is ILOOKeeper {
     function withdrawSellOrder(
         uint classOfShare,
         uint seqOfOrder
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
 
@@ -244,7 +237,7 @@ contract FundLOOKeeper is ILOOKeeper {
     function placeBuyOrder(
         ICashier.TransferAuth memory auth, 
         uint classOfShare, uint paid, uint price, uint execHours
-    ) external onlyDK whenNotPaused  {
+    ) external whenNotPaused  {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
 
@@ -277,7 +270,7 @@ contract FundLOOKeeper is ILOOKeeper {
     function placeMarketBuyOrder(
         ICashier.TransferAuth memory auth, 
         uint classOfShare, uint paid, uint execHours
-    ) external onlyDK whenNotPaused  {
+    ) external whenNotPaused {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
 
@@ -308,7 +301,7 @@ contract FundLOOKeeper is ILOOKeeper {
     function withdrawBuyOrder(
         uint classOfShare,
         uint seqOfOrder
-    ) external onlyDK  {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
 

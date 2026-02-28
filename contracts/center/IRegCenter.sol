@@ -32,6 +32,14 @@ import "../openzeppelin/token/ERC20/IERC20.sol";
 
 interface IRegCenter is IBookOfPoints, IBookOfDocs, IBookOfUsers, IERC20{
 
+    // ##################
+    // ##    Error     ##
+    // ##################
+
+    error RC_WrongAccess(bytes32 reason);
+
+    error RC_WrongState(bytes32 reason);
+
     /// @notice Register caller as a user and mint initial gift points if configured.
     function regUser() external;
 

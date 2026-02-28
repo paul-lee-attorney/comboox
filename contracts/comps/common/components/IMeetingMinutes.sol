@@ -34,8 +34,7 @@ interface IMeetingMinutes {
     //##    error    ##
     //##################
 
-
-
+    error MM_WrongInput(bytes32 reason);
 
     //##################
     //##    events    ##

@@ -65,6 +65,14 @@ contract MockUSDC is IUSDC, ERC20("USD Coin", "USDC"), Ownable {
         return _authorizationStates[authorizer][nonce];
     }
 
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
+
+    error MockUSDC_WrongInput(bytes32 reason);
+
+    error MockUSDC_WrongState(bytes32 reason);
+
     // ---- Mint & Burn ----
 
     function mint(address to, uint amt) external onlyOwner {
@@ -89,20 +97,17 @@ contract MockUSDC is IUSDC, ERC20("USD Coin", "USDC"), Ownable {
         bytes32 s
     ) external {
 
-        require(
-            block.timestamp > validAfter,
-            "FiatTokenV2: authorization is not yet valid"
-        );
+        if(block.timestamp < validAfter) {  
+            revert MockUSDC_WrongInput(bytes32("MockUSDC_AuthNotValidNow"));
+        }
 
-        require(
-            block.timestamp < validBefore, 
-            "FiatTokenV2: authorization is expired"
-        );
+        if(block.timestamp > validBefore) {
+            revert MockUSDC_WrongInput(bytes32("MockUSDC_AuthExpired"));
+        }
 
-        require(
-            !_authorizationStates[from][nonce],
-            "FiatTokenV2: authorization is used or canceled"
-        );
+        if(_authorizationStates[from][nonce]) {
+            revert MockUSDC_WrongInput(bytes32("MockUSDC_AuthUsedOrCanceled"));
+        }
 
         _requireValidSignature(
             from,
@@ -135,17 +140,18 @@ contract MockUSDC is IUSDC, ERC20("USD Coin", "USDC"), Ownable {
         bytes32 r,
         bytes32 s
     ) private view {
-        require(
-            _isValidSignatureNow(
+        if(
+            !_isValidSignatureNow(
                 signer,
                 _toTypedDataHash(dataHash),
                 v,
                 r,
                 s
-            ),
-            "FiatTokenV2: invalid signature"
-        );
-    }
+            )
+        ) {
+            revert MockUSDC_WrongState(bytes32("MockUSDC_InvalidSignature"));
+        }
+    }   
 
     function _toTypedDataHash(bytes32 structHash)
         internal
@@ -193,15 +199,17 @@ contract MockUSDC is IUSDC, ERC20("USD Coin", "USDC"), Ownable {
             uint256(s) >
             0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
         ) {
-            revert("ECRecover: invalid signature 's' value");
+            revert MockUSDC_WrongState(bytes32("MockUSDC_InvalidSValue"));
         }
 
         if (v != 27 && v != 28) {
-            revert("ECRecover: invalid signature 'v' value");
+            revert MockUSDC_WrongState(bytes32("MockUSDC_InvalidVValue"));
         }
 
         address signer = ecrecover(digest, v, r, s);
-        require(signer != address(0), "ECRecover: invalid signature");
+        if (signer == address(0)) {
+            revert MockUSDC_WrongState(bytes32("MockUSDC_ZeroSig"));
+        }
 
         return signer;
     }

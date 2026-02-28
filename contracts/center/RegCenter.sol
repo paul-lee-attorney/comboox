@@ -43,8 +43,8 @@ contract RegCenter is BookOfPoints, IRegCenter{
 
         uint40 target = _getUserNo(targetAddr);
 
-        require(docExist(msg.sender), 
-            "RC.getUserNo: Doc NOT registered");
+        if(!docExist(msg.sender))
+            revert RC_WrongAccess(bytes32("RC_DocNotRegistered"));
             
         UsersRepo.Key memory rr = getRoyaltyRule(author);
         address authorAddr = _getUserByNo(author).primeKey.pubKey; 
@@ -68,7 +68,8 @@ contract RegCenter is BookOfPoints, IRegCenter{
         
         uint floorPrice = uint(pr.floor) * 10 ** 9;
 
-        require(fee >= floorPrice, "RC.chargeFee: lower than floor");
+        if (fee < floorPrice) 
+            revert RC_WrongState(bytes32("RC_FeeTooLow"));
 
         uint offAmt = uint(t.primeKey.coupon) * uint(rr.discount) * fee / 10000 + uint(rr.coupon) * 10 ** 9;
         

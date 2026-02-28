@@ -535,7 +535,7 @@ library MembersRepo {
         Repo storage repo, 
         uint256 acct, 
         uint class
-    ) public view memberExist(repo, acct) returns (bool flag) {
+    ) public view returns (bool flag) {
         return repo.members[acct].classesBelonged.contains(class);
     }
 
@@ -545,7 +545,7 @@ library MembersRepo {
     function classesBelonged(
         Repo storage repo, 
         uint256 acct
-    ) public view memberExist(repo, acct) returns (uint[] memory) {
+    ) public view returns (uint[] memory) {
         return repo.members[acct].classesBelonged.values();
     }
 

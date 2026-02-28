@@ -27,11 +27,13 @@ import { Bytes32Zero } from "./utils";
 
 import { parseUnits, id } from "ethers";
 
-import { getGMM, getRC, getROS, getFK } from "./boox";
+import { getGMM, getRC, getROS, getGK } from "./boox";
 import { getLatestSeqOfMotion, parseMotion } from "./gmm";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { printShares } from "./ros";
 import { transferCBP } from "./saveTool";
+import { parseCompInfo } from "./gk";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -45,29 +47,33 @@ async function main() {
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getFK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const gmm = await getGMM();
     const ros = await getROS();
-    const addrRC = await rc.getAddress();
-    const addrGK = await gk.getAddress();
 
     // ==== propos motion ====
     // ---- Create Motion ----
 
     // selector of function mint(): 40c10f19
     let selector = id("mint(address,uint256)").substring(0, 10);
-    let firstInput = addrGK.substring(2).padStart(64, "0"); 
+    let firstInput = gk.target.substring(2).padStart(64, "0"); 
     let secondInput = parseUnits('88', 18).toString(16).padStart(64, '0');
     let payload = selector + firstInput + secondInput;
 
-    // await expect(gk.connect(signers[5]).createActionOfGM(9, [addrRC], [0], [payload], id('9'+addrRC+payload), 1)).to.be.revertedWith("MR.memberExist: not");
+    // await expect(gk.connect(signers[5]).createActionOfGM(9, [rc.target], [0], [payload], id('9'+rc.target+payload), 1)).to.be.revertedWith("MR.memberExist: not");
     console.log(" \u2714 Passed Access Control Test for gk.createActionOfGM().\n");
     
-    let tx = await gk.createActionOfGM(9, [addrRC], [0], [payload], id('9'+addrRC+payload), 1);
+    gk = await readTool("FundGMMKeeper", gk.target);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 99n, "gk.createActionOfGM().");
+    let tx = await gk.createActionOfGM(9, [rc.target], [0], [payload], id('9'+rc.target+payload), users[0]);
 
-    transferCBP("1", "8", 99n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 99n, "gk.createActionOfGM().");
+
+    transferCBP(users[0], userComp, 99n);
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
@@ -75,8 +81,8 @@ async function main() {
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
     let motion = parseMotion(await gmm.getMotion(seqOfMotion));
 
-    expect(motion.head.creator).to.equal(1);
-    expect(motion.head.executor).to.equal(1);
+    expect(motion.head.creator).to.equal(users[0]);
+    expect(motion.head.executor).to.equal(users[0]);
     expect(motion.body.state).to.equal('Created');
 
     console.log(" \u2714 Passed Result Verify Test for gk.createActionOfGM(). \n");
@@ -88,23 +94,23 @@ async function main() {
     
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
-    transferCBP("1", "8", 72n);
+    transferCBP(users[0], userComp, 72n);
 
     // ==== Vote For Motion  ====
     
     await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
 
-    transferCBP("1", "8", 72n);
+    transferCBP(users[0], userComp, 72n);
 
     await gk.voteCountingOfGM(seqOfMotion);
 
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(" \u2714 Passed Result Test for approved motion. \n");
 
     await printShares(ros);
-    await cbpOfUsers(rc, addrGK);
+    await cbpOfUsers(rc, gk.target, userComp);
 }
 
 main()

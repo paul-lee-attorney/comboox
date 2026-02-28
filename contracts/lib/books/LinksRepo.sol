@@ -54,9 +54,16 @@ library LinksRepo {
         EnumerableSet.UintSet  draggersList;
     }
 
+    error LinksRepo_WrongParty(bytes32 reason);
+
+    error LinksRepo_WrongInput(bytes32 reason);
+
+
     /// @dev Reverts if dragger is not registered.
     modifier draggerExist(Repo storage repo, uint dragger, IRegisterOfMembers _rom) {
-        require(isDragger(repo, dragger, _rom), "LR.mf.draggerExist: not");
+        if (!isDragger(repo, dragger, _rom)) {
+            revert LinksRepo_WrongParty(bytes32("LinksR_NotDragger"));
+        }
         _;
     }
 
@@ -198,8 +205,12 @@ library LinksRepo {
         uint closingDeadline,
         uint issueDateOfShare
     ) private pure returns (uint roe) {
-        require(dealPrice > issuePrice, "ROE: NEGATIVE selling price");
-        require(closingDeadline > issueDateOfShare, "ROE: NEGATIVE holding period");
+        if (dealPrice <= issuePrice) {
+            revert LinksRepo_WrongInput(bytes32("LinksR_NonPositiveROE"));
+        }   
+        if (closingDeadline <= issueDateOfShare) {
+            revert LinksRepo_WrongInput(bytes32("LinksR_NegativeHoldingPeriod"));
+        }
 
         roe = (dealPrice - issuePrice) * 31536 * 10 ** 7 / issuePrice / (closingDeadline - issueDateOfShare);
     }

@@ -28,8 +28,12 @@ import "../../lib/books/UsersRepo.sol";
 interface IBookOfUsers {
 
     // ##################
-    // ##    Event     ##
+    // ##    Error     ##
     // ##################
+
+    error BOU_WrongInput(bytes32 reason);
+
+    error BOU_WrongParty(bytes32 reason);
 
     // ==== Config ====
 

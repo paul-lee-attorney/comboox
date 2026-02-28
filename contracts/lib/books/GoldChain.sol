@@ -287,7 +287,9 @@ library GoldChain {
         Chain storage chain, uint seqOfOrder
     ) public returns(Order memory order) {
 
-        require(isNode(chain, seqOfOrder), "GC.offChain: Node not exist");
+        if (!isNode(chain, seqOfOrder)) {
+            revert GC_WrongState(bytes32("GC_OrderNotExist"));
+        }
 
         order = chain.orders[seqOfOrder];
 

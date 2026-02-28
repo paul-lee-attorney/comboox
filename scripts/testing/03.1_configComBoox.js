@@ -53,10 +53,10 @@
 
 import { network } from "hardhat";
 import { expect } from "chai";
-import { getRC, getFT, getROS, getCashier, getFK } from "./boox";
+import { getRC, getFT, getROS, getCashier, getGK, getTypeByName } from "./boox";
 import { printShares } from "./ros";
 import { cbpOfUsers } from "./rc";
-import { setUserDepo } from "./saveTool";
+import { parseCompInfo } from "./gk";
 
 async function main() {
 
@@ -66,67 +66,77 @@ async function main() {
     console.log('********************************');
     console.log('\n');
 
-    const {ethers} = await network.connect();
+    const { ethers } = await network.connect();
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
     const ft = await getFT();
-    const gk = await getFK();
+    let gk = await getGK();
+
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const ros = await getROS();
     const cashier = await getCashier();
-    const addrRC = await rc.getAddress();
-    const addrGK = await gk.getAddress();
-    const addrCashier = await cashier.getAddress();
     
-    setUserDepo("1", 0n);
-    setUserDepo("2", 0n);
-    setUserDepo("3", 0n);
-    setUserDepo("4", 0n);
-    setUserDepo("5", 0n);
-    setUserDepo("6", 0n);
-    setUserDepo("7", 0n);
-    setUserDepo("8", 0n);
+    // setUserDepo("1", 0n);
+    // setUserDepo("2", 0n);
+    // setUserDepo("3", 0n);
+    // setUserDepo("4", 0n);
+    // setUserDepo("5", 0n);
+    // setUserDepo("6", 0n);
+    // setUserDepo("7", 0n);
+    // setUserDepo("8", 0n);
 
     // ==== Transfer Ownership of Platform to Company ====
     
-    // await expect(rc.connect(signers[1]).transferOwnership(addrGK)).to.be.revertedWith("UR.mf.OO: not owner");
+    // await expect(rc.connect(signers[1]).transferOwnership(gk.target)).to.be.revertedWith("UR.mf.OO: not owner");
     console.log(" \u2714 Passed Access Control Test for rc.transferOwnership(). \n");
 
-    await expect(rc.transferOwnership(addrGK)).to.emit(rc, "TransferOwnership");
+    await expect(rc.transferOwnership(gk.target)).to.emit(rc, "TransferOwnership");
     console.log(" \u2714 Passed Event Test for rc.TransferOwnership(). \n");
 
     let newOwner = (await rc.getOwner()).toLowerCase();
-    expect(newOwner).to.equal(addrGK.toLowerCase());
+    expect(newOwner).to.equal(gk.target.toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for rc.transferOwnership(). \n');
 
     // ==== Transfer Ownership of Fuel Tank to Company ====
 
-    await ft.setCashier(addrCashier);
+    await ft.connect(signers[1]).setCashier(cashier.target);
 
     let newCashier = (await ft.cashier()).toLowerCase();
-    expect(newCashier).to.equal(addrCashier.toLowerCase());
+    expect(newCashier).to.equal(cashier.target.toLowerCase());
     console.log(' \u2714 Passed Result Verify Test for ft.setCashier(). \n');
 
     // ==== Transfer IPR of Templates to Company ====
 
-    const transferIPR = async (i)=>{
-      let tx = await rc.transferIPR(i, 1, 8);
+    const transferIPR = async (nameOfTemp)=>{
+      const typeOfDoc = getTypeByName(nameOfTemp);
+
+      let tx = await rc.transferIPR(typeOfDoc, 1, userComp);
       await tx.wait();
       
-      await expect(tx).to.emit(rc, "TransferIPR").withArgs(i, 1, 8);
-      console.log(' \u2714 Passed Event Test for rc.transferIPR() with typeOfDoc', i, ' version 1. \n');
+      await expect(tx).to.emit(rc, "TransferIPR").withArgs(typeOfDoc, 1, userComp);
+      console.log(' \u2714 Passed Event Test for rc.transferIPR() with', typeOfDoc, ' version 1. \n');
     }
 
-    for (let i=1; i<29; i++) {
-      await transferIPR(i);
-    }
-
-    for (let i=35; i<46; i++) {
-      await transferIPR(i);
-    }
+    await transferIPR("GeneralKeeper");
+    await transferIPR("FundROCKeeper");
+    await transferIPR("RODKeeper");
+    await transferIPR("BMMKeeper");
+    await transferIPR("ROMKeeper");
+    await transferIPR("FundGMMKeeper");
+    await transferIPR("ROAKeeper");
+    await transferIPR("ROOKeeper");
+    await transferIPR("ROPKeeper");
+    await transferIPR("SHAKeeper");
+    await transferIPR("FundAccountant");
+    await transferIPR("FundROIKeeper");
+    await transferIPR("FundLOOKeeper");
+    await transferIPR("FundRORKeeper");
+    await transferIPR("Cashier");
 
     await printShares(ros);
-    await cbpOfUsers(rc, addrGK);
+    await cbpOfUsers(rc, gk.target, userComp);
     
 }
 

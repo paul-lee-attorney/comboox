@@ -41,6 +41,7 @@ contract Accountant is IAccountant {
 
     function initClass(uint class) external {
         address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
         if (msg.sender != IAccessControl(_gk).getDK()) 
             revert ACTT_WrongParty(bytes32("ACTT_NotDK"));

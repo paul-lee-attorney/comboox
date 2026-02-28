@@ -93,7 +93,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint amt, 
         uint expireDate, 
         bytes32 hashLock
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         SharesRepo.Share storage share = 
             _repo.shares[seqOfShare];
@@ -114,7 +114,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function requestPaidInCapital(
         bytes32 hashLock, 
         string memory hashKey
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         LockersRepo.Head memory head = 
             _lockers.pickupPoints(hashLock, hashKey, 0);
@@ -131,7 +131,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function withdrawPayInAmt(
         bytes32 hashLock, 
         uint seqOfShare
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         LockersRepo.Head memory head = 
             _lockers.withdrawDeposit(hashLock, seqOfShare);
@@ -278,7 +278,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function updatePaidInDeadline(
         uint256 seqOfShare, 
         uint deadline
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.updatePayInDeadline(seqOfShare, deadline);
         emit UpdatePaidInDeadline(seqOfShare, deadline);
     }
@@ -370,7 +370,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function restoreShares(
         SharesRepo.Share[] memory shares,
         SharesRepo.Share[] memory classes
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.restoreRepo(shares, classes);
     }
 

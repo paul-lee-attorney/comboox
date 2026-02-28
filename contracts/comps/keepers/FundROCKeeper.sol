@@ -52,7 +52,7 @@ contract FundROCKeeper is IROCKeeper {
 
     function createSHA(
         uint version
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
@@ -81,7 +81,7 @@ contract FundROCKeeper is IROCKeeper {
         address sha,
         bytes32 docUrl,
         bytes32 docHash
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
@@ -112,7 +112,7 @@ contract FundROCKeeper is IROCKeeper {
     function signSHA(
         address sha,
         bytes32 sigHash
-    ) external onlyDK {
+    ) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
@@ -141,7 +141,7 @@ contract FundROCKeeper is IROCKeeper {
         return members.fullyCoveredBy(parties);
     }
 
-    function activateSHA(address sha) external onlyDK {
+    function activateSHA(address sha) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
@@ -257,7 +257,7 @@ contract FundROCKeeper is IROCKeeper {
         }        
     }
 
-    function acceptSHA(bytes32 sigHash) external onlyDK {
+    function acceptSHA(bytes32 sigHash) external {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 

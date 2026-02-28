@@ -54,20 +54,17 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
 
     // ---- Officers ----
 
-    function takePosition (uint256 seqOfPos, uint caller) external onlyDK()
-    {
+    function takePosition (uint256 seqOfPos, uint caller) external onlyKeeper {
         if (_repo.takePosition(seqOfPos, caller)) 
             emit TakePosition(seqOfPos, caller);
     }
 
-    function quitPosition (uint256 seqOfPos, uint caller) external onlyDK
-    {
+    function quitPosition (uint256 seqOfPos, uint caller) external onlyKeeper {
         if (_repo.quitPosition(seqOfPos, caller))
             emit QuitPosition(seqOfPos, caller);
     }
 
-    function removeOfficer (uint256 seqOfPos) external onlyDK()
-    {
+    function removeOfficer (uint256 seqOfPos) external onlyKeeper {
         if (_repo.vacatePosition(seqOfPos))
             emit RemoveOfficer(seqOfPos);
     }

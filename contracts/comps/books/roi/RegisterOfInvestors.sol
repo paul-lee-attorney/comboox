@@ -46,7 +46,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
 
     // ==== Pause LOO ====
 
-    function pause(uint caller) external onlyDK {
+    function pause(uint caller) external onlyKeeper {
         if (_paused == true) {
             revert ROI_WrongState("ROI_AlreadyPaused");
         }
@@ -54,7 +54,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
         emit Paused(caller);
     }
 
-    function unPause(uint caller) external onlyDK {
+    function unPause(uint caller) external onlyKeeper {
         if (_paused == false) {
             revert ROI_WrongState("ROI_AlreadyUnpaused");
         }
@@ -67,7 +67,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function freezeShare(
         uint userNo, uint seqOfShare, uint paid, uint caller,
         bytes32 hashOrder
-    ) external onlyDK {
+    ) external onlyKeeper {
         _frozenShares[userNo].add(seqOfShare);
         _frozenPaid[seqOfShare] += paid;
         emit FreezeShare(seqOfShare, paid, caller, hashOrder);
@@ -76,7 +76,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function unfreezeShare(
         uint userNo, uint seqOfShare, uint paid, uint caller,
         bytes32 hashOrder
-    ) external onlyDK {
+    ) external onlyKeeper {
         _unfreezeShare(userNo, seqOfShare, paid);
         emit UnfreezeShare(seqOfShare, paid, caller, hashOrder);
     }
@@ -95,7 +95,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function forceTransfer(
         uint userNo, uint seqOfShare, uint paid, uint caller,
         bytes32 hashOrder
-    ) external onlyDK {
+    ) external onlyKeeper {
         _unfreezeShare(userNo, seqOfShare, paid);
         emit ForceTransfer(seqOfShare, paid, caller, hashOrder);
     }
@@ -106,7 +106,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
         uint userNo,
         uint groupRep,
         bytes32 idHash
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.regInvestor(userNo, groupRep, idHash);
         emit RegInvestor(userNo, groupRep, idHash);
     }
@@ -114,7 +114,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function approveInvestor(
         uint userNo,
         uint verifier
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.approveInvestor(userNo, verifier);
         emit ApproveInvestor(userNo, verifier);
     }        
@@ -122,14 +122,14 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function revokeInvestor(
         uint userNo,
         uint verifier
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.revokeInvestor(userNo, verifier);
         emit RevokeInvestor(userNo, verifier);
     }
 
     function restoreInvestorsRepo(
         InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.restoreRepo(list, qtyOfInvestors);
     }
 

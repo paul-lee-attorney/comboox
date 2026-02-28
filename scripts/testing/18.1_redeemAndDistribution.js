@@ -46,14 +46,16 @@ import { network } from "hardhat";
 import { formatUnits } from "ethers";
 import { expect } from "chai";
 
-import { getRC, getGMM, getROS, getCashier, getUSDC, getFK, getROR } from "./boox";
+import { getRC, getGMM, getROS, getCashier, getUSDC, getGK, getROR } from "./boox";
 import { increaseTime, now, Bytes32Zero } from "./utils";
 import { getLatestSeqOfMotion, parseMotion } from "./gmm";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { printShares, parseShare } from "./ros";
 import { transferCBP } from "./saveTool";
 import { parseRequest } from "./ror";
 import { parseDrop } from "./cashier";
+import { parseCompInfo } from "./gk";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -69,16 +71,14 @@ async function main() {
     const cashier = await getCashier();
     const usdc = await getUSDC();
     const rc = await getRC();
-    const gk = await getFK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const gmm = await getGMM();
     const ros = await getROS();
     const ror = await getROR();
-    const addrCashier = await cashier.getAddress();
-    const addrGK = await gk.getAddress();
-    const addrRC = await rc.getAddress();
-    const addrAM = await signers[0].getAddress();
-    const addrUSER1 = await signers[1].getAddress();
-    const addrUSER3 = await signers[3].getAddress();
 
     // ==== Redeemable Class Setting ====
 
@@ -87,10 +87,12 @@ async function main() {
     // await expect(gk.connect(signers[1]).addRedeemableClass(3)).to.be.revertedWith("FundRORK: not GP or Manager");
     console.log(" \u2714 Passed Access Control Test for gk.addRedeemeableClass(). \n");
     
+    gk = await readTool("FundRORKeeper", gk.target);
+
     let tx = await gk.addRedeemableClass(3);
     
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.addRedeemableClass().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.addRedeemableClass().");
+    transferCBP(users[0], userComp, 18n);
     
     await expect(tx).to.emit(ror, "AddRedeemableClass").withArgs(3);
     console.log(" \u2714 Passed Event Test for ror.AddRedeemableClass(). \n");
@@ -107,8 +109,8 @@ async function main() {
 
     tx = await gk.removeRedeemableClass(3);
     
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.removeRedeemableClass().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.removeRedeemableClass().");
+    transferCBP(users[0], userComp, 18n);
     
     await expect(tx).to.emit(ror, "RemoveRedeemableClass").withArgs(3);
     console.log(" \u2714 Passed Event Test for ror.RemoveRedeemableClass(). \n");
@@ -122,8 +124,8 @@ async function main() {
 
     tx = await gk.addRedeemableClass(3);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.addRedeemableClass().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.addRedeemableClass().");
+    transferCBP(users[0], userComp, 18n);
 
     res = await ror.isRedeemable(3);
 
@@ -140,8 +142,8 @@ async function main() {
   
     tx = await gk.updateNavPrice(3, 2.5 * 10 ** 4);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.udpateNavPrice().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.udpateNavPrice().");
+    transferCBP(users[0], userComp, 18n);
 
     await expect(tx).to.emit(ror, "UpdateNavPrice").withArgs(3, 2.5 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ror.updateNavPrice(). \n");
@@ -160,14 +162,16 @@ async function main() {
 
     tx = await gk.connect(signers[1]).requestForRedemption(3, 100 * 10 ** 4);
 
-    await royaltyTest(addrRC, addrUSER1, addrGK, tx, 88n, "gk.requestForRedemption().");
-    transferCBP("2", "8", 88n);
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 88n, "gk.requestForRedemption().");
+    transferCBP(users[1], userComp, 88n);
 
     await expect(tx).to.emit(ror, "RequestForRedemption").withArgs(3, 4, 100 * 10 ** 4, 2.5 * 10 ** 6);
     console.log(" \u2714 Passed Event Test for ror.requestForRedemption(). \n");
 
     // ---- Util BigNumber to Number ----
+    
     const big2Num = (big) => Number(big.toString());
+
     const list2Num = (list) => list.map(v => big2Num(v));
 
     res = formatUnits((await ror.getInfoOfClass(3)).value.toString(), 4);
@@ -185,7 +189,7 @@ async function main() {
     expect(request.class).to.equal(3);
     expect(request.seqOfShare).to.equal(4);
     expect(request.navPrice).to.equal(2.5);
-    expect(request.shareholder).to.equal(2);
+    expect(request.shareholder).to.equal(users[1]);
     expect(request.paid).to.equal(100);
     expect(request.value).to.equal(250);
 
@@ -195,8 +199,8 @@ async function main() {
 
     tx = await gk.connect(signers[3]).requestForRedemption(3, 200 * 10 ** 4);
 
-    await royaltyTest(addrRC, addrUSER3, addrGK, tx, 88n, "gk.requestForRedemption().");
-    transferCBP("3", "8", 88n);
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 88n, "gk.requestForRedemption().");
+    transferCBP(users[3], userComp, 88n);
 
     await expect(tx).to.emit(ror, "RequestForRedemption").withArgs(3, 5, 200 * 10 ** 4, 5 * 10 ** 6);
     console.log(" \u2714 Passed Event Test for ror.requestForRedemption(). \n");
@@ -216,7 +220,7 @@ async function main() {
     expect(request.class).to.equal(3);
     expect(request.seqOfShare).to.equal(5);
     expect(request.navPrice).to.equal(2.5);
-    expect(request.shareholder).to.equal(3);
+    expect(request.shareholder).to.equal(users[3]);
     expect(request.paid).to.equal(200);
     expect(request.value).to.equal(500);
 
@@ -230,8 +234,8 @@ async function main() {
 
     tx = await gk.updateNavPrice(3, 2.8 * 10 ** 4);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.udpateNavPrice().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.udpateNavPrice().");
+    transferCBP(users[0], userComp, 18n);
 
     await expect(tx).to.emit(ror, "UpdateNavPrice").withArgs(3, 2.8 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ror.updateNavPrice(). \n");
@@ -245,8 +249,8 @@ async function main() {
 
     tx = await gk.connect(signers[1]).requestForRedemption(3, 100 * 10 ** 4);
 
-    await royaltyTest(addrRC, addrUSER1, addrGK, tx, 88n, "gk.requestForRedemption().");
-    transferCBP("2", "8", 88n);
+    await royaltyTest(rc.target, signers[1].address, gk.target, tx, 88n, "gk.requestForRedemption().");
+    transferCBP(users[1], userComp, 88n);
 
     await expect(tx).to.emit(ror, "RequestForRedemption").withArgs(3, 4, 100 * 10 ** 4, 2.8 * 10 ** 6);
     console.log(" \u2714 Passed Event Test for ror.requestForRedemption(). \n");
@@ -266,7 +270,7 @@ async function main() {
     expect(request.class).to.equal(3);
     expect(request.seqOfShare).to.equal(4);
     expect(request.navPrice).to.equal(2.8);
-    expect(request.shareholder).to.equal(2);
+    expect(request.shareholder).to.equal(users[1]);
     expect(request.paid).to.equal(100);
     expect(request.value).to.equal(280);
 
@@ -276,8 +280,8 @@ async function main() {
 
     tx = await gk.connect(signers[3]).requestForRedemption(3, 200 * 10 ** 4);
 
-    await royaltyTest(addrRC, addrUSER3, addrGK, tx, 88n, "gk.requestForRedemption().");
-    transferCBP("3", "8", 88n);
+    await royaltyTest(rc.target, signers[3].address, gk.target, tx, 88n, "gk.requestForRedemption().");
+    transferCBP(users[3], userComp, 88n);
 
     await expect(tx).to.emit(ror, "RequestForRedemption").withArgs(3, 5, 200 * 10 ** 4, 5.6 * 10 ** 6);
     console.log(" \u2714 Passed Event Test for ror.requestForRedemption(). \n");
@@ -297,7 +301,7 @@ async function main() {
     expect(request.class).to.equal(3);
     expect(request.seqOfShare).to.equal(5);
     expect(request.navPrice).to.equal(2.8);
-    expect(request.shareholder).to.equal(3);
+    expect(request.shareholder).to.equal(users[3]);
     expect(request.paid).to.equal(200);
     expect(request.value).to.equal(560);
 
@@ -308,24 +312,24 @@ async function main() {
     // await expect(gk.connect(signers[1]).redeem(3, big2Num(list[list.length - 2]))).to.be.revertedWith("FundRORK: not GP or Manager");
     console.log(" \u2714 Passed Access Control Test for gk.redeem(). \n");
 
-    let bala_2_before = big2Num(await cashier.depositOfMine(2));
-    let bala_3_before = big2Num(await cashier.depositOfMine(3));
+    let bala_2_before = big2Num(await cashier.depositOfMine(users[2]));
+    let bala_3_before = big2Num(await cashier.depositOfMine(users[3]));
 
     res = await ror.getInfoOfPack(3, big2Num(list[list.length - 2]));
     expect(formatUnits(res.value.toString(), 4)).to.equal('750.0');
 
     tx = await gk.redeem(3, big2Num(list[list.length - 2]));
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.redeem().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.redeem().");
+    transferCBP(users[0], userComp, 18n);
 
     await expect(tx).to.emit(ror, "RedeemClass").withArgs(3, res.paid, res.value);
     console.log(" \u2714 Passed Event Test for ror.RedeemClass(). \n");
 
-    let bala_2_after = big2Num(await cashier.depositOfMine(2));
+    let bala_2_after = big2Num(await cashier.depositOfMine(users[1]));
     expect(formatUnits(bala_2_after.toString(), 6)).to.equal('250.0');
 
-    let bala_3_after = big2Num(await cashier.depositOfMine(3));
+    let bala_3_after = big2Num(await cashier.depositOfMine(users[3]));
     expect(formatUnits(bala_3_after.toString(), 6)).to.equal('500.0');
 
     let share_4_after = parseShare(await ros.getShare(4));
@@ -348,24 +352,24 @@ async function main() {
     // await expect(gk.connect(signers[1]).redeem(3, big2Num(list[list.length - 1]))).to.be.revertedWith("FundRORK: not GP or Manager");
     console.log(" \u2714 Passed Access Control Test for gk.redeem(). \n");
 
-    bala_2_before = big2Num(await cashier.depositOfMine(2));
-    bala_3_before = big2Num(await cashier.depositOfMine(3));
+    bala_2_before = big2Num(await cashier.depositOfMine(users[1]));
+    bala_3_before = big2Num(await cashier.depositOfMine(users[3]));
 
     res = await ror.getInfoOfPack(3, big2Num(list[list.length - 1]));
     expect(formatUnits(res.value.toString(), 4)).to.equal('840.0');
 
     tx = await gk.redeem(3, big2Num(list[list.length - 1]));
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.redeem().");
-    transferCBP("1", "8", 18n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.redeem().");
+    transferCBP(users[0], userComp, 18n);
 
     await expect(tx).to.emit(ror, "RedeemClass").withArgs(3, res.paid, res.value);
     console.log(" \u2714 Passed Event Test for ror.RedeemClass(). \n");
 
-    bala_2_after = big2Num(await cashier.depositOfMine(2));
+    bala_2_after = big2Num(await cashier.depositOfMine(users[1]));
     expect(formatUnits(bala_2_after.toString(), 6)).to.equal('530.0');
 
-    bala_3_after = big2Num(await cashier.depositOfMine(3));
+    bala_3_after = big2Num(await cashier.depositOfMine(users[3]));
     expect(formatUnits(bala_3_after.toString(), 6)).to.equal('1060.0');
 
     share_4_after = parseShare(await ros.getShare(4));
@@ -388,16 +392,18 @@ async function main() {
     let seqOfDR = 1280n;
     const executor = await rc.getMyUserNo();
 
-    await usdc.transfer(addrCashier, 200000 * 10 ** 6);
+    await usdc.transfer(cashier.target, 200000 * 10 ** 6);
     let distAmt = 10000 * 10 ** 6;
 
     let today = await now();
     let expireDate = today + 86400 * 60;
 
+    gk = await readTool("FundGMMKeeper", gk.target);  
+
     tx = await gk.proposeToDistributeUsd(distAmt, expireDate, seqOfVR, seqOfDR, 0, executor);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 68n, "gk.proposeToDistributeUsd().");
-    transferCBP("1", "8", 68n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 68n, "gk.proposeToDistributeUsd().");
+    transferCBP(users[0], userComp, 68n);
 
     let seqOfMotion = await getLatestSeqOfMotion(gmm);
 
@@ -408,20 +414,20 @@ async function main() {
 
     expect(motion.head.typeOfMotion).to.equal("Distribute Profits");
     expect(motion.head.seqOfVR).to.equal(9);
-    expect(motion.head.creator).to.equal(1);
-    expect(motion.body.proposer).to.equal(1);
+    expect(motion.head.creator).to.equal(users[0]);
+    expect(motion.body.proposer).to.equal(users[0]);
 
     console.log(" \u2714 Passed Result Verify Test for gk.proposeToDistributeUsd(). \n");
 
     // ==== Vote for Distribution Motion ====
 
     await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
-    transferCBP("1", "8", 72n);
+    transferCBP(users[0], userComp, 72n);
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(' \u2714 Passed Result Verify Test for motion voting. \n');
@@ -432,21 +438,23 @@ async function main() {
     // await expect(gk.connect(signers[1]).distributeProfits(distAmt, expireDate, seqOfDR, seqOfMotion)).to.be.revertedWith("Accountant: not GP");
     console.log(" \u2714 Passed Access Control Test for gk.distributeProfits(). \n");
 
-    bala_2_before = big2Num(await cashier.depositOfMine(2));
-    bala_3_before = big2Num(await cashier.depositOfMine(3));
+    bala_2_before = big2Num(await cashier.depositOfMine(users[1]));
+    bala_3_before = big2Num(await cashier.depositOfMine(users[3]));
 
-    tx = await gk.distributeProfits(distAmt, expireDate, seqOfDR, seqOfMotion);
+    gk = await readTool("FundAccountant", gk.target);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.distributeProfits().");
-    transferCBP("1", "8", 18n);
+    tx = await gk.distrProfits(distAmt, expireDate, seqOfDR, seqOfMotion);
 
-    bala_2_after = big2Num(await cashier.depositOfMine(2));
-    bala_3_after = big2Num(await cashier.depositOfMine(3));
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.distributeProfits().");
+    transferCBP(users[0], userComp, 18n);
+
+    bala_2_after = big2Num(await cashier.depositOfMine(users[1]));
+    bala_3_after = big2Num(await cashier.depositOfMine(users[3]));
 
     console.log('profits_2:', formatUnits((bala_2_after - bala_2_before).toString(), 6));
     console.log('profits_3:', formatUnits((bala_3_after - bala_3_before).toString(), 6));
 
-    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, 1);
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, users[0]);
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(cashier, "DistrProfits").withArgs(distAmt, seqOfDR, 1);
@@ -463,10 +471,12 @@ async function main() {
     expireDate = today + 86400 * 60;
     seqOfDR = 1281n;
 
+    gk = await readTool("FundGMMKeeper", gk.target);
+
     tx = await gk.proposeToDistributeUsd(distAmt, expireDate, seqOfVR, seqOfDR, executor, executor);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 68n, "gk.proposeToDistributeUsd().");
-    transferCBP("1", "8", 68n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 68n, "gk.proposeToDistributeUsd().");
+    transferCBP(users[0], userComp, 68n);
 
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
@@ -477,20 +487,20 @@ async function main() {
 
     expect(motion.head.typeOfMotion).to.equal("Distribute Profits");
     expect(motion.head.seqOfVR).to.equal(9);
-    expect(motion.head.creator).to.equal(1);
-    expect(motion.body.proposer).to.equal(1);
+    expect(motion.head.creator).to.equal(users[0]);
+    expect(motion.body.proposer).to.equal(users[0]);
 
     console.log(" \u2714 Passed Result Verify Test for gk.proposeToDistributeUsd(). \n");
 
     // ==== Vote for Distribution Motion ====
 
     await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
-    transferCBP("1", "8", 72n);
+    transferCBP(users[0], userComp, 72n);
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(' \u2714 Passed Result Verify Test for motion voting. \n');
@@ -503,15 +513,17 @@ async function main() {
     // await expect(gk.connect(signers[1]).distributeIncome(distAmt, expireDate, seqOfDR, 1, seqOfMotion)).to.be.revertedWith("Accountant: not GP");
     console.log(" \u2714 Passed Access Control Test for gk.distributeIncome(). \n");
 
-    bala_2_before = big2Num(await cashier.depositOfMine(2));
+    bala_2_before = big2Num(await cashier.depositOfMine(users[1]));
     console.log('bala_2_before:', bala_2_before);
-    bala_3_before = big2Num(await cashier.depositOfMine(3));
+    bala_3_before = big2Num(await cashier.depositOfMine(users[3]));
     console.log('bala_3_before:', bala_3_before);
 
-    tx = await gk.distributeIncome(distAmt, expireDate, seqOfDR, 1, seqOfMotion);
+    gk = await readTool("FundAccountant", gk.target); 
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.distributeIncome().");
-    transferCBP("1", "8", 18n);
+    tx = await gk.distrIncome(distAmt, expireDate, seqOfDR, users[0], seqOfMotion);
+
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.distributeIncome().");
+    transferCBP(users[0], userComp, 18n);
 
     const calDistrOfClass = async (seqOfClass, rate) => {
 
@@ -536,14 +548,14 @@ async function main() {
 
     console.log('sum of distr for Classes 2, 3 & 4 :', formatUnits(Math.floor(distr).toString(), 6));
 
-    bala_2_after = big2Num(await cashier.depositOfMine(2));
-    bala_3_after = big2Num(await cashier.depositOfMine(3));
+    bala_2_after = big2Num(await cashier.depositOfMine(users[1]));
+    bala_3_after = big2Num(await cashier.depositOfMine(users[3]));
 
     console.log('profits_2:', formatUnits((bala_2_after - bala_2_before).toString(), 6));
     console.log('profits_3:', formatUnits((bala_3_after - bala_3_before).toString(), 6));
     console.log('total distr of User 2 & 3:', formatUnits((bala_2_after + bala_3_after - bala_2_before - bala_3_before).toString(), 6));
 
-    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, 1);
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, users[0]);
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(cashier, "DistrIncome").withArgs(distAmt, seqOfDR, executor, 2);
@@ -557,10 +569,12 @@ async function main() {
     expireDate = today + 86400 * 60;
     seqOfDR = 1282n;
 
+    gk = await readTool("FundGMMKeeper", gk.target);
+
     tx = await gk.proposeToDistributeUsd(distAmt, expireDate, seqOfVR, seqOfDR, executor, executor);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 68n, "gk.proposeToDistributeUsd().");
-    transferCBP("1", "8", 68n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 68n, "gk.proposeToDistributeUsd().");
+    transferCBP(users[0], userComp, 68n);
 
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
@@ -571,20 +585,20 @@ async function main() {
 
     expect(motion.head.typeOfMotion).to.equal("Distribute Profits");
     expect(motion.head.seqOfVR).to.equal(9);
-    expect(motion.head.creator).to.equal(1);
-    expect(motion.body.proposer).to.equal(1);
+    expect(motion.head.creator).to.equal(users[0]);
+    expect(motion.body.proposer).to.equal(users[0]);
 
     console.log(" \u2714 Passed Result Verify Test for gk.proposeToDistributeUsd(). \n");
 
     // ==== Vote for Distribution Motion ====
 
     await gk.castVoteOfGM(seqOfMotion, 1, Bytes32Zero);
-    transferCBP("1", "8", 72n);
+    transferCBP(users[0], userComp, 72n);
 
     await increaseTime(86400);
 
     await gk.voteCountingOfGM(seqOfMotion);
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
     console.log(' \u2714 Passed Result Verify Test for motion voting. \n');
@@ -597,19 +611,21 @@ async function main() {
     // await expect(gk.connect(signers[1]).distributeIncome(distAmt, expireDate, seqOfDR, 1, seqOfMotion)).to.be.revertedWith("Accountant: not GP");
     console.log(" \u2714 Passed Access Control Test for gk.distributeIncome(). \n");
 
-    let bala_1_before = big2Num(await cashier.depositOfMine(1));
+    let bala_1_before = big2Num(await cashier.depositOfMine(users[0]));
     console.log('bala_1_before:', bala_1_before);
-    bala_2_before = big2Num(await cashier.depositOfMine(2));
+    bala_2_before = big2Num(await cashier.depositOfMine(users[1]));
     console.log('bala_2_before:', bala_2_before);
-    bala_3_before = big2Num(await cashier.depositOfMine(3));
+    bala_3_before = big2Num(await cashier.depositOfMine(users[3]));
     console.log('bala_3_before:', bala_3_before);
 
-    tx = await gk.distributeIncome(distAmt, expireDate, seqOfDR, 1, seqOfMotion);
+    gk = await readTool("FundAccountant", gk.target);
 
-    await royaltyTest(addrRC, addrAM, addrGK, tx, 18n, "gk.distributeIncome().");
-    transferCBP("1", "8", 18n);
+    tx = await gk.distrIncome(distAmt, expireDate, seqOfDR, users[0], seqOfMotion);
 
-    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, 1);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.distributeIncome().");
+    transferCBP(users[0], userComp, 18n);
+
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, users[0]);
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(cashier, "DistrIncome").withArgs(distAmt, seqOfDR, executor, 3);
@@ -636,9 +652,9 @@ async function main() {
     carry += exceed * 4;
     console.log('carry-2:', carry);
 
-    let bala_1_after = big2Num(await cashier.depositOfMine(1));
-    bala_2_after = big2Num(await cashier.depositOfMine(2));
-    bala_3_after = big2Num(await cashier.depositOfMine(3));
+    let bala_1_after = big2Num(await cashier.depositOfMine(users[0]));
+    bala_2_after = big2Num(await cashier.depositOfMine(users[1]));
+    bala_3_after = big2Num(await cashier.depositOfMine(users[3]));
 
     console.log('profits_1:', formatUnits((bala_1_after - bala_1_before).toString(), 6));
     console.log('profits_2:', formatUnits((bala_2_after - bala_2_before).toString(), 6));
@@ -666,14 +682,14 @@ async function main() {
       if (i == 2) continue;
 
       const userNo = await rc.connect(signers[i]).getMyUserNo();
-      const depo = await cashier.connect(signers[i]).depositOfMine(userNo);
+      const depo = await cashier.connect(signers[i]).depositOfMine(users[i]);
 
       let balaBefore = await usdc.balanceOf(await signers[i].getAddress());
       tx = await cashier.connect(signers[i]).pickupUsd();
       let balaAfter = await usdc.balanceOf(await signers[i].getAddress());
       
-      await royaltyTest(addrRC, await signers[i].getAddress(), addrGK, tx, 18n, "cashier.pickupUsd().");
-      transferCBP(userNo.toString(), "8", 18n);
+      await royaltyTest(rc.target, signers[i].address, gk.target, tx, 18n, "cashier.pickupUsd().");
+      transferCBP(users[i], userComp, 18n);
 
       await expect(tx).to.emit(cashier, "PickupUsd").withArgs(await signers[i].getAddress(), userNo, depo);
       console.log(" \u2714 Passed Event Test for cashier.PickupUsd(). \n");
@@ -687,7 +703,7 @@ async function main() {
     }
 
     await printShares(ros);
-    await cbpOfUsers(rc, addrGK);
+    await cbpOfUsers(rc, gk.target, userComp);
 
 }
 

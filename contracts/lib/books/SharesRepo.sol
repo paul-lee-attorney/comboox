@@ -349,8 +349,8 @@ library SharesRepo {
         uint64 deltaPaid = uint64(paid);
         uint64 deltaPar = uint64(par);
 
-        if (deltaPar == 0) {
-            revert SHR_WrongInput(bytes32("SHR_ZeroDeltaPar"));
+        if (deltaPar == 0 && deltaPaid == 0) {
+            revert SHR_WrongInput(bytes32("SHR_ZeroDeltaAmt"));
         }
         if (share.body.cleanPaid < deltaPaid) {
             revert SHR_WrongInput(bytes32("SHR_DeltaPaidExceedCleanPaid"));
