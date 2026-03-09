@@ -62,14 +62,14 @@ interface IRegCenter is IBookOfPoints, IBookOfDocs, IBookOfUsers, IERC20{
 
     /// @notice Get user number by address (admin access in implementation).
     /// @param targetAddr User address.
-    function getUserNo(address targetAddr) external view returns (uint40);
+    function obtainUserNo(address targetAddr) external view returns (uint40);
 
     /// @notice Get user record by address (admin access in implementation).
     /// @param targetAddr User address.
-    function getUser(address targetAddr) external view returns (UsersRepo.User memory);
+    function obtainUser(address targetAddr) external view returns (UsersRepo.User memory);
 
     /// @notice Get user record by user number (admin access in implementation).
     /// @param acct User number.
-    function getUserByNo(uint acct) external view returns (UsersRepo.User memory);
+    function obtainUserByNo(uint acct) external view returns (UsersRepo.User memory);
 
 }

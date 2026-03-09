@@ -35,7 +35,7 @@ library RedemptionsRepo {
         uint40 shareholder;
         uint64 paid;
         uint64 value; 
-        uint8 seqOfPacks;
+        uint8 seqOfPack;
     }
 
 
@@ -115,7 +115,7 @@ library RedemptionsRepo {
                 request.shareholder,
                 request.paid,
                 request.value,
-                request.seqOfPacks
+                request.seqOfPack
             );
 
         assembly {
@@ -169,11 +169,11 @@ library RedemptionsRepo {
     ) {
         Class storage cls = repo.classes[class];
 
-        request.seqOfPacks = uint8(block.timestamp / 86400 % 256);
+        request.seqOfPack = uint8(block.timestamp / 86400 % 256);
 
-        cls.packsList.add(request.seqOfPacks);
+        cls.packsList.add(request.seqOfPack);
 
-        Pack storage pack = cls.packs[request.seqOfPacks];
+        Pack storage pack = cls.packs[request.seqOfPack];
         
         pack.sharesList.add(seqOfShare);
 

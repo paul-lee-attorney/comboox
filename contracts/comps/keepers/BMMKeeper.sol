@@ -86,8 +86,8 @@ contract BMMKeeper is IBMMKeeper {
         address _gk = address(this);
         uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
         
-        if (!_gk.getROD().isDirector(caller))
-            revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
+        // if (!_gk.getROD().isDirector(caller))
+        //     revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
 
         IRegisterOfDirectors _rod = _gk.getROD();
         

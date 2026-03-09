@@ -105,15 +105,15 @@ contract RegCenter is BookOfPoints, IRegCenter{
 
     // ==== Admin Checking ====
 
-    function getUserNo(address targetAddr) external view onlyKeeper returns (uint40) {
+    function obtainUserNo(address targetAddr) external view onlyKeeper returns (uint40) {
         return _getUserNo(targetAddr);
     }
 
-    function getUser(address targetAddr) external view onlyKeeper returns (UsersRepo.User memory) {
+    function obtainUser(address targetAddr) external view onlyKeeper returns (UsersRepo.User memory) {
         return _getUser(targetAddr);
     }
 
-    function getUserByNo(uint acct) external view onlyKeeper returns (UsersRepo.User memory) {
+    function obtainUserByNo(uint acct) external view onlyKeeper returns (UsersRepo.User memory) {
         return _getUserByNo(acct);
     }
 

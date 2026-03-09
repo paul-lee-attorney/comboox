@@ -141,7 +141,7 @@ interface IRegisterOfAgreements is IFilesFolder {
     /// @param ia Investment agreement address.
     /// @param acct User number.
     /// @return True if claimed.
-    function isFRClaimer(address ia, uint256 acct) external returns (bool);
+    function isFRClaimer(address ia, uint256 acct) external view returns (bool);
 
     /// @notice Get deal list with FR claims.
     /// @param ia Investment agreement address.
