@@ -30,10 +30,11 @@ export default defineConfig({
   networks: {
     localhost:{
         url: "http://127.0.0.1:8545",
+        blockGasLimit: 100_000_000,
     },
     hardhat: {
       // gas: 100_000_000,
-      // blockGasLimit: 100_000_000,
+      blockGasLimit: 100_000_000,
       type: "edr-simulated",
       chainId: 31337,
       initialDate: "2025-01-01T00:00:00Z",

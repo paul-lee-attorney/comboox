@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -44,7 +44,6 @@ async function main() {
 	await usdc.connect(signers[1]).setNewOwner(signers[0].address);
 	
 	console.log("deployed MockUSDC:", usdc.target, "with owner: ", await usdc.getOwner(), "\n");
-
 	
 	// ---- CreateNewComp ----
 
@@ -75,7 +74,6 @@ async function main() {
 
 	libraries = {
 		"InterfacesHub": (await rc.getTemp(getTypeByName("InterfacesHub"), 1))[1],
-		// "Address": (await rc.getTemp(getTypeByName("Address"), 1))[1],
 	}
 	params = [];
 	const addrUsdFuelTank = await deployTool(signers[0], "UsdFuelTank", libraries, params);
@@ -86,7 +84,7 @@ async function main() {
 	console.log("Proxy deployed for UsdFuelTank \n");
 
 	const ft = await readTool("UsdFuelTank", (await rc.getDoc(getTypeByName("UsdFuelTank"), 1, 1))[1]);
- 
+
 	await ft.connect(signers[1]).setRate(2600 * 10 ** 6);
 	console.log("set rate for UsdFuelTank to: ", 2600 * 10 ** 6, "\n");
 

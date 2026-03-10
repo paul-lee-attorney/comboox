@@ -129,6 +129,7 @@ async function main() {
     await gk.voteCountingOfGM(seqOfMotion);
 
     await royaltyTest(rc.target, signers[0].address, gk.target, tx, 88n, "gk.voteCountingOfGM().");
+    
     transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
