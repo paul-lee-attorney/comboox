@@ -42,7 +42,12 @@ export default defineConfig({
     arbitrumSepolia: {
       type: "http",
       url: `https://arb-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_SEPOLIA_KEY}`,
-      accounts: [process.env.SEPOLIA_PRIV_KEY_0, process.env.SEPOLIA_PRIV_KEY_1],
+      accounts: [
+        process.env.SEPOLIA_PRIV_KEY_0, process.env.SEPOLIA_PRIV_KEY_1,
+        process.env.SEPOLIA_PRIV_KEY_2, process.env.SEPOLIA_PRIV_KEY_3,
+        process.env.SEPOLIA_PRIV_KEY_4, process.env.SEPOLIA_PRIV_KEY_5,
+        process.env.SEPOLIA_PRIV_KEY_6, process.env.SEPOLIA_PRIV_KEY_7,
+      ],
     },
     mainnet: {
       type: "http",
@@ -58,28 +63,10 @@ export default defineConfig({
   verify: {
     etherscan: {
       apiKey: process.env.ETHERSCAN_API_KEY,
-      // customChains: [
-      //   {
-      //     network: "arbitrumSepolia",
-      //     chainId: 421614,
-      //     urls: {
-      //       apiURL: "https://api-sepolia.arbiscan.io/api",
-      //       browserURL: "https://sepolia.arbiscan.io/",
-      //     },
-      //   },
-      //   {
-      //     network: "arbitrumOne",
-      //     chainId: 42161,
-      //     urls: {
-      //       apiURL: "https://api.arbiscan.io/api",
-      //       browserURL: "https://arbiscan.io/",
-      //     },
-      //   },
-      // ],
     },
   },
   sourcify: {
-    enabled: true,
+    enabled: false,
   },
   blockscout: {
     enabled: false,

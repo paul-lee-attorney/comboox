@@ -56,7 +56,7 @@
 
 
 import { expect } from "chai";
-import { getRC, getFT, getGK, getROS, getCashier, getTypeByName, getUSDC } from "./boox";
+import { getRC, getFT, getGK, getROS, getCashier, getTypeByName } from "./boox";
 import { printShares, parseShare } from "./ros";
 import { cbpOfUsers, getAllUsers, royaltyTest } from "./rc";
 import { generateAuth } from "./sigTools";

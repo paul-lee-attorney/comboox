@@ -21,7 +21,7 @@ function main() {
       console.log(`\n🔍 Verifying ${contractName} at ${contractAddress}...`);
       
       // 构建验证命令
-      const verifyCommand = `npx hardhat verify ${contractAddress} --network ${CONFIG.network}`;
+      const verifyCommand = `npx hardhat verify etherscan ${contractAddress} --network ${CONFIG.network}`;
       
       try {
         // 执行验证
