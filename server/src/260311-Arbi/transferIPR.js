@@ -56,6 +56,7 @@ async function main() {
     await transferIPR("RegisterOfAgreements");
     await transferIPR("RegisterOfOptions");
     await transferIPR("RegisterOfPledges");
+    await transferIPR("RegisterOfShares");
     await transferIPR("RegisterOfInvestors");
     await transferIPR("ListOfOrders");
     await transferIPR("Cashier");
