@@ -37,11 +37,11 @@ library RulesParser {
         uint16 proposeHeadRatioOfDirectorsInGM;
         uint16 proposeHeadRatioOfDirectorsInBoard;
         uint16 maxQtyOfMembers;
-        uint16 quorumOfGM;  
+        uint16 quorumOfGM;
         uint8 maxNumOfDirectors;
         uint16 tenureMonOfBoard;
         uint16 quorumOfBoardMeeting;
-        uint48 establishedDate;    
+        uint48 establishedDate;
         uint8 businessTermInYears;
         uint8 typeOfComp;
         uint16 minVoteRatioOnChain;
