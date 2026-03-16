@@ -60,11 +60,26 @@ function codifyHeadOfDeal(head) {
   return hexSn;
 }
 
+function codifyDTClaimHead(head) {
+  let hexSn = `0x${
+    (Number(head.seqOfDeal).toString(16).padStart(4, '0')) +
+    (head.dragAlong ? '01' : '00') +
+    (Number(head.seqOfShare).toString(16).padStart(8, '0')) +
+    ((head.paid).toString(16).padStart(16, '0')) +
+    ((head.par).toString(16).padStart(16, '0')) +
+    (Number(head.caller).toString(16).padStart(10, '0')) +
+    (Number(head.para).toString(16).padStart(4, '0')) + 
+    (Number(head.argu).toString(16).padStart(4, '0'))
+  }`;
+  return hexSn;
+}
+
 export {
     getDealValue,
     parseHeadOfDeal,
     codifyHeadOfDeal,
     parseDeal,
+    codifyDTClaimHead
 };
 
   

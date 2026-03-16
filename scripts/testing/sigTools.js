@@ -161,9 +161,9 @@ const generateAuth = async (signer, to, amt) => {
   const value = {
     from: signer.address,
     to: to,
-    value: parseUnits(amt.toString(), 6), // USDC精度为6位
-    validAfter: blk.timestamp - 1,
-    validBefore: blk.timestamp + 3600, // 1小时有效期
+    value: BigInt(parseUnits(amt.toString(), 6)), // USDC精度为6位
+    validAfter: BigInt(blk.timestamp - 1),
+    validBefore: BigInt(blk.timestamp + 3600), // 1小时有效期
     nonce: hexlify(randomBytes(32)), // 递增式nonce
   };
 

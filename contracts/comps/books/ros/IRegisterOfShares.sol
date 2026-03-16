@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,12 +17,12 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../../../lib/SharesRepo.sol";
-import "../../../lib/LockersRepo.sol";
-import "../../../lib/DealsRepo.sol";
-import "../../../lib/BooksRepo.sol";
+import "../../../lib/books/SharesRepo.sol";
+import "../../../lib/books/LockersRepo.sol";
+import "../../../lib/books/DealsRepo.sol";
+import "../../../lib/InterfacesHub.sol";
 
 import "../rom/IRegisterOfMembers.sol";
 import "../roc/IShareholdersAgreement.sol";
@@ -31,31 +31,79 @@ import "../roc/terms/ILockUp.sol";
 interface IRegisterOfShares {
 
     //##################
+    //##    Error     ##
+    //##################
+
+    error ROS_WrongInput(bytes32 reason);
+
+    error ROS_WrongAccess(bytes32 reason);
+
+    //##################
     //##    Event     ##
     //##################
 
+    /// @notice Emitted when a share is issued.
+    /// @param shareNumber Share serial number.
+    /// @param paid Paid amount.
+    /// @param par Par amount.
     event IssueShare(bytes32 indexed shareNumber, uint indexed paid, uint indexed par);
 
+    /// @notice Emitted when a share is transferred.
+    /// @param shareNumber Original share serial number.
+    /// @param newShareNumber New share serial number.
+    /// @param paid Paid amount transferred.
+    /// @param par Par amount transferred.
     event TransferShare(bytes32 indexed shareNumber, bytes32 indexed newShareNumber, uint indexed paid, uint par);
 
+    /// @notice Emitted when capital is paid in for a share.
+    /// @param seqOfShare Share sequence.
+    /// @param amount Paid-in amount.
     event PayInCapital(uint256 indexed seqOfShare, uint indexed amount);
 
+    /// @notice Emitted when paid/par amounts are reduced for a share.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Paid amount reduced.
+    /// @param par Par amount reduced.
     event SubAmountFromShare(uint256 indexed seqOfShare, uint indexed paid, uint indexed par);
 
+    /// @notice Emitted when a share is deregistered.
+    /// @param seqOfShare Share sequence.
     event DeregisterShare(uint256 indexed seqOfShare);
 
+    /// @notice Emitted when price of paid amount is updated.
+    /// @param seqOfShare Share sequence.
+    /// @param newPrice New price.
     event UpdatePriceOfPaid(uint indexed seqOfShare, uint indexed newPrice);
 
+    /// @notice Emitted when paid-in deadline is updated.
+    /// @param seqOfShare Share sequence.
+    /// @param paidInDeadline New deadline timestamp.
     event UpdatePaidInDeadline(uint256 indexed seqOfShare, uint indexed paidInDeadline);
 
+    /// @notice Emitted when clean paid amount is decreased.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Amount decreased.
     event DecreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
 
+    /// @notice Emitted when clean paid amount is increased.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Amount increased.
     event IncreaseCleanPaid(uint256 indexed seqOfShare, uint indexed paid);
 
+    /// @notice Emitted when a pay-in amount is set with hash lock.
+    /// @param headSn Share head serial number.
+    /// @param hashLock Hash lock.
     event SetPayInAmt(bytes32 indexed headSn, bytes32 indexed hashLock);
 
+    /// @notice Emitted when a pay-in amount is withdrawn.
+    /// @param seqOfShare Share sequence.
+    /// @param amount Amount withdrawn.
     event WithdrawPayInAmt(uint indexed seqOfShare, uint indexed amount);
 
+    /// @notice Emitted when equity of a class is adjusted.
+    /// @param isIncrease True if increase, false if decrease.
+    /// @param class Share class id.
+    /// @param amt Amount changed.
     event IncreaseEquityOfClass(bool indexed isIncrease, uint indexed class, uint indexed amt);
 
     //##################

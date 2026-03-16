@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,45 +17,50 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../books/roc/terms/ILockUp.sol";
-import "../books/roc/IShareholdersAgreement.sol";
-import "../books/roc/IRegisterOfConstitution.sol";
-import "../books/rod/IRegisterOfDirectors.sol";
-import "../books/rom/IRegisterOfMembers.sol";
-
-import "../common/components/ISigPage.sol";
-import "../common/access/IDraftControl.sol";
-
-import "../../lib/OfficersRepo.sol";
-import "../../lib/RulesParser.sol";
-import "../../lib/DocsRepo.sol";
-// import "../../lib/FilesRepo.sol";
-import "../../lib/BooksRepo.sol";
-
+/// @title IROCKeeper
+/// @notice Interface for shareholder agreement lifecycle actions.
 interface IROCKeeper {
 
-    // ############
-    // ##  SHA   ##
-    // ############
+    // ##########################
+    // ##   Error & Modifier   ##
+    // ##########################
 
-    function createSHA(uint version, address msgSender) external;
+    error ROCK_WrongParty(bytes32 reason);
 
+    error ROCK_WrongState(bytes32 reason);
+
+    error ROCK_WrongInput(bytes32 reason);
+
+
+    /// @notice Create a shareholder agreement.
+    /// @param version Agreement version.
+    function createSHA(uint version) external;
+
+    /// @notice Circulate SHA document for signature.
+    /// @param sha Shareholders agreement address.
+    /// @param docUrl Document URL hash.
+    /// @param docHash Document content hash.
     function circulateSHA(
         address sha,
         bytes32 docUrl,
-        bytes32 docHash,
-        address msgSender
+        bytes32 docHash
     ) external;
 
+    /// @notice Sign SHA document.
+    /// @param sha Shareholders agreement address.
+    /// @param sigHash Signature hash.
     function signSHA(
         address sha,
-        bytes32 sigHash,
-        address msgSender
+        bytes32 sigHash
     ) external;
 
-    function activateSHA(address sha, address msgSender) external;
+    /// @notice Activate a SHA.
+    /// @param sha Shareholders agreement address.
+    function activateSHA(address sha) external;
 
-    function acceptSHA(bytes32 sigHash, address msgSender) external;
+    /// @notice Accept SHA with signature hash.
+    /// @param sigHash Signature hash.
+    function acceptSHA(bytes32 sigHash) external;
 }

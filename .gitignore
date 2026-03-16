@@ -8,5 +8,6 @@ cache
 artifacts
 
 test
+types
 
 server/src/contracts/

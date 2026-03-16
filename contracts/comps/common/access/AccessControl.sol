@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.4
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,30 +17,112 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IAccessControl.sol";
-import "../../../center/access/Ownable.sol";
+import "./Ownable.sol";
+import "../../../lib/InterfacesHub.sol";
 
 contract AccessControl is IAccessControl, Ownable {
+    using InterfacesHub for address;
 
+    enum Books {
+        ZeroPoint,
+        ROC,        //1
+        ROD,
+        BMM,
+        ROM,
+        GMM,        //5
+        ROA,
+        ROO,
+        ROP,
+        ROS,
+        LOO,        //10
+        ROI,
+        Bank,
+        Blank_1,
+        Blank_2,
+        Cashier,    //15
+        ROR
+    }
+
+    enum Keepers {
+        ZeroPoint,
+        ROCK,       //1
+        RODK,
+        BMMK,
+        ROMK,
+        GMMK,       //5
+        ROAK,
+        ROOK,
+        ROPK,
+        SHAK,
+        LOOK,       //10
+        ROIK,       
+        Accountant,
+        Blank_1,
+        Blank_2,
+        Blank_3,    //15
+        RORK
+    }
+
+    /// @notice Direct keeper admin record.
     Admin internal _dk;
-    IBaseKeeper internal _gk;
+    /// @notice General keeper address.
+    address internal _gk;
+
+    // ==== UUPSUpgradable ====
+
+    /// @dev Storage gap for upgrade safety.
+    uint[50] private __gap;
+
+    function initKeepers(
+        address directKeeper, 
+        address generalKeeper
+    ) external virtual reinitializer(2) {
+        _initKeepers(directKeeper, generalKeeper);
+    }
+
+    /// @dev Authorize UUPS upgrades. Caller must be GK or DK.
+    function _authorizeUpgrade(address newImplementation) internal virtual override {
+        if (msg.sender != _gk && msg.sender != _dk.addr) {
+            revert AC_WrongAccess(bytes32("AC_NotGKorDK"));
+        }
+        if (!_rc.getRC().tempExist(newImplementation)) {
+            revert AC_WrongState(bytes32("AC_TempNotExist"));
+        }
+    }
+
+    function upgradeDocTo(address newImplementation) external virtual {
+        upgradeTo(newImplementation);
+        _rc.getRC().upgradeDoc(newImplementation);
+    }
 
     // ################
     // ##  Modifier  ##
     // ################
 
+    /// @notice Restrict to direct keeper.
     modifier onlyDK {
-        require(_dk.addr == msg.sender,
-            "AC.onlyDK: not");
+        if (_dk.addr != msg.sender) {
+            revert AC_WrongAccess(bytes32("AC_NotDK"));
+        }
         _;
     }
 
-    modifier onlyKeeper {
-        require(_gk.isKeeper(msg.sender) || 
-            _dk.addr == msg.sender, 
-            "AC.onlyKeeper: NOT");
+    // /// @notice Restrict to general keeper.
+    // modifier onlyGK {
+    //     if (_gk != msg.sender) {
+    //         revert AC_WrongAccess(bytes32("AC_NotGK"));
+    //     }
+    //     _;
+    // }
+
+    /// @notice Restrict to general keeper or direct keeper.
+    modifier onlyKeeper virtual {
+        if (_gk != msg.sender && _dk.addr != msg.sender) {
+            revert AC_WrongAccess(bytes32("AC_NotKeeper"));
+        }
         _;
     }
 
@@ -50,17 +130,16 @@ contract AccessControl is IAccessControl, Ownable {
     // ##    Write    ##
     // #################
 
-    function initKeepers(address dk,address gk) external {
-        require(_dk.state == 0, 
-            "AC.initKeepers: already inited");
-        _dk.addr = dk;
-        _gk = IBaseKeeper(gk);
+    /// @notice Initialize keeper addresses (one-time).
+    /// @param directKeeper Direct keeper address.
+    /// @param generalKeeper General keeper address.
+    function _initKeepers(address directKeeper,address generalKeeper) internal {
+        if (_dk.state != 0) {
+            revert AC_WrongState(bytes32("AC_AlreadyInited"));
+        }
+        _dk.addr = directKeeper;
+        _gk = generalKeeper;
         _dk.state = 1;
-    }
-
-    function setNewGK(address gk) external onlyDK {
-        _gk = IBaseKeeper(gk);
-        emit SetNewGK(gk);
     }
 
     function setDirectKeeper(address acct) external onlyDK {
@@ -72,12 +151,16 @@ contract AccessControl is IAccessControl, Ownable {
         IAccessControl(target).setDirectKeeper(msg.sender);
     }
 
-    // ##############
-    // ##   Read   ##
-    // ##############
+    // #################
+    // ##    Read     ##
+    // #################
 
     function getDK() external view returns (address) {
         return _dk.addr;
+    }
+
+    function getGK() external view returns (address) {
+        return _gk;
     }
 
 }

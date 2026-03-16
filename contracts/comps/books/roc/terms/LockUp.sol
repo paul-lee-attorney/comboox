@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../../common/access/DraftControl.sol";
 
@@ -26,10 +26,10 @@ import "./ILockUp.sol";
 contract LockUp is ILockUp, DraftControl {
     using ArrayUtils for uint256[];
     using EnumerableSet for EnumerableSet.UintSet;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // default expire date as “2105-09-19”
-    uint48 constant _REMOTE_FUTURE = 4282732800;
+    uint48 internal constant _REMOTE_FUTURE = 4282732800;
 
     // lockers[0].keyHolders: ssnList;
     // seqOfShare => Locker
@@ -51,12 +51,14 @@ contract LockUp is ILockUp, DraftControl {
     }
 
     function addKeyholder(uint256 seqOfShare, uint256 keyholder) external onlyAttorney {
-        require(seqOfShare != 0, "LU.addKeyholder: zero seqOfShare");
+        if(seqOfShare == 0) 
+            revert LU_ZeroValue(bytes32("LU_ZeroSeqOfShare"));
         _lockers[seqOfShare].keyHolders.add(keyholder);
     }
 
     function removeKeyholder(uint256 seqOfShare, uint256 keyholder) external onlyAttorney {
-        require(seqOfShare != 0, "LU.removeKeyholder: zero seqOfShare");
+        if(seqOfShare == 0) 
+            revert LU_ZeroValue(bytes32("LU_ZeroSeqOfShare"));
         _lockers[seqOfShare].keyHolders.remove(keyholder);
     }
 
@@ -65,7 +67,9 @@ contract LockUp is ILockUp, DraftControl {
     // ################
 
     function isLocked(uint256 seqOfShare) public view returns (bool) {
-        return _lockers[0].keyHolders.contains(seqOfShare);
+        if(seqOfShare == 0) 
+            revert LU_ZeroValue(bytes32("LU_ZeroSeqOfShare"));
+        return _lockers[seqOfShare].dueDate > block.timestamp;
     }
 
     function getLocker(uint256 seqOfShare)

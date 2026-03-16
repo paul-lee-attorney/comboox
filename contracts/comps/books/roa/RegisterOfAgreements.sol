@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfAgreements.sol";
 
@@ -29,7 +29,7 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     using FRClaims for FRClaims.Claims;
     using FilesRepo for FilesRepo.Repo;
     using TopChain for TopChain.Chain;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     // ia => frClaims
     mapping(address => FRClaims.Claims) private _frClaims;
@@ -37,6 +37,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
     mapping(address => DTClaims.Claims) private _dtClaims;
     // ia => mockResults
     mapping(address => TopChain.Chain) private _mockOfIA;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //#################
     //##  Write I/O  ##
@@ -50,8 +53,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
         uint256 caller,
         bytes32 sigHash
     ) external onlyKeeper {
-        require(block.timestamp < _repo.frExecDeadline(ia),
-            "ROA.claimFR: missed frExecDeadline");
+        if (block.timestamp >= _repo.frExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_MissedDeadline");
+        }
         _frClaims[ia].claimFirstRefusal(seqOfDeal, caller, sigHash);
         emit ClaimFirstRefusal(ia, seqOfDeal, caller);
     }
@@ -60,8 +64,9 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
         address ia,
         uint256 seqOfDeal
     ) external onlyKeeper returns (FRClaims.Claim[] memory output) {
-        require(block.timestamp >= _repo.frExecDeadline(ia),
-            "ROA.computeFR: not reached frExecDeadline");
+        if (block.timestamp < _repo.frExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_NotReachedFRDeadline");
+        }
         output = _frClaims[ia].computeFirstRefusal(seqOfDeal, _gk.getROM());
         emit ComputeFirstRefusal(ia, seqOfDeal);
     }
@@ -70,41 +75,28 @@ contract RegisterOfAgreements is IRegisterOfAgreements, FilesFolder {
 
     function execAlongRight(
         address ia,
-        bool dragAlong,
-        uint256 seqOfDeal,
-        uint256 seqOfShare,
-        uint paid,
-        uint par,
-        uint256 caller,
+        bytes32 snOfClaim,
         bytes32 sigHash
     ) external onlyKeeper {
-        require(block.timestamp >= _repo.frExecDeadline(ia),
-            "ROA.execDT: not reached frExecDeadline");
-        require(block.timestamp < _repo.dtExecDeadline(ia),
-            "ROA.execDT: missed dtExecDeadline");
+        if (block.timestamp < _repo.frExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_NotReachedFRDeadline");
+        }
+        if (block.timestamp >= _repo.dtExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_MissedDTDeadline");
+        }
 
-        _dtClaims[ia].execAlongRight(dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
+        _dtClaims[ia].execAlongRight(snOfClaim, sigHash);
 
-        DTClaims.Head memory head = DTClaims.Head({
-            seqOfDeal: uint16(seqOfDeal),
-            dragAlong: dragAlong,
-            seqOfShare: uint32(seqOfShare),
-            paid: uint64(paid),
-            par: uint64(par),
-            caller: uint40(caller),
-            para: 0,
-            argu: 0
-        });
-
-        emit ExecAlongRight(ia, head.codifyHead(), sigHash);
+        emit ExecAlongRight(ia, snOfClaim, sigHash);
     }
 
     function acceptAlongClaims(
         address ia, 
         uint seqOfDeal
     ) external onlyKeeper returns(DTClaims.Claim[] memory) {
-        require(block.timestamp >= _repo.dtExecDeadline(ia),
-            "ROA.execDT: not reached frExecDeadline");
+        if (block.timestamp < _repo.dtExecDeadline(ia)) {
+            revert ROA_WrongState("ROA_NotReachedDTDeadline");
+        }
         
         emit AcceptAlongClaims(ia, seqOfDeal);
         return _dtClaims[ia].acceptAlongClaims(seqOfDeal);

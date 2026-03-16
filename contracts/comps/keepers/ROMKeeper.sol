@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,52 +17,75 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
 
 import "./IROMKeeper.sol";
 
-contract ROMKeeper is IROMKeeper, RoyaltyCharge {
-    using BooksRepo for IBaseKeeper;
+contract ROMKeeper is IROMKeeper {
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
 
-    // ###################
-    // ##   ROMKeeper   ##
-    // ###################
+    // = uint32(uint(keccak256("ROMKeeper")));
+    uint public constant TYPE_OF_DOC = 0xa223ca65;
+    uint public constant VERSION = 1;
 
-    function setMaxQtyOfMembers(uint max) external onlyDK {
+    modifier onlyDK() {
+        if(msg.sender != IAccessControl(address(this)).getDK())
+            revert ROMK_WrongAccess(bytes32("ROMK_NotDK"));
+        _;
+    }
+
+    function setMaxQtyOfMembers(uint max) external onlyDK  {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
         _gk.getROM().setMaxQtyOfMembers(max);
     }
 
-    function setPayInAmt(uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock) 
-    external onlyDK {
+    function setPayInAmt(
+        uint seqOfShare, uint amt, uint expireDate, bytes32 hashLock
+    ) external onlyDK  {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
         _gk.getROS().setPayInAmt(seqOfShare, amt, expireDate, hashLock);
     }
 
-    function requestPaidInCapital(bytes32 hashLock, string memory hashKey)
-    external onlyDK {
+    function requestPaidInCapital(
+        bytes32 hashLock, string memory hashKey
+    ) external  {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
         _gk.getROS().requestPaidInCapital(hashLock, hashKey);
     }
 
-    function withdrawPayInAmt(bytes32 hashLock, uint seqOfShare) external onlyDK {
+    function withdrawPayInAmt(
+        bytes32 hashLock, uint seqOfShare
+    ) external onlyDK {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
         _gk.getROS().withdrawPayInAmt(hashLock, seqOfShare);
     }
 
     function payInCapital(
         ICashier.TransferAuth memory auth,
         uint seqOfShare, 
-        uint paid, 
-        address msgSender
-    ) external onlyDK {
-        
-        uint caller = _msgSender(msgSender, 36000);
+        uint paid
+    ) external {
+        address _gk = address(this);        
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
+
         IRegisterOfShares _ros = _gk.getROS();
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
         
-        require(share.head.shareholder == caller,
-            "UsdROMK.payInCap: not shareholder");
+        if(share.head.shareholder != caller)
+            revert ROMK_WrongParty(bytes32("ROMK_NotShareholder"));
 
-        auth.from = msgSender;
+        auth.from = msg.sender;
         auth.value = share.head.priceOfPaid * paid / 100;
 
         _gk.getCashier().collectUsd(auth, bytes32("PayInCapital"));
@@ -73,14 +96,19 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
     }
 
     function decreaseCapital(
-        uint256 seqOfShare, 
-        uint paid,
-        uint par,
-        uint amt
-    ) external onlyDK {
+        uint seqOfVR, uint256 seqOfShare, 
+        uint paid, uint par, uint amt,
+        uint seqOfMotion
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
+        _gk.getGMM().decreaseCapital(
+            seqOfVR, seqOfShare, paid, par, amt, seqOfMotion, caller
+        );
         IRegisterOfShares _ros=_gk.getROS();
-        _ros.decreaseCapital(seqOfShare, paid, par);
         uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
+        _ros.decreaseCapital(seqOfShare, paid, par);
         _gk.getCashier().depositUsd(shareholder, amt, bytes32("DecreaseCapital"));
     }
 
@@ -88,6 +116,9 @@ contract ROMKeeper is IROMKeeper, RoyaltyCharge {
         uint256 seqOfShare, 
         uint line
     ) external onlyDK {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
         _gk.getROS().updatePaidInDeadline(seqOfShare, line);
     }
 

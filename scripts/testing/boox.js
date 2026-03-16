@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2024 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
 import { join } from "path";
 import { readFileSync } from "fs";
+import { keccak256, toUtf8Bytes } from "ethers";
+
+
 const __dirname = import.meta.dirname;
 
 const tempsDir = join(__dirname, "..", "..", "server", "src", "contracts");
@@ -23,14 +26,27 @@ const refreshBoox = () => {
   Boox = JSON.parse(readFileSync(fileNameOfBoox));
 }
 
+const getTypeByName = (name) => {
+  const hash = BigInt(keccak256(toUtf8Bytes(name)));
+  return Number(hash & BigInt(0xFFFFFFFF));
+}
+
 // ==== RegCenter ====
 
 const getRC = async () => {
-  return await readTool("RegCenter", Temps.RegCenter);
+  return await readTool("RegCenter", Temps.RegCenter_Proxy);
 }
 
 const getCNC = async () => {
-  return await readTool("CreateNewComp", Temps.CreateNewComp);
+  const rc = await getRC();
+  const typeOfCNC = getTypeByName("CreateNewComp");
+  console.log("Type of CNC: ", typeOfCNC, "\n");
+  const docCNC = await rc.getDoc(typeOfCNC, 1, 1);
+  console.log("Doc of CNC: ", docCNC, "\n");
+  const addrCNC = `0x${docCNC[1].substring(2)}`;
+  const cnc = await readTool("CreateNewComp", addrCNC);
+
+  return cnc;
 }
 
 // const getCNF = async () => {
@@ -42,24 +58,22 @@ const getCNC = async () => {
 // }
 
 const getFT = async () => {
-  return await readTool("UsdFuelTank", Temps.UsdFuelTank);
-}
-
-const getBR = async () => {
-  return await readTool("BooksRepo", Temps.BooksRepo);
+  const rc = await getRC();
+  const addrFT = (await rc.getDoc(getTypeByName("UsdFuelTank"), 1, 1))[1];
+  return await readTool("UsdFuelTank", addrFT);
 }
 
 // ==== Boox ====
 
 const getGK = async (addr) => {
   if (!addr) addr = Boox.GK;
-  return await readTool("CompKeeper", addr);
+  return await readTool("GeneralKeeper", addr);
 }
 
-const getFK = async (addr) => {
-  if (!addr) addr = Boox.FundKeeper;
-  return await readTool("FundKeeper", addr);
-}
+// const getFK = async (addr) => {
+//   if (!addr) addr = Boox.FundKeeper;
+//   return await readTool("FundKeeper", addr);
+// }
 
 const getBMM = async () => {
   return await readTool("MeetingMinutes", Boox.BMM);
@@ -149,10 +163,10 @@ export {
   refreshBoox,
   getRC,
   getCNC,
-  getCNF,
+  // getCNF,
   getFT,
   getGK,
-  getFK,
+  // getFK,
   getBMM,
   getGMM,
   getLOO,
@@ -174,6 +188,7 @@ export {
   getROAKeeper,
   getROMKeeper,
   getROOKeeper,
+  getTypeByName
 };
 
   

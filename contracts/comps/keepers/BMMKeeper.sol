@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,54 +17,86 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../openzeppelin/utils/Address.sol";
+import "../../lib/utils/ArrayUtils.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/OfficersRepo.sol";
 
 import "./IBMMKeeper.sol";
 
-contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
+contract BMMKeeper is IBMMKeeper {
     using RulesParser for bytes32;
+    using Address for address;
     using ArrayUtils for uint[];
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
 
-    //###############
-    //##   Write   ##
-    //###############
+    // uint32(uint(keccak256("BMMKeeper")));
+    uint public constant TYPE_OF_DOC = 0xca6e13b7;
+    uint public constant VERSION = 1;
+
+    //######################
+    //##   Error & Event  ##
+    //######################
+
+    error BMMK_WrongParty(bytes32 reason);
+
+    error BMMK_WrongAmt(bytes32 reason);
+
+    error BMMK_WrongInput(bytes32 reason);
+
+    /// @notice Emitted when a board motion executes an action.
+    /// @param targets Target contract address.
+    /// @param values ETH value.
+    /// @param params Encoded parameters blob.
+    /// @param seqOfMotion Motion sequence.
+    /// @param caller Caller user number.
+    event ExecAction(
+        address indexed targets, 
+        uint indexed values, 
+        bytes indexed params, 
+        uint seqOfMotion, 
+        uint caller
+    );
 
     // ==== CreateMotion ====
 
     // ---- Officers ----
 
-    function nominateOfficer(
-        uint256 seqOfPos,
-        uint candidate,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+    function nominateOfficer(uint256 seqOfPos, uint candidate) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 
         IRegisterOfDirectors _rod = _gk.getROD();
-        
-        require(_rod.hasNominationRight(seqOfPos, caller),
-            "BMMKeeper.nominateOfficer: no rights");
+
+        if (!_rod.hasNominationRight(seqOfPos, caller))
+            revert BMMK_WrongParty(bytes32("BMMK_HasNoNominationRight"));
      
-        _gk.getBMM().nominateOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, candidate, caller);
+        _gk.getBMM().nominateOfficer(
+            seqOfPos,
+            _rod.getPosition(seqOfPos).seqOfVR, candidate, caller
+        );
     }
 
-    function createMotionToRemoveOfficer(
-        uint256 seqOfPos,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
+    function createMotionToRemoveOfficer(uint256 seqOfPos) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
         
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        // if (!_gk.getROD().isDirector(caller))
+        //     revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
 
         IRegisterOfDirectors _rod = _gk.getROD();
         
-        require(_rod.hasNominationRight(seqOfPos, caller),
-            "BMMK.createMotionToRemoveOfficer: no rights");
+        if (!_rod.hasNominationRight(seqOfPos, caller))
+            revert BMMK_WrongParty(bytes32("BMMK_HasNoNominationRight"));
 
-        _gk.getBMM().createMotionToRemoveOfficer(seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, caller);
+        _gk.getBMM().createMotionToRemoveOfficer(
+            seqOfPos, _rod.getPosition(seqOfPos).seqOfVR, caller
+        );
     }
 
     // ---- Docs ----
@@ -74,36 +104,47 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
     function createMotionToApproveDoc(
         uint doc,
         uint seqOfVR,
-        uint executor,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);        
+        
+        if (!_gk.getROD().isDirector(caller))
+            revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
 
-        _gk.getBMM().createMotionToApproveDoc(doc, seqOfVR, executor, caller);
+        _gk.getBMM().createMotionToApproveDoc(
+            doc, seqOfVR, executor, caller
+        );
     }
 
-    function proposeToTransferFund(
+    function proposeToTransferFundWithBoard(
         address to,
         bool isCBP,
         uint amt,
         uint expireDate,
         uint seqOfVR,
-        uint executor,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 66000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 66000);        
+
+        if (!_gk.getROD().isDirector(caller))
+            revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
         
         IMeetingMinutes _bmm = _gk.getBMM();
 
-        require (amt <= 
+        if (amt > 
             uint(_gk.getSHA().getRule(0).governanceRuleParser().fundApprovalThreshold) * 
-            (isCBP ? 10 ** 18 : 10 ** 6), "BMMK.transferFund: amt overflow");
+            (isCBP ? 10 ** 18 : 10 ** 6)) 
+        {
+            revert BMMK_WrongAmt(bytes32("BMMK_AmtOverflow"));
+        }
 
         uint64 seqOfMotion = 
-            _bmm.createMotionToTransferFund(to, isCBP, amt, expireDate, seqOfVR, executor, caller);
-        _bmm.proposeMotionToBoard(seqOfMotion, caller);            
+            _bmm.createMotionToTransferFund(
+                to, isCBP, amt, expireDate, seqOfVR, executor, caller
+            );
+        _bmm.proposeMotionToBoard(seqOfMotion, caller);
     }
 
     // ---- Actions ----
@@ -114,11 +155,12 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint executor,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 66000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 66000);        
+        if (!_gk.getROD().isDirector(caller))
+            revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
 
         _gk.getBMM().createAction(
             seqOfVR,
@@ -135,22 +177,24 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
 
     function entrustDelegaterForBoardMeeting(
         uint256 seqOfMotion,
-        uint delegate,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        uint delegate
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);        
+        if (!_gk.getROD().isDirector(caller))
+            revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
 
-        _avoidanceCheck(seqOfMotion, caller);
+        _avoidanceCheck(_gk, seqOfMotion, caller);
         _gk.getBMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
     function proposeMotionToBoard (
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);        
-        require(_gk.getROD().isDirector(caller), "BMMK: not director");
+        uint seqOfMotion
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);        
+        if (!_gk.getROD().isDirector(caller))
+            revert BMMK_WrongParty(bytes32("BMMK_NotDirector"));
 
         _gk.getBMM().proposeMotionToBoard(seqOfMotion, caller);
     }
@@ -158,16 +202,18 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
     function castVote(
         uint256 seqOfMotion,
         uint attitude,
-        bytes32 sigHash,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);        
+        bytes32 sigHash
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);        
 
-        _avoidanceCheck(seqOfMotion, caller);
-        _gk.getBMM().castVoteInBoardMeeting(seqOfMotion, attitude, sigHash, caller);
+        _avoidanceCheck(_gk, seqOfMotion, caller);
+        _gk.getBMM().castVoteInBoardMeeting(
+            seqOfMotion, attitude, sigHash, caller
+        );
     }
 
-    function _avoidanceCheck(uint256 seqOfMotion, uint caller) private view {
+    function _avoidanceCheck(address _gk, uint256 seqOfMotion, uint caller) private view {
 
         MotionsRepo.Motion memory motion = _gk.getBMM().getMotion(seqOfMotion);
 
@@ -181,34 +227,50 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
                 _gk.getROD().getFullPosInfoInHand(caller);
             uint256 len = poses.length;            
             while (len > 0) {
-                require (!ISigPage(doc).isSigner(poses[len-1].nominator), 
-                    "BMMK.RPC: is related party");
+                if (ISigPage(doc).isSigner(poses[len-1].nominator)) 
+                    revert BMMK_WrongParty(bytes32("BMMK_NominatorIsSigner"));
                 len --;
             }
-            require (!ISigPage(doc).isSigner(caller), 
-                "BMMK.RPC: is related party");
+            if (ISigPage(doc).isSigner(caller)) 
+                revert BMMK_WrongParty(bytes32("BMMK_CallerIsSigner"));
 
         }
     }
 
     // ==== Vote Counting ====
 
+    function voteCounting(uint256 seqOfMotion) external  {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
-    function _nominators(IRegisterOfDirectors _rod, uint director) private view returns(uint[] memory) {
-        OfficersRepo.Position[] memory poses = 
-            _rod.getFullPosInfoInHand(director);
-        
-        uint len = poses.length;
-        uint[] memory nominators = new uint[](len);
-
-        while (len > 0) {
-            nominators[len-1] = poses[len-1].nominator;
-            len--;
-        }
-
-        return nominators;
+        _voteCounting(_gk, seqOfMotion);
     }
 
+    function _voteCounting(address _gk, uint256 seqOfMotion) private {
+        IRegisterOfDirectors _rod = _gk.getROD();
+        IMeetingMinutes _bmm = _gk.getBMM();
+        
+        MotionsRepo.Motion memory motion = 
+            _bmm.getMotion(seqOfMotion);
+
+        MotionsRepo.VoteCalBase memory base;
+
+        BallotsBox.Case memory case0 = _bmm.getCaseOfAttitude(motion.head.seqOfMotion, 0);         
+
+        if (_allConsent(_bmm, _rod, motion, case0)) {
+            base.unaniConsent = true;
+        } else {
+            base = _calBase(_bmm, _rod, motion, base, case0);
+        }
+
+        IShareholdersAgreement _sha = _gk.getSHA();
+
+        bool quorumFlag = (address(_sha) == address(0) || 
+            base.attendHeadRatio >= 
+            _sha.getRule(0).governanceRuleParser().quorumOfBoardMeeting);
+
+        _bmm.voteCounting(quorumFlag, seqOfMotion, base);
+    }
 
     function _allConsent(
         IMeetingMinutes _bmm, 
@@ -253,6 +315,21 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         return false;
     } 
 
+    function _nominators(IRegisterOfDirectors _rod, uint director) private view returns(uint[] memory) {
+        OfficersRepo.Position[] memory poses = 
+            _rod.getFullPosInfoInHand(director);
+        
+        uint len = poses.length;
+        uint[] memory nominators = new uint[](len);
+
+        while (len > 0) {
+            nominators[len-1] = poses[len-1].nominator;
+            len--;
+        }
+
+        return nominators;
+    }
+
     function _calBase(
         IMeetingMinutes _bmm, 
         IRegisterOfDirectors _rod, 
@@ -261,7 +338,6 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         BallotsBox.Case memory case0
     ) private view returns(MotionsRepo.VoteCalBase memory) {
 
-        // BallotsBox.Case memory case0 = _bmm.getCaseOfAttitude(motion.head.seqOfMotion, 0);
         BallotsBox.Case memory case3 = _bmm.getCaseOfAttitude(motion.head.seqOfMotion, 3);
 
         uint32 numOfDirectors = uint32(_rod.getNumOfDirectors());
@@ -323,61 +399,7 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         return base;
     }
 
-    function voteCounting(uint256 seqOfMotion, address msgSender)
-        external onlyDK
-    {
-        _msgSender(msgSender, 58000);
-        
-        IRegisterOfDirectors _rod = _gk.getROD();
-        IMeetingMinutes _bmm = _gk.getBMM();
-        
-        MotionsRepo.Motion memory motion = 
-            _bmm.getMotion(seqOfMotion);
-
-        MotionsRepo.VoteCalBase memory base;
-
-        BallotsBox.Case memory case0 = _bmm.getCaseOfAttitude(motion.head.seqOfMotion, 0);         
-
-        if (_allConsent(_bmm, _rod, motion, case0)) {
-            base.unaniConsent = true;
-        } else {
-            base = _calBase(_bmm, _rod, motion, base, case0);
-        }
-
-        IShareholdersAgreement _sha = _gk.getSHA();
-
-        bool quorumFlag = (address(_sha) == address(0) || 
-            base.attendHeadRatio >= 
-            _sha.getRule(0).governanceRuleParser().quorumOfBoardMeeting);
-
-        _bmm.voteCounting(quorumFlag, seqOfMotion, base);
-    }
-
-    function transferFund(
-        address to,
-        bool isCBP,
-        uint amt,
-        uint expireDate,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyKeeper {
-        uint caller = _msgSender(msgSender, 38000);        
-
-        _gk.getBMM().transferFund(
-            to,
-            isCBP,
-            amt,
-            expireDate,
-            seqOfMotion,
-            caller
-        );
-
-        emit TransferFund(to, isCBP, amt, seqOfMotion, caller);
-
-        if (!isCBP) {
-            _gk.getCashier().transferUsd(to, amt, bytes32((1<<255) + seqOfMotion));
-        }
-    }
+    // ==== Exec Action ====
 
     function execAction(
         uint typeOfAction,
@@ -385,18 +407,36 @@ contract BMMKeeper is IBMMKeeper, RoyaltyCharge {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 seqOfMotion,
-        address msgSender
-    ) external returns (uint) {
-        uint caller = _msgSender(msgSender, 18000);        
+        uint256 seqOfMotion
+    ) external {
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+        
+        _execAction(
+            caller, typeOfAction, targets, values, 
+            params, desHash, seqOfMotion
+        );
+    }
+
+    function _execAction(
+        uint caller,
+        uint typeOfAction,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint256 seqOfMotion
+    ) public {
+        if(!(targets.length == values.length && targets.length == params.length))
+            revert BMMK_WrongInput(bytes32("BMMK_InputLenMismatch"));
 
         uint len = targets.length;
         while (len > 0) {
+            targets[len-1].functionCallWithValue(params[len-1], values[len-1]);
             emit ExecAction(targets[len-1], values[len-1], params[len-1], seqOfMotion, caller);
             len--;
         }
 
-        return _gk.getBMM().execAction(
+        address(this).getBMM().execAction(
             typeOfAction,
             targets,
             values,

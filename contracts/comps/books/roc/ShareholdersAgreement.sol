@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4 
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,26 +17,40 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IShareholdersAgreement.sol";
 import "../../common/components/SigPage.sol";
+import "../../../openzeppelin/utils/structs/EnumerableSet.sol";
+import "../../../lib/InterfacesHub.sol";
 
 contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
-    using EnumerableSet for EnumerableSet.UintSet;    
+    using EnumerableSet for EnumerableSet.UintSet;
+    using InterfacesHub for address;
 
+    /// @notice Mapping of term document types to term addresses.
     TermsRepo private _terms;
+    /// @notice Repository of voting and governance rules.
     RulesRepo private _rules;
+
+    function docTypeOfTerm(uint256 i) public pure returns (uint32) {
+        if (i == 0) return 0;               // ZeroPoint
+        else if (i == 1) return 0xe5707158; // uint32(uint(keccak256("AntiDilution")))
+        else if (i == 2) return 0x19f096ac; // uint32(uint(keccak256("LockUp")))
+        else if (i == 3) return 0x4511939f; // uint32(uint(keccak256("Alongs")))
+        else if (i == 4) return 0x4511939f; // uint32(uint(keccak256("Alongs")))
+        else if (i == 5) return 0x755d04a0; // uint32(uint(keccak256("Options")))
+        else revert SHA_WrongInput(bytes32("SHA_InvalidTitle"));
+    }
 
     //####################
     //##    modifier    ##
     //####################
 
+    /// @dev Reverts if the term title does not exist.
     modifier titleExist(uint256 title) {
-        require(
-            hasTitle(title),
-            "SHA.mf.TE: title not exist"
-        );
+        if (!hasTitle(title)) 
+            revert SHA_WrongInput(bytes32("SHA_TitleNotExist"));
         _;
     }
 
@@ -46,32 +58,31 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
     //##  Write I/O   ##
     //##################
 
-    function createTerm(uint title, uint version)
+    function createTerm(uint titleOfTerm, uint version)
         external
         onlyGC
     {
         address gc = msg.sender;
 
-        uint typeOfDoc = title > 3 ? 21 + title : 22 + title;
-
-        bytes32 snOfDoc = bytes32((typeOfDoc << 224) + uint224(version << 192));
-
-        DocsRepo.Doc memory doc = _rc.createDoc(snOfDoc, address(this));
-
-        IAccessControl(doc.body).initKeepers(
-            address(this),
-            address(_gk)
+        DocsRepo.Doc memory doc = _rc.getRC().cloneDoc(
+            docTypeOfTerm(titleOfTerm),
+            version
         );
 
-        IDraftControl(doc.body).setRoleAdmin(bytes32("Attorneys"), gc);
+        IAccessControl(doc.body).initKeepers(address(this), _gk);
 
-        _terms.terms[title] = doc.body;
-        _terms.seqList.add(title);
+        IDraftControl(doc.body).setRoleAdmin(
+            keccak256(bytes("Attorneys")), 
+            gc
+        );
+
+        _terms.terms[titleOfTerm] = doc.body;
+        _terms.seqList.add(titleOfTerm);
     }
 
-    function removeTerm(uint title) external onlyAttorney {
-        if (_terms.seqList.remove(title)) {
-            delete _terms.terms[title];
+    function removeTerm(uint titleOfTerm) external onlyAttorney {
+        if (_terms.seqList.remove(titleOfTerm)) {
+            delete _terms.terms[titleOfTerm];
         }
     }
 
@@ -81,9 +92,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         _addRule(seqOfRule, rule);
     }
 
+    /// @dev Insert or overwrite a rule and track its sequence number.
     function _addRule(uint seqOfRule, bytes32 rule) private {
-        // uint seqOfRule = uint16(uint(rule) >> 240);
-
         _rules.rules[seqOfRule] = rule;
         _rules.seqList.add(seqOfRule);
     }
@@ -96,7 +106,7 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         }
     }
 
-    function initDefaultRules() external onlyDK {
+    function initDefaultRules() external onlyKeeper {
 
         bytes32[] memory rules = new bytes32[](15);
         uint16[15] memory seqs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 512, 513];
@@ -152,8 +162,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
 
     // ==== Terms ====
 
-    function hasTitle(uint256 title) public view returns (bool) {
-        return _terms.seqList.contains(title);
+    function hasTitle(uint256 titleOfTerm) public view returns (bool) {
+        return _terms.seqList.contains(titleOfTerm);
     }
 
     function qtyOfTerms() external view returns (uint256) {
@@ -164,8 +174,8 @@ contract ShareholdersAgreement is IShareholdersAgreement, SigPage {
         return _terms.seqList.values();
     }
 
-    function getTerm(uint256 title) external view titleExist(title) returns (address) {
-        return _terms.terms[title];
+    function getTerm(uint256 titleOfTerm) external view titleExist(titleOfTerm) returns (address) {
+        return _terms.terms[titleOfTerm];
     }
 
     // ==== Rules ====

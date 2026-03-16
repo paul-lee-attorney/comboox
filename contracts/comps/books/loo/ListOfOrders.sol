@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IListOfOrders.sol";
 import "../../common/access/AccessControl.sol";
@@ -30,8 +30,13 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     using GoldChain for GoldChain.Data;
     using EnumerableSet for EnumerableSet.UintSet;
 
+    // class of share => order book for the class
     mapping (uint => UsdOrdersRepo.Repo) private _ordersOfClass;
+    // List of classes traded in this order book.
     EnumerableSet.UintSet private _classesList;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //#################
     //##  Write I/O  ##
@@ -41,8 +46,8 @@ contract ListOfOrders is IListOfOrders, AccessControl {
 
     function placeSellOrder(
         UsdOrdersRepo.Deal memory input, uint execHours
-    ) external onlyDK returns(
-        UsdOrdersRepo.Deal[] memory deals, 
+    ) external onlyKeeper returns(
+        UsdOrdersRepo.Deal[] memory deals,
         uint lenOfDeals,
         GoldChain.Order[] memory expired,
         uint lenOfExpired,
@@ -90,7 +95,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
     function placeBuyOrder(
         UsdOrdersRepo.Deal memory input,
         uint execHours
-    ) external onlyDK returns (
+    ) external onlyKeeper returns (
         UsdOrdersRepo.Deal[] memory deals,
         uint lenOfDeals, 
         GoldChain.Order[] memory expired,
@@ -113,7 +118,7 @@ contract ListOfOrders is IListOfOrders, AccessControl {
 
     function withdrawOrder(
         uint classOfShare, uint seqOfOrder, bool isOffer
-    ) external onlyDK returns(GoldChain.Order memory order) {
+    ) external onlyKeeper returns(GoldChain.Order memory order) {
 
         if (!_classesList.contains(classOfShare)) return order;
 

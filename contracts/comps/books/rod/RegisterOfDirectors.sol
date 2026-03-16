@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,16 +17,20 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfDirectors.sol";
 import "../../common/access/AccessControl.sol";
 
 contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
     using OfficersRepo for OfficersRepo.Repo;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for directors, officers, their positions, and their titles.
     OfficersRepo.Repo private _repo;
+
+    // ==== UUPS Upgradeable ====
+    uint256[50] private __gap;
 
     //#################
     //##  Write I/O  ##
@@ -50,20 +54,17 @@ contract RegisterOfDirectors is IRegisterOfDirectors, AccessControl {
 
     // ---- Officers ----
 
-    function takePosition (uint256 seqOfPos, uint caller) external onlyDK()
-    {
+    function takePosition (uint256 seqOfPos, uint caller) external onlyKeeper {
         if (_repo.takePosition(seqOfPos, caller)) 
             emit TakePosition(seqOfPos, caller);
     }
 
-    function quitPosition (uint256 seqOfPos, uint caller) external onlyDK
-    {
+    function quitPosition (uint256 seqOfPos, uint caller) external onlyKeeper {
         if (_repo.quitPosition(seqOfPos, caller))
             emit QuitPosition(seqOfPos, caller);
     }
 
-    function removeOfficer (uint256 seqOfPos) external onlyDK()
-    {
+    function removeOfficer (uint256 seqOfPos) external onlyKeeper {
         if (_repo.vacatePosition(seqOfPos))
             emit RemoveOfficer(seqOfPos);
     }

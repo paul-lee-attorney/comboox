@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,28 +17,46 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../common/access/RoyaltyCharge.sol";
+
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/PledgesRepo.sol";
 
 import "./IROPKeeper.sol";
 
-contract ROPKeeper is IROPKeeper, RoyaltyCharge {
+contract ROPKeeper is IROPKeeper {
     using PledgesRepo for bytes32;
-    using BooksRepo for IBaseKeeper;
-    
-    // ###################
-    // ##   ROPKeeper   ##
-    // ###################
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
+
+    // uint32(uint(keccak256("ROPKeeper")));
+    uint public constant TYPE_OF_DOC = 0x4fcfb5a7;
+    uint public constant VERSION = 1;
+
+    // #######################
+    // ##   Error & Event   ##
+    // #######################
+
+    // error ROPK_WrongParty(bytes32 reason);
+
+    error ROPK_WrongParty(bytes32 reason);
+
+    error ROPK_WrongState(bytes32 reason);
+
 
     function _pledgerIsVerified(
+        address _gk,
         uint pledgor
     ) private view {
-        require (_gk.getROI().getInvestor(pledgor).state == 
-            uint8(InvestorsRepo.StateOfInvestor.Approved), 
-            "ROPK: buyer not verified");
-        require(_gk.getSHA().isSigner(pledgor),
-            "ROPK:buyer not signer of SHA");
+        if (_gk.getROI().getInvestor(pledgor).state != 
+            uint8(InvestorsRepo.StateOfInvestor.Approved)) {
+            revert ROPK_WrongParty(bytes32("ROPK_PledgorNotVerified"));
+        }
+        if (!_gk.getSHA().isSigner(pledgor)) {
+            revert ROPK_WrongParty(bytes32("ROPK_ShaNotSignedByPledgor"));
+        }
     }
 
     function createPledge(
@@ -46,10 +64,12 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         uint paid,
         uint par,
         uint guaranteedAmt,
-        uint execDays,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 66000);
+        uint execDays
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION, 66000
+        );
 
         IRegisterOfShares _ros = _gk.getROS();
 
@@ -57,10 +77,13 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         
         head.pledgor = _ros.getShare(head.seqOfShare).head.shareholder;
 
-        require(head.pledgor == caller, "BOPK.createPld: NOT shareholder");
+        if (head.pledgor != caller) {
+            revert ROPK_WrongParty(bytes32("ROPK_NotPledgor"));
+        }
 
-        require(_ros.notLocked(head.seqOfShare, block.timestamp),
-            "ROPK.createPledge: target share locked");
+        if (!_ros.notLocked(head.seqOfShare, block.timestamp)) {
+            revert ROPK_WrongState(bytes32("ROPK_ShareLocked"));
+        }
 
         head = _gk.getROP().createPledge(
             snOfPld,
@@ -77,20 +100,24 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         uint256 seqOfShare,
         uint256 seqOfPld,
         uint buyer,
-        uint amt,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+        uint amt
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION, 88000
+        );
         _gk.getROP().transferPledge(seqOfShare, seqOfPld, buyer, amt, caller);
     }
 
     function refundDebt(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint amt,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);        
+        uint amt
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION, 36000
+        );
 
         PledgesRepo.Pledge memory pld = 
             _gk.getROP().refundDebt(seqOfShare, seqOfPld, amt, caller);
@@ -101,28 +128,35 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
     function extendPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        uint extDays,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        uint extDays
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION, 18000
+        );
         _gk.getROP().extendPledge(seqOfShare, seqOfPld, extDays, caller);    
     }
 
     function lockPledge(
         uint256 seqOfShare,
         uint256 seqOfPld,
-        bytes32 hashLock,
-        address msgSender
-    ) external onlyDK {        
-        uint caller = _msgSender(msgSender, 58000);
-        _gk.getROP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);    
+        bytes32 hashLock
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION, 58000
+        );
+        _gk.getROP().lockPledge(seqOfShare, seqOfPld, hashLock, caller);
     }
 
     function releasePledge(
         uint256 seqOfShare, 
         uint256 seqOfPld, 
         string memory hashKey
-    ) external onlyDK {
+    ) external {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
+
         uint64 paid = _gk.getROP().releasePledge(seqOfShare, seqOfPld, hashKey);
         _gk.getROS().increaseCleanPaid(seqOfShare, paid);
     }
@@ -131,12 +165,12 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         uint seqOfShare,
         uint256 seqOfPld,
         uint buyer,
-        uint groupOfBuyer,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 88000);
+        uint groupOfBuyer
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
 
-        _pledgerIsVerified(buyer);
+        _pledgerIsVerified(_gk, buyer);
 
         IRegisterOfPledges _rop = _gk.getROP();
         _rop.execPledge(seqOfShare, seqOfPld, caller);
@@ -147,8 +181,9 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
         IRegisterOfShares _ros = _gk.getROS();
         IRegisterOfMembers _rom = _gk.getROM();
 
-        require(_ros.notLocked(pld.head.seqOfShare, block.timestamp),
-            "ROPK.createPledge: share locked");
+        if (!_ros.notLocked(pld.head.seqOfShare, block.timestamp)) {
+            revert ROPK_WrongState(bytes32("ROPK_ShareLocked"));
+        }
         
         DealsRepo.Deal memory deal;
 
@@ -171,15 +206,21 @@ contract ROPKeeper is IROPKeeper, RoyaltyCharge {
 
     function revokePledge(
         uint256 seqOfShare, 
-        uint256 seqOfPld,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
+        uint256 seqOfPld
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
         
         IRegisterOfPledges _rop = _gk.getROP();
 
         PledgesRepo.Pledge memory pld = _rop.getPledge(seqOfShare, seqOfPld);
-        require(pld.head.pledgor == caller, "BOPK.RP: not pledgor");
+        if (pld.head.pledgor != caller) {
+            revert ROPK_WrongParty(bytes32("ROPK_NotPledgor"));
+        }
+
+        if (!_gk.getROS().notLocked(pld.head.seqOfShare, block.timestamp)) {
+            revert ROPK_WrongState(bytes32("ROPK_ShareLocked"));
+        }
 
         _rop.revokePledge(seqOfShare, seqOfPld, caller);
         _gk.getROS().increaseCleanPaid(seqOfShare, pld.body.paid);   

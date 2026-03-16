@@ -1,25 +1,24 @@
-
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 import { defineConfig } from "hardhat/config";
-import hardhatVerify from "@nomicfoundation/hardhat-verify";
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
+import hardhatVerify from "@nomicfoundation/hardhat-verify";
 import hardhatTypechain from "@nomicfoundation/hardhat-typechain";
 import hardhatMocha from "@nomicfoundation/hardhat-mocha";
 import hardhatEthersChaiMatchers from "@nomicfoundation/hardhat-ethers-chai-matchers";
 import hardhatNetworkHelpers from "@nomicfoundation/hardhat-network-helpers";
 
+
 export default defineConfig({
-  plugins:[
-    hardhatVerify,
+  plugins: [
     hardhatEthers,
+    hardhatVerify,
     hardhatTypechain,
     hardhatMocha,
     hardhatEthersChaiMatchers,
-    hardhatNetworkHelpers,    
+    hardhatNetworkHelpers,
   ],
   solidity: {
-    version: "0.8.8",
+    version: "0.8.24",
     settings: {
       optimizer: {
         enabled: true,
@@ -27,19 +26,28 @@ export default defineConfig({
       },
     },
   },
-  defaultNetwork: "localhost",
+  defaultNetwork: "hardhat",
   networks: {
-    localhost: {
-      blockGasLimit: 30_000_000,
-      gas: 16_000_000,
-      type:"edr-simulated",
-      url: "http://127.0.0.1:8545",
+    localhost:{
+        url: "http://127.0.0.1:8545",
+        blockGasLimit: 100_000_000,
+    },
+    hardhat: {
+      // gas: 100_000_000,
+      blockGasLimit: 100_000_000,
+      type: "edr-simulated",
+      chainId: 31337,
       initialDate: "2025-01-01T00:00:00Z",
     },
     arbitrumSepolia: {
       type: "http",
       url: `https://arb-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_SEPOLIA_KEY}`,
-      accounts: [process.env.SEPOLIA_PRIV_KEY_0, process.env.SEPOLIA_PRIV_KEY_1],
+      accounts: [
+        process.env.SEPOLIA_PRIV_KEY_0, process.env.SEPOLIA_PRIV_KEY_1,
+        process.env.SEPOLIA_PRIV_KEY_2, process.env.SEPOLIA_PRIV_KEY_3,
+        process.env.SEPOLIA_PRIV_KEY_4, process.env.SEPOLIA_PRIV_KEY_5,
+        process.env.SEPOLIA_PRIV_KEY_6, process.env.SEPOLIA_PRIV_KEY_7,
+      ],
     },
     mainnet: {
       type: "http",
@@ -52,26 +60,15 @@ export default defineConfig({
       accounts: [process.env.ARB_PRIV_KEY_0, process.env.ARB_PRIV_KEY_1, process.env.ARB_PRIV_KEY_2],
     },
   },
-  verify:{
-    etherscan:{
+  verify: {
+    etherscan: {
       apiKey: process.env.ETHERSCAN_API_KEY,
     },
-    // apiKey: {
-    //   arbitrumOne: process.env.ETHERSCAN_API_KEY, // Arbiscan
-    //   arbitrumSepolia: process.env.ETHERSCAN_API_KEY,
-    // },
-    // customChains: [
-    //   {
-    //     network: 'arbitrumSepolia',
-    //     chainId: 421614,
-    //     urls: {
-    //       apiURL: "https://api-sepolia.arbiscan.io/api",
-    //       browserURL: "https://sepolia.arbiscan.io/",
-    //     }
-    //   }
-    // ]
   },
   sourcify: {
-    enabled: true
+    enabled: false,
+  },
+  blockscout: {
+    enabled: false,
   },
 });

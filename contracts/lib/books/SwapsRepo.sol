@@ -1,0 +1,242 @@
+// SPDX-License-Identifier: UNLICENSED
+
+/* *
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
+ *
+ * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
+ * can be obtained at:
+ *         [https://github.com/paul-lee-attorney/comboox]
+ *
+ * THIS WORK IS PROVIDED ON AN "AS IS" BASIS, WITHOUT 
+ * WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED 
+ * TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO 
+ * EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.
+ *
+ * YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE 
+ * OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR 
+ * MORE NODES THAT ARE OUT OF YOUR CONTROL.
+ * */
+
+pragma solidity ^0.8.24;
+
+/// @title SwapsRepo
+/// @notice Repository of swap records for pledge/target exchanges.
+library SwapsRepo {
+
+    /// @notice Swap lifecycle state.
+    enum StateOfSwap {
+        Pending,    
+        Issued,
+        Closed,
+        Terminated
+    }
+
+    /// @notice Swap record.
+    struct Swap {
+        uint16 seqOfSwap;
+        uint32 seqOfPledge;
+        uint64 paidOfPledge;
+        uint32 seqOfTarget;
+        uint64 paidOfTarget;
+        uint32 priceOfDeal;
+        bool isPutOpt;
+        uint8 state;
+    }
+
+    /// @notice Repository of swaps by sequence.
+    struct Repo {
+        // seqOfSwap => Swap
+        mapping(uint256 => Swap) swaps;
+    }
+
+    // ###############
+    // ##    Error  ##
+    // ###############
+
+    error SWR_WrongInput(bytes32 reason);
+    error SWR_WrongState(bytes32 reason);
+    error SWR_Overflow(bytes32 reason);
+    error SWR_WrongParty(bytes32 reason);
+
+
+    // ###############
+    // ##  Modifier ##
+    // ###############
+
+    /// @notice Ensure swap exists.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
+    modifier swapExist(Repo storage repo, uint seqOfSwap) {
+        if (!isSwap(repo, seqOfSwap)) {
+            revert SWR_WrongState(bytes32("SWR_SwapNotExist"));
+        }
+        _;
+    }
+
+    // ###############
+    // ## Write I/O ##
+    // ###############
+
+    // ==== cofify / parser ====
+
+    /// @notice Pack swap into bytes32.
+    /// @param swap Swap record.
+    function codifySwap(Swap memory swap) public pure returns (bytes32 sn) {
+        bytes memory _sn = abi.encodePacked(
+                            swap.seqOfSwap,
+                            swap.seqOfPledge,
+                            swap.paidOfPledge,
+                            swap.seqOfTarget,
+                            swap.paidOfTarget,
+                            swap.priceOfDeal,
+                            swap.isPutOpt,
+                            swap.state);
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
+    }
+
+    /// @notice Register a new swap.
+    /// @param repo Storage repo.
+    /// @param swap Swap record.
+    function regSwap(
+        Repo storage repo,
+        Swap memory swap
+    ) public returns(Swap memory) {
+
+        if (swap.seqOfTarget * swap.paidOfTarget * swap.seqOfPledge == 0) {
+            revert SWR_WrongInput(bytes32("SR_ZeroParaOfSwap"));
+        }
+
+        swap.seqOfSwap = _increaseCounter(repo);
+
+        repo.swaps[swap.seqOfSwap] = swap;
+        repo.swaps[0].paidOfTarget += swap.paidOfTarget;
+
+        return swap;
+    }
+
+    /// @notice Mark a swap as paid off.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
+    function payOffSwap(
+        Repo storage repo,
+        uint seqOfSwap
+        // uint msgValue,
+        // uint centPrice
+    ) public returns (Swap memory ) {
+
+        Swap storage swap = repo.swaps[seqOfSwap];
+
+        if (swap.state != uint8(StateOfSwap.Issued)) {
+            revert SWR_WrongState(bytes32("SWR_SwapNotIssued"));
+        }
+
+        swap.state = uint8(StateOfSwap.Closed);
+
+        return swap;
+    }
+
+    /// @notice Terminate an issued swap.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
+    function terminateSwap(
+        Repo storage repo,
+        uint seqOfSwap
+    ) public returns (Swap memory){
+
+        Swap storage swap = repo.swaps[seqOfSwap];
+
+        if (swap.state != uint8(StateOfSwap.Issued)) {
+            revert SWR_WrongState(bytes32("SWR_SwapNotIssued"));
+        }
+
+        swap.state = uint8(StateOfSwap.Terminated);
+
+        return swap;
+    }
+
+    // ==== Counter ====
+
+    function _increaseCounter(Repo storage repo) private returns(uint16) {
+        repo.swaps[0].seqOfSwap++;
+        return repo.swaps[0].seqOfSwap;
+    } 
+
+    // ################
+    // ##  Read I/O  ##
+    // ################
+
+    /// @notice Get total swap counter.
+    /// @param repo Storage repo.
+    function counterOfSwaps(Repo storage repo)
+        public view returns (uint16)
+    {
+        return repo.swaps[0].seqOfSwap;
+    }
+
+    /// @notice Get sum of paid target amounts.
+    /// @param repo Storage repo.
+    function sumPaidOfTarget(Repo storage repo)
+        public view returns (uint64)
+    {
+        return repo.swaps[0].paidOfTarget;
+    }
+
+    /// @notice Check whether a swap exists.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
+    function isSwap(Repo storage repo, uint256 seqOfSwap)
+        public view returns (bool)
+    {
+        return seqOfSwap <= counterOfSwaps(repo);
+    }
+
+    /// @notice Get swap by sequence.
+    /// @param repo Storage repo.
+    /// @param seqOfSwap Swap sequence.
+    function getSwap(Repo storage repo, uint256 seqOfSwap)
+        public view swapExist(repo, seqOfSwap) returns (Swap memory)
+    {
+        return repo.swaps[seqOfSwap];
+    }
+
+    // function checkValueOfSwap(
+    //     Repo storage repo,
+    //     uint seqOfSwap,
+    //     uint centPrice
+    // ) public view returns (uint) {
+    //     Swap memory swap = getSwap(repo, seqOfSwap);
+    //     return centPrice * swap.paidOfTarget * swap.priceOfDeal / 10 ** 6;
+    // }
+
+    /// @notice Get all swaps.
+    /// @param repo Storage repo.
+    function getAllSwaps(Repo storage repo)
+        public view returns (Swap[] memory )
+    {
+        uint256 len = counterOfSwaps(repo);
+        Swap[] memory swaps = new Swap[](len);
+
+        while (len > 0) {
+            swaps[len-1] = repo.swaps[len];
+            len--;
+        }
+        return swaps;
+    }
+
+    /// @notice Check whether all swaps are closed.
+    /// @param repo Storage repo.
+    function allSwapsClosed(Repo storage repo)
+        public view returns (bool)
+    {
+        uint256 len = counterOfSwaps(repo);
+        while (len > 0) {
+            if (repo.swaps[len].state < uint8(StateOfSwap.Closed))
+                return false;
+            len--;
+        }
+
+        return true;        
+    }
+}

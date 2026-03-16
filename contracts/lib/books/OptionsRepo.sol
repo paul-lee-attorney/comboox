@@ -1,0 +1,646 @@
+// SPDX-License-Identifier: UNLICENSED
+
+/* *
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
+ *
+ * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
+ * can be obtained at:
+ *         [https://github.com/paul-lee-attorney/comboox]
+ *
+ * THIS WORK IS PROVIDED ON AN "AS IS" BASIS, WITHOUT 
+ * WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED 
+ * TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE. IN NO 
+ * EVENT SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR ANY DAMAGES.
+ *
+ * YOU ARE PROHIBITED FROM DEPLOYING THE SMART CONTRACTS OF THIS WORK, IN WHOLE 
+ * OR IN PART, FOR WHATEVER PURPOSE, ON ANY BLOCKCHAIN NETWORK THAT HAS ONE OR 
+ * MORE NODES THAT ARE OUT OF YOUR CONTROL.
+ * */
+
+pragma solidity ^0.8.24;
+
+import "../../openzeppelin/utils/structs/EnumerableSet.sol";
+import "./Checkpoints.sol";
+import "./CondsRepo.sol";
+import "./SharesRepo.sol";
+import "./SwapsRepo.sol";
+
+import "../../comps/books/ros/IRegisterOfShares.sol";
+
+/// @title OptionsRepo
+/// @notice Library for creating, executing, and settling option records.
+/// @dev Stores options, obligors, swaps, and oracle checkpoints.
+library OptionsRepo {
+    using EnumerableSet for EnumerableSet.UintSet;
+    using Checkpoints for Checkpoints.History;
+    using CondsRepo for CondsRepo.Cond;
+    using CondsRepo for bytes32;
+    using SwapsRepo for SwapsRepo.Repo;
+
+    /// @notice Option types.
+    enum TypeOfOpt {
+        CallPrice,          
+        PutPrice,           
+        CallRoe,            
+        PutRoe,             
+        CallPriceWithCnds,  
+        PutPriceWithCnds,   
+        CallRoeWithCnds,    
+        PutRoeWithCnds     
+    }
+
+    /// @notice Option lifecycle states.
+    enum StateOfOpt {
+        Pending,    
+        Issued,         
+        Executed,
+        Closed
+    }
+
+    /// @notice Core option parameters encoded in snOfOpt.
+    struct Head {
+        uint32 seqOfOpt;
+        uint8 typeOfOpt;
+        uint16 classOfShare;
+        uint32 rate;            
+        uint48 issueDate;
+        uint48 triggerDate;     
+        uint16 execDays;         
+        uint16 closingDays;
+        uint40 obligor;      
+    }
+
+    /// @notice Runtime fields of an option.
+    struct Body {
+        uint48 closingDeadline;
+        uint40 rightholder;
+        uint64 paid;
+        uint64 par;
+        uint8 state;
+        uint16 para;
+        uint16 argu;
+    }
+
+    /// @notice Full option record.
+    struct Option {
+        Head head;
+        CondsRepo.Cond cond;
+        Body body;
+    }
+
+    /// @notice Per-option auxiliary data.
+    struct Record {
+        EnumerableSet.UintSet obligors;
+        SwapsRepo.Repo swaps;
+        Checkpoints.History oracles;
+    }
+
+    /// @notice Repository storage for options.
+    struct Repo {
+        mapping(uint256 => Option) options;
+        mapping(uint256 => Record) records;
+        EnumerableSet.UintSet seqList;
+    }
+
+    // ###############
+    // ##    Error  ##
+    // ###############
+
+    error OPR_WrongInput(bytes32 reason);
+
+    error OPR_WrongState(bytes32 reason);
+
+    error OPR_WrongParty(bytes32 reason);
+
+    error OPR_Overflow(bytes32 reason);
+
+
+    // ###############
+    // ##  Modifier ##
+    // ###############
+
+
+    /// @dev Reverts if the option does not exist.
+    modifier optExist(Repo storage repo, uint seqOfOpt) {
+        if (!isOption(repo, seqOfOpt)) {
+            revert OPR_WrongState(bytes32("OPR_OptNotExist"));
+        }
+        _;
+    }
+
+    /// @dev Reverts if caller is not the option rightholder.
+    modifier onlyRightholder(Repo storage repo, uint seqOfOpt, uint caller) {
+        if (!isRightholder(repo, seqOfOpt, caller)) {
+            revert OPR_WrongParty(bytes32("OPR_NotTheRightholder"));
+        }
+        _;
+    }
+
+    // ###############
+    // ## Write I/O ##
+    // ###############
+
+    // ==== cofify / parser ====
+
+    /// @notice Parse an option serial number into its head.
+    function snParser(bytes32 sn) public pure returns (Head memory head) {
+        uint _sn = uint(sn);
+
+        head = Head({
+            seqOfOpt: uint32(_sn >> 224),
+            typeOfOpt: uint8(_sn >> 216),
+            classOfShare: uint16(_sn >> 200),
+            rate: uint32(_sn >> 168),
+            issueDate: uint48(_sn >> 120),
+            triggerDate: uint48(_sn >> 72),
+            execDays: uint16(_sn >> 56),
+            closingDays: uint16(_sn >> 40),
+            obligor: uint40(_sn)
+        });
+    }
+
+    /// @notice Encode a head into an option serial number.
+    function codifyHead(Head memory head) public pure returns (bytes32 sn) {
+        bytes memory _sn = abi.encodePacked(
+                            head.seqOfOpt,
+                            head.typeOfOpt,
+                            head.classOfShare,
+                            head.rate,
+                            head.issueDate,
+                            head.triggerDate,
+                            head.execDays,
+                            head.closingDays,
+                            head.obligor);
+        assembly {
+            sn := mload(add(_sn, 0x20))
+        }
+    }
+
+    // ==== Option ====
+
+    /// @notice Create and register an option from encoded inputs.
+    function createOption(
+        Repo storage repo,
+        bytes32 snOfOpt,
+        bytes32 snOfCond,
+        uint rightholder,
+        uint paid,
+        uint par
+    ) public returns (Head memory head) 
+    {
+        Option memory opt;
+
+        opt.head = snParser(snOfOpt);
+        opt.cond = snOfCond.snParser();
+
+        opt.body.closingDeadline = opt.head.triggerDate + (uint48(opt.head.execDays) + uint48(opt.head.closingDays)) * 86400;
+        opt.body.rightholder = uint40(rightholder);
+        opt.body.paid = uint64(paid);
+        opt.body.par = uint64(par);
+
+        head = regOption(repo, opt);
+    }
+
+    /// @notice Mark an option as issued.
+    function issueOption(
+        Repo storage repo,
+        Option memory opt
+    ) public returns(uint) {
+        Option storage o = repo.options[opt.head.seqOfOpt];
+
+        o.head.issueDate = uint48(block.timestamp);
+        o.body.state = uint8(StateOfOpt.Issued);
+
+        return o.head.issueDate;
+    }
+
+    /// @notice Register an option with validation and sequence assignment.
+    function regOption(
+        Repo storage repo,
+        Option memory opt
+    ) public returns(Head memory) {
+
+        if (opt.head.rate == 0) {
+            revert OPR_WrongInput(bytes32("OPR_ZeroRate"));
+        }
+        if (opt.head.triggerDate <= block.timestamp) {
+            revert OPR_WrongInput(bytes32("OPR_TriggerDateNotFuture"));
+        }
+        if (opt.head.execDays == 0) {
+            revert OPR_WrongInput(bytes32("OPR_ZeroExecDays"));
+        }
+        if (opt.head.closingDays == 0) {
+            revert OPR_WrongInput(bytes32("OPR_ZeroClosingDays"));
+        }
+        if (opt.head.obligor == 0) {
+            revert OPR_WrongInput(bytes32("OPR_ZeroObligor")) ;
+        }
+        if (opt.body.rightholder == 0) {
+            revert OPR_WrongInput(bytes32("OPR_ZeroRightholder"));
+        }
+        if (opt.body.paid == 0) {
+            revert OPR_WrongInput(bytes32("OPR_ZeroPaid"));
+        }
+        if (opt.body.par < opt.body.paid) {
+            revert OPR_WrongInput(bytes32("OPR_PaidExceedsPar"));
+        }
+
+        opt.head.seqOfOpt = _increaseCounter(repo);
+
+        repo.seqList.add(opt.head.seqOfOpt);
+
+        repo.options[opt.head.seqOfOpt] = opt;
+        repo.records[opt.head.seqOfOpt].obligors.add(opt.head.obligor);
+
+        return opt.head;        
+    }
+
+    /// @notice Remove a pending option.
+    function removeOption(
+        Repo storage repo,
+        uint seqOfOpt
+    ) public returns (bool flag) {
+
+        if (repo.options[seqOfOpt].body.state != uint8(StateOfOpt.Pending)) {
+            revert OPR_WrongState(bytes32("OPR_OptNotInPending"));
+        }
+
+        if (repo.seqList.remove(seqOfOpt)) {
+            delete repo.options[seqOfOpt];
+            flag = true;
+        }
+    }
+
+    // ==== Record ====
+
+    /// @notice Add an obligor to an option.
+    function addObligorIntoOption(Repo storage repo, uint seqOfOpt, uint256 obligor)
+        public returns(bool)
+    {
+        if (obligor == 0) {
+            revert OPR_WrongInput(bytes32("OR.ZeroObligor"));
+        }
+        return repo.records[seqOfOpt].obligors.add(uint40(obligor));
+    }
+
+    /// @notice Remove an obligor from an option.
+    function removeObligorFromOption(Repo storage repo, uint seqOfOpt, uint256 obligor)
+        public returns(bool)
+    {
+        if (obligor == 0) {
+            revert OPR_WrongInput(bytes32("OR.ZeroObligor"));
+        }
+        return repo.records[seqOfOpt].obligors.remove(obligor);
+    }
+
+    /// @notice Add multiple obligors to an option.
+    function addObligorsIntoOption(Repo storage repo, uint seqOfOpt, uint256[] memory obligors)
+        public
+    {
+        Record storage rcd = repo.records[seqOfOpt];
+        uint256 len = obligors.length;
+
+        while (len > 0) {
+            rcd.obligors.add(uint40(obligors[len-1]));
+            len--;
+        }
+    }
+
+    // ==== ExecOption ====
+
+    /// @notice Append an oracle checkpoint.
+    function updateOracle(
+        Repo storage repo,
+        uint256 seqOfOpt,
+        uint d1,
+        uint d2,
+        uint d3
+    ) public optExist(repo, seqOfOpt) {
+        repo.records[seqOfOpt].oracles.push(100, d1, d2, d3);
+    }
+
+    /// @notice Execute an issued option within its exercise window.
+    function execOption(
+        Repo storage repo,
+        uint256 seqOfOpt,
+        uint caller
+    ) public onlyRightholder(repo, seqOfOpt, caller) {
+        Option storage opt = repo.options[seqOfOpt]; 
+        Record storage rcd = repo.records[seqOfOpt];
+
+        if (opt.body.state != uint8(StateOfOpt.Issued)) {
+            revert OPR_WrongState(bytes32("OPR_OptNotInIssuedState"));
+        }
+        if (block.timestamp < opt.head.triggerDate) {
+            revert OPR_WrongState(bytes32("OPR_NotReachedTriggerDate"));
+        }
+
+        if (block.timestamp >= opt.head.triggerDate + uint48(opt.head.execDays) * 86400) {
+            revert OPR_WrongState(bytes32("OPR_NotInExercisePeriod"));
+        }
+
+        if (opt.head.typeOfOpt > uint8(TypeOfOpt.PutRoe)) {
+            Checkpoints.Checkpoint memory cp = rcd.oracles.latest();
+
+            if (opt.cond.logicOpr == uint8(CondsRepo.LogOps.ZeroPoint)) { 
+                if (!opt.cond.checkSoleCond(cp.paid)) {
+                    revert OPR_WrongState(bytes32("OPR_CondsNotSatisfied"));
+                }
+            } else if (opt.cond.logicOpr <= uint8(CondsRepo.LogOps.NotEqual)) {
+                if (!opt.cond.checkCondsOfTwo(cp.paid, cp.par)) {
+                    revert OPR_WrongState(bytes32("OPR_CondsNotSatisfied"));
+                }                 
+            } else if (opt.cond.logicOpr <= uint8(CondsRepo.LogOps.NeOr)) {
+                if (!opt.cond.checkCondsOfThree(cp.paid, cp.par, cp.points)) {
+                    revert OPR_WrongState(bytes32("OPR_CondsNotSatisfied"));
+                }   
+            } else revert OPR_Overflow(bytes32("OPR_LogOperatorOverflow"));
+        }
+
+        opt.body.closingDeadline = uint48(block.timestamp) + uint48(opt.head.closingDays) * 86400;
+        opt.body.state = uint8(StateOfOpt.Executed);
+    }
+
+    // ==== Brief ====
+
+    /// @notice Create a swap order for an executed option.
+    function createSwap(
+        Repo storage repo,
+        uint256 seqOfOpt,
+        uint seqOfTarget,
+        uint paidOfTarget,
+        uint seqOfPledge,
+        uint caller,
+        IRegisterOfShares _ros
+    ) public onlyRightholder(repo, seqOfOpt, caller) returns(SwapsRepo.Swap memory swap) {
+
+        Option storage opt = repo.options[seqOfOpt];
+
+        if (opt.body.state != uint8(StateOfOpt.Executed)) {
+            revert OPR_WrongState(bytes32("OPR_OptNotInExecutedState"));
+        }
+        if (block.timestamp >= opt.body.closingDeadline) {
+            revert OPR_WrongState(bytes32("OPR_OptExpired"));
+        }
+
+        swap.seqOfTarget = uint32(seqOfTarget);
+        swap.paidOfTarget = uint64(paidOfTarget);
+        swap.seqOfPledge = uint32(seqOfPledge);
+        swap.state = uint8(SwapsRepo.StateOfSwap.Issued);
+
+        Record storage rcd = repo.records[opt.head.seqOfOpt];
+
+        SharesRepo.Head memory headOfTarget = _ros.getShare(swap.seqOfTarget).head;
+        SharesRepo.Head memory headOfPledge = _ros.getShare(swap.seqOfPledge).head;
+
+        if (opt.head.classOfShare != headOfTarget.class) {
+            revert OPR_WrongInput(bytes32("OPR_WrongTargetClass"));
+        }
+
+        if (opt.body.paid < rcd.swaps.sumPaidOfTarget() + swap.paidOfTarget) {
+            revert OPR_Overflow(bytes32("OPR_PaidOfTargetOverflow"));
+        }
+
+        if (opt.head.typeOfOpt % 2 == 1) { // Put Option
+
+            if (opt.body.rightholder != headOfTarget.shareholder) {
+                revert OPR_WrongInput(bytes32("OPR_RightholderNotTargetholder"));
+            }
+            if (!rcd.obligors.contains(headOfPledge.shareholder)) {
+                revert OPR_WrongInput(bytes32("OPR_PledgeShareholderNotObligor"));
+            }
+
+            swap.isPutOpt = true;
+
+        } else { // Call Opt
+            if (opt.body.rightholder != headOfPledge.shareholder) {
+                revert OPR_WrongInput(bytes32("OPR_PldShareholderHasNoRight"));
+            }
+
+            if (!rcd.obligors.contains(headOfTarget.shareholder)) {
+                revert OPR_WrongInput(bytes32("OPR_TgtShareholderNotObligor"));
+            }
+        }
+
+        if (opt.head.typeOfOpt % 4 < 2) 
+            swap.priceOfDeal = opt.head.rate;
+        else {
+            uint32 ds = uint32(((block.timestamp - headOfTarget.issueDate) + 43200) / 86400);
+            swap.priceOfDeal = uint32(uint(headOfTarget.priceOfPaid) * (opt.head.rate * ds + 3650000) / 3650000);  
+        }
+
+        if (opt.head.typeOfOpt % 2 == 1) {            
+            swap.paidOfPledge = (swap.priceOfDeal - headOfTarget.priceOfPaid) * 10000
+                * swap.paidOfTarget / headOfPledge.priceOfPaid / 10000;
+        }
+
+        return rcd.swaps.regSwap(swap);
+
+    }
+
+    /// @notice Pay off a swap order.
+    function payOffSwap(
+        Repo storage repo,
+        uint seqOfOpt,
+        uint seqOfSwap
+        // uint msgValue,
+        // uint centPrice
+    ) public returns (SwapsRepo.Swap memory ) {
+
+        Option storage opt = repo.options[seqOfOpt];
+
+        if (opt.body.state != uint8(StateOfOpt.Executed)) {
+            revert OPR_WrongState(bytes32("OPR_OptNotInExecutedState"));
+        }
+        if (block.timestamp >= opt.body.closingDeadline) {
+            revert OPR_WrongState(bytes32("OPR_OptExpired"));
+        }
+
+        return repo.records[seqOfOpt].swaps.payOffSwap(seqOfSwap);
+    }
+
+    /// @notice Terminate an expired swap order.
+    function terminateSwap(
+        Repo storage repo,
+        uint seqOfOpt,
+        uint seqOfSwap
+    ) public returns (SwapsRepo.Swap memory){
+
+        Option storage opt = repo.options[seqOfOpt];
+
+        if (opt.body.state != uint8(StateOfOpt.Executed)) {
+            revert OPR_WrongState(bytes32("OPR_OptNotInExecutedState"));
+        }
+        if (block.timestamp < opt.body.closingDeadline) {
+            revert OPR_WrongState(bytes32("OPR_OptNotExpired"));
+        }
+
+        return repo.records[seqOfOpt].swaps.terminateSwap(seqOfSwap);
+    }
+
+    // ==== Counter ====
+
+    /// @dev Increment and return the option sequence counter.
+    function _increaseCounter(Repo storage repo) private returns(uint32 seqOfOpt) {
+        repo.options[0].head.seqOfOpt++;
+        seqOfOpt = repo.options[0].head.seqOfOpt;
+    } 
+
+    // ################
+    // ##  Read I/O  ##
+    // ################
+
+    // ==== Repo ====
+
+    /// @notice Get the option counter.
+    function counterOfOptions(Repo storage repo)
+        public view returns (uint32)
+    {
+        return repo.options[0].head.seqOfOpt;
+    }
+
+    /// @notice Get number of options.
+    function qtyOfOptions(Repo storage repo)
+        public view returns (uint)
+    {
+        return repo.seqList.length();
+    }
+
+    /// @notice Check whether an option exists.
+    function isOption(Repo storage repo, uint256 seqOfOpt) 
+        public view returns (bool) 
+    {
+        return repo.seqList.contains(seqOfOpt);
+    }
+
+    /// @notice Get an option by sequence number.
+    function getOption(Repo storage repo, uint256 seqOfOpt) public view 
+        optExist(repo, seqOfOpt) returns (OptionsRepo.Option memory option)   
+    {
+        option = repo.options[seqOfOpt];
+    }
+
+    /// @notice Get all options.
+    function getAllOptions(Repo storage repo) 
+        public view returns (Option[] memory) 
+    {
+        uint[] memory ls = repo.seqList.values();
+        uint256 len = ls.length;
+        Option[] memory output = new Option[](len);
+        
+        while (len > 0) {
+            output[len-1] = repo.options[ls[len-1]];
+            len--;
+        }
+        return output;
+    }
+
+    /// @notice Check whether an account is the rightholder.
+    function isRightholder(Repo storage repo, uint256 seqOfOpt, uint256 acct) 
+        public view optExist(repo, seqOfOpt) returns (bool)
+    {
+        return repo.options[seqOfOpt].body.rightholder == acct;
+    }
+
+    /// @notice Check whether an account is an obligor.
+    function isObligor(Repo storage repo, uint256 seqOfOpt, uint256 acct) public 
+        view optExist(repo, seqOfOpt) returns (bool) 
+    {
+        return repo.records[seqOfOpt].obligors.contains(acct);
+    }
+
+    /// @notice Get obligors of an option.
+    function getObligorsOfOption(Repo storage repo, uint256 seqOfOpt) public 
+        view optExist(repo, seqOfOpt) returns (uint256[] memory)
+    {
+        return repo.records[seqOfOpt].obligors.values();
+    }
+
+    /// @notice Get list of option sequence numbers.
+    function getSeqList(Repo storage repo) public view returns(uint[] memory) {
+        return repo.seqList.values();
+    }
+
+    // ==== Order ====
+
+    /// @notice Get swap counter for an option.
+    function counterOfSwaps(Repo storage repo, uint256 seqOfOpt)
+        public view returns (uint16)
+    {
+        return repo.records[seqOfOpt].swaps.counterOfSwaps();
+    }
+
+    /// @notice Sum paid amount of targets for an option.
+    function sumPaidOfTarget(Repo storage repo, uint256 seqOfOpt)
+        public view returns (uint64)
+    {
+        return repo.records[seqOfOpt].swaps.sumPaidOfTarget();
+    }
+
+    /// @notice Check whether a swap exists.
+    function isSwap(Repo storage repo, uint256 seqOfOpt, uint256 seqOfOrder)
+        public view returns (bool)
+    {
+        return repo.records[seqOfOpt].swaps.isSwap(seqOfOrder);
+    }
+
+    /// @notice Get a swap by sequence number.
+    function getSwap(Repo storage repo, uint256 seqOfOpt, uint256 seqOfSwap)
+        public view returns (SwapsRepo.Swap memory)
+    {
+        return repo.records[seqOfOpt].swaps.getSwap(seqOfSwap);
+    }
+
+    /// @notice Get all swaps of an option.
+    function getAllSwapsOfOption(Repo storage repo, uint256 seqOfOpt)
+        public view returns (SwapsRepo.Swap[] memory )
+    {
+        return repo.records[seqOfOpt].swaps.getAllSwaps();
+    }
+
+    /// @notice Check whether all swaps are closed.
+    function allSwapsClosed(Repo storage repo, uint256 seqOfOpt)
+        public view returns (bool)
+    {
+        return repo.records[seqOfOpt].swaps.allSwapsClosed();
+    }
+
+    // ==== Oracles ====
+
+    /// @notice Get oracle checkpoint at a date.
+    function getOracleAtDate(
+        Repo storage repo, 
+        uint256 seqOfOpt, 
+        uint date
+    ) public view optExist(repo, seqOfOpt) 
+        returns (Checkpoints.Checkpoint memory)
+    {
+        return repo.records[seqOfOpt].oracles.getAtDate(date);
+    }
+
+    /// @notice Get latest oracle checkpoint.
+    function getLatestOracle(Repo storage repo, uint256 seqOfOpt) 
+        public view optExist(repo, seqOfOpt) 
+        returns(Checkpoints.Checkpoint memory)
+    {
+        return repo.records[seqOfOpt].oracles.latest();
+    }
+
+    /// @notice Get all oracle checkpoints of an option.
+    function getAllOraclesOfOption(Repo storage repo, uint256 seqOfOpt)
+        public view optExist(repo, seqOfOpt)
+        returns (Checkpoints.Checkpoint[] memory) 
+    {
+        return repo.records[seqOfOpt].oracles.pointsOfHistory();
+    }
+
+    // function checkValueOfSwap(
+    //     Repo storage repo, 
+    //     uint seqOfOpt, 
+    //     uint seqOfSwap, 
+    //     uint centPrice
+    // ) public view optExist(repo, seqOfOpt) returns (uint) {
+    //     return repo.records[seqOfOpt].swaps.checkValueOfSwap(seqOfSwap, centPrice);
+    // }
+
+}

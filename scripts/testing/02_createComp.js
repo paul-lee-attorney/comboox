@@ -93,14 +93,15 @@
 
 import { network } from "hardhat";
 
-import { getAddress, formatUnits, hexlify, toUtf8Bytes, id } from "ethers";
+import { formatUnits, hexlify, toUtf8Bytes, id } from "ethers";
 import { expect } from "chai";
-import { saveBooxAddr, setUserCBP, setUserDepo } from "./saveTool";
+import { saveBooxAddr, setUserCBP, transferCBP } from "./saveTool";
+import { readTool } from "../readTool.js";
 import { codifyHeadOfShare, printShares } from './ros';
-import { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC, getBR } from "./boox";
+import { getCNC, getGK, getROM, getROS, getRC, refreshBoox, getUSDC } from "./boox";
 import { now, increaseTime } from "./utils";
 import { parseCompInfo } from "./gk";
-import { cbpOfUsers } from "./rc";
+import { cbpOfUsers, getAllUsers } from "./rc";
 
 async function main() {
 
@@ -112,122 +113,82 @@ async function main() {
     
     // ==== Get Instances ====
 
-    const {ethers} = await network.connect();
+    const { ethers } = await network.connect();
 
 	  const signers = await ethers.getSigners();
-    const cnc = await getCNC();
     const rc = await getRC();
+    const users = await getAllUsers(rc, 6);
+    const cnc = await getCNC();
+    console.log("obtained CNC at address:", cnc.target);
 
     // ==== Create Company ====
 
-    let tx = await cnc.createComp(signers[1].address);
+    let tx = await cnc.createComp(4, signers[1].address);
     let receipt = await tx.wait();
 
-    await expect(tx).to.emit(rc, "CreateDoc");
-    console.log(" \u2714 Passed Event Test for rc.CreateDoc(). \n");
+    await expect(tx).to.emit(rc, "ProxyDoc");
+    console.log(" \u2714 Passed Event Test for rc.ProxyDoc(). \n");
 
-    const GK = getAddress(`0x${receipt.logs[0].topics[2].substring(26)}`);
-    saveBooxAddr("GK", GK);
+    // ==== Get GK Address ====
 
-    const gk = await getGK(GK);
+    const eventLogs = receipt.logs
+      .filter((log) =>
+        log.address.toLowerCase() === rc.target.toLowerCase() && 
+        log.topics[0] === rc.interface.getEvent('ProxyDoc').topicHash &&
+        log.topics[1].substring(0, 10) == '0x25586efd'
+      );
+
+    const addrGK = `0x${eventLogs[0].topics[2].substring(26)}`;
+
+    let gk = await getGK(addrGK);
+    const userGK = parseCompInfo(await gk.getCompInfo()).regNum;
+    console.log("userGK:", userGK, "\n");
+
+    saveBooxAddr("GK", addrGK);
     
     await expect(tx).to.emit(gk, "SetDirectKeeper").withArgs(signers[1].address);
     console.log(" \u2714 Passed Event Test for gk.SetDirectKeeper(). \n");
 
-    setUserCBP("8", 0n); // No rewards will be granted for CA User;
+    setUserCBP(userGK, 0n); // No rewards will be granted for CA User;
 
-    const ROC = await gk.getROC();
+    const ROC = await gk.getBook(1);
     saveBooxAddr("ROC", ROC);
 
-    const ROD = await gk.getROD();
+    const ROD = await gk.getBook(2);
     saveBooxAddr("ROD", ROD);
 
-    const BMM = await gk.getBMM();
+    const BMM = await gk.getBook(3);
     saveBooxAddr("BMM", BMM);
 
-    const ROM = await gk.getROM();
+    const ROM = await gk.getBook(4);
     saveBooxAddr("ROM", ROM);
 
-    const GMM = await gk.getGMM();
+    const GMM = await gk.getBook(5);
     saveBooxAddr("GMM", GMM);
 
-    const ROA = await gk.getROA();
+    const ROA = await gk.getBook(6);
     saveBooxAddr("ROA", ROA);
 
-    const ROO = await gk.getROO();
+    const ROO = await gk.getBook(7);
     saveBooxAddr("ROO", ROO);
 
-    const ROP = await gk.getROP();
+    const ROP = await gk.getBook(8);
     saveBooxAddr("ROP", ROP);
 
-    const ROS = await gk.getROS();
+    const ROS = await gk.getBook(9);
     saveBooxAddr("ROS", ROS);
 
-    const LOO = await gk.getLOO();
+    const LOO = await gk.getBook(10);
     saveBooxAddr("LOO", LOO);
 
-    const ROI = await gk.getROI();
+    const ROI = await gk.getBook(11);
     saveBooxAddr("ROI", ROI);
 
-    const Cashier = await gk.getCashier();
+    const Cashier = await gk.getBook(15);
     saveBooxAddr("Cashier", Cashier);
 
-    const USDC = await gk.getBank();
+    const USDC = await gk.getBook(12);
     saveBooxAddr("USDC", USDC);
-
-    // const UsdLOO = await gk.getBook(13);
-    // saveBooxAddr("UsdLOO", UsdLOO);
-
-    const ROCKeeper = await gk.getKeeper(1);
-    saveBooxAddr("ROCKeeper", ROCKeeper);
-
-    const RODKeeper = await gk.getKeeper(2);
-    saveBooxAddr("RODKeeper", RODKeeper);
-
-    const BMMKeeper = await gk.getKeeper(3);
-    saveBooxAddr("BMMKeeper", BMMKeeper);
-
-    const ROMKeeper = await gk.getKeeper(4);
-    saveBooxAddr("ROMKeeper", ROMKeeper);
-
-    const GMMKeeper = await gk.getKeeper(5);
-    saveBooxAddr("GMMKeeper", GMMKeeper);
-
-    const ROAKeeper = await gk.getKeeper(6);
-    saveBooxAddr("ROAKeeper", ROAKeeper);
-
-    const ROOKeeper = await gk.getKeeper(7);
-    saveBooxAddr("ROOKeeper", ROOKeeper);
-
-    const ROPKeeper = await gk.getKeeper(8);
-    saveBooxAddr("ROPKeeper", ROPKeeper);
-
-    const SHAKeeper = await gk.getKeeper(9);
-    saveBooxAddr("SHAKeeper", SHAKeeper);
-
-    const LOOKeeper = await gk.getKeeper(10);
-    saveBooxAddr("LOOKeeper", LOOKeeper);
-
-    const ROIKeeper = await gk.getKeeper(11);
-    saveBooxAddr("ROIKeeper", ROIKeeper);
-
-    const Accountant = await gk.getKeeper(12);
-    saveBooxAddr("Accountant", Accountant);
-
-    // const UsdROMKeeper = await gk.getKeeper(11);
-    // saveBooxAddr("UsdROMKeeper", UsdROMKeeper);
-
-    // const UsdROAKeeper = await gk.getKeeper(12);
-    // saveBooxAddr("UsdROAKeeper", UsdROAKeeper);
-
-    // const UsdLOOKeeper = await gk.getKeeper(13);
-    // saveBooxAddr("UsdLOOKeeper", UsdLOOKeeper);
-
-    // const UsdROOKeeper = await gk.getKeeper(14);
-    // saveBooxAddr("UsdROOKeeper", UsdROOKeeper);
-
-    // const UsdKeeper = await gk.getKeeper(15);
-    // saveBooxAddr("UsdKeeper", UsdKeeper);
 
     refreshBoox();
 
@@ -247,13 +208,14 @@ async function main() {
     const symbol = hexlify(toUtf8Bytes("COMBOOX")).padEnd(38, '0');
     
     // await expect(gk.setCompInfo(0, symbol, "ComBoox DAO LLC")).to.be.revertedWith("AC.onlyDK: not");
-    console.log(" \u2714 Passed Access Control Test for ac.OnlyDK(). \n");
+    // console.log(" \u2714 Passed Access Control Test for ac.OnlyDK(). \n");
     
     await gk.connect(signers[1]).setCompInfo(0, symbol, "ComBoox DAO LLC");
     
     const info = parseCompInfo(await gk.getCompInfo());
 
-    expect(info.regNum).to.equal(8);
+    console.log("regNum:", info.regNum, "\n");
+    expect(info.regNum).to.equal(userGK);
     expect(info.currency).to.equal('USD');
     expect(info.symbol).to.equal('COMBOOX');
     expect(info.name).to.equal("ComBoox DAO LLC");
@@ -278,7 +240,7 @@ async function main() {
       seqOfShare: 1,
       preSeq: 0,
       issueDate: issueDate,
-      shareholder: 1,
+      shareholder: users[0],
       priceOfPaid: 1,
       priceOfPar: 0,
       votingWeight: 100,
@@ -289,13 +251,13 @@ async function main() {
     await expect(tx).to.emit(ros, "IssueShare").withArgs(codifyHeadOfShare(head), 100000 * 10 ** 4, 100000 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.IssueShare(). \n");
 
-    await expect(tx).to.emit(rom, "AddMember").withArgs(1, 1);
+    await expect(tx).to.emit(rom, "AddMember").withArgs(users[0], 1);
     console.log(" \u2714 Passed Event Test for rom.AddMember(). \n");
 
     await expect(tx).to.emit(rom, "CapIncrease").withArgs(100, 100000 * 10 ** 4, 100000 * 10 ** 4, 100);
     console.log(" \u2714 Passed Event Test for rom.CapIncrease(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(1, 1);
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(1, users[0]);
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     head = {
@@ -303,7 +265,7 @@ async function main() {
       seqOfShare: 2,
       preSeq: 0,
       issueDate: issueDate,
-      shareholder: 2,
+      shareholder: users[1],
       priceOfPaid: 1,
       priceOfPar: 0,
       votingWeight: 100,
@@ -316,7 +278,7 @@ async function main() {
       seqOfShare: 3,
       preSeq: 0,
       issueDate: issueDate,
-      shareholder: 3,
+      shareholder: users[3],
       priceOfPaid: 1.5,
       priceOfPar: 0,
       votingWeight: 100,
@@ -329,7 +291,7 @@ async function main() {
       seqOfShare: 4,
       preSeq: 0,
       issueDate: issueDate,
-      shareholder: 4,
+      shareholder: users[4],
       priceOfPaid: 1.5,
       priceOfPar: 0,
       votingWeight: 100,
@@ -342,7 +304,7 @@ async function main() {
       seqOfShare: 5,
       preSeq: 0,
       issueDate: issueDate,
-      shareholder: 5,
+      shareholder: users[5],
       priceOfPaid: 1.5,
       priceOfPar: 0,
       votingWeight: 100,
@@ -357,7 +319,7 @@ async function main() {
     await expect(tx).to.emit(rom, "CapDecrease").withArgs(100, 20000 * 10 ** 4, 20000 * 10 ** 4, 100);
     console.log(" \u2714 Passed Event Test for rom.CapDecrease(). \n");
 
-    await expect(tx).to.emit(rom, "RemoveShareFromMember").withArgs(5, 5);
+    await expect(tx).to.emit(rom, "RemoveShareFromMember").withArgs(5, users[5]);
     console.log(" \u2714 Passed Event Test for rom.RemoveShareFromMember(). \n");
 
     await expect(tx).to.emit(ros, "DeregisterShare").withArgs(5);
@@ -365,43 +327,53 @@ async function main() {
 
     // ==== Turn Over Direct Keeper Rights ====
 
-    await ros.connect(signers[1]).setDirectKeeper(ROMKeeper);
+    await ros.connect(signers[1]).setDirectKeeper(addrGK);
 
-    let dk = await ros.getDK();
-    expect(dk).to.equal(ROMKeeper);
+    let dk = (await ros.getDK()).toLowerCase();
+    expect(dk).to.equal(addrGK);
     console.log(" \u2714 Passed Result Verify Test for ros.setDirectKeeper(). \n");
     
-    await rom.connect(signers[1]).setDirectKeeper(ROMKeeper);
+    await rom.connect(signers[1]).setDirectKeeper(addrGK);
     
-    dk = await rom.getDK();
-    expect(dk).to.equal(ROMKeeper);
+    dk = (await rom.getDK()).toLowerCase();
+    expect(dk).to.equal(addrGK);
     console.log(" \u2714 Passed Result Verify Test for rom.setDirectKeeper(). \n");
 
     // ==== Pay In Capital by Hash Lock ====
 
     let expireDate = today + 86400 * 3;
     let hashLock = id('Today is Monday.');
+
+    // IROMKeeper(gk);
+    gk = await readTool("IROMKeeper", addrGK);
+    
     tx = await gk.connect(signers[1]).setPayInAmt(4, 5000 * 10 ** 4, expireDate, hashLock);
 
     await expect(tx).to.emit(ros, "SetPayInAmt");
     console.log(" \u2714 Passed Event Test for ros.SetPayInAmt(). \n");
 
+    transferCBP(users[1], users[0], 18n);
+    
     tx = await gk.connect(signers[4]).requestPaidInCapital(hashLock, 'Today is Monday.');
 
     await expect(tx).to.emit(rom, "CapIncrease").withArgs(100, 5000 * 10 ** 4, 0, 100);
     console.log(" \u2714 Passed Event Test for rom.CapIncrease(). \n");
 
-    await expect(tx).to.emit(rom, "ChangeAmtOfMember").withArgs(4, 5000 * 10 ** 4, 0, true);
+    await expect(tx).to.emit(rom, "ChangeAmtOfMember").withArgs(users[4], 5000 * 10 ** 4, 0, true);
     console.log(" \u2714 Passed Event Test for rom.ChangeAmtOfMember(). \n");
 
     await expect(tx).to.emit(ros, "PayInCapital").withArgs(4, 5000 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.PayInCapital(). \n");
+
+    transferCBP(users[4], users[0], 18n);
 
     // ==== Withdraw Locked Capital ====
 
     hashLock = id('Today is Tuesday.');
 
     tx = await gk.connect(signers[1]).setPayInAmt(4, 5000 * 10 ** 4, expireDate, hashLock);
+
+    transferCBP(users[1], users[0], 18n);
 
     await increaseTime(86400 * 3);
 
@@ -410,18 +382,19 @@ async function main() {
     await expect(tx).to.emit(ros, "WithdrawPayInAmt").withArgs(4, 5000 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.WithdrawPayInAmt(). \n");
     
-    setUserDepo("1", 0n);
-    setUserDepo("2", 0n);
-    setUserDepo("3", 0n);
-    setUserDepo("4", 0n);
-    setUserDepo("5", 0n);
-    setUserDepo("6", 0n);
-    setUserDepo("7", 0n);
-    setUserDepo("8", 0n);
+    transferCBP(users[1], users[0], 18n);
+
+    // setUserDepo(users[0], 0n);
+    // setUserDepo(users[1], 0n);
+    // setUserDepo(users[3], 0n);
+    // setUserDepo(users[4], 0n);
+    // setUserDepo(users[5], 0n);
+    // setUserDepo(users[6], 0n);
+    // setUserDepo(users[7], 0n);
+    // setUserDepo(users[8], 0n);
 
     await printShares(ros);
-    await cbpOfUsers(rc, GK);
-    // await depositOfUsers(rc, gk);
+    await cbpOfUsers(rc, addrGK, userGK);
 }
 
 main()

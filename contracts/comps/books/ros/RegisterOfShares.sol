@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfShares.sol";
 import "../../common/access/AccessControl.sol";
@@ -29,10 +29,17 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     using SharesRepo for SharesRepo.Share;
     using SharesRepo for SharesRepo.Head;
     using SharesRepo for uint256;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for shares and their classes, amounts, paid and par values, 
+    // distribution weights, and payment deadlines.
     SharesRepo.Repo private _repo;
+    // Repository for lockers of pay-in capital, which are used to secure the 
+    // payment of shares.
     LockersRepo.Repo private _lockers;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //##################
     //##  Write I/O   ##
@@ -86,7 +93,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
         uint amt, 
         uint expireDate, 
         bytes32 hashLock
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         SharesRepo.Share storage share = 
             _repo.shares[seqOfShare];
@@ -107,7 +114,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function requestPaidInCapital(
         bytes32 hashLock, 
         string memory hashKey
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         LockersRepo.Head memory head = 
             _lockers.pickupPoints(hashLock, hashKey, 0);
@@ -124,7 +131,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function withdrawPayInAmt(
         bytes32 hashLock, 
         uint seqOfShare
-    ) external onlyDK {
+    ) external onlyKeeper {
 
         LockersRepo.Head memory head = 
             _lockers.withdrawDeposit(hashLock, seqOfShare);
@@ -158,8 +165,9 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
 
         SharesRepo.Share storage share = _repo.shares[seqOfShare];
 
-        require(share.head.shareholder != to,
-            "ROS.transferShare: self deal");
+        if (share.head.shareholder == to) {
+            revert ROS_WrongInput("ROS_SelfDeal");
+        }
 
         SharesRepo.Share memory newShare;
 
@@ -234,12 +242,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function decreaseCleanPaid(
         uint256 seqOfShare, 
         uint paid
-    ) external {
-
-        require(msg.sender == address(_gk.getROP()) ||
-            _gk.isKeeper(msg.sender), 
-            "ROS.decrClean: access denied");
-
+    ) external onlyKeeper {
         _repo.increaseCleanPaid(
             false,
             seqOfShare,
@@ -252,12 +255,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function increaseCleanPaid(
         uint256 seqOfShare, 
         uint paid
-    ) external {
-
-        require(msg.sender == address(_gk.getROP()) ||
-            _gk.isKeeper(msg.sender), 
-            "ROS.DCA: neither keeper nor ROP");
-
+    ) external onlyKeeper {
         _repo.increaseCleanPaid(
             true,
             seqOfShare,
@@ -280,8 +278,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function updatePaidInDeadline(
         uint256 seqOfShare, 
         uint deadline
-    ) external onlyDK {
-
+    ) external onlyKeeper {
         _repo.updatePayInDeadline(seqOfShare, deadline);
         emit UpdatePaidInDeadline(seqOfShare, deadline);
     }
@@ -373,7 +370,7 @@ contract RegisterOfShares is IRegisterOfShares, AccessControl {
     function restoreShares(
         SharesRepo.Share[] memory shares,
         SharesRepo.Share[] memory classes
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.restoreRepo(shares, classes);
     }
 

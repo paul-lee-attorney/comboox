@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,114 +17,164 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/books/DTClaims.sol";
 
 import "./ISHAKeeper.sol";
 
-contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
+contract SHAKeeper is ISHAKeeper {
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
     using RulesParser for bytes32;
-    using BooksRepo for IBaseKeeper;
+    using DTClaims for bytes32;
+
+    // uint32(uint(keccak256("SHAKeeper")));
+    uint public constant TYPE_OF_DOC = 0x2beb4fa1;
+    uint public constant VERSION = 1;
 
     // ======== TagAlong & DragAlong ========
 
     function execAlongRight(
         address ia,
-        uint256 seqOfDeal,
-        bool dragAlong,
-        uint256 seqOfShare,
-        uint paid,
-        uint par,
-        address msgSender,
+        bytes32 snOfClaim,
         bytes32 sigHash
-    ) external onlyDK {
+    ) external {
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION, 88000
+        );
 
-        uint caller = _msgSender(msgSender, 88000);
+        DTClaims.Head memory head = snOfClaim.snParser();
         
-        IRegisterOfAgreements _roa = _gk.getROA();
-        IRegisterOfShares _ros = _gk.getROS();
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(head.seqOfDeal);
+        SharesRepo.Share memory share = address(this).getROS().getShare(head.seqOfShare);
 
-        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
-        SharesRepo.Share memory share = _ros.getShare(seqOfShare);
+        _checkCaller(head.dragAlong, ia, deal, share, caller);
 
-        require(deal.body.state == uint8(DealsRepo.StateOfDeal.Locked), 
-            "SHAK.execAlongs: state not Locked");
+        _checkFRClaimAndMockIA(ia, caller, share);
 
-        require(!_roa.isFRClaimer(ia, caller), 
-            "SHAK.execAlongs: caller is frClaimer");
+        IAlongs _al = _getAlongTerm(head.dragAlong);
 
-        require(!_roa.isFRClaimer(ia, share.head.shareholder), 
-            "SHAK.execAlongs: shareholder is frClaimer");
+        _isTriggered(_al, ia, deal, share);
 
-        _roa.createMockOfIA(ia);
+        _checkAmt(_al, deal, share, head.paid, head.par);
 
-        _checkAlongDeal(dragAlong, ia, deal, share, caller, paid, par, _ros.getShare(deal.head.seqOfShare).head.votingWeight);
+        head.caller = uint40(caller);
+        snOfClaim = DTClaims.codifyHead(head);
 
-        _roa.execAlongRight(ia, dragAlong, seqOfDeal, seqOfShare, paid, par, caller, sigHash);
+        _execAlongRight(ia, snOfClaim, sigHash);
     }
 
-    function _checkAlongDeal(
+    function _checkCaller(
         bool dragAlong,
         address ia,
         DealsRepo.Deal memory deal,
         SharesRepo.Share memory share,
-        uint caller,
-        uint paid,
-        uint par,
-        uint subjectVW
+        uint caller
     ) private view {
-        
+        if (dragAlong) {
+            if(caller != deal.head.seller) 
+                revert SHAK_WrongParty(bytes32("SHAK_NotSeller"));
+        } else {
+            if(caller != share.head.shareholder)
+                revert SHAK_WrongParty(bytes32("SHAK_NotShareholder"));
+            if(ISigPage(ia).isBuyer(true, caller))
+                revert SHAK_WrongParty(bytes32("SHAK_BuyerNotAllowed"));
+        }
+    }
 
-        IAlongs _al = dragAlong
+    function _checkFRClaimAndMockIA(
+        address ia,
+        uint256 caller,
+        SharesRepo.Share memory share
+    ) private {
+        IRegisterOfAgreements _roa = address(this).getROA();
+        if(_roa.isFRClaimer(ia, caller))
+            revert SHAK_WrongParty(bytes32("SHAK_CallerIsFRClaimer"));
+        if(_roa.isFRClaimer(ia, share.head.shareholder))
+            revert SHAK_WrongParty(bytes32("SHAK_ShareholderIsFRClaimer"));
+        _roa.createMockOfIA(ia);            
+    }
+
+    function _getAlongTerm(
+        bool dragAlong
+    ) private view returns(IAlongs) {
+        address _gk = address(this);
+        return dragAlong
             ? IAlongs(_gk.getSHA().
                 getTerm(uint8(IShareholdersAgreement.TitleOfTerm.DragAlong)))
             : IAlongs(_gk.getSHA().
                 getTerm(uint8(IShareholdersAgreement.TitleOfTerm.TagAlong)));
+    }
 
-        require(
-            _al.isFollower(deal.head.seller, share.head.shareholder),
-            "SHAK.checkAlongs: NOT linked"
-        );
+    function _isTriggered(
+        IAlongs _al,
+        address ia,
+        DealsRepo.Deal memory deal,
+        SharesRepo.Share memory share
+    ) private view {
+        if(deal.body.state != uint8(DealsRepo.StateOfDeal.Locked))
+            revert SHAK_WrongState(bytes32("SHAK_NotLocked"));
+        if(!_al.isFollower(deal.head.seller, share.head.shareholder))
+            revert SHAK_WrongParty(bytes32("SHAK_NotLinked"));
+        if(!_al.isTriggered(ia, deal))
+            revert SHAK_WrongState(bytes32("SHAK_AlongsNotTriggered"));
+    }
 
-        require(_al.isTriggered(ia, deal), "SHAK.checkAlongs: not triggered");
-
-        if (dragAlong) {
-            require(caller == deal.head.seller, "SHAK.checkAlongs: not drager");
-        } else {
-            require(caller == share.head.shareholder,
-                "SHAK.checkAlongs: not follower");
-            require(!ISigPage(ia).isBuyer(true, caller),
-                "SHAK.checkAlongs: caller is Buyer");
-        }
+    function _checkAmt(
+        IAlongs _al,
+        DealsRepo.Deal memory deal,
+        SharesRepo.Share memory share,
+        uint paid,
+        uint par
+    ) private view {
+        address _gk = address(this);
+        uint subjectVW = _gk.getROS().getShare(deal.head.seqOfShare).head.votingWeight;
 
         if(_al.getLinkRule(deal.head.seller).proRata) {
             IRegisterOfMembers _rom = _gk.getROM();
             
-            if (_rom.basedOnPar())
-                require ( par <= 
-                subjectVW * deal.body.par * share.body.par / _rom.votesOfGroup(deal.head.seller) / 100 , 
-                "SHAKeeper.checkAlong: par overflow");
-            else require ( paid <=
-                 subjectVW * deal.body.paid * share.body.paid / _rom.votesOfGroup(deal.head.seller) / 100,
-                "SHAKeeper.checkAlong: paid overflow");
+            if (_rom.basedOnPar()) {
+                if( par > 
+                subjectVW * deal.body.par * share.body.par / _rom.votesOfGroup(deal.head.seller) / 100 )
+                    revert SHAK_AmtOverflow(bytes32("SHAK_ParOverflow"));
+            } else {
+                if ( paid > 
+                 subjectVW * deal.body.paid * share.body.paid / _rom.votesOfGroup(deal.head.seller) / 100 )
+                revert SHAK_AmtOverflow(bytes32("SHAK_PaidOverflow"));
+            }
         }
+    }
+
+    function _execAlongRight(
+        address ia,
+        bytes32 snOfClaim,
+        bytes32 sigHash
+    ) private {
+        IRegisterOfAgreements _roa = address(this).getROA();
+        _roa.execAlongRight(ia, snOfClaim, sigHash);
     }
 
     function acceptAlongDeal(
         address ia,
         uint256 seqOfDeal,
-        address msgSender,
         bytes32 sigHash
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION,36000
+        );
         
         IRegisterOfAgreements _roa = _gk.getROA();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
-        require(caller == deal.body.buyer, "SHAK.AAD: not buyer");
+        if(caller != deal.body.buyer)
+            revert SHAK_WrongParty(bytes32("SHAK_NotBuyer"));
 
         DTClaims.Claim[] memory claims = _roa.acceptAlongClaims(ia, seqOfDeal);
 
@@ -135,17 +185,17 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             SharesRepo.Share memory share = 
                 _gk.getROS().getShare(claim.seqOfShare);
 
-            _createAlongDeal(_ia, claim, deal, share);
+            _createAlongDeal(_gk, _ia, claim, deal, share);
 
             _ia.regSig(share.head.shareholder, claim.sigDate, claim.sigHash);
             _ia.regSig(caller, uint48(block.timestamp), sigHash);
 
             len--;
         }
-
     }
 
     function _createAlongDeal(
+        address _gk,
         IInvestmentAgreement _ia,
         DTClaims.Claim memory claim,
         DealsRepo.Deal memory deal,
@@ -183,27 +233,33 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         _gk.getROS().decreaseCleanPaid(share.head.seqOfShare, claim.paid);
     }
 
-    // ======== AntiDilution ========
+    // ======== Anti-Dilution ========
 
     function execAntiDilution(
         address ia,
         uint256 seqOfDeal,
         uint256 seqOfShare,
-        address msgSender,
         bytes32 sigHash
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 88000);
-        
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION, 88000
+        );
+
         IRegisterOfShares _ros = _gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         SharesRepo.Share memory tShare = _ros.getShare(seqOfShare);
 
-        require(caller == tShare.head.shareholder, "SHAK.execAD: not shareholder");
-        require(!_ia.isInitSigner(caller), "SHAK.execAD: is InitSigner");
+        if(caller != tShare.head.shareholder)
+            revert SHAK_WrongParty(bytes32("SHAK_NotShareholder"));
+        
+        if(_ia.isInitSigner(caller))
+            revert SHAK_WrongParty(bytes32("SHAK_IsInitSigner"));
 
-        require(_gk.getROA().getHeadOfFile(ia).state == 
-            uint8(FilesRepo.StateOfFile.Circulated), "SHAK.execAD: wrong file state");
+        if( _gk.getROA().getHeadOfFile(ia).state != 
+            uint8(FilesRepo.StateOfFile.Circulated)
+        ) revert SHAK_WrongState(bytes32("SHAK_WrongFileState"));
 
         _ia.requestPriceDiff(seqOfDeal, seqOfShare);
 
@@ -225,7 +281,6 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         deal.body.state = uint8(DealsRepo.StateOfDeal.Locked);
 
         _deductShares(obligors, _ia, deal, giftPaid, _ros, sigHash);
-
     }
 
     function _deductShares(
@@ -236,7 +291,7 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         IRegisterOfShares _ros,
         bytes32 sigHash
     ) private {
-
+        address _gk = address(this);
         IRegisterOfMembers _rom = _gk.getROM();
 
         deal.body.groupOfBuyer = _rom.groupRep(deal.body.buyer);
@@ -274,7 +329,6 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         }
     }
 
-
     function _createGift(
         IInvestmentAgreement _ia,
         DealsRepo.Deal memory deal,
@@ -305,23 +359,27 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             _ros.decreaseCleanPaid(cShare.head.seqOfShare, lockAmount);
         }
         result = giftPaid - lockAmount;
-    }
+    }    
 
     function takeGiftShares(
         address ia,
-        uint256 seqOfDeal,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 58000);
-        
+        uint256 seqOfDeal
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION,58000
+        );
+
         IRegisterOfShares _ros = _gk.getROS();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
-        require(caller == deal.body.buyer, "caller is not buyer");
-        require(_ros.notLocked(deal.head.seqOfShare, block.timestamp),
-            "SHAK.takeGift: share locked");
+        if(caller != deal.body.buyer)
+            revert SHAK_WrongParty(bytes32("SHAK_NotBuyer"));
+
+        if(!_ros.notLocked(deal.head.seqOfShare, block.timestamp))
+            revert SHAK_WrongState(bytes32("SHAK_ShareLocked"));
 
         if (_ia.takeGift(seqOfDeal))
             _gk.getROA().setStateOfFile(ia, uint8(FilesRepo.StateOfFile.Closed));
@@ -339,24 +397,27 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         SharesRepo.Share memory tShare = _ros.getShare(deal.head.priceOfPar);
         if (tShare.head.priceOfPaid > deal.head.priceOfPaid)
             _ros.updatePriceOfPaid(tShare.head.seqOfShare, deal.head.priceOfPaid);
+    
     }
 
-    // ======== FirstRefusal ========
+    // ==== First Refusal ========
 
     function execFirstRefusal(
         uint256 seqOfFRRule,
         uint256 seqOfRightholder,
         address ia,
         uint256 seqOfDeal,
-        address msgSender,
         bytes32 sigHash
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 88000);
-        
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION,88000
+        );
+
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
-        require(!_ia.isSeller(true, caller), 
-            "SHAK.EFR: frClaimer is seller");
+        if(_ia.isSeller(true, caller))
+            revert SHAK_WrongParty(bytes32("SHAK_frClaimerIsSeller"));
 
         DealsRepo.Head memory headOfDeal = 
             _ia.getDeal(seqOfDeal).head;
@@ -364,29 +425,36 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         RulesParser.FirstRefusalRule memory rule = 
             _gk.getSHA().getRule(seqOfFRRule).firstRefusalRuleParser();
 
-        require(rule.typeOfDeal == headOfDeal.typeOfDeal, 
-            "SHAK.EFR: rule and deal are not same type");
+        if(rule.typeOfDeal != headOfDeal.typeOfDeal)
+            revert SHAK_WrongInput(bytes32("SHAK_WrongTypeOfDeal"));
 
-        require(
-            (rule.membersEqual && _gk.getROM().isMember(caller)) || 
-            rule.rightholders[seqOfRightholder] == caller,
-            "SHAK.EFR: caller NOT rightholder"
-        );
+        if(
+            rule.membersEqual && 
+            !_gk.getROM().isMember(caller)
+        ) revert SHAK_WrongParty(bytes32("SHAK_NotMember"));
+
+        if (
+            !rule.membersEqual && 
+            rule.rightholders[seqOfRightholder] != caller
+        ) revert SHAK_WrongParty(bytes32("SHAK_NotRightholder"));
 
         _gk.getROA().claimFirstRefusal(ia, seqOfDeal, caller, sigHash);
 
         if (_ia.getDeal(seqOfDeal).body.state != 
             uint8(DealsRepo.StateOfDeal.Terminated))
                 _ia.terminateDeal(seqOfDeal); 
+
     }
 
     function computeFirstRefusal(
         address ia,
-        uint256 seqOfDeal,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
-        
+        uint256 seqOfDeal
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(
+            TYPE_OF_DOC, VERSION,18000
+        );
+
         IRegisterOfMembers _rom = _gk.getROM();
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -394,7 +462,8 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
 
         (,, bytes32 sigHashOfSeller) = _ia.getSigOfParty(true, deal.head.seller);
 
-        require(_rom.isMember(caller), "SHAKeeper.computeFR: not member");
+        if(!_rom.isMember(caller))
+            revert SHAK_WrongParty(bytes32("SHAK_NotMember"));
 
         if (deal.head.seqOfShare != 0) {
             deal.head.typeOfDeal = uint8(DealsRepo.TypeOfDeal.FirstRefusal);
@@ -422,7 +491,6 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
             _regFRDeal(_ia, frDeal, cls[len-1], sigHashOfSeller);
             len--;
         }
-        
     }
 
     function _createFRDeal(
@@ -445,11 +513,11 @@ contract SHAKeeper is ISHAKeeper, RoyaltyCharge {
         FRClaims.Claim memory cl,
         bytes32 sigHashOfSeller
     ) private {
-
         _ia.regDeal(deal);
         _ia.regSig(cl.claimer, cl.sigDate, cl.sigHash);
 
         if (deal.head.seller > 0)
             _ia.regSig(deal.head.seller, uint48(block.timestamp), sigHashOfSeller);
     }
+
 }

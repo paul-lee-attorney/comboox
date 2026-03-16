@@ -46,7 +46,8 @@ const runScript = (command, args) => {
 
 (async () => {
   try {
-    await runScript('npx', ['hardhat', 'run', './scripts/deployMasterBase.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/deployLibraries.js', '--network', 'localhost']);
+    await runScript('npx', ['hardhat', 'run', './scripts/deployContracts.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/01_regUsers.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/02.1_createFund.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/03.1_configComBoox.js', '--network', 'localhost']);
@@ -57,12 +58,7 @@ const runScript = (command, args) => {
     await runScript('npx', ['hardhat', 'run', './scripts/testing/08.1_issueLPShares.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/09.1_externalTransfer.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/10.1_internalTransfer.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/11_antiDilution.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/12_alongs.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/13_firstRefusal.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/14.1_pledge.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/15_options.js', '--network', 'localhost']);
-    // await runScript('npx', ['hardhat', 'run', './scripts/testing/16_cbpTransaction.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/17.1_listing.js', '--network', 'localhost']);
     await runScript('npx', ['hardhat', 'run', './scripts/testing/18.1_redeemAndDistribution.js', '--network', 'localhost']);
 

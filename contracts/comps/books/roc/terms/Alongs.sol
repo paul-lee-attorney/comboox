@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,14 +17,14 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../../common/access/DraftControl.sol";
 import "./IAlongs.sol";
 
 contract Alongs is IAlongs, DraftControl {
     using LinksRepo for LinksRepo.Repo;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     LinksRepo.Repo private _repo;
 

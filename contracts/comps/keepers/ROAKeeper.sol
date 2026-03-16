@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -18,40 +17,57 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
+
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/DocsRepo.sol";
 
 import "./IROAKeeper.sol";
 
-import "../../comps/common/access/RoyaltyCharge.sol";
 
-contract ROAKeeper is IROAKeeper, RoyaltyCharge {
+contract ROAKeeper is IROAKeeper {
     using RulesParser for bytes32;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
+    using DocsRepo for DocsRepo.Head;
 
-    // #############################
-    // ##   InvestmentAgreement   ##
-    // #############################
+    // uint32(uint(keccak256("ROAKeeper")));
+    uint public constant TYPE_OF_DOC = 0x7eaeb1a4;
+    uint public constant VERSION = 1;
 
-    function createIA(uint version, address msgSender) external onlyDK {
- 
-        uint caller = _msgSender(msgSender, 58000);
+    // ###############
+    // ##   Error   ##
+    // ###############
 
-        require(_gk.getROM().isMember(caller), "not MEMBER");
-        
-        bytes32 snOfDoc = bytes32((uint(uint8(IRegCenter.TypeOfDoc.IA)) << 224) +
-            uint224(version << 192)); 
+    error ROAK_WrongParty(bytes32 reason);
+    
+    error ROAK_WrongState(bytes32 reason);
 
-        DocsRepo.Doc memory doc = _rc.createDoc(
-            snOfDoc,
-            msgSender
+    error ROAK_ShareLocked(bytes32 reason);
+
+    // ==== Create IA ====
+
+    function createIA(uint version) external {
+        address _gk = address(this); 
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
+
+        if (!_gk.getROM().isMember(caller)) 
+            revert ROAK_WrongParty(bytes32("ROAK_NotMember"));
+
+        DocsRepo.Doc memory doc = _gk.getRCByGK().cloneDoc(
+            uint32(uint(keccak256("InvestmentAgreement"))),
+            version
         );
 
         IAccessControl(doc.body).initKeepers(
-            address(this),
-            address(_gk)
+            _gk, _gk
         );
 
         _gk.getROA().regFile(DocsRepo.codifyHead(doc.head), doc.body);
+
+        IOwnable(doc.body).setNewOwner(msg.sender);
     }
 
     // ======== Circulate IA ========
@@ -59,23 +75,24 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
     function circulateIA(
         address ia,
         bytes32 docUrl,
-        bytes32 docHash,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+        bytes32 docHash
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 
-        require(ISigPage(ia).isParty(caller), "ROAK.md.OPO: NOT Party");
+        if (!ISigPage(ia).isParty(caller)) {
+            revert ROAK_WrongParty(bytes32("ROAK_NotPartyOfIA"));
+        }
 
-        require(IDraftControl(ia).isFinalized(), 
-            "ROAK.CIA: IA not finalized");
+        if (!IDraftControl(ia).isFinalized()) {
+            revert ROAK_WrongState(bytes32("ROAK_IANotFinalized"));
+        }
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         _ia.circulateDoc();
         uint16 signingDays = _ia.getSigningDays();
-        uint16 closingDays = _ia.getClosingDays();
-
-        
+        uint16 closingDays = _ia.getClosingDays();        
 
         RulesParser.VotingRule memory vr = 
             _gk.getSHA().getRule(_ia.getTypeOfIA()).votingRuleParser();
@@ -89,28 +106,34 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
 
     function signIA(
         address ia,
-        address msgSender,
         bytes32 sigHash
-    ) external onlyDK {
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 
-        uint caller = _msgSender(msgSender, 36000);
-
-        require(ISigPage(ia).isParty(caller), "ROAK.md.OPO: NOT Party");
+        if (!ISigPage(ia).isParty(caller)) {
+            revert ROAK_WrongParty(bytes32("ROAK_NotPartyOfIA"));
+        }
 
         IRegisterOfAgreements _roa = _gk.getROA();
 
-        require(
-            _roa.getHeadOfFile(ia).state == uint8(FilesRepo.StateOfFile.Circulated),
-            "ROAK.signIA: wrong state"
-        );
+        if (
+            _roa.getHeadOfFile(ia).state != uint8(FilesRepo.StateOfFile.Circulated)
+        ) {
+            revert ROAK_WrongState(bytes32("ROAK_IaNotCirculated"));
+        }
 
-        _lockDealsOfParty(ia, caller);
+        _lockDealsOfParty(_gk, ia, caller);
+
         ISigPage(ia).signDoc(true, caller, sigHash);
+
     }
 
-    function _lockDealsOfParty(address ia, uint256 caller) private {
+    function _lockDealsOfParty(address _gk, address ia, uint256 caller) private {
+
         uint[] memory list = IInvestmentAgreement(ia).getSeqList();
         uint256 len = list.length;
+
         while (len > 0) {
             uint seq = list[len - 1];
             len--;
@@ -126,7 +149,7 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
 
             } else if (deal.body.buyer == caller) {
                 
-                _buyerIsVerified(deal.body.buyer);
+                _buyerIsVerified(_gk, deal.body.buyer);
                 
                 if (deal.head.typeOfDeal ==
                    uint8(DealsRepo.TypeOfDeal.CapitalIncrease)) {
@@ -137,50 +160,58 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         }
     }
 
+    function _buyerIsVerified(address _gk, uint buyer) private view {
+        if (
+            _gk.getROI().getInvestor(buyer).state != 
+            uint8(InvestorsRepo.StateOfInvestor.Approved)
+        ) revert ROAK_WrongParty(bytes32("ROAK_BuyerNotVerified"));
+        
+        if (!_gk.getSHA().isSigner(buyer)) 
+            revert ROAK_WrongParty(bytes32("ROAK_BuyerNotSignerOfSHA"));
+    }
+
     // ======== Deal Closing ========
 
     function pushToCoffer(
         address ia,
         uint256 seqOfDeal,
         bytes32 hashLock,
-        uint closingDeadline,
-        address msgSender
-    ) external onlyDK {
-
-        uint caller = _msgSender(msgSender, 58000);
+        uint closingDeadline
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
-        DealsRepo.Deal memory deal = 
-            _ia.getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
         bool isST = (deal.head.seqOfShare != 0);
 
         if (isST) {
-            require(caller == deal.head.seller, "ROAK.PTC: not seller");
-            require(_lockUpCheck(address(_ia), deal, uint48(block.timestamp)), 
-                "ROAK.PTC: target share locked");
+            if (deal.head.seller != caller) 
+                revert ROAK_WrongParty(bytes32("ROAK_CallerNotSeller"));
+            if (!_lockUpCheck(_gk, ia, deal, closingDeadline)) 
+                revert ROAK_ShareLocked(bytes32("ROAK_TargetShareLocked"));
         } else {
-            require (_gk.getROD().isDirector(caller) ||
-                _gk.getROM().controllor() == caller, 
-                "ROAK.PTC: not director or controllor");
+            if (
+                !_gk.getROD().isDirector(caller) &&
+                _gk.getROM().controllor() != caller
+            ) revert ROAK_WrongParty(bytes32("ROAK_NotDirectorOrControllor"));
         }
 
-        _vrAndSHACheck(_ia);
+        _vrAndSHACheck(_gk, _ia);
 
         _ia.clearDealCP(seqOfDeal, hashLock, closingDeadline);
     }
 
-    function _vrAndSHACheck(IInvestmentAgreement _ia) private view {
-        
+    function _vrAndSHACheck(address _gk, IInvestmentAgreement _ia) private view {
         IMeetingMinutes _bmm = _gk.getBMM();
         IMeetingMinutes _gmm = _gk.getGMM();
         IRegisterOfAgreements _roa = _gk.getROA();
 
-        require(
-            _roa.getHeadOfFile(address(_ia)).state == uint8(FilesRepo.StateOfFile.Approved),
-            "BOAK.vrAndSHACheck: wrong state"
-        );
+        if (_roa.getHeadOfFile(address(_ia)).state != uint8(FilesRepo.StateOfFile.Approved)) {
+            revert ROAK_WrongState(bytes32("ROAK_IaNotApproved"));
+        }
 
         uint256 typeOfIA = _ia.getTypeOfIA();
 
@@ -193,43 +224,79 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
 
         if (vr.amountRatio > 0 || vr.headRatio > 0) {
             if (vr.authority == 1) {
-                require(_gmm.isPassed(seqOfMotion), 
-                    "ROAK.vrCheck:  rejected by GM");
+                if (!_gmm.isPassed(seqOfMotion)) {
+                    revert ROAK_WrongState(bytes32("ROAK_GMMNotApproved"));
+                }
             } else if (vr.authority == 2) {
-                require(_bmm.isPassed(seqOfMotion), 
-                    "ROAK.vrCheck:  rejected by Board");
-            } else revert("ROAK.vrCheck: authority overflow");
+                if (!_bmm.isPassed(seqOfMotion)) {
+                    revert ROAK_WrongState(bytes32("ROAK_BMMNotApproved"));
+                }
+            } 
         }
-    }
+    }    
 
-    function _closeDeal(IInvestmentAgreement _ia, DealsRepo.Deal memory deal) private {
-        if (deal.head.seqOfShare > 0) {
-            _shareTransfer(_ia, deal.head.seqOfDeal);
-        } else {
-            _issueNewShare(_ia, deal.head.seqOfDeal);
-        }
-    }
+    // ==== Close Deal ====
 
     function closeDeal(
         address ia,
         uint256 seqOfDeal,
         string memory hashKey
-    ) external onlyDK {
+    ) external {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
         if (_ia.closeDeal(deal.head.seqOfDeal, hashKey))
-            _gk.getROA().execFile(ia);
+            address(this).getROA().execFile(ia);
 
-        _closeDeal(_ia, deal);
+        _closeDeal(_gk, _ia, deal);
+    }
+
+    function _closeDeal(
+        address _gk,
+        IInvestmentAgreement _ia, 
+        DealsRepo.Deal memory deal
+    ) private {
+        if (deal.head.seqOfShare > 0) {
+            _shareTransfer(_gk, _ia, deal.head.seqOfDeal);
+        } else {
+            _issueNewShare(_gk, _ia, deal.head.seqOfDeal);
+        }
+    }
+
+    function _shareTransfer(address _gk, IInvestmentAgreement _ia, uint256 seqOfDeal) private {
+        IRegisterOfShares _ros = _gk.getROS();
+        IRegisterOfMembers _rom = _gk.getROM();
+
+        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
+
+        _buyerIsVerified(_gk, deal.body.buyer);
+
+        if (!_lockUpCheck(_gk, address(_ia), deal, block.timestamp)) {
+            revert ROAK_ShareLocked(bytes32("ROAK_TargetShareLocked"));
+        }
+
+        if (!_checkAlong(_ia, seqOfDeal)) {
+            revert ROAK_WrongState(bytes32("ROAK_AlongDealOpen"));
+        }
+
+        _ros.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
+        _ros.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, 
+            deal.body.buyer, deal.head.priceOfPaid, deal.head.priceOfPar);
+
+        if (deal.body.buyer != deal.body.groupOfBuyer && 
+            deal.body.groupOfBuyer != _rom.groupRep(deal.body.buyer)) 
+                _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
     }
 
     function _lockUpCheck(
+        address _gk,
         address _ia,
         DealsRepo.Deal memory deal,
-        uint48 closingDate
+        uint closingDate
     ) private view returns(bool) {
 
         IShareholdersAgreement _sha = _gk.getSHA();
@@ -241,7 +308,7 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         address lu = _sha.getTerm(uint8(IShareholdersAgreement.TitleOfTerm.LockUp));
         
         if (closingDate > 0) {
-            deal.head.closingDeadline = closingDate;
+            deal.head.closingDeadline = uint48(closingDate);
         }
 
         if (!ILockUp(lu).isTriggered(deal)) {
@@ -251,39 +318,6 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         }
 
         return false;
-    }
-
-    function _buyerIsVerified(uint buyer) private view {
-        require (_gk.getROI().getInvestor(buyer).state == 
-            uint8(InvestorsRepo.StateOfInvestor.Approved), 
-            "ROAK.buyerIsVerified: not");
-        
-        require(_gk.getSHA().isSigner(buyer),
-            "ROAK: buyer not signer of SHA");
-    
-    }
-
-    function _shareTransfer(IInvestmentAgreement _ia, uint256 seqOfDeal) private {
-        
-        IRegisterOfShares _ros = _gk.getROS();
-        IRegisterOfMembers _rom = _gk.getROM();
-
-        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
-
-        _buyerIsVerified(deal.body.buyer);
-
-        require (_lockUpCheck(address(_ia), deal, uint48(block.timestamp)),
-            "ROAK._ST: share locked");
-
-        require(_checkAlong(_ia, seqOfDeal), "ROAK.shareTransfer: Along Deal Open");
-
-        _ros.increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);
-        _ros.transferShare(deal.head.seqOfShare, deal.body.paid, deal.body.par, 
-            deal.body.buyer, deal.head.priceOfPaid, deal.head.priceOfPar);
-
-        if (deal.body.buyer != deal.body.groupOfBuyer && 
-            deal.body.groupOfBuyer != _rom.groupRep(deal.body.buyer)) 
-                _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
     }
 
     function _checkAlong(IInvestmentAgreement _ia, uint seqOfDeal) private view returns(bool) {
@@ -303,31 +337,33 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         return true;
     }
 
-    function issueNewShare(address ia, uint256 seqOfDeal, address msgSender) public onlyDK {
+    // ==== Issue New Share ====
 
-        uint caller = _msgSender(msgSender, 58000);
+    function issueNewShare(address ia, uint256 seqOfDeal) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
-        require(_gk.getROD().isDirector(caller) ||
-            _gk.getROM().controllor() == caller, 
-            "ROAK.issueNewShare: not director or controllor");
+        if(
+            !_gk.getROD().isDirector(caller) &&
+            _gk.getROM().controllor() != caller
+        ) revert ROAK_WrongParty(bytes32("ROAK_NotDirectorOrControllor"));
 
-        _vrAndSHACheck(_ia);
+        _vrAndSHACheck(_gk, _ia);
 
         if (_ia.directCloseDeal(seqOfDeal)) _gk.getROA().execFile(ia);
 
-        _issueNewShare(_ia, seqOfDeal);
+        _issueNewShare(_gk, _ia, seqOfDeal);
     }
 
-    function _issueNewShare(IInvestmentAgreement _ia, uint seqOfDeal) private {
-        
+    function _issueNewShare(address _gk, IInvestmentAgreement _ia, uint seqOfDeal) private {
         IRegisterOfShares _ros = _gk.getROS();
         IRegisterOfMembers _rom = _gk.getROM();
 
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
-        _buyerIsVerified(deal.body.buyer);
+        _buyerIsVerified(_gk, deal.body.buyer);
 
         SharesRepo.Share memory share;
 
@@ -358,45 +394,43 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
                 _rom.addMemberToGroup(deal.body.buyer, deal.body.groupOfBuyer);
     }
 
+    // ==== Transfer Target Share ====
 
     function transferTargetShare(
         address ia,
-        uint256 seqOfDeal,
-        address msgSender
-    ) public onlyDK {
-
-        uint caller = _msgSender(msgSender, 58000);
+        uint256 seqOfDeal
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
-        require(
-            caller == _ia.getDeal(seqOfDeal).head.seller,
-                "ROAK.TTS: not seller"
-        );
+        if (caller != _ia.getDeal(seqOfDeal).head.seller)
+            revert ROAK_WrongParty(bytes32("ROAK_NotSeller"));
 
-        _vrAndSHACheck(_ia);
+        _vrAndSHACheck(_gk, _ia);
 
         if (_ia.directCloseDeal(seqOfDeal))
             _gk.getROA().execFile(ia);
 
-        _shareTransfer(_ia, seqOfDeal);
+        _shareTransfer(_gk, _ia, seqOfDeal);
     }
+
+    // ==== Terminate Deal ====
 
     function terminateDeal(
         address ia,
-        uint256 seqOfDeal,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        uint256 seqOfDeal
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
         IRegisterOfAgreements _roa = _gk.getROA();
 
         DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
-        require(
-            caller == deal.head.seller,
-            "ROAK.TD: NOT seller"
-        );
+        if (caller != deal.head.seller)
+            revert ROAK_WrongParty(bytes32("ROAK_NotSeller"));
 
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
 
@@ -412,42 +446,52 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
                 _roa.terminateFile(ia);
             if (_ia.releaseDealSubject(seqOfDeal))
                 _gk.getROS().increaseCleanPaid(deal.head.seqOfShare, deal.body.paid);            
-        } else revert("ROAK.TD: wrong state");
+        } else revert ROAK_WrongState(bytes32("ROAK_IaNotTerminatable"));
     }
 
+    // ==== Pay Off Approved Deal ====
+
     function payOffApprovedDeal(
-        ICashier.TransferAuth memory auth, address ia, uint seqOfDeal,
-        address to, address msgSender
-    ) external onlyDK {
+        ICashier.TransferAuth memory auth, address ia, 
+        uint seqOfDeal, address to
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 58000);
 
         ICashier _cashier = _gk.getCashier();
 
-        uint caller = _msgSender(msgSender, 58000);
-        IInvestmentAgreement _ia = IInvestmentAgreement(ia);
-        DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
+        DealsRepo.Deal memory deal = IInvestmentAgreement(ia).getDeal(seqOfDeal);
 
         auth.value = (deal.body.paid * deal.head.priceOfPaid + 
             (deal.body.par - deal.body.paid) * deal.head.priceOfPar) / 100;
-        auth.from = msgSender;
+        auth.from = msg.sender;
 
         if (deal.head.seqOfShare > 0) {
-            require(deal.head.seller == _msgSender(to, 18000),
-               "UsdROAK.payOffApprDealInUSD: wrong payee");
+            if (deal.head.seller != 
+                to.msgSender(TYPE_OF_DOC, VERSION, 58000))
+                revert ROAK_WrongParty(bytes32("ROAK_PayeeNotSeller"));
 
             // remark: PayOffShareTransferDeal
-            _cashier.forwardUsd(auth, to, bytes32(0x5061794f666653686172655472616e736665724465616c000000000000000000));
+            _cashier.forwardUsd(
+                auth, to,
+                bytes32(0x5061794f666653686172655472616e736665724465616c000000000000000000)
+            );
         } else {
-            require(address(_cashier) == to,
-               "UsdROAK.payOffApprDealInUSD: wrong payee");
+            if (address(_cashier) != to)
+                revert ROAK_WrongParty(bytes32("ROAK_PayeeNotCashier"));
 
             // remark: PayOffCapIncreaseDeal
-            ICashier(_cashier).forwardUsd(auth, to, bytes32(0x5061794f6666436170496e6372656173654465616c0000000000000000000000));            
+            ICashier(_cashier).forwardUsd(
+                auth, to, 
+                bytes32(0x5061794f6666436170496e6372656173654465616c0000000000000000000000)
+            );            
         }
 
-        _payOffApprovedDeal(ia, seqOfDeal, auth.value, caller);
+        _payOffApprovedDeal(_gk, ia, seqOfDeal, auth.value, caller);
     }
 
     function _payOffApprovedDeal(
+        address _gk,
         address ia,
         uint seqOfDeal,
         uint valueOfDeal,
@@ -456,12 +500,12 @@ contract ROAKeeper is IROAKeeper, RoyaltyCharge {
         IInvestmentAgreement _ia = IInvestmentAgreement(ia);
         DealsRepo.Deal memory deal = _ia.getDeal(seqOfDeal);
 
-        _vrAndSHACheck(_ia);
+        _vrAndSHACheck(_gk, _ia);
 
         if (_ia.payOffApprovedDeal(seqOfDeal, valueOfDeal, caller)) 
             _gk.getROA().execFile(ia);
 
-        _closeDeal(_ia, deal);
+        _closeDeal(_gk, _ia, deal);
     }
 
 }

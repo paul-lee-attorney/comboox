@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright 2021-2025 LI LI of JINGTIAN & GONGCHENG.
+ * Copyright 2021-2026 LI LI of JINGTIAN & GONGCHENG.
  * All Rights Reserved.
  * */
 
@@ -33,11 +33,13 @@
 import { network } from "hardhat";
 import { id } from "ethers";
 import { expect } from "chai";
-import { getRC, getROS, getROI, getFK } from "./boox";
+import { getRC, getROS, getROI, getGK } from "./boox";
 import { parseInvestor } from "./roi";
-import { royaltyTest, cbpOfUsers, userParser } from "./rc";
+import { royaltyTest, cbpOfUsers, userParser, getAllUsers } from "./rc";
 import { printShares } from "./ros";
 import { setUserCBP, transferCBP } from "./saveTool";
+import { parseCompInfo } from "./gk";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -51,40 +53,44 @@ async function main() {
 	  const signers = await ethers.getSigners();
 
     const rc = await getRC();
-    const gk = await getFK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const roi = await getROI();
     const ros = await getROS();
-    const addrRC = await rc.getAddress();
-    const addrGK = await gk.getAddress();
 
     // ==== Reg New Users ==== 
 
-    const regNewUser = async (signerNo) => {
-      await rc.connect(signers[signerNo]).regUser();
-      setUserCBP((signerNo+2).toString(), 18n * 10n ** 15n); 
-      await rc.connect(signers[signerNo]).setBackupKey(await signers[signerNo+10].getAddress());
-    }
+    // const regNewUser = async (signerNo) => {
+    //   await rc.connect(signers[signerNo]).regUser();
+    //   setUserCBP((signerNo+2).toString(), 18n * 10n ** 15n); 
+    //   await rc.connect(signers[signerNo]).setBackupKey(await signers[signerNo+10].getAddress());
+    // }
 
-    for (let i=7; i<10; i++) {
-      await regNewUser(i);
-    }
+    // for (let i=7; i<10; i++) {
+    //   await regNewUser(i);
+    // }
     
     // ==== Reg & Approve Investors ====
 
     const regAndApproveInvestor = async (signerNo) => {
       const userNo = await rc.connect(signers[signerNo]).getMyUserNo();
 
-      let user = userParser(await rc.connect(signers[signerNo]).getUser());
+      let user = userParser(await rc.connect(signers[signerNo]).getMyUser());
 
-      let tx = await gk.connect(signers[signerNo]).regInvestor(user.backupKey.pubKey, userNo, id(await signers[signerNo].getAddress()));
+      gk = await readTool("FundROIKeeper", gk.target);
+
+      let tx = await gk.connect(signers[signerNo]).regInvestor(user.backupKey.pubKey, userNo, id(signers[signerNo].address));
       
-      await royaltyTest(addrRC, await signers[signerNo].getAddress(), addrGK, tx, 18n, "gk.regInvestor().PrimeKeyTest().");
-      transferCBP(userNo.toString(), "8", 18n);
+      await royaltyTest(rc.target, signers[signerNo].address, gk.target, tx, 18n, "gk.regInvestor().PrimeKeyTest().");
+      transferCBP(userNo.toString(), userComp, 18n);
 
-      await royaltyTest(addrRC, await signers[signerNo].getAddress(), addrGK, tx, 18n, "gk.regInvestor().BackupKeyTest().");
-      transferCBP(userNo.toString(), "8", 18n);
+      await royaltyTest(rc.target, signers[signerNo].address, gk.target, tx, 18n, "gk.regInvestor().BackupKeyTest().");
+      transferCBP(userNo.toString(), userComp, 18n);
   
-      await expect(tx).to.emit(roi, "RegInvestor").withArgs(userNo, userNo, id(await signers[signerNo].getAddress()));
+      await expect(tx).to.emit(roi, "RegInvestor").withArgs(userNo, userNo, id(signers[signerNo].address));
       console.log(" \u2714 Passed Event Test for gk.regInvestor(). \n");
 
       let info = parseInvestor(await roi.getInvestor(userNo));
@@ -95,11 +101,11 @@ async function main() {
     
       tx = await gk.approveInvestor(userNo, 1024);
 
-      await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 18n, "gk.approveInvestor().");
+      await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.approveInvestor().");
 
-      transferCBP("1", "8", 18n);
+      transferCBP(users[0], userComp, 18n);
 
-      await expect(tx).to.emit(roi, "ApproveInvestor").withArgs(userNo, 1);
+      await expect(tx).to.emit(roi, "ApproveInvestor").withArgs(userNo, users[0]);
       console.log(" \u2714 Passed Event Test for roi.ApproveInvestor(). \n");
 
       info = parseInvestor(await roi.getInvestor(userNo));
@@ -123,11 +129,11 @@ async function main() {
       const userNo = await rc.connect(signers[i]).getMyUserNo();
       const tx = await gk.revokeInvestor(userNo, 1024);
       
-      await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 18n, "gk.revokeIvnestor().");
+      await royaltyTest(rc.target, signers[0].address, gk.target, tx, 18n, "gk.revokeIvnestor().");
 
-      transferCBP("1", "8", 18n);
+      transferCBP(users[0], userComp, 18n);
 
-      await expect(tx).to.emit(roi, "RevokeInvestor").withArgs(userNo, 1);
+      await expect(tx).to.emit(roi, "RevokeInvestor").withArgs(userNo, users[0]);
       console.log(' \u2714 Passed Event Test for gk.revokeInvestor(). \n');
       
       const info = parseInvestor(await roi.getInvestor(userNo));
@@ -137,7 +143,7 @@ async function main() {
     }
 
     await printShares(ros);
-    await cbpOfUsers(rc, addrGK);
+    await cbpOfUsers(rc, gk.target, userComp);
 }
 
 main()

@@ -18,15 +18,21 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../books/roi/IRegisterOfInvestors.sol";
-import "../books/ros/IRegisterOfShares.sol";
-
-import "../../lib/RulesParser.sol";
-import "../../lib/BooksRepo.sol";
-
+/// @title IROIKeeper
+/// @notice Interface for investor compliance actions and LOO pause.
 interface IROIKeeper {
+
+    //##########################
+    //##     Error & Event    ##
+    //##########################
+
+    error ROIK_WrongParty(bytes32 reason);
+
+    error ROIK_WrongInput(bytes32 reason);
+
+    error ROIK_WrongState(bytes32 reason);
 
     //###############
     //##   Write   ##
@@ -34,33 +40,63 @@ interface IROIKeeper {
 
     // ==== Pause LOO ====
 
-    function pause(uint seqOfLR, address msgSender) external;
+    /// @notice Pause LOO operations.
+    /// @param seqOfLR Listing rule sequence.
+    function pause(uint seqOfLR) external;
 
-    function unPause(uint seqOfLR, address msgSender) external;
+    /// @notice Unpause LOO operations.
+    /// @param seqOfLR Listing rule sequence.
+    function unPause(uint seqOfLR) external;
 
     // ==== Freeze Share ====
 
+    /// @notice Freeze a share for compliance.
+    /// @param seqOfLR Listing rule sequence.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Paid amount.
+    /// @param hashOrder Related order hash.
     function freezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
+        bytes32 hashOrder
     ) external;
 
+    /// @notice Unfreeze a share.
+    /// @param seqOfLR Listing rule sequence.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Paid amount.
+    /// @param hashOrder Related order hash.
     function unfreezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
+        bytes32 hashOrder
     ) external;
 
+    /// @notice Force transfer a frozen share.
+    /// @param seqOfLR Listing rule sequence.
+    /// @param seqOfShare Share sequence.
+    /// @param paid Paid amount.
+    /// @param addrTo Recipient address.
+    /// @param hashOrder Related order hash.
     function forceTransfer(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address addrTo, address msgSender, bytes32 hashOrder
+        address addrTo, bytes32 hashOrder
     ) external;
 
     // ==== Investor ====
 
-    function regInvestor(address msgSender, address bKey, uint groupRep, bytes32 idHash) external;
+    /// @notice Register an investor.
+    /// @param bKey Investor key address.
+    /// @param groupRep Group representative user number.
+    /// @param idHash Investor id hash.
+    function regInvestor(address bKey, uint groupRep, bytes32 idHash) external;
 
-    function approveInvestor(uint userNo, address msgSender,uint seqOfLR) external;
+    /// @notice Approve an investor.
+    /// @param userNo Investor user number.
+    /// @param seqOfLR Listing rule sequence.
+    function approveInvestor(uint userNo, uint seqOfLR) external;
 
-    function revokeInvestor(uint userNo,address msgSender,uint seqOfLR) external;
+    /// @notice Revoke an investor approval.
+    /// @param userNo Investor user number.
+    /// @param seqOfLR Listing rule sequence.
+    function revokeInvestor(uint userNo, uint seqOfLR) external;
 
 }

@@ -88,13 +88,15 @@ import { network } from "hardhat";
 import { expect } from "chai";
 import { parseUnits, id } from "ethers";
 
-import { getGK, getRC, getGMM, getROM, getFT, getGMMKeeper, getROS, getCashier } from "./boox";
-import { increaseTime, Bytes32Zero, now } from "./utils";
+import { getGK, getRC, getGMM, getROM, getFT, getROS, getCashier } from "./boox";
+import { increaseTime, now } from "./utils";
 import { getLatestSeqOfMotion, allSupportMotion, parseMotion } from "./gmm";
-import { royaltyTest, cbpOfUsers } from "./rc";
+import { royaltyTest, cbpOfUsers, getAllUsers } from "./rc";
 import { printShares } from "./ros";
-import { transferCBP, addCBPToUser, minusCBPFromUser, addEthToUser } from "./saveTool";
+import { transferCBP, addCBPToUser, minusCBPFromUser } from "./saveTool";
 import { generateAuth } from "./sigTools";
+import { parseCompInfo } from "./gk";
+import { readTool } from "../readTool";
 
 async function main() {
 
@@ -110,31 +112,33 @@ async function main() {
     const rc = await getRC();
     const ft = await getFT();
     const cashier = await getCashier();
-    const gk = await getGK();
+    let gk = await getGK();
+
+    const users = await getAllUsers(rc, 9);
+    const userComp = await parseCompInfo(await gk.getCompInfo()).regNum;
+
     const rom = await getROM();
     const gmm = await getGMM();
     const ros = await getROS();
-    const gmmKeeper = await getGMMKeeper();
-    const addrGK = await gk.getAddress();
-    const addrRC = await rc.getAddress();
-    const addrFT = await ft.getAddress();
 
     // ==== Motion for Mint CBP to DAO ====
 
+    gk = await readTool("GMMKeeper", gk.target);
+
     // selector of function mint(): 40c10f19
     let selector = id("mint(address,uint256)").substring(0, 10);
-    let firstInput = (addrGK).substring(2).padStart(64, "0"); 
+    let firstInput = (gk.target).substring(2).padStart(64, "0"); 
     let secondInput = parseUnits('88', 18).toString(16).padStart(64, '0');
     let payload = selector + firstInput + secondInput;
 
-    // await expect(gk.connect(signers[2]).createActionOfGM(9, [addrRC], [0], [payload], id('9'+(addrRC)+payload), 1)).revertedWith("GMMK: no right");
+    // await expect(gk.connect(signers[2]).createActionOfGM(9, [rc.target], [0], [payload], id('9'+(rc.target)+payload), 1)).revertedWith("GMMK: no right");
     console.log(" \u2714 Passed Access Control Test for gk.createActionOfGM(). \n");
 
-    let tx = await gk.createActionOfGM(9, [addrRC], [0], [payload], id('9'+(addrRC)+payload), 1);
+    let tx = await gk.createActionOfGM(9, [rc.target], [0], [payload], id('9'+(rc.target)+payload), users[0]);
 
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 99n, "gk.createActionOfGM().");
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 99n, "gk.createActionOfGM().");
 
-    transferCBP("1", "8", 99n);
+    transferCBP(users[0], userComp, 99n);
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
@@ -144,15 +148,16 @@ async function main() {
 
     expect(motion.head.typeOfMotion).to.equal("Approve Action");
     expect(motion.head.seqOfVR).to.equal(9);
-    expect(motion.head.creator).to.equal(1);
-    expect(motion.head.executor).to.equal(1);
+    expect(motion.head.creator).to.equal(users[0]);
+    expect(motion.head.executor).to.equal(users[0]);
     expect(motion.body.state).to.equal("Created");
 
     console.log(" \u2714 Passed Result Verify Test for gk.createActionOfGM(). \n");
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
-    transferCBP("1", "8", 72n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 72n, "gk.proposeMotionToGeneralMeeting().");
+    transferCBP(users[0], userComp, 72n);
 
     motion = parseMotion(await gmm.getMotion(seqOfMotion));
     expect(motion.body.state).to.equal("Proposed");
@@ -161,10 +166,11 @@ async function main() {
     
     await increaseTime(86400);
 
-    await allSupportMotion(gk, rom, seqOfMotion);
+    await allSupportMotion(gk, rom, seqOfMotion, userComp);
+
     await gk.voteCountingOfGM(seqOfMotion);
 
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
@@ -174,26 +180,26 @@ async function main() {
 
     // console.log('CBP balance of GK before:', ethers.utils.formatUnits((await rc.balanceOf(gk.address)).toString(), 18), '\n');
 
-    let balaBefore = BigInt(await rc.balanceOf(addrGK));
+    let balaBefore = BigInt(await rc.balanceOf(gk.target));
 
-    tx = await gk.execActionOfGM(9, [addrRC], [0], [payload], id('9'+(addrRC)+payload), seqOfMotion);
+    tx = await gk.execActionOfGM(9, [rc.target], [0], [payload], id('9'+(rc.target)+payload), seqOfMotion);
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
     
-    addCBPToUser(88n * 10n ** 18n, "8");
+    addCBPToUser(88n * 10n ** 18n, userComp);
     
     // await royaltyTest(rc.address, signers[0].address, gk.address, tx, 36n, "gk.execActionOfGM().");
 
-    await expect(tx).to.emit(gmmKeeper, "ExecAction").withArgs(addrRC, 0, payload, seqOfMotion, 1);
-    console.log(" \u2714 Passed Event Test for gmmKeeper.ExecAction(). \n");
+    await expect(tx).to.emit(gk, "ExecAction").withArgs(rc.target, 0, payload, seqOfMotion, users[0]);
+    console.log(" \u2714 Passed Event Test for gk.ExecAction(). \n");
 
-    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, 1);
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, users[0]);
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
     await expect(tx).to.emit(gk, "ExecAction");
     console.log(" \u2714 Passed Event Test for gk.ExecAction(). \n");
 
-    let balaAfter = BigInt(await rc.balanceOf(addrGK));
+    let balaAfter = BigInt(await rc.balanceOf(gk.target));
 
     // console.log("balaBefore:", balaBefore.toString());
     // console.log("balaAfter:", balaAfter.toString());
@@ -208,35 +214,35 @@ async function main() {
     let today = await now();
     let expireDate = today + 86400 * 3;
     
-    tx = await gk.proposeToTransferFund(false, addrFT, true, parseUnits("88", 18) , expireDate, 9, 1);
-    await royaltyTest(addrRC, await signers[0].getAddress(), addrGK, tx, 99n, "gk.proposeToTransferFund().");
+    tx = await gk.proposeToTransferFundWithGM(ft.target, true, parseUnits("88", 18), expireDate, 9, users[0]);
 
-    transferCBP("1", "8", 99n);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 99n, "gk.proposeToTransferFund().");
+    transferCBP(users[0], userComp, 99n);
 
     await expect(tx).to.emit(gmm, "CreateMotion");
     console.log(" \u2714 Passed Event Test for gmm.CreateMotion(). \n");
 
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
-    await expect(tx).to.emit(gmm, "ProposeMotionToGeneralMeeting").withArgs(seqOfMotion, 1);
+    await expect(tx).to.emit(gmm, "ProposeMotionToGeneralMeeting").withArgs(seqOfMotion, users[0]);
     console.log(" \u2714 Passed Event Test for gmm.ProposeMotionToGeneralMeeting(). \n");
     
     motion = parseMotion(await gmm.getMotion(seqOfMotion));
 
     expect(motion.head.typeOfMotion).to.equal("Transfer Fund");
     expect(motion.head.seqOfVR).to.equal(9);
-    expect(motion.head.creator).to.equal(1);
-    expect(motion.head.executor).to.equal(1);
+    expect(motion.head.creator).to.equal(users[0]);
+    expect(motion.head.executor).to.equal(users[0]);
     expect(motion.body.state).to.equal("Proposed");
 
     console.log(" \u2714 Passed Result Verify Test for gk.proposeToTransferFund(). \n");
 
     await increaseTime(86400);
 
-    await allSupportMotion(gk, rom, seqOfMotion);
-    await gk.voteCountingOfGM(seqOfMotion);
+    await allSupportMotion(gk, rom, seqOfMotion, userComp);
 
-    transferCBP("1", "8", 88n);
+    await gk.voteCountingOfGM(seqOfMotion);
+    transferCBP(users[0], userComp, 88n);
 
     expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
 
@@ -244,146 +250,100 @@ async function main() {
 
     // ---- Transfer CBP to Fuel Tank ----
 
-    balaBefore = BigInt(await rc.balanceOf(addrFT));
+    gk = await readTool("Accountant", gk.target);
 
-    tx = await gk.transferFund(false, addrFT, true, parseUnits("88", 18), expireDate, seqOfMotion);
+    balaBefore = BigInt(await rc.balanceOf(ft.target));
 
-    transferCBP("1", "8", 76n);
+    tx = await gk.transferFund(false, ft.target, true, parseUnits("88", 18), expireDate, seqOfMotion);
 
-    minusCBPFromUser(88n * 10n ** 18n, "8");
-    
-    // await royaltyTest(rc.address, signers[0].address, gk.address, tx, 76n, "gk.transferFund().");
-    
-    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, 1);
+    await royaltyTest(rc.target, signers[0].address, gk.target, tx, 76n, "gk.transferFund().");
+
+    transferCBP(users[0], userComp, 76n);
+
+    minusCBPFromUser(88n * 10n ** 18n, userComp);
+        
+    await expect(tx).to.emit(gmm, "ExecResolution").withArgs(seqOfMotion, users[0]);
     console.log(" \u2714 Passed Event Test for gmm.ExecResolution(). \n");
 
-    // await expect(tx).to.emit(gmmKeeper, "TransferFund").withArgs(ft.address, true,  parseUnits("88", 18), seqOfMotion, 1);
-    // console.log(" \u2714 Passed Event Test for gmmKeeper.TransferFund(). \n");
+    await royaltyTest(rc.target, gk.target, ft.target, tx, 88n * 10n ** 5n, "rc.Transfer() in gk.transferFund().");
 
-    await expect(tx).to.emit(rc, "Transfer").withArgs(addrGK, addrFT, parseUnits("88", 18));
-    console.log(" \u2714 Passed Event Test for rc.Transfer(). \n");
+    balaAfter = BigInt(await rc.balanceOf(ft.target));
 
-    balaAfter = BigInt(await rc.balanceOf(addrFT));
-
-    expect(balaAfter - balaBefore).to.equal( parseUnits("88", 18));
+    expect(balaAfter - balaBefore).to.equal(parseUnits("88", 18));
     console.log(" \u2714 Passed Result Verify Test for gk.transferFund(). \n");
 
     // ==== User-3 refuel gas from Fuel Tank ====
-    
-    balaBefore = BigInt(await rc.balanceOf(await signers[3].getAddress()));
+
+    balaBefore = BigInt(await rc.balanceOf(signers[3].address));
 
     let usdBalaOfCompBefore = BigInt(await cashier.balanceOfComp());
 
-    let auth = await generateAuth(signers[3], await cashier.getAddress(), 2600 * 81);
+    let auth = await generateAuth(signers[3], cashier.target, 2600 * 81);
     console.log("auth:", auth);
 
-    tx = await ft.connect(signers[3]).refuel(auth,  parseUnits("80", 18));
+    tx = await ft.connect(signers[3]).refuel(auth, parseUnits("80", 18));
 
-    addCBPToUser(80n * 10n ** 18n, "3");
+    addCBPToUser(80n * 10n ** 18n, users[3]);
 
-    await expect(tx).to.emit(ft, "Refuel").withArgs(await signers[3].getAddress(), parseUnits("208", 9), parseUnits("80", 18));
+    await expect(tx).to.emit(ft, "Refuel").withArgs(signers[3].address, parseUnits("208", 9), parseUnits("80", 18));
     console.log(" \u2714 Passed Event Test for ft.Refuel(). \n");
 
-    await expect(tx).to.emit(rc, "Transfer").withArgs(addrFT, await signers[3].getAddress(), parseUnits("80", 18));
+    await expect(tx).to.emit(rc, "Transfer").withArgs(ft.target, signers[3].address, parseUnits("80", 18));
     console.log(" \u2714 Passed Event Test for rc.Transfer(). \n");
 
-    balaAfter = BigInt(await rc.balanceOf(await signers[3].getAddress()));
+    balaAfter = BigInt(await rc.balanceOf(signers[3].address));
     expect(balaAfter - balaBefore).to.equal(parseUnits("80", 18));
     console.log(" \u2714 Passed Result Verify Test for ft.refuel(). \n");
 
     let usdBalaOfCompAfter = BigInt(await cashier.balanceOfComp());
     expect(usdBalaOfCompAfter - usdBalaOfCompBefore).to.equal(parseUnits("208", 9));
     console.log(" \u2714 Passed Result Verify Test for cashier.balanceOfComp(). \n");
-
-    // ==== Pickup Income 80 ETH from Fuel Tank ====
-
-    // ---- Motion for Pickup Income ----
-
-    // selector of function withdrawIncome(uint256): 9273bbb6
-    // selector = id("withdrawIncome(uint256)").substring(0, 10);
-    // firstInput = await parseUnits("80", 18).padStart(64, '0');  // 80 ETH
-    // payload = selector + firstInput;
-
-    // await gk.createActionOfGM(9, [ft.address], [0], [payload], id('9'+ft.address+payload), 1);
-
-    // transferCBP("1", "8", 99n);
-
-    // seqOfMotion = await getLatestSeqOfMotion(gmm);
-
-    // await gk.proposeMotionToGeneralMeeting(seqOfMotion);
-
-    // transferCBP("1", "8", 72n);
-
-    // await increaseTime(86400);
-
-    // await allSupportMotion(gk, rom, seqOfMotion);
-    // await gk.voteCountingOfGM(seqOfMotion);
-
-    // transferCBP("1", "8", 88n);
-
-    // expect(await gmm.isPassed(seqOfMotion)).to.equal(true);
-
-    // // ---- Pickup Income ----
-
-    // balaBefore = BigInt(await ethers.provider.getBalance(ft.address));
-
-    // tx = await gk.execActionOfGM(9, [ft.address], [0], [payload], id('9'+ft.address+payload), seqOfMotion)
-
-    // transferCBP("1", "8", 36n);
-
-    // balaAfter = BigInt(await ethers.provider.getBalance(ft.address));
-
-    // await expect(tx).to.emit(gk, "ReceivedCash").withArgs(ft.address,  parseUnits("80", 18));
-    // console.log(" \u2714 Passed Event Verify Test for gk.ReceivedCash(). \n")
-
-    // addEthToUser(80n*10n**18n, "8");
-
-    // expect(balaBefore - balaAfter).to.equal( parseUnits("80", 18));
-    // console.log(" \u2714 Passed Result Verify Test for ft.withdrawIncome(). \n");
     
     // ==== Withdraw Fuel 8 CBP from Fuel Tank ====
 
     // ---- Motion for Withdraw Fuel ----
+
+    gk = await readTool("GMMKeeper", gk.target);
 
     // selector of function withdrawFuel(uint256): bbc446ac
     selector = id("withdrawFuel(uint256)").substring(0, 10);
     firstInput = parseUnits("8", 18).toString(16).padStart(64, '0');  // 8 CBP
     payload = selector + firstInput;
 
-    await gk.createActionOfGM(9, [addrFT], [0], [payload], id('9'+addrFT+payload), 1);
+    await gk.createActionOfGM(9, [ft.target], [0], [payload], id('9'+ft.target+payload), users[0]);
 
-    transferCBP("1", "8", 99n);
+    transferCBP(users[0], userComp, 99n);
 
     seqOfMotion = await getLatestSeqOfMotion(gmm);
 
     await gk.proposeMotionToGeneralMeeting(seqOfMotion);
 
-    transferCBP("1", "8", 72n);
+    transferCBP(users[0], userComp, 72n);
 
     await increaseTime(86400);
 
-    await allSupportMotion(gk, rom, seqOfMotion);
+    await allSupportMotion(gk, rom, seqOfMotion, userComp);
     await gk.voteCountingOfGM(seqOfMotion);
     
-    transferCBP("1", "8", 88n);
+    transferCBP(users[0], userComp, 88n);
 
     // ---- Withdraw Fuel ----
 
-    balaBefore = BigInt(await rc.balanceOf(addrFT));
+    balaBefore = BigInt(await rc.balanceOf(ft.target));
 
-    await gk.execActionOfGM(9, [addrFT], [0], [payload], id('9'+addrFT+payload), seqOfMotion);
+    await gk.execActionOfGM(9, [ft.target], [0], [payload], id('9'+ft.target+payload), seqOfMotion);
 
-    transferCBP("1", "8", 36n);
+    transferCBP(users[0], userComp, 36n);
 
-    addCBPToUser(8n * 10n ** 18n, "8");
+    addCBPToUser(8n * 10n ** 18n, userComp);
 
-    balaAfter = BigInt(await rc.balanceOf(addrFT));
+    balaAfter = BigInt(await rc.balanceOf(ft.target));
 
     expect(balaBefore - balaAfter).to.equal(parseUnits("8", 18));
     console.log(" \u2714 Passed Result Verify Test for ft.withdrawFuel(). \n");
 
     await printShares(ros);
-    await cbpOfUsers(rc, addrGK);
+    await cbpOfUsers(rc, gk.target, userComp);
     // await depositOfUsers(rc, gk);
 }
 

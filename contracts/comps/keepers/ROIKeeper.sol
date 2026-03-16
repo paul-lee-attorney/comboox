@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -18,47 +17,61 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../openzeppelin/utils/Address.sol";
 
 import "./IROIKeeper.sol";
 
-contract ROIKeeper is IROIKeeper, RoyaltyCharge {
+contract ROIKeeper is IROIKeeper {
     using RulesParser for bytes32;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
+    using Address for address;
 
-    //###############
-    //##   Write   ##
-    //###############
+    // uint32(uint(keccak256("ROIKeeper")));
+    uint public constant TYPE_OF_DOC = 0xd042852b;
+    uint public constant VERSION = 1;
+
+    // ######################
+    // ##   Error & Event  ##
+    // ######################
 
     // ==== Pause LOO ====
 
-    function _checkVerifierLicense(uint seqOfLR, uint caller) private {
+    function _checkVerifierLicense(address _gk, uint seqOfLR, uint caller) private view {
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
-        require(_gk.getROD().hasTitle(caller, lr.titleOfVerifier),
-            "ROIK.checkVerifierLicense: no rights");
+        if(!_gk.getROD().hasTitle(caller, lr.titleOfVerifier)) {
+            revert ROIK_WrongParty(bytes32("ROIK_NoRightOfVerify"));
+        }
     }
 
-    function _checkEnforcerLicense(uint seqOfLR, uint caller) private {
+    function _checkEnforcerLicense(address _gk, uint seqOfLR, uint caller) private view {
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
-        require(_gk.getROD().hasTitle(caller, lr.para),
-            "ROIK.checkEnforcerLicense: no rights");
+        if(!_gk.getROD().hasTitle(caller, lr.para)) {
+            revert ROIK_WrongParty(bytes32("ROIK_NoRightOfEnforce"));
+        }
     }
 
-    function pause(uint seqOfLR, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
-        _checkEnforcerLicense(seqOfLR, caller);
+    function pause(uint seqOfLR) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
+        _checkEnforcerLicense(_gk, seqOfLR, caller);
 
         _gk.getROI().pause(caller);
     }
 
-    function unPause(uint seqOfLR, address msgSender) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
-        _checkEnforcerLicense(seqOfLR, caller);
+    function unPause(uint seqOfLR) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
+        _checkEnforcerLicense(_gk, seqOfLR, caller);
         _gk.getROI().unPause(caller);
     }
 
@@ -66,10 +79,12 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function freezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
-        _checkEnforcerLicense(seqOfLR, caller);
+        bytes32 hashOrder
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
+
+        _checkEnforcerLicense(_gk, seqOfLR, caller);
 
         IRegisterOfShares _ros = _gk.getROS();
         _ros.decreaseCleanPaid(seqOfShare, paid);
@@ -79,11 +94,13 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function unfreezeShare(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address msgSender, bytes32 hashOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
-        _checkEnforcerLicense(seqOfLR, caller);
+        bytes32 hashOrder
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 
+        _checkEnforcerLicense(_gk, seqOfLR, caller);
+    
         IRegisterOfShares _ros = _gk.getROS();
         _ros.increaseCleanPaid(seqOfShare, paid);
         uint shareholder = _ros.getShare(seqOfShare).head.shareholder;
@@ -92,15 +109,19 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
 
     function forceTransfer(
         uint seqOfLR, uint seqOfShare, uint paid, 
-        address addrTo, address msgSender, bytes32 hashOrder
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
-        _checkEnforcerLicense(seqOfLR, caller);
+        address addrTo, bytes32 hashOrder
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
+        _checkEnforcerLicense(_gk, seqOfLR, caller);
         
         IRegisterOfInvestors _roi = _gk.getROI();
-        uint to = _msgSender(addrTo, 88000);
-        require(_roi.isInvestor(to), 
-            "ROIKeeper.forceTransfer: to is NOT a Verified Investor");
+        uint to = addrTo.msgSender(TYPE_OF_DOC, VERSION, 88000);
+
+        if(!_roi.isInvestor(to)) {
+            revert ROIK_WrongParty(bytes32("ROIK_NotInvestor"));
+        }
 
         IRegisterOfShares _ros = _gk.getROS();
         SharesRepo.Share memory share = _ros.getShare(seqOfShare);
@@ -112,65 +133,66 @@ contract ROIKeeper is IROIKeeper, RoyaltyCharge {
     // ==== Investor ====
 
     function regInvestor(
-        address msgSender, address bKey, uint groupRep, bytes32 idHash
-    ) external onlyDK {
+        address bKey, uint groupRep, bytes32 idHash
+    ) external {
 
-        uint caller = _msgSender(msgSender, 18000);
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        require(msgSender != bKey, 
-            "ROIK.regInvestor: same key");
+        // address _rc = _gk.getRCByGK();
 
-        require(caller == _msgSender(bKey, 18000), 
-            "ROIK.regInvestor: wrong backupKey");
+        if(msg.sender == bKey)
+            revert ROIK_WrongInput(bytes32("ROIK_SameKey"));
 
-        if (_isContract(msgSender)) {
-            require(_rc.getHeadByBody(msgSender).typeOfDoc == 20,
-                "ROIK.RegInvestor: COA applicant not GK");
+        if(caller != bKey.msgSender(TYPE_OF_DOC, VERSION, 18000)) {
+            revert ROIK_WrongInput(bytes32("ROIK_WrongBackupKey"));
         }
 
-        if (_isContract(bKey)) {
-            require(_rc.getHeadByBody(bKey).typeOfDoc == 20,
-                "ROIK.RegInvestor: COA backupKey not GK");
+        if (msg.sender.isContract()) {
+            // uint32(uint(keccak256("GeneralKeeper"))
+            if(_gk.getRCByGK().getHeadByBody(msg.sender).typeOfDoc != 0x25586efd)  
+                revert ROIK_WrongParty(bytes32("ROIK_COAApplicantNotGK"));
+        }
+
+        if (bKey.isContract()) {
+            if(_gk.getRCByGK().getHeadByBody(bKey).typeOfDoc != 0x25586efd)
+                revert ROIK_WrongParty(bytes32("ROIK_COABackupKeyNotGK"));
         }
 
         _gk.getROI().regInvestor(caller, groupRep, idHash);
     }
 
-    function _isContract(address acct) private view returns (bool) {
-        uint32 size;
-        assembly {
-            size := extcodesize(acct)
-        }
-        return size != 0;
-    }
-
     function approveInvestor(
         uint userNo,
-        address msgSender,
         uint seqOfLR
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
-        _checkVerifierLicense(seqOfLR, caller);
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
+        _checkVerifierLicense(_gk, seqOfLR, caller);
 
         IRegisterOfInvestors _roi = _gk.getROI();
 
         RulesParser.ListingRule memory lr = 
             _gk.getSHA().getRule(seqOfLR).listingRuleParser();
 
-        require(lr.maxQtyOfInvestors == 0 ||
-            _roi.getQtyOfInvestors() < lr.maxQtyOfInvestors,
-            "ROIK.apprInv: no quota");
+        if(lr.maxQtyOfInvestors != 0 &&
+            _roi.getQtyOfInvestors() >= lr.maxQtyOfInvestors
+        ) {
+            revert ROIK_WrongState(bytes32("ROIK_NoQuotaOfInvestors"));
+        }
 
         _roi.approveInvestor(userNo, caller);
     }
 
     function revokeInvestor(
         uint userNo,
-        address msgSender,
         uint seqOfLR
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
-        _checkVerifierLicense(seqOfLR, caller);
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
+        _checkVerifierLicense(_gk, seqOfLR, caller);
 
         _gk.getROI().revokeInvestor(userNo, caller);
     }

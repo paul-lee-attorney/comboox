@@ -2,7 +2,7 @@
 
 /* *
  *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -18,17 +18,24 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfRedemptions.sol";
 
 import "../../common/access/AccessControl.sol";
+import "../../../lib/books/RedemptionsRepo.sol";
+import "../../../lib/InterfacesHub.sol";
 
 
 contract RegisterOfRedemptions is IRegisterOfRedemptions, AccessControl {
     using RedemptionsRepo for RedemptionsRepo.Repo;
+    using InterfacesHub for address;
 
+    // Repository for redemption classes, packs, and requests.
     RedemptionsRepo.Repo private _list;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //###############
     //##   Write   ##

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../../common/access/DraftControl.sol";
 
@@ -25,7 +25,7 @@ import "./IAntiDilution.sol";
 
 contract AntiDilution is IAntiDilution, DraftControl {
     using EnumerableSet for EnumerableSet.UintSet;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     Ruler private _ruler;
 
@@ -34,7 +34,8 @@ contract AntiDilution is IAntiDilution, DraftControl {
     // #################
 
     modifier onlyMarked(uint256 class) {
-        require(isMarked(class), "AD.mf.OM: class not marked");
+        if(!isMarked(class)) 
+            revert AD_WrongInput(bytes32("AD_ClassNotMarked"));
         _;
     }
 
@@ -44,8 +45,10 @@ contract AntiDilution is IAntiDilution, DraftControl {
 
     function addBenchmark(uint256 class, uint price) external onlyAttorney {        
 
-        require (class > 0, "AD.AB: zero class");
-        require (price > 0, "AD.AB: zero price");
+        if (class == 0) 
+            revert AD_ZeroValue(bytes32("AD_ZeroClass"));
+        if (price == 0) 
+            revert AD_ZeroValue(bytes32("AD_ZeroPrice"));
 
         _ruler.marks[class].classOfShare = uint16(class);
         _ruler.marks[class].floorPrice = uint32(price);
@@ -59,6 +62,8 @@ contract AntiDilution is IAntiDilution, DraftControl {
     }
 
     function addObligor(uint256 class, uint256 obligor) external onlyMarked(class) onlyAttorney {
+        if (obligor == 0) 
+            revert AD_ZeroValue(bytes32("AD_ZeroObligor"));
         _ruler.marks[class].obligors.add(obligor);
     }
 
@@ -110,11 +115,13 @@ contract AntiDilution is IAntiDilution, DraftControl {
         SharesRepo.Share memory share = 
             _gk.getROS().getShare(seqOfShare);
 
-        require (isTriggered(deal, share.head.class), "AD.getGiftPaid: AD not triggered");
+        if (!isTriggered(deal, share.head.class)) 
+            revert AD_WrongState(bytes32("AD_NotTriggered"));
 
         uint32 floorPrice = getFloorPriceOfClass(share.head.class);
 
-        require (share.head.priceOfPaid >= floorPrice, "AD.getGiftPaid: price of target share lower than floor");
+        if (share.head.priceOfPaid < floorPrice) 
+            revert AD_Overflow(bytes32("AD_PriceBelowFloor"));
 
         return (share.body.paid * floorPrice / deal.head.priceOfPaid - share.body.paid);
     }

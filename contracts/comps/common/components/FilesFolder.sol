@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,16 +17,22 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IFilesFolder.sol";
-
 import "../access/AccessControl.sol";
+import "../../../lib/books/FilesRepo.sol";
 
 contract FilesFolder is IFilesFolder, AccessControl {
     using FilesRepo for FilesRepo.Repo;
 
+    /// @notice Internal repository of files managed by this folder.
     FilesRepo.Repo internal _repo;
+
+    // ==== UUPSUpgradeable ====
+
+    /// @dev Storage gap for upgrade safety.
+    uint[50] private __gap;
 
     //##################
     //##  Write I/O   ##
@@ -137,5 +143,4 @@ contract FilesFolder is IFilesFolder, AccessControl {
     {
         head = _repo.getHeadOfFile(body);
     }
-
 }

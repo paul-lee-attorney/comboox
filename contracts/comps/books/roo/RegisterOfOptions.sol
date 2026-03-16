@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfOptions.sol";
 
@@ -25,9 +25,13 @@ import "../../common/access/AccessControl.sol";
 
 contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     using OptionsRepo for OptionsRepo.Repo;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for options and swaps.
     OptionsRepo.Repo private _repo;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     // ################
     // ## Write I/O ##
@@ -75,12 +79,12 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         }
     }
 
-    function addObligorIntoOption(uint256 seqOfOpt, uint256 obligor) external onlyDK {
+    function addObligorIntoOption(uint256 seqOfOpt, uint256 obligor) external onlyKeeper {
         if (_repo.addObligorIntoOption(seqOfOpt, obligor))
             emit AddObligorIntoOpt(seqOfOpt, obligor);
     }
 
-    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external onlyDK {
+    function removeObligorFromOption(uint256 seqOfOpt, uint256 obligor) external onlyKeeper {
         if (_repo.removeObligorFromOption(seqOfOpt, obligor))
             emit RemoveObligorFromOpt(seqOfOpt, obligor);
     }
@@ -92,7 +96,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
         uint d1,
         uint d2,
         uint d3
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.updateOracle(seqOfOpt, d1, d2, d3);
         emit UpdateOracle(seqOfOpt, d1, d2, d3);
     }
@@ -116,9 +120,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     function payOffSwap(
         uint seqOfOpt,
         uint seqOfSwap
-        // uint msgValue,
-        // uint centPrice
-    ) external returns (SwapsRepo.Swap memory swap) {
+    ) external onlyKeeper returns (SwapsRepo.Swap memory swap) {
         swap = _repo.payOffSwap(seqOfOpt, seqOfSwap);
         emit PayOffSwap(seqOfOpt, SwapsRepo.codifySwap(swap));
     }
@@ -126,7 +128,7 @@ contract RegisterOfOptions is IRegisterOfOptions, AccessControl {
     function terminateSwap(
         uint seqOfOpt,
         uint seqOfSwap
-    ) external returns (SwapsRepo.Swap memory swap){
+    ) external onlyKeeper returns (SwapsRepo.Swap memory swap){
         swap = _repo.terminateSwap(seqOfOpt, seqOfSwap);
         emit TerminateSwap(seqOfOpt, seqOfSwap);
     }

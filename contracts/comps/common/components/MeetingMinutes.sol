@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../access/AccessControl.sol";
 
@@ -28,9 +26,13 @@ import "./IMeetingMinutes.sol";
 contract MeetingMinutes is IMeetingMinutes, AccessControl {
     using MotionsRepo for MotionsRepo.Repo;
     using RulesParser for bytes32;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for motions, their states, and their voting results.
     MotionsRepo.Repo private _repo;
+
+    // ==== UUPS Upgradeable ====
+    uint[50] private __gap;
 
     //##################
     //##    Write     ##
@@ -77,7 +79,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
     function createMotionToRemoveOfficer(
         uint256 seqOfPos,
         uint seqOfVR,
-        uint nominator    
+        uint nominator
     ) external onlyDK returns(uint64) {
 
         return _addMotion(
@@ -199,18 +201,36 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
             );
     }
 
-    function createMotionToDeprecateGK(
-        address receiver,
-        uint proposer
-    ) external onlyKeeper returns(uint64) {
+    function createMotionToDecreaseCapital(
+        uint seqOfVR, uint seqOfShare, 
+        uint paid, uint par, uint amt, 
+        uint executor, uint proposer
+    ) external onlyKeeper returns (uint64) {
+        uint contents = _hashDecreaseCapital(
+            seqOfVR, seqOfShare, paid, par, amt
+        );
         return _addMotion(
-            uint8(MotionsRepo.TypeOfMotion.DeprecateGK),
-            10,
+            uint8(MotionsRepo.TypeOfMotion.DecreaseCapital),
+            seqOfVR,
             proposer,
-            proposer,
-            uint(uint160(receiver))
+            executor,
+            contents
         );
     }
+
+    function _hashDecreaseCapital(
+        uint seqOfVR, uint seqOfShare, 
+        uint paid, uint par, uint amt
+    ) private pure returns (uint) {
+        return 
+            uint256(
+                keccak256(
+                    abi.encode(seqOfVR, seqOfShare, paid, par, amt)
+                )
+            );
+    }
+
+    // ==== ProposeMotion ====
 
     function proposeMotionToGeneralMeeting(
         uint256 seqOfMotion,
@@ -279,7 +299,7 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         external onlyDK returns(uint8 result)
     {            
         result = _repo.voteCounting(flag0, seqOfMotion, base);
-        emit VoteCounting(seqOfMotion, result);            
+        emit VoteCounting(seqOfMotion, result);
     }
 
     // ==== ExecResolution ====
@@ -300,18 +320,17 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller
     ) external onlyKeeper {
 
-        require(block.timestamp < expireDate, 
-            "MM.distrProf: missed deadline");
+        if(block.timestamp >= expireDate) 
+            revert MM_WrongInput(bytes32("MM_ExpireDateNotFuture"));
 
-        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.DistributeProfits), 
-            "MM.distrProf: wrong typeOfMotion");
+        if( _repo.getMotion(seqOfMotion).head.typeOfMotion != 
+                uint8(MotionsRepo.TypeOfMotion.DistributeProfits)
+        ) revert MM_WrongInput(bytes32("MM_WrongTypeOfMotion"));
         
         uint contents = _hashPayment(address(uint160(seqOfDR << 40 + para)), false, amt, expireDate);
 
         execResolution(seqOfMotion, contents, caller);
     }
-
 
     function transferFund(
         address to,
@@ -322,12 +341,12 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         uint caller
     ) external onlyKeeper {
 
-        require(block.timestamp < expireDate, 
-            "MM.TF: missed deadline");
+        if(block.timestamp >= expireDate)
+            revert MM_WrongInput(bytes32("MM_TF_ExpireDateNotFuture"));
 
-        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.TransferFund), 
-            "MM.TF: wrong typeOfMotion");
+        if (_repo.getMotion(seqOfMotion).head.typeOfMotion != 
+                uint8(MotionsRepo.TypeOfMotion.TransferFund)
+        ) revert MM_WrongInput(bytes32("MM_TF_WrongTypeOfMotion"));
         
         uint contents = _hashPayment(to, isCBP, amt, expireDate);
 
@@ -347,9 +366,9 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         MotionsRepo.Motion memory motion =  
             _repo.getMotion(seqOfMotion);
 
-        require(motion.head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.ApproveAction), 
-            "MM.EA: wrong typeOfMotion");
+        if (motion.head.typeOfMotion != 
+            uint8(MotionsRepo.TypeOfMotion.ApproveAction)
+        ) revert MM_WrongInput(bytes32("MM_EA_WrongTypeOfMotion"));
 
         contents = _hashAction(
             seqOfVR,
@@ -362,14 +381,18 @@ contract MeetingMinutes is IMeetingMinutes, AccessControl {
         execResolution(seqOfMotion, contents, caller);
     }
 
-    function deprecateGK(address receiver, uint seqOfMotion, uint executor) external onlyDK{
-        require(_repo.getMotion(seqOfMotion).head.typeOfMotion == 
-            uint8(MotionsRepo.TypeOfMotion.DeprecateGK), 
-            "MM.DeprecateGK: wrong typeOfMotion");
+    function decreaseCapital(
+        uint seqOfVR, uint seqOfShare,
+        uint paid, uint par, uint amt,
+        uint seqOfMotion, uint caller
+    ) external onlyKeeper {
+        if (_repo.getMotion(seqOfMotion).head.typeOfMotion != 
+            uint8(MotionsRepo.TypeOfMotion.DecreaseCapital)
+        ) revert MM_WrongInput(bytes32("MM_DC_WrongTypeOfMotion"));
         
-        uint contents = uint(uint160(receiver));
+        uint contents = _hashDecreaseCapital(seqOfVR, seqOfShare, paid, par, amt);
 
-        execResolution(seqOfMotion, contents, executor);
+        execResolution(seqOfMotion, contents, caller);
     }
 
     //################

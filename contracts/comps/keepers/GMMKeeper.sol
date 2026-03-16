@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,35 +17,45 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
+
+import "../../lib/books/RulesParser.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/utils/ArrayUtils.sol";
+import "../../openzeppelin/utils/Address.sol";
 
 import "./IGMMKeeper.sol";
 
-import "../common/access/RoyaltyCharge.sol";
-
-contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
+contract GMMKeeper is IGMMKeeper {
     using RulesParser for bytes32;
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
     using ArrayUtils for uint[];
-    using BooksRepo for IBaseKeeper;
+    using Address for address;
 
-    // ################
-    // ##   Motion   ##
-    // ################
+    // uint32(uint(keccak256("GMMKeeper")));
+    uint public constant TYPE_OF_DOC = 0x49148247;
+    uint public constant VERSION = 1;
+
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
 
     // ==== CreateMotion ====
 
     // ---- Officers ----
     function nominateDirector(
         uint256 seqOfPos,
-        uint candidate,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 72000);
+        uint candidate
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 72000);
 
         IRegisterOfDirectors _rod = _gk.getROD();
 
-        require(_rod.hasNominationRight(seqOfPos, caller),
-            "GMMK: has no right");
+        if(!_rod.hasNominationRight(seqOfPos, caller))
+            revert GMMK_WrongParty(bytes32("GMMK_NoNominationRight"));
 
         _gk.getGMM().nominateOfficer(
             seqOfPos, 
@@ -58,15 +66,15 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     }
 
     function createMotionToRemoveDirector(
-        uint256 seqOfPos,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 116000);
+        uint256 seqOfPos
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 116000);
 
         IRegisterOfDirectors _rod = _gk.getROD();
 
-        require(_rod.hasNominationRight(seqOfPos, caller),
-            "GMMK: has no right");
+        if(!_rod.hasNominationRight(seqOfPos, caller))
+            revert GMMK_WrongParty(bytes32("GMMK_NoNominationRight"));
 
         _gk.getGMM().createMotionToRemoveOfficer(
             seqOfPos, 
@@ -78,12 +86,13 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     function proposeDocOfGM(
         uint doc,
         uint seqOfVR,
-        uint executor,
-        address msgSender
-    ) external onlyDK {
-        
-        uint caller = _msgSender(msgSender, 116000);
-        require(_gk.getROM().isMember(caller), "GMMK: NOT Member");
+        uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 116000);
+
+        if(!_gk.getROM().isMember(caller))
+            revert GMMK_WrongParty(bytes32("GMMK_NotMember"));
 
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -96,17 +105,17 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
 
             address addr = address(uint160(doc));
 
-            require(ISigPage(addr).isSigner(caller), 
-                "GMMK: not signer");
+            if(!ISigPage(addr).isSigner(caller))
+                revert GMMK_WrongParty(bytes32("GMMK_NotSignerOfDoc"));
 
-            require(ISigPage(addr).established(),
-                "GMMK: not established");
+            if(!ISigPage(addr).established())
+                revert GMMK_WrongState(bytes32("GMMK_DocNotEstablished"));
 
             if (seqOfVR == 8) {
                 _gk.getROC().proposeFile(addr, seqOfMotion);
             } else {
-                require(_gk.getROA().allClaimsAccepted(addr),
-                    "GMMK: Claims outstanding");
+                if(!_gk.getROA().allClaimsAccepted(addr))
+                    revert GMMK_WrongState(bytes32("GMMK_RoaHasOpenClaims"));
                 _gk.getROA().proposeFile(addr, seqOfMotion);
             }
         }
@@ -118,13 +127,13 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint seqOfVR,
         uint seqOfDR,
         uint para,
-        uint executor,
-        address msgSender
-    ) external onlyKeeper {
+        uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 68000);
 
-        uint caller = _msgSender(msgSender, 68000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
+        if( !_gk.getROM().isMember(caller) && !_gk.getROD().isDirector(caller)) 
+            revert GMMK_WrongParty(bytes32("GMMK_NoProposalRight"));
 
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -134,19 +143,19 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
 
-    function proposeToTransferFund(
+    function proposeToTransferFundWithGM(
         address to,
         bool isCBP,
         uint amt,
         uint expireDate,
         uint seqOfVR,
-        uint executor,
-        address msgSender
-    ) external onlyKeeper {
+        uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 99000);
 
-        uint caller = _msgSender(msgSender, 99000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
+        if(!_gk.getROM().isMember(caller) && !_gk.getROD().isDirector(caller))
+            revert GMMK_WrongParty(bytes32("GMMK_NoProposalRight"));
         
         IMeetingMinutes _gmm = _gk.getGMM();
 
@@ -162,13 +171,12 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint executor,
-        address msgSender
-    ) external onlyDK {
-
-        uint caller = _msgSender(msgSender, 99000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
+        uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 99000);
+        if(!_gk.getROM().isMember(caller) && !_gk.getROD().isDirector(caller))
+            revert GMMK_WrongParty(bytes32("GMMK_NoProposalRight"));
 
         _gk.getGMM().createAction(
             seqOfVR,
@@ -181,41 +189,41 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         );
     }
 
-    function proposeToDeprecateGK(
-        address receiver,
-        address msgSender
-    ) external onlyDK {
+    function createMotionToDecreaseCapital(
+        uint seqOfVR, uint seqOfShare, 
+        uint paid, uint par, uint amt, uint executor
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
-        uint caller = _msgSender(msgSender, 88000);
-        require(_gk.getROM().isMember(caller) || _gk.getROD().isDirector(caller), 
-            "GMMK: no right");
-
-        IMeetingMinutes _gmm = _gk.getGMM();
-
-        uint64 seqOfMotion = 
-            _gmm.createMotionToDeprecateGK(receiver, caller);
-            
-        _gmm.proposeMotionToGeneralMeeting(seqOfMotion, caller);
+        if(!_gk.getROM().isMember(caller) && !_gk.getROD().isDirector(caller))
+            revert GMMK_WrongParty(bytes32("GMMK_NoProposalRight"));
+    
+        _gk.getGMM().createMotionToDecreaseCapital(
+            seqOfVR, seqOfShare,
+            paid, par, amt, 
+            executor, caller
+        );
     }
 
     // ==== ProposeMotion ====
 
     function entrustDelegaterForGeneralMeeting(
         uint256 seqOfMotion,
-        uint delegate,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 36000);
+        uint delegate
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
 
-        _avoidanceCheck(seqOfMotion, caller);
+        _avoidanceCheck(_gk, seqOfMotion, caller);
         _gk.getGMM().entrustDelegate(seqOfMotion, delegate, caller);
     }
 
     function proposeMotionToGeneralMeeting(
-        uint256 seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 72000);
+        uint256 seqOfMotion
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 72000);
 
         _gk.getGMM().proposeMotionToGeneralMeeting(seqOfMotion, caller);
     }
@@ -223,42 +231,83 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
     function castVoteOfGM(
         uint256 seqOfMotion,
         uint attitude,
-        bytes32 sigHash,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 72000);
+        bytes32 sigHash
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 72000);
 
-        _avoidanceCheck(seqOfMotion, caller);
+        _avoidanceCheck(_gk, seqOfMotion, caller);
         _gk.getGMM().castVoteInGeneralMeeting(seqOfMotion, attitude, sigHash, caller);
     }
 
-    function _avoidanceCheck(uint256 seqOfMotion, uint caller) private view {
+    function _avoidanceCheck(address _gk, uint256 seqOfMotion, uint caller) private view {
         MotionsRepo.Motion memory motion = _gk.getGMM().getMotion(seqOfMotion);
 
-        require( motion.votingRule.class == 0 ||
-            _gk.getROM().isClassMember(caller, motion.votingRule.class),
-            "GMMK: not Class member");
+        if (motion.votingRule.class > 0 && 
+            !_gk.getROM().isClassMember(caller, motion.votingRule.class)
+        ) revert GMMK_WrongParty(bytes32("GMMK_NotClassMember"));
 
         if (motion.head.typeOfMotion == 
             uint8(MotionsRepo.TypeOfMotion.ApproveDoc) && 
             motion.head.seqOfVR < 9) 
         {
             address doc = address(uint160(motion.contents));
-            require (!ISigPage(doc).isSigner(caller),
-                "GMMK: is related party");
+            if (ISigPage(doc).isSigner(caller)) 
+                revert GMMK_WrongParty(bytes32("GMMK_IsRelatedParty"));
         }
     }
 
-    // ==== VoteCounting ====
+    function voteCountingOfGM(uint256 seqOfMotion) external {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 88000);
+
+        _voteCountingOfGM(_gk, seqOfMotion);
+    }
+
+    // ==== Vote Counting ====
+
+    function _voteCountingOfGM(address _gk, uint256 seqOfMotion) private {
+        IRegisterOfMembers _rom = _gk.getROM();
+        IMeetingMinutes _gmm = _gk.getGMM();
+
+        MotionsRepo.Motion memory motion =
+            _gmm.getMotion(seqOfMotion);
+
+        MotionsRepo.VoteCalBase memory base;
+
+        BallotsBox.Case memory case0 = _gmm.getCaseOfAttitude(motion.head.seqOfMotion, 0);
+
+        if (_allConsent(_gmm, _rom, motion, case0)) {
+            base.unaniConsent = true;
+        } else {
+            base = _calBase(_gk, _gmm, _rom, motion, base, case0);
+        }
+
+        bool quorumFlag = (address(_gk.getSHA()) == address(0) ||
+            base.attendWeightRatio >=
+            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfGM);
+
+        bool approved = _gmm.voteCounting(quorumFlag, seqOfMotion, base) ==
+            uint8(MotionsRepo.StateOfMotion.Passed);
+
+        if (motion.head.seqOfVR < 9) {
+            address doc = address(uint160(motion.contents));
+
+            if (motion.head.seqOfVR == 8) {
+                _gk.getROC().voteCountingForFile(doc, approved);
+            } else {
+                _gk.getROA().voteCountingForFile(doc, approved);
+            }
+        }
+    }
 
     function _allConsent(
-        IMeetingMinutes _gmm, 
-        IRegisterOfMembers _rom, 
+        IMeetingMinutes _gmm,
+        IRegisterOfMembers _rom,
         MotionsRepo.Motion memory motion,
         BallotsBox.Case memory case0
     ) private view returns(bool) {
-
-        BallotsBox.Case memory case1 = _gmm.getCaseOfAttitude(motion.head.seqOfMotion, 1);         
+        BallotsBox.Case memory case1 = _gmm.getCaseOfAttitude(motion.head.seqOfMotion, 1);
         uint[] memory consentVoters = case1.voters.combine(case1.principals);
 
         uint[] memory allVoters = case0.voters.combine(case0.principals);
@@ -272,18 +321,18 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         uint[] memory restMembers = members.minus(consentVoters);
 
         if (restMembers.length == 0) return true;
-            
-        if (motion.head.typeOfMotion == 
+
+        if (motion.head.typeOfMotion ==
             uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) {
 
-            uint256[] memory parties = 
+            uint256[] memory parties =
                 ISigPage(address(uint160(motion.contents))).getParties();
 
             uint[] memory vetoMembers = restMembers.minus(parties);
 
             uint len = vetoMembers.length;
 
-            while (len > 0) { 
+            while (len > 0) {
                 if (_rom.votesAtDate(vetoMembers[len - 1], motion.body.shareRegDate) > 0) return false;
                 len--;
             }
@@ -292,23 +341,24 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         }
 
         return false;
-    } 
+    }
 
     function _calBase(
+        address _gk,
         IMeetingMinutes _gmm,
         IRegisterOfMembers _rom,
         MotionsRepo.Motion memory motion,
         MotionsRepo.VoteCalBase memory base,
         BallotsBox.Case memory case0
-    ) private view returns (MotionsRepo.VoteCalBase memory){
-
-        BallotsBox.Case memory case3 = _gmm.getCaseOfAttitude(motion.head.seqOfMotion, 3);
+    ) private view returns (MotionsRepo.VoteCalBase memory) {
+        BallotsBox.Case memory case3 = 
+            _gmm.getCaseOfAttitude(motion.head.seqOfMotion, 3);
 
         uint64 votesOfMembers;
         if (motion.votingRule.class == 0) {
             votesOfMembers = _rom.totalVotes();
         } else {
-            SharesRepo.Share memory classInfo = 
+            SharesRepo.Share memory classInfo =
                 _gk.getROS().getInfoOfClass(motion.votingRule.class);
             votesOfMembers = _rom.basedOnPar()
                 ? classInfo.head.votingWeight * classInfo.body.par
@@ -328,11 +378,11 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
                 ? uint32(_rom.qtyOfMembers())
                 : uint32(_rom.qtyOfClassMember(motion.votingRule.class));
 
-            base.totalWeight = votesOfMembers; 
+            base.totalWeight = votesOfMembers;
 
             if (motion.votingRule.impliedConsent) {
 
-                base.supportHead = base.totalHead - case0.sumOfHead;                
+                base.supportHead = base.totalHead - case0.sumOfHead;
                 base.supportWeight = base.totalWeight > case0.sumOfWeight
                         ? (base.totalWeight - case0.sumOfWeight)
                         : 0;
@@ -345,15 +395,15 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
                     : 0 ;
         }
 
-        if (motion.head.typeOfMotion == 
+        if (motion.head.typeOfMotion ==
             uint8(MotionsRepo.TypeOfMotion.ApproveDoc)) {
 
-            uint256[] memory parties = 
+            uint256[] memory parties =
                 ISigPage(address(uint160(motion.contents))).getParties();
             uint256 len = parties.length;
 
             while (len > 0) {
-                uint64 votesAtDate = 
+                uint64 votesAtDate =
                     _rom.votesAtDate(parties[len - 1], motion.body.shareRegDate);
 
                 if (votesAtDate > 0) {
@@ -370,7 +420,7 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
 
                             base.attendWeightRatio += uint16(votesAtDate * 10000 / votesOfMembers);
                         }
-                        
+
                     } else {
 
                         if (!motion.votingRule.onlyAttendance) {
@@ -394,69 +444,55 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
                 }
 
                 len--;
-            }                
+            }
         }
 
         return base;
     }
 
+    // ==== Execute Action ====
 
-    function voteCountingOfGM(uint256 seqOfMotion, address msgSender) external onlyDK {
-        _msgSender(msgSender, 88000);
-        
-        IRegisterOfMembers _rom = _gk.getROM();
-        IMeetingMinutes _gmm = _gk.getGMM();
-
-        MotionsRepo.Motion memory motion = 
-            _gmm.getMotion(seqOfMotion);
-
-        MotionsRepo.VoteCalBase memory base;
-
-        BallotsBox.Case memory case0 = _gmm.getCaseOfAttitude(motion.head.seqOfMotion, 0);
-
-        if (_allConsent(_gmm, _rom, motion, case0)) {
-            base.unaniConsent = true;
-        } else {
-            base = _calBase(_gmm, _rom, motion, base, case0);
-        }
-
-        bool quorumFlag = (address(_gk.getSHA()) == address(0)|| 
-            base.attendWeightRatio >= 
-            _gk.getSHA().getRule(0).governanceRuleParser().quorumOfGM);
-
-        bool approved = _gmm.voteCounting(quorumFlag, seqOfMotion, base) == 
-            uint8(MotionsRepo.StateOfMotion.Passed);
-
-        if (motion.head.seqOfVR < 9) {
-
-            address doc = address(uint160(motion.contents));
-
-            if (motion.head.seqOfVR == 8)
-                _gk.getROC().voteCountingForFile(doc, approved);
-            else _gk.getROA().voteCountingForFile(doc, approved);
-        }
-    }
-
-    // ==== execute ====
-    
     function execActionOfGM(
         uint typeOfAction,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory params,
         bytes32 desHash,
-        uint256 seqOfMotion,
-        address msgSender
-    ) external onlyDK returns (uint){
-        uint caller = _msgSender(msgSender, 36000);
+        uint256 seqOfMotion
+    ) external {
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 36000);
+        
+        _execActionOfGM(
+            caller,
+            typeOfAction,
+            targets,
+            values,
+            params,
+            desHash,
+            seqOfMotion
+        );
+    }
 
+    function _execActionOfGM(
+        uint caller,
+        uint typeOfAction,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory params,
+        bytes32 desHash,
+        uint256 seqOfMotion
+    ) private {
+        if(!(targets.length == values.length && targets.length == params.length)) 
+            revert GMMK_WrongInput("GMMK_InputLenMismatch");
+        
         uint len = targets.length;
         while (len > 0) {
-            emit ExecAction(targets[len-1], values[len-1], params[len-1], seqOfMotion, caller);
+            targets[len - 1].functionCallWithValue(params[len - 1], values[len - 1]);
+            emit ExecAction(targets[len - 1], values[len - 1], params[len - 1], seqOfMotion, caller);
             len--;
         }
 
-        return _gk.getGMM().execAction(
+        address(this).getGMM().execAction(
             typeOfAction,
             targets,
             values,
@@ -467,18 +503,6 @@ contract GMMKeeper is IGMMKeeper, RoyaltyCharge {
         );
     }
 
-    function deprecateGK(
-        address receiver,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 88000);
 
-        _gk.getGMM().deprecateGK(
-            receiver,
-            seqOfMotion,
-            caller
-        );
-    }
 
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,8 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
-
+pragma solidity ^0.8.24;
 
 import "../../common/components/SigPage.sol";
 
@@ -27,7 +26,7 @@ import "./IInvestmentAgreement.sol";
 contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     using DealsRepo for DealsRepo.Repo;
     using SigsRepo for SigsRepo.Page;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
     DealsRepo.Repo private _repo;
 
@@ -42,13 +41,12 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint paid,
         uint par,
         uint distrWeight
-    ) external onlyAttorney() {
+    ) external onlyAttorney {
         _repo.addDeal(sn, buyer, groupOfBuyer, paid, par, distrWeight);
-        // emit AddDeal(seqOfDeal);
     }
 
     function regDeal(DealsRepo.Deal memory deal) 
-        external attorneyOrKeeper returns(uint16 seqOfDeal) 
+        external attorneyOrGK returns(uint16 seqOfDeal) 
     {
         seqOfDeal = _repo.regDeal(deal);
 
@@ -80,7 +78,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     }
 
     function releaseDealSubject(uint256 seq)
-        external onlyDK returns (bool flag)
+        external onlyKeeper returns (bool flag)
     {
         flag = _repo.releaseDealSubject(seq);
     }
@@ -89,14 +87,14 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         uint256 seq,
         bytes32 hashLock,
         uint closingDeadline
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.clearDealCP(seq, hashLock, closingDeadline);
         emit ClearDealCP(seq, hashLock, closingDeadline);
     }
 
     function closeDeal(uint256 seq, string memory hashKey)
         external
-        onlyDK
+        onlyKeeper
         returns (bool flag)
     {        
         flag = _repo.closeDeal(seq, hashKey);
@@ -105,7 +103,7 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
 
     function directCloseDeal(uint256 seq)
         external
-        onlyDK
+        onlyKeeper
         returns (bool flag)
     {        
         flag = _repo.directCloseDeal(seq);
@@ -131,46 +129,11 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
         lockContents();
     }
 
-    // ==== Swap ====
-
-    function createSwap (
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint paidOfTarget,
-        uint seqOfPledge,
-        uint caller
-    ) external onlyKeeper returns(SwapsRepo.Swap memory swap) {
-        
-
-        swap = _repo.createSwap(seqOfMotion, seqOfDeal, paidOfTarget, 
-            seqOfPledge, caller, _gk.getROS(), _gk.getGMM());
-
-        emit CreateSwap(seqOfDeal, SwapsRepo.codifySwap(swap));
-    }
-
-    function payOffSwap(
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external onlyKeeper returns(SwapsRepo.Swap memory swap){
-        swap = _repo.payOffSwap(seqOfDeal, seqOfSwap);
-        emit PayOffSwap(seqOfDeal, seqOfSwap);
-    }
-
-    function terminateSwap(
-        uint seqOfMotion,
-        uint seqOfDeal,
-        uint seqOfSwap
-    ) external onlyKeeper returns (SwapsRepo.Swap memory swap){
-        swap = _repo.terminateSwap(seqOfMotion, seqOfDeal, 
-            seqOfSwap, _gk.getGMM());
-        emit TerminateSwap(seqOfDeal, seqOfSwap);        
-    }
-
     function payOffApprovedDeal(
         uint seqOfDeal,
         uint msgValue,
         uint caller
-    ) external returns (bool flag){
+    ) external onlyKeeper returns (bool flag){
         flag = _repo.payOffApprovedDeal(seqOfDeal, caller);
         emit PayOffApprovedDeal(seqOfDeal, msgValue);
     }
@@ -198,25 +161,5 @@ contract InvestmentAgreement is IInvestmentAgreement, SigPage {
     function getSeqList() external view returns (uint[] memory) {
         return _repo.getSeqList();
     }
-
-    // ==== Swap ====
-
-    function getSwap(uint seqOfDeal, uint256 seqOfSwap)
-        external view returns (SwapsRepo.Swap memory)
-    {
-        return _repo.getSwap(seqOfDeal, seqOfSwap);
-    }
-
-    function getAllSwaps(uint seqOfDeal)
-        external view returns (SwapsRepo.Swap[] memory )
-    {
-        return _repo.getAllSwaps(seqOfDeal);
-    }
-
-    function allSwapsClosed(uint seqOfDeal)
-        external view returns (bool)
-    {
-        return _repo.allSwapsClosed(seqOfDeal);
-    } 
 
 }

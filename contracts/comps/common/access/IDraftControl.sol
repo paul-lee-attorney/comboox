@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v0.2.4
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,44 +17,79 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../../../lib/RolesRepo.sol";
+import "../../../lib/utils/RolesRepo.sol";
 
+/// @title IDraftControl
+/// @notice Draft-stage access control and finalization interface.
+/// @dev Manages role administration and irreversible content locking.
 interface IDraftControl {
 
-    // ##################
-    // ##   Event      ##
-    // ##################
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
 
+    /// @notice Emitted when a wrong party attempts a limited action.
+    error DC_WrongParty(bytes32 reason);
+
+    /// @notice Emitted when an action is attempted in an invalid state.
+    error DC_WrongState(bytes32 reason);
+
+    /// @notice Emitted when a role admin is updated.
+    /// @param role Role identifier.
+    /// @param acct New admin address.
     event SetRoleAdmin(bytes32 indexed role, address indexed acct);    
 
+    /// @notice Emitted when contents are finalized and roles are locked.
     event LockContents();
 
     // ##################
     // ##    Write     ##
     // ##################
 
+    /// @notice Set the admin for a role.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Admin address (must be a non-zero address).
     function setRoleAdmin(bytes32 role, address acct) external;
 
+    /// @notice Grant a role to an account.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Account address (non-zero).
     function grantRole(bytes32 role, address acct) external;
 
+    /// @notice Revoke a role from an account.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Account address (non-zero).
     function revokeRole(bytes32 role, address acct) external;
 
+    /// @notice Renounce a role held by the caller.
+    /// @param role Role identifier (non-zero bytes32).
     function renounceRole(bytes32 role) external;
 
+    /// @notice Abandon a role by clearing its members.
+    /// @param role Role identifier (non-zero bytes32).
     function abandonRole(bytes32 role) external;
 
+    /// @notice Irreversibly lock contents by removing write authorities.
+    /// @dev Typically sets owner to zero and abandons privileged roles.
     function lockContents() external;
 
     // ##################
     // ##   Read I/O   ##
     // ##################
 
+    /// @notice Check whether contents are finalized.
+    /// @return True if the contract is finalized and immutable.
     function isFinalized() external view returns (bool);
 
+    /// @notice Get the admin address for a role.
+    /// @param role Role identifier (non-zero bytes32).
     function getRoleAdmin(bytes32 role) external view returns (address);
 
+    /// @notice Check whether an account has a role.
+    /// @param role Role identifier (non-zero bytes32).
+    /// @param acct Account address (non-zero).
     function hasRole(bytes32 role, address acct) external view returns (bool);
 
 }

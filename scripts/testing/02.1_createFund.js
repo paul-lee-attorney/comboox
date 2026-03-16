@@ -68,10 +68,10 @@ import { getAddress, formatUnits, hexlify, toUtf8Bytes } from "ethers";
 import { expect } from "chai";
 import { saveBooxAddr, setUserCBP, setUserDepo } from "./saveTool";
 import { codifyHeadOfShare, printShares } from './ros';
-import { getROM, getROS, getRC, refreshBoox, getUSDC, getCNC, getFK } from "./boox";
+import { getROM, getROS, getRC, refreshBoox, getUSDC, getCNC, getGK } from "./boox";
 import { now } from "./utils";
 import { parseCompInfo } from "./gk";
-import { cbpOfUsers } from "./rc";
+import { cbpOfUsers, getAllUsers } from "./rc";
 
 async function main() {
 
@@ -88,95 +88,81 @@ async function main() {
     const cnc = await getCNC();
     const rc = await getRC();
 
+    const users = await getAllUsers(rc, 6);
+
     // ==== Create Company ====
 
-    let tx = await cnc.createComp(9, await signers[1].getAddress());
+    let tx = await cnc.createComp(9, signers[1].address);
     let receipt = await tx.wait();
 
-    await expect(tx).to.emit(rc, "CreateDoc");
-    console.log(" \u2714 Passed Event Test for rc.CreateDoc(). \n");
+    await expect(tx).to.emit(rc, "ProxyDoc");
+    console.log(" \u2714 Passed Event Test for rc.ProxyDoc(). \n");
 
-    const FK = getAddress(`0x${receipt.logs[0].topics[2].substring(26)}`);
-    saveBooxAddr("FundKeeper", FK);
+    // ==== Get FK Addresses ====
 
-    const gk = await getFK(FK);
+    const eventLogs = receipt.logs
+      .filter((log) =>
+        log.address.toLowerCase() === rc.target.toLowerCase() && 
+        log.topics[0] === rc.interface.getEvent('ProxyDoc').topicHash &&
+        log.topics[1].substring(0, 10) == '0x25586efd'
+      );
+
+    const addrGK = `0x${eventLogs[0].topics[2].substring(26)}`;
+
+    let gk = await getGK(addrGK);
+    const userFund = parseCompInfo(await gk.getCompInfo()).regNum;
+    console.log("userFund:", userFund, "\n");
+
+    saveBooxAddr("GK", addrGK);
+
+    // const FK = getAddress(`0x${receipt.logs[0].topics[2].substring(26)}`);
+    // saveBooxAddr("FundKeeper", FK);
+
+    // const gk = await getFK(FK);
     
-    await expect(tx).to.emit(gk, "SetDirectKeeper").withArgs(await signers[1].getAddress());
+    await expect(tx).to.emit(gk, "SetDirectKeeper").withArgs(signers[1].address);
     console.log(" \u2714 Passed Event Test for gk.SetDirectKeeper(). \n");
 
-    setUserCBP("8", 0n); // No rewards will be granted for CA User;
+    setUserCBP(userFund, 0n); // No rewards will be granted for CA User;
 
-    const ROC = await gk.getROC();
+    const ROC = await gk.getBook(1);
     saveBooxAddr("ROC", ROC);
 
-    const ROD = await gk.getROD();
+    const ROD = await gk.getBook(2);
     saveBooxAddr("ROD", ROD);
 
-    const BMM = await gk.getBMM();
+    const BMM = await gk.getBook(3);
     saveBooxAddr("BMM", BMM);
 
-    const ROM = await gk.getROM();
+    const ROM = await gk.getBook(4);
     saveBooxAddr("ROM", ROM);
 
-    const GMM = await gk.getGMM();
+    const GMM = await gk.getBook(5);
     saveBooxAddr("GMM", GMM);
 
-    const ROA = await gk.getROA();
+    const ROA = await gk.getBook(6);
     saveBooxAddr("ROA", ROA);
 
-    const ROP = await gk.getROP();
+    const ROP = await gk.getBook(8);
     saveBooxAddr("ROP", ROP);
 
-    const ROS = await gk.getROS();
+    const ROS = await gk.getBook(9);
     saveBooxAddr("ROS", ROS);
 
-    const LOO = await gk.getLOO();
+    const LOO = await gk.getBook(10);
     saveBooxAddr("LOO", LOO);
 
-    const ROI = await gk.getROI();
+    const ROI = await gk.getBook(11);
     saveBooxAddr("ROI", ROI);
 
-    const Cashier = await gk.getCashier();
+    const Cashier = await gk.getBook(15);
     saveBooxAddr("Cashier", Cashier);
 
-    const USDC = await gk.getBank();
+    const USDC = await gk.getBook(12);
     saveBooxAddr("USDC", USDC);
 
-    const ROR = await gk.getROR();
+    const ROR = await gk.getBook(16);
     saveBooxAddr("ROR", ROR);
-
-    const ROCKeeper = await gk.getKeeper(1);
-    saveBooxAddr("ROCKeeper", ROCKeeper);
-
-    const RODKeeper = await gk.getKeeper(2);
-    saveBooxAddr("RODKeeper", RODKeeper);
-
-    const BMMKeeper = await gk.getKeeper(3);
-    saveBooxAddr("BMMKeeper", BMMKeeper);
-
-    const ROMKeeper = await gk.getKeeper(4);
-    saveBooxAddr("ROMKeeper", ROMKeeper);
-
-    const GMMKeeper = await gk.getKeeper(5);
-    saveBooxAddr("GMMKeeper", GMMKeeper);
-
-    const ROAKeeper = await gk.getKeeper(6);
-    saveBooxAddr("ROAKeeper", ROAKeeper);
-
-    const ROPKeeper = await gk.getKeeper(8);
-    saveBooxAddr("ROPKeeper", ROPKeeper);
-
-    const LOOKeeper = await gk.getKeeper(10);
-    saveBooxAddr("LOOKeeper", LOOKeeper);
-
-    const ROIKeeper = await gk.getKeeper(11);
-    saveBooxAddr("ROIKeeper", ROIKeeper);
-
-    const Accountant = await gk.getKeeper(12);
-    saveBooxAddr("Accountant", Accountant);
-
-    const RORKeeper = await gk.getKeeper(16);
-    saveBooxAddr("RORKeeper", RORKeeper);
 
     refreshBoox();
 
@@ -202,7 +188,7 @@ async function main() {
     
     const info = parseCompInfo(await gk.getCompInfo());
 
-    expect(info.regNum).to.equal(8);
+    expect(info.regNum).to.equal(userFund);
     expect(info.currency).to.equal('USD');
     expect(info.symbol).to.equal('COMBOOX');
     expect(info.name).to.equal("ComBoox Fund");
@@ -227,7 +213,7 @@ async function main() {
       seqOfShare: 1,
       preSeq: 0,
       issueDate: issueDate,
-      shareholder: 1,
+      shareholder: users[0],
       priceOfPaid: 1,
       priceOfPar: 0,
       votingWeight: 100,
@@ -238,40 +224,40 @@ async function main() {
     await expect(tx).to.emit(ros, "IssueShare").withArgs(codifyHeadOfShare(head), 100 * 10 ** 4, 100 * 10 ** 4);
     console.log(" \u2714 Passed Event Test for ros.IssueShare(). \n");
 
-    await expect(tx).to.emit(rom, "AddMember").withArgs(1n, 1n);
+    await expect(tx).to.emit(rom, "AddMember").withArgs(users[0], 1n);
     console.log(" \u2714 Passed Event Test for rom.AddMember(). \n");
 
     await expect(tx).to.emit(rom, "CapIncrease").withArgs(100n, 100 * 10 ** 4, 100 * 10 ** 4, 100n);
     console.log(" \u2714 Passed Event Test for rom.CapIncrease(). \n");
 
-    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(1n, 1n);
+    await expect(tx).to.emit(rom, "AddShareToMember").withArgs(1n, users[0]);
     console.log(" \u2714 Passed Event Test for rom.AddShareToMember(). \n");
 
     // ==== Turn Over Direct Keeper Rights ====
 
-    await ros.connect(signers[1]).setDirectKeeper(ROMKeeper);
+    await ros.connect(signers[1]).setDirectKeeper(addrGK);
 
-    let dk = await ros.getDK();
-    expect(dk).to.equal(ROMKeeper);
+    let dk = (await ros.getDK()).toLowerCase();
+    expect(dk).to.equal(addrGK);
     console.log(" \u2714 Passed Result Verify Test for ros.setDirectKeeper(). \n");
     
-    await rom.connect(signers[1]).setDirectKeeper(ROMKeeper);
+    await rom.connect(signers[1]).setDirectKeeper(addrGK);
     
-    dk = await rom.getDK();
-    expect(dk).to.equal(ROMKeeper);
+    dk = (await rom.getDK()).toLowerCase();
+    expect(dk).to.equal(addrGK);
     console.log(" \u2714 Passed Result Verify Test for rom.setDirectKeeper(). \n");
     
-    setUserDepo("1", 0n);
-    setUserDepo("2", 0n);
-    setUserDepo("3", 0n);
-    setUserDepo("4", 0n);
-    setUserDepo("5", 0n);
-    setUserDepo("6", 0n);
-    setUserDepo("7", 0n);
-    setUserDepo("8", 0n);
+    // setUserDepo("1", 0n);
+    // setUserDepo("2", 0n);
+    // setUserDepo("3", 0n);
+    // setUserDepo("4", 0n);
+    // setUserDepo("5", 0n);
+    // setUserDepo("6", 0n);
+    // setUserDepo("7", 0n);
+    // setUserDepo("8", 0n);
 
     await printShares(ros);
-    await cbpOfUsers(rc, await gk.getAddress());
+    await cbpOfUsers(rc, gk.target, userFund);
 }
 
 main()

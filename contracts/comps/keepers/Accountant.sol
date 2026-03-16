@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -18,17 +17,35 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../common/access/RoyaltyCharge.sol";
+import "../../lib/InterfacesHub.sol";
+import "../../lib/utils/RoyaltyCharge.sol";
+import "../../lib/books/WaterfallsRepo.sol";
 
 import "./IAccountant.sol";
 
+contract Accountant is IAccountant {
+    using InterfacesHub for address;
+    using RoyaltyCharge for address;
 
-contract Accountant is IAccountant, RoyaltyCharge {
-    using BooksRepo for IBaseKeeper;
+    // uint32(uint(keccak256("Accountant")));
+    uint public constant TYPE_OF_DOC = 0x671969be;
+    uint public constant VERSION = 1;
 
-    function initClass(uint class) external onlyDK {
+    // #####################
+    // ##  Error & Event  ##
+    // #####################
+
+    error ACTT_WrongParty(bytes32 reason);
+
+    function initClass(uint class) external {
+        address _gk = address(this);
+        msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
+
+        if (msg.sender != IAccessControl(_gk).getDK()) 
+            revert ACTT_WrongParty(bytes32("ACTT_NotDK"));
+
         uint sum = _gk.getROS().getInfoOfClass(class).body.paid;
         _gk.getCashier().initClass(class, sum);
     }
@@ -37,10 +54,10 @@ contract Accountant is IAccountant, RoyaltyCharge {
         uint amt,
         uint expireDate,
         uint seqOfDR,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 18000);
+        uint seqOfMotion
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
         _gk.getGMM().distributeUsd(
             amt,
@@ -59,11 +76,10 @@ contract Accountant is IAccountant, RoyaltyCharge {
         uint expireDate,
         uint seqOfDR,
         uint fundManager,
-        uint seqOfMotion,
-        address msgSender        
-    ) external onlyDK {
-
-        uint caller = _msgSender(msgSender, 18000);
+        uint seqOfMotion
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 18000);
 
         IRegisterOfShares _ros = _gk.getROS();
         ICashier _cashier = _gk.getCashier();
@@ -101,10 +117,10 @@ contract Accountant is IAccountant, RoyaltyCharge {
         bool isCBP,
         uint amt,
         uint expireDate,
-        uint seqOfMotion,
-        address msgSender
-    ) external onlyDK {
-        uint caller = _msgSender(msgSender, 76000);
+        uint seqOfMotion
+    ) external {
+        address _gk = address(this);
+        uint caller = msg.sender.msgSender(TYPE_OF_DOC, VERSION, 76000);
 
         if (fromBMM) {
             _gk.getBMM().transferFund(
@@ -128,6 +144,8 @@ contract Accountant is IAccountant, RoyaltyCharge {
 
         if (!isCBP) {
             _gk.getCashier().transferUsd(to, amt, bytes32(seqOfMotion));
+        } else {
+            _gk.getRCByGK().transfer(to, amt);
         }
     }
 }

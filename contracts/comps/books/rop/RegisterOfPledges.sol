@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfPledges.sol";
 
@@ -27,7 +27,11 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
     using PledgesRepo for PledgesRepo.Repo;
     using PledgesRepo for PledgesRepo.Pledge;
 
+    // Repository for pledges and their states.
     PledgesRepo.Repo private _repo;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //##################
     //##  Write I/O   ##
@@ -39,7 +43,7 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
         uint par,
         uint guaranteedAmt,
         uint execDays
-    ) external onlyDK returns(PledgesRepo.Head memory head){
+    ) external onlyKeeper returns(PledgesRepo.Head memory head){
         head = _repo.createPledge(
             snOfPld,
             paid,
@@ -106,7 +110,9 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
         uint caller
     ) external onlyKeeper returns (PledgesRepo.Pledge memory newPld)
     {
-        require(buyer > 0, "ROP.transferPld: zero buyer");
+        if (buyer == 0) {
+            revert ROP_WrongInput("ROP_ZeroBuyer");
+        }
 
         newPld = _repo.splitPledge(seqOfShare, seqOfPld, buyer, amt, caller);
 
@@ -161,21 +167,23 @@ contract RegisterOfPledges is IRegisterOfPledges, AccessControl {
         uint256 seqOfPld, 
         string memory hashKey
     ) external onlyKeeper returns (uint64) {
-        PledgesRepo.Pledge storage pld = _repo.pledges[seqOfShare][seqOfPld];
+        PledgesRepo.Pledge storage pld = 
+            _repo.pledges[seqOfShare][seqOfPld];
         pld.releasePledge(hashKey);   
         emit ReleasePledge(seqOfShare, seqOfPld, hashKey);
         return pld.body.paid;
     }
 
-    function execPledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
-        external onlyKeeper 
-    {
+    function execPledge(
+        uint256 seqOfShare, uint256 seqOfPld, uint caller
+    ) external onlyKeeper {
         _repo.pledges[seqOfShare][seqOfPld].execPledge(caller);
         emit ExecPledge(seqOfShare, seqOfPld);
     }
 
-    function revokePledge(uint256 seqOfShare, uint256 seqOfPld, uint caller)
-        external onlyKeeper {
+    function revokePledge(
+        uint256 seqOfShare, uint256 seqOfPld, uint caller
+    ) external onlyKeeper {
         _repo.pledges[seqOfShare][seqOfPld].revokePledge(caller);
         emit RevokePledge(seqOfShare, seqOfPld);
     }

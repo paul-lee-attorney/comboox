@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,27 +17,35 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "../../common/components/IFilesFolder.sol";
 
+/// @title IRegisterOfConstitution
+/// @notice Interface for managing the constitution document register.
 interface IRegisterOfConstitution is IFilesFolder{
 
     //##############
     //##  Event   ##
     //##############
 
+    /// @notice Emitted when the active pointer is updated.
+    /// @param pointer New pointer address.
     event ChangePointer(address indexed pointer);
 
     //#############
     //##  Write  ##
     //#############
 
+    /// @notice Update the active pointer to a registered document.
+    /// @param body Document contract address.
     function changePointer(address body) external;
 
     //################
     //##    Read    ##
     //################
 
+    /// @notice Get the current pointer address.
+    /// @return Current document pointer address.
     function pointer() external view returns (address);
 }

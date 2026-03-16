@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfInvestors.sol";
 import "../../common/access/AccessControl.sol";
@@ -26,6 +26,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     using InvestorsRepo for InvestorsRepo.Repo;
     using EnumerableSet for EnumerableSet.UintSet;
 
+    // Repository for investors and their groupings.
     InvestorsRepo.Repo private _investors;
 
     /// @dev mapping from seqOfShare to paid amount under frozen;
@@ -36,20 +37,27 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
 
     bool private _paused;
 
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
+
     //#################
     //##  Write I/O  ##
     //#################
 
     // ==== Pause LOO ====
 
-    function pause(uint caller) external onlyDK {
-        require(_paused == false, "already paused");
+    function pause(uint caller) external onlyKeeper {
+        if (_paused == true) {
+            revert ROI_WrongState("ROI_AlreadyPaused");
+        }
         _paused = true;
         emit Paused(caller);
     }
 
-    function unPause(uint caller) external onlyDK {
-        require(_paused == true, "not paused");
+    function unPause(uint caller) external onlyKeeper {
+        if (_paused == false) {
+            revert ROI_WrongState("ROI_AlreadyUnpaused");
+        }
         _paused = false;
         emit UnPaused(caller);
     }
@@ -59,7 +67,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function freezeShare(
         uint userNo, uint seqOfShare, uint paid, uint caller,
         bytes32 hashOrder
-    ) external onlyDK {
+    ) external onlyKeeper {
         _frozenShares[userNo].add(seqOfShare);
         _frozenPaid[seqOfShare] += paid;
         emit FreezeShare(seqOfShare, paid, caller, hashOrder);
@@ -68,7 +76,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function unfreezeShare(
         uint userNo, uint seqOfShare, uint paid, uint caller,
         bytes32 hashOrder
-    ) external onlyDK {
+    ) external onlyKeeper {
         _unfreezeShare(userNo, seqOfShare, paid);
         emit UnfreezeShare(seqOfShare, paid, caller, hashOrder);
     }
@@ -76,8 +84,9 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function _unfreezeShare(
         uint userNo, uint seqOfShare, uint paid
     ) private {
-        require(_frozenPaid[seqOfShare] >= paid,
-            "LOO.unfreezeShare: insufficient fronzen paid");
+        if (_frozenPaid[seqOfShare] < paid) {
+            revert ROI_Overflow("ROI_ShotOfFrozenPaid");
+        }
         _frozenPaid[seqOfShare] -= paid;
         if (_frozenPaid[seqOfShare] == 0 )
             _frozenShares[userNo].remove(seqOfShare);
@@ -86,7 +95,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function forceTransfer(
         uint userNo, uint seqOfShare, uint paid, uint caller,
         bytes32 hashOrder
-    ) external onlyDK {
+    ) external onlyKeeper {
         _unfreezeShare(userNo, seqOfShare, paid);
         emit ForceTransfer(seqOfShare, paid, caller, hashOrder);
     }
@@ -97,7 +106,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
         uint userNo,
         uint groupRep,
         bytes32 idHash
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.regInvestor(userNo, groupRep, idHash);
         emit RegInvestor(userNo, groupRep, idHash);
     }
@@ -105,7 +114,7 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function approveInvestor(
         uint userNo,
         uint verifier
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.approveInvestor(userNo, verifier);
         emit ApproveInvestor(userNo, verifier);
     }        
@@ -113,14 +122,14 @@ contract RegisterOfInvestors is IRegisterOfInvestors, AccessControl {
     function revokeInvestor(
         uint userNo,
         uint verifier
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.revokeInvestor(userNo, verifier);
         emit RevokeInvestor(userNo, verifier);
     }
 
     function restoreInvestorsRepo(
         InvestorsRepo.Investor[] memory list, uint qtyOfInvestors
-    ) external onlyDK {
+    ) external onlyKeeper {
         _investors.restoreRepo(list, qtyOfInvestors);
     }
 

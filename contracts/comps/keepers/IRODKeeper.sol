@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,45 +17,58 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../common/components/IMeetingMinutes.sol";
-
-import "../../lib/BooksRepo.sol";
-import "../../lib/MotionsRepo.sol";
-
+/// @title IRODKeeper
+/// @notice Interface for director and officer appointment actions.
 interface IRODKeeper {
+
+    //###############
+    //##   Error   ##
+    //###############
+
+    error RODK_WrongTypeOfMotion(bytes32 reason);
 
     // ==== Directors ====
 
+    /// @notice Take a director seat after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
     function takeSeat(
         uint256 seqOfMotion,
-        uint256 seqOfPos,
-        address msgSender 
+        uint256 seqOfPos
     ) external;
 
+    /// @notice Remove a director after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
     function removeDirector (
         uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        address msgSender
+        uint256 seqOfPos
     ) external;
 
     // ==== Officers ====
 
+    /// @notice Take an officer position after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
     function takePosition(
         uint256 seqOfMotion,
-        uint256 seqOfPos,
-        address msgSender 
+        uint256 seqOfPos
     ) external;
 
+    /// @notice Remove an officer after motion approval.
+    /// @param seqOfMotion Motion sequence.
+    /// @param seqOfPos Position sequence.
     function removeOfficer (
         uint256 seqOfMotion, 
-        uint256 seqOfPos,
-        address msgSender
+        uint256 seqOfPos
     ) external;
 
     // ==== Quit ====
 
-    function quitPosition(uint256 seqOfPos, address msgSender) external;
+    /// @notice Quit an officer position.
+    /// @param seqOfPos Position sequence.
+    function quitPosition(uint256 seqOfPos) external;
 
 }

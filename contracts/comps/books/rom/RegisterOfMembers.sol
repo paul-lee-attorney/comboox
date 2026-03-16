@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -17,7 +17,7 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IRegisterOfMembers.sol";
 import "../../common/access/AccessControl.sol";
@@ -26,17 +26,22 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
     using MembersRepo for MembersRepo.Repo;
     using TopChain for TopChain.Chain;
     using Checkpoints for Checkpoints.History;
-    using BooksRepo for IBaseKeeper;
+    using InterfacesHub for address;
 
+    // Repository for members and their shares, votes, equity, points, and groupings.
     MembersRepo.Repo private _repo;
+
+    // ==== UUPSUpgradable ====
+    uint256[50] private __gap;
 
     //##################
     //##   Modifier   ##
     //##################
 
     modifier onlyROS() {
-        require(msg.sender == address(_gk.getROS()),
-            "ROM.onlyROS: not");
+        if (msg.sender != address(_gk.getROS())) {
+            revert ROM_WrongAccess("ROM_NotROS");
+        }
         _;
     }
 
@@ -51,19 +56,13 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         emit SetMaxQtyOfMembers(max);
     }
 
-    function setMinVoteRatioOnChain(uint min) external {
-        require(msg.sender == _gk.getKeeper(1),
-            "ROM.OnlyROCKeeper: not");
+    function setMinVoteRatioOnChain(uint min) external onlyKeeper {
         _repo.chain.setMinVoteRatioOnChain(min);
         emit SetMinVoteRatioOnChain(min);
     }
 
-    function setVoteBase(bool _basedOnPar) external {
-        require(msg.sender == _gk.getKeeper(1),
-            "ROM.OnlyROCKeeper: not");
-
+    function setVoteBase(bool _basedOnPar) external onlyKeeper {
         IRegisterOfShares _ros = _gk.getROS();
-
         if (_repo.setVoteBase(_ros, _basedOnPar)) 
             emit SetVoteBase(_basedOnPar);
     }
@@ -168,20 +167,20 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
 
     // ==== Restore ====
 
-    function restoreSharesInRom(SharesRepo.Share[] memory shares) external onlyDK{
+    function restoreSharesInRom(SharesRepo.Share[] memory shares) external onlyKeeper{
         _repo.restoreSharesInRepo(shares);
     }
 
     function restoreTopChainInRom(
         TopChain.Node[] memory list, TopChain.Para memory para
-    ) external onlyDK {
+    ) external onlyKeeper {
         _repo.chain.restoreChain(list, para);
     }
 
     function restoreVotesHistoryInRom(
         uint acct, Checkpoints.Checkpoint[] memory list,
         Checkpoints.Checkpoint memory distrPts
-    ) external onlyDK {
+    ) external onlyKeeper {
         MembersRepo.Member storage member = _repo.members[acct];
         member.votesInHand.restoreHistory(list);
         member.votesInHand.updateDistrPoints(distrPts.rate, distrPts.paid, distrPts.par, distrPts.points);
@@ -272,7 +271,9 @@ contract RegisterOfMembers is IRegisterOfMembers, AccessControl {
         view
         returns (uint64)
     {
-        require(_repo.isMember(acct), "ROM.votesInHand: not member");
+        if (!_repo.isMember(acct)) {
+            revert ROM_WrongInput("ROM_NotMember");
+        }
         return _repo.chain.nodes[acct].amt;
     }
 

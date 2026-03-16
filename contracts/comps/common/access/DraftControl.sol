@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 /* *
- * V.0.2.4
- *
- * Copyright (c) 2021-2024 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -19,15 +17,16 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
 import "./IDraftControl.sol";
 import "./AccessControl.sol";
+// import "../../../lib/InterfacesHub.sol";
 
 contract DraftControl is IDraftControl, AccessControl {
     using RolesRepo for RolesRepo.Repo;
 
-    bytes32 private constant _ATTORNEYS = bytes32("Attorneys");
+    bytes32 private constant _ATTORNEYS = keccak256(bytes("Attorneys"));
     RolesRepo.Repo private _roles;
 
     // ################
@@ -35,21 +34,21 @@ contract DraftControl is IDraftControl, AccessControl {
     // ################
 
     modifier onlyGC {
-        require(_roles.getRoleAdmin(_ATTORNEYS) == 
-            msg.sender,"AC.onlyGC: NOT");
+        if (_roles.getRoleAdmin(_ATTORNEYS) != msg.sender)
+            revert DC_WrongParty(bytes32("DC_NotGC"));
         _;
     }
 
     modifier onlyAttorney {
-        require(_roles.hasRole(_ATTORNEYS, msg.sender),
-            "AC.onlyAttorney: NOT");
+        if (!_roles.hasRole(_ATTORNEYS, msg.sender))
+            revert DC_WrongParty(bytes32("DC_NotAttorney"));
         _;
     }
 
-    modifier attorneyOrKeeper {
-        require(_roles.hasRole(_ATTORNEYS, msg.sender) ||
-            _gk.isKeeper(msg.sender),
-            "AC.md.attorneyOrKeeper: NOT");
+    modifier attorneyOrGK {
+        if (!_roles.hasRole(_ATTORNEYS, msg.sender) &&
+            msg.sender != _gk
+        ) revert DC_WrongParty(bytes32("DC_NotAttorneyOrGK"));
         _;
     }
 
@@ -79,8 +78,8 @@ contract DraftControl is IDraftControl, AccessControl {
     }
 
     function lockContents() public onlyOwner {
-        require(_dk.state == 1, 
-            "AC.lockContents: wrong state");
+        if(_dk.state != 1)
+            revert DC_WrongState(bytes32("DC_NotInDraft"));
 
         _roles.abandonRole(_ATTORNEYS);
         setNewOwner(address(0));

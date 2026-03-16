@@ -2,7 +2,7 @@
 
 /* *
  * v.0.2.5
- * Copyright (c) 2021-2025 LI LI @ JINGTIAN & GONGCHENG.
+ * Copyright (c) 2021-2026 LI LI @ JINGTIAN & GONGCHENG.
  *
  * This WORK is licensed under ComBoox SoftWare License 1.0, a copy of which 
  * can be obtained at:
@@ -18,30 +18,45 @@
  * MORE NODES THAT ARE OUT OF YOUR CONTROL.
  * */
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.24;
 
-import "../../lib/RedemptionsRepo.sol";
-import "../../lib/BooksRepo.sol";
-import "../../lib/SharesRepo.sol";
-
-import "../books/ror/IRegisterOfRedemptions.sol";
-import "../books/rom/IRegisterOfMembers.sol";
-import "../books/ros/IRegisterOfShares.sol";
-import "../books/cashier/ICashier.sol";
-
-
+/// @title IRORKeeper
+/// @notice Interface for redemption configuration and execution.
 interface IRORKeeper {
 
-    function addRedeemableClass(uint class, address msgSender) external;
+    //######################
+    //##   Error & Event  ##
+    //######################
 
-    function removeRedeemableClass(uint class, address msgSender) external;
+    error FundRORK_WrongParty(bytes32 reason);
 
-    function updateNavPrice(uint class, uint price, address msgSender) external;
+    error FundRORK_Overflow(bytes32 reason);
 
+    error FundRORK_ZeroValue(bytes32 reason);
+
+    /// @notice Add a redeemable class.
+    /// @param class Share class id.
+    function addRedeemableClass(uint class) external;
+
+    /// @notice Remove a redeemable class.
+    /// @param class Share class id.
+    function removeRedeemableClass(uint class) external;
+
+    /// @notice Update NAV price for a class.
+    /// @param class Share class id.
+    /// @param price NAV price.
+    function updateNavPrice(uint class, uint price) external;
+
+    /// @notice Request redemption for a share.
+    /// @param class Share class id.
+    /// @param paid Paid amount to redeem.
     function requestForRedemption(
-        uint class, uint paid, address msgSender
+        uint class, uint paid
     ) external;
 
-    function redeem(uint class, uint seqOfPack, address msgSender) external;
+    /// @notice Redeem a pack for a class.
+    /// @param class Share class id.
+    /// @param seqOfPack Pack sequence.
+    function redeem(uint class, uint seqOfPack) external;
 
 }
