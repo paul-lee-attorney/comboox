@@ -110,7 +110,7 @@ contract Cashier is ICashier, AccessControl {
         address from, address to, uint amt, bytes32 remark
     ) external onlyKeeper {
         if(_coffers[from] < amt) {
-            revert Cashier_Overflow("Cashier_InsufficientAmt");
+            revert Cashier_Overflow(bytes32("Cashier_InsufficientAmt"));
         }
 
         _coffers[from] -= amt;
